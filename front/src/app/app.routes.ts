@@ -2,21 +2,21 @@ import { Routes } from '@angular/router';
 import { authGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
-  // RedirecciÃ³n inicial al login
+  // Redirección inicial al dashboard
   {
     path: '',
     pathMatch: 'full',
-    redirectTo: 'login',
+    redirectTo: 'dashboard',
   },
 
-  // Login (pÃ¡gina pÃºblica)
+  // Login (página pública)
   {
     path: 'login',
     loadComponent: () =>
       import('./components/login/login.component').then(m => m.LoginComponent),
   },
 
-  // Login (pÃ¡gina pÃºblica)
+  // Login (página pública)
   {
     path: 'recuperar-clave',
     loadComponent: () =>
@@ -31,7 +31,7 @@ export const routes: Routes = [
       import('./components/dashboard/dashboard.component').then(m => m.DashboardComponent),
   },
 
-  // GestiÃ³n de colaboradores
+  // Gestión de colaboradores
   {
     path: 'colaboradores',
     canActivate: [authGuard],
@@ -39,7 +39,7 @@ export const routes: Routes = [
       import('./components/colaboradores/colaboradores.component').then(m => m.ColaboradoresComponent),
   },
 
-  // GestiÃ³n de tutores
+  // Gestión de tutores
   {
     path: 'tutores',
     canActivate: [authGuard],
@@ -47,7 +47,7 @@ export const routes: Routes = [
       import('./components/tutores/tutores.component').then(m => m.TutoresComponent),
   },
 
-  // GestiÃ³n de usuarios
+  // Gestión de usuarios
   {
     path: 'usuarios',
     canActivate: [authGuard],
@@ -55,7 +55,7 @@ export const routes: Routes = [
       import('./components/usuarios/usuarios.component').then(m => m.UsuariosComponent),
   },
 
-  // GestiÃ³n de estudiantes
+  // Gestión de estudiantes
   {
     path: 'estudiantes',
     canActivate: [authGuard],
@@ -71,7 +71,7 @@ export const routes: Routes = [
       import('./components/encuestas/encuestas.component').then(m => m.EncuestasComponent),
   },
 
-  // SupervisiÃ³n general
+  // Supervisión general
   {
     path: 'supervision',
     canActivate: [authGuard],
@@ -79,7 +79,7 @@ export const routes: Routes = [
       import('./components/supervision/supervision.component').then(m => m.SupervisionComponent),
   },
 
-  // GestiÃ³n de prÃ¡cticas
+  // Gestión de prácticas
   {
     path: 'practicas',
     canActivate: [authGuard],
@@ -87,7 +87,7 @@ export const routes: Routes = [
       import('./components/practicas/practicas.component').then(m => m.PracticasComponent),
   },
 
-  // GestiÃ³n de centros educativos
+  // Gestión de centros educativos
   {
     path: 'centros-educativos',
     canActivate: [authGuard],
@@ -95,7 +95,7 @@ export const routes: Routes = [
       import('./components/centros-educativos/centros-educativos.component').then(m => m.CentrosEducativosComponent),
   },
 
-  // GeneraciÃ³n de carta de solicitud
+  // Generación de carta de solicitud
   {
     path: 'carta',
     canActivate: [authGuard],
@@ -103,7 +103,7 @@ export const routes: Routes = [
       import('./components/carta/carta.component').then(m => m.CartaComponent),
   },
 
-  // Estudiantes en prÃ¡ctica (solo para jefatura de carrera)
+  // Estudiantes en práctica (solo para jefatura de carrera)
   {
     path: 'estudiantes-en-practica',
     canActivate: [authGuard],
@@ -119,7 +119,7 @@ export const routes: Routes = [
       import('./components/actividades-estudiantes/actividades-estudiantes.component').then(m => m.ActividadesEstudiantesComponent),
   },
 
-  // Ruta comodÃ­n â†’ redirige a login
+  // Ruta comodín ? redirige a dashboard
   {
     path: '**',
     redirectTo: 'dashboard',

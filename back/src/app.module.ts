@@ -18,6 +18,7 @@ import { ActividadPracticaModule } from './actividad-practica/actividad-practica
 import { ActividadesModule } from './actividades/actividades.module';
 import { AuthModule } from './auth/auth.module';
 import { EncuestasModule } from './encuestas/encuestas.module';
+import { UsuariosModule } from './usuarios/usuarios.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { EncuestasModule } from './encuestas/encuestas.module';
     ActividadesModule,
     EncuestasModule,
     AuthModule,
+    UsuariosModule,
   ],
   controllers: [AppController],
   providers: [AppService],

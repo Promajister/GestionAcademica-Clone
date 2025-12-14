@@ -149,10 +149,31 @@ model Usuario {
   password  String
   nombre    String
   role      String
+  rolId     Int?
+  rol       Rol?     @relation(fields: [rolId], references: [id])
   activo    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   resetTokens PasswordResetToken[]
+}
+
+model Rol {
+  id       Int      @id @default(autoincrement())
+  clave    String   @unique
+  nombre   String?
+  usuarios Usuario[]
+  permisos Permiso[] @relation("RolPermisos")
+
+  @@map("rol")
+}
+
+model Permiso {
+  id          Int    @id @default(autoincrement())
+  clave       String @unique
+  descripcion String?
+  roles       Rol[]  @relation("RolPermisos")
+
+  @@map("permiso")
 }
 
 
@@ -383,4 +404,3 @@ model Cargo {
 
   @@map("cargo")
 }
-
