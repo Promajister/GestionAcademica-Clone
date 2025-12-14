@@ -23,19 +23,30 @@ export class AuthService {
 
   login(email: string, password: string): Observable<LoginResponse> {
     if (environment.skipAuth) {
+      // Determinar el rol basándose en el email
+      let role: 'jefatura' | 'vinculacion' | 'practicas' = 'jefatura';
+      const emailLower = (email || '').toLowerCase();
+      
+      if (emailLower.includes('practicas')) {
+        role = 'practicas';
+      } else if (emailLower.includes('vinculacion')) {
+        role = 'vinculacion';
+      }
+      
       const mock: LoginResponse = {
         accessToken: 'dev-token',
         user: {
           id: 0,
           email: email || 'dev@example.com',
           nombre: 'Dev User',
-          role: 'jefatura',
+          role: role,
         },
       };
 
       localStorage.setItem(this.TOKEN_KEY, mock.accessToken);
       localStorage.setItem(this.USER_KEY, JSON.stringify(mock.user));
       localStorage.setItem('lastLogin', new Date().toISOString());
+      localStorage.removeItem('app.loggedOut'); // Limpiar flag de logout
 
       return of(mock);
     }
@@ -47,18 +58,32 @@ export class AuthService {
           localStorage.setItem(this.TOKEN_KEY, res.accessToken);
           localStorage.setItem(this.USER_KEY, JSON.stringify(res.user));
           localStorage.setItem('lastLogin', new Date().toISOString());
+          localStorage.removeItem('app.loggedOut'); // Limpiar flag de logout
         }),
       );
   }
 
   logout(): void {
+    if (typeof localStorage === 'undefined') return;
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.USER_KEY);
+    localStorage.removeItem('app.selectedRole');
+    localStorage.removeItem('lastLogin');
+    // Establecer flag de logout para que skipAuth no redirija automáticamente
+    if (environment.skipAuth) {
+      localStorage.setItem('app.loggedOut', 'true');
+    }
   }
 
   isLoggedIn(): boolean {
-    if (environment.skipAuth) return true;
     if (typeof localStorage === 'undefined') return false;
+    
+    // Si hay un flag de logout explícito, no considerar logueado
+    if (localStorage.getItem('app.loggedOut') === 'true') {
+      return false;
+    }
+    
+    if (environment.skipAuth) return true;
     return !!localStorage.getItem(this.TOKEN_KEY);
   }
 

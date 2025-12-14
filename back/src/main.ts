@@ -9,7 +9,12 @@ import { existsSync } from 'fs';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  app.enableCors();
+  app.enableCors({
+    origin: ['http://localhost:4200', 'http://localhost:3000'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-role', 'x-user-role', 'x_user_role'],
+  });
 
   // 1) TODAS LAS RUTAS DE API CON PREFIJO /api
   app.setGlobalPrefix('api');

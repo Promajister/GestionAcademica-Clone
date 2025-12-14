@@ -10,7 +10,7 @@
     <div class="Spacer"></div>
 
     <!-- BOTÓN AGREGAR -->
-    <button mat-flat-button color="primary" (click)="alternarFormulario()" class="BtnAdd" *ngIf="!soloLecturaVinculacion">
+    <button mat-flat-button color="primary" (click)="alternarFormulario()" class="BtnAdd" *ngIf="!esSoloLectura">
       <mat-icon>{{ mostrarFormulario ? 'close' : 'person_add' }}</mat-icon>
       {{ mostrarFormulario ? 'Cerrar' : 'Agregar colaborador' }}
     </button>
@@ -38,7 +38,7 @@
   </mat-card>
 
   <!-- FORMULARIO (colapsable por botón) -->
-  <div class="FormContainer" [class.FormOpen]="mostrarFormulario" *ngIf="!soloLecturaVinculacion">
+  <div class="FormContainer" [class.FormOpen]="mostrarFormulario" *ngIf="!esSoloLectura">
     @if (mostrarFormulario) {
       <mat-card class="Elev FormCard">
         <mat-card-header class="FormHeader">
@@ -163,14 +163,12 @@
               <button mat-icon-button color="accent" (click)="verDetalles(c)" title="Ver más información">
                 <mat-icon>visibility</mat-icon>
               </button>
-              <ng-container *ngIf="!soloLecturaVinculacion">
-                <button mat-icon-button color="primary" (click)="editarColaborador(c)" title="Editar">
-                  <mat-icon>edit</mat-icon>
-                </button>
-                <button mat-icon-button color="warn" (click)="eliminar(c)" title="Eliminar">
-                  <mat-icon>delete</mat-icon>
-                </button>
-              </ng-container>
+              <button mat-icon-button color="primary" (click)="editarColaborador(c)" title="Editar" *ngIf="!esSoloLectura">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button mat-icon-button color="warn" (click)="eliminar(c)" title="Eliminar" *ngIf="!esSoloLectura">
+                <mat-icon>delete</mat-icon>
+              </button>
             </div>
           </div>
         </div>
@@ -255,7 +253,7 @@
         
         <div class="DialogActions">
           <button mat-stroked-button (click)="cerrarDetalles()">Cerrar</button>
-          <button mat-raised-button color="primary" (click)="editarColaborador(colaboradorSeleccionado!)" *ngIf="!soloLecturaVinculacion">
+          <button mat-raised-button color="primary" (click)="editarColaborador(colaboradorSeleccionado!)" *ngIf="!esSoloLectura">
             <mat-icon>edit</mat-icon>
             Editar colaborador
           </button>
@@ -264,7 +262,7 @@
     </div>
   }
 <!-- MODAL DE CONFIRMACIÓN (nuevo diseño igual al de Centros) -->
-@if (!soloLecturaVinculacion && mostrarConfirmarEliminar && colaboradorAEliminar) {
+@if (!esSoloLectura && mostrarConfirmarEliminar && colaboradorAEliminar) {
   <div class="confirm-dialog">
     <div class="dialog-overlay" (click)="cerrarConfirmarEliminar()" tabindex="0"></div>
 
