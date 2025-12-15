@@ -137,11 +137,28 @@ try {
 
     const headerRow = sheet.getRow(1);
     const headers: Record<string, number> = {};
+    const headerAliases: Record<string, string> = {
+      ano_ingreso: 'anio_ingreso',
+      ano_nacimiento: 'anio_nacimiento',
+      ano_nacimento: 'anio_nacimiento',
+      anio_nacimento: 'anio_nacimiento',
+      sist_ingreso: 'sistema_ingreso',
+      ptj_ponderado: 'puntaje_ponderado',
+      ptj_psu: 'puntaje_psu',
+      nro_inscripciones: 'numero_inscripciones',
+    };
     headerRow.eachCell((cell, colNumber) => {
-      const key = String(cell.value ?? '')
-        .trim()
-        .toLowerCase();
-      if (key) headers[key] = colNumber;
+      const key = String(cell.value ?? '').trim().toLowerCase();
+      let normalized = key
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '')
+        .replace(/__+/g, '_')
+        .replace(/\bano/g, 'anio');
+
+      normalized = headerAliases[normalized] ?? normalized;
+      if (normalized) headers[normalized] = colNumber;
     });
 
     const required = ['rut', 'nombre'];
@@ -179,9 +196,27 @@ try {
       const data: Prisma.EstudianteUncheckedCreateInput = {
         rut,
         nombre,
+        genero: this.getCellString(row, headers, 'genero'),
+        anio_nacimiento: this.getCellDate(row, headers, 'anio_nacimiento'),
+        anio_ingreso: this.getCellInt(row, headers, 'anio_ingreso'),
         plan: this.getCellString(row, headers, 'plan'),
+        avance: this.getCellFloat(row, headers, 'avance'),
+        puntaje_ponderado: this.getCellFloat(
+          row,
+          headers,
+          'puntaje_ponderado',
+        ),
+        puntaje_psu: this.getCellFloat(row, headers, 'puntaje_psu'),
+        promedio: this.getCellFloat(row, headers, 'promedio'),
         email: this.getCellString(row, headers, 'email'),
-        fono: this.getCellNumber(row, headers, 'fono'),
+        fono: this.getCellInt(row, headers, 'fono'),
+        direccion: this.getCellString(row, headers, 'direccion'),
+        sistema_ingreso: this.getCellString(row, headers, 'sistema_ingreso'),
+        numero_inscripciones: this.getCellInt(
+          row,
+          headers,
+          'numero_inscripciones',
+        ),
       };
 
       try {
@@ -237,10 +272,76 @@ try {
     headers: Record<string, number>,
     key: string,
   ): number | null {
-    const raw = this.getCellString(row, headers, key);
-    if (!raw) return null;
-    const normalized = raw.replace(/\./g, '').replace(',', '.');
-    const n = Number(normalized);
+    return this.parseNumberString(this.getCellString(row, headers, key));
+  }
+
+  private getCellInt(
+    row: import('exceljs').Row,
+    headers: Record<string, number>,
+    key: string,
+  ): number | null {
+    const n = this.parseNumberString(this.getCellString(row, headers, key));
+    return Number.isFinite(n) ? Math.trunc(n as number) : null;
+  }
+
+  private getCellFloat(
+    row: import('exceljs').Row,
+    headers: Record<string, number>,
+    key: string,
+  ): number | null {
+    const n = this.parseNumberString(this.getCellString(row, headers, key));
+    return Number.isFinite(n) ? n : null;
+  }
+
+  private getCellDate(
+    row: import('exceljs').Row,
+    headers: Record<string, number>,
+    key: string,
+  ): Date | null {
+    const col = headers[key];
+    if (!col) return null;
+    const cell = row.getCell(col);
+    const value: any = cell?.value ?? cell?.text ?? cell?.result;
+
+    if (value instanceof Date) return value;
+
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      const year = Math.trunc(value);
+      return new Date(year, 0, 1);
+    }
+
+    const text = String(value ?? '').trim();
+    if (!text) return null;
+
+    const parsedNumber = Number(text);
+    if (Number.isFinite(parsedNumber)) {
+      return new Date(Math.trunc(parsedNumber), 0, 1);
+    }
+
+    const parsedDate = new Date(text);
+    return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
+  }
+
+  private parseNumberString(raw: string): number | null {
+    const trimmed = raw?.trim();
+    if (!trimmed) return null;
+
+    let candidate = trimmed.replace(/\s/g, '');
+
+    // Formato 1.234,56 -> 1234.56
+    if (/^\d{1,3}(\.\d{3})+(,\d+)?$/.test(candidate)) {
+      candidate = candidate.replace(/\./g, '').replace(',', '.');
+    }
+    // Formato 1,234.56 -> 1234.56
+    else if (/^\d{1,3}(,\d{3})+(\.\d+)?$/.test(candidate)) {
+      candidate = candidate.replace(/,/g, '');
+    }
+    // Formato simple: usa coma como decimal si existe; punto queda
+    else {
+      candidate = candidate.replace(',', '.');
+    }
+
+    const n = Number(candidate);
     return Number.isFinite(n) ? n : null;
   }
 }
