@@ -17,7 +17,7 @@ export const routes: Routes = [
       import('./components/login/login.component').then(m => m.LoginComponent),
   },
 
-  // Login (página pública)
+  // Recuperar clave (página pública)
   {
     path: 'recuperar-clave',
     loadComponent: () =>
@@ -30,6 +30,14 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadComponent: () =>
       import('./components/dashboard/dashboard.component').then(m => m.DashboardComponent),
+  },
+
+  // Mi cuenta
+  {
+    path: 'mi-cuenta',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./components/mi-cuenta/mi-cuenta.component').then(m => m.MiCuentaComponent),
   },
 
   // Gestión de colaboradores
@@ -131,9 +139,10 @@ export const routes: Routes = [
       import('./components/actividades-estudiantes/actividades-estudiantes.component').then(m => m.ActividadesEstudiantesComponent),
   },
 
-  // Ruta comodín → redirige a login
+  // Ruta comodín -> redirige a dashboard
   {
     path: '**',
     redirectTo: 'dashboard',
   },
 ];
+

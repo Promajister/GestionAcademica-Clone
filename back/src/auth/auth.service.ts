@@ -5,6 +5,8 @@ import { randomBytes, randomUUID } from 'crypto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RefreshTokenRepository } from './repositories/refresh-token.repository';
 import { JwtAccessPayload, JwtRefreshPayload } from './types/jwt-payload';
+import { existsSync, unlinkSync } from 'fs';
+import { join } from 'path';
 
 type SafeUser = {
   id: number;
@@ -12,6 +14,7 @@ type SafeUser = {
   nombre: string;
   role: string;
   activo: boolean;
+  fotoUrl?: string | null;
 };
 
 @Injectable()
@@ -27,15 +30,17 @@ export class AuthService {
 
   private cookieConfig() {
     const sameSiteEnv = (process.env.COOKIE_SAME_SITE as 'lax' | 'strict' | 'none') || 'lax';
-    // Permitir configurar secure explícitamente (útil en localhost http)
+    // Permitir configurar secure explicitamente (util en localhost http)
     const secureEnv =
       typeof process.env.COOKIE_SECURE !== 'undefined'
         ? process.env.COOKIE_SECURE === 'true'
         : process.env.NODE_ENV === 'production';
+    // En HTTP (localhost), SameSite=None se bloquea si no va con Secure; forzamos lax en ese caso.
+    const sameSite = !secureEnv && sameSiteEnv === 'none' ? 'lax' : sameSiteEnv;
     return {
       accessTtl: this.accessTtl,
       refreshTtl: this.refreshTtl,
-      sameSite: sameSiteEnv,
+      sameSite,
       secure: secureEnv,
     };
   }
@@ -47,6 +52,12 @@ export class AuthService {
   private toSafeUser(user: any): SafeUser {
     const { password, ...rest } = user;
     return rest;
+  }
+
+  async findSafeUser(userId: number): Promise<SafeUser | null> {
+    const user = await this.prisma.usuario.findUnique({ where: { id: userId } });
+    if (!user) return null;
+    return this.toSafeUser(user);
   }
 
   private async validateUser(email: string, password: string) {
@@ -85,7 +96,7 @@ export class AuthService {
   async login(email: string, password: string) {
     const user = await this.validateUser(email, password);
     if (!user) {
-      throw new UnauthorizedException('Credenciales inválidas');
+      throw new UnauthorizedException('Credenciales invalidas');
     }
     const safeUser = this.toSafeUser(user);
     const tokens = await this.signTokens(safeUser);
@@ -104,13 +115,13 @@ export class AuthService {
   async refresh(payload: JwtRefreshPayload & { refreshToken: string }) {
     const record = await this.refreshRepo.find(payload.jti);
     if (!record || record.userId !== payload.sub || record.revoked) {
-      throw new UnauthorizedException('Refresh token inválido');
+      throw new UnauthorizedException('Refresh token invalido');
     }
     if (record.expiresAt.getTime() < Date.now()) {
       throw new UnauthorizedException('Refresh token expirado');
     }
     const matches = await bcrypt.compare(payload.refreshToken, record.hashedToken);
-    if (!matches) throw new UnauthorizedException('Refresh token inválido');
+    if (!matches) throw new UnauthorizedException('Refresh token invalido');
 
     const user = await this.prisma.usuario.findUnique({ where: { id: payload.sub } });
     if (!user || !user.activo) {
@@ -131,6 +142,52 @@ export class AuthService {
     });
 
     return { tokens, user: safeUser, cookieCfg: this.cookieConfig() };
+  }
+
+  async updateAvatar(userId: number, fotoUrl: string) {
+    const current = await this.prisma.usuario.findUnique({ where: { id: userId } });
+
+    // Borrar archivo anterior si existia y es diferente al nuevo
+    if (current?.fotoUrl) {
+      let prevPath = current.fotoUrl;
+      if (prevPath.startsWith('http')) {
+        try {
+          prevPath = new URL(prevPath).pathname;
+        } catch {
+          prevPath = current.fotoUrl;
+        }
+      }
+      if (!prevPath.startsWith('/uploads')) {
+        prevPath = `/uploads/${prevPath.replace(/^\/+/, '')}`;
+      }
+
+      let newPath = fotoUrl;
+      if (newPath.startsWith('http')) {
+        try {
+          newPath = new URL(newPath).pathname;
+        } catch {
+          newPath = fotoUrl;
+        }
+      }
+      if (!newPath.startsWith('/uploads')) {
+        newPath = `/uploads/${newPath.replace(/^\/+/, '')}`;
+      }
+
+      if (prevPath !== newPath) {
+        try {
+          const fsPath = join(process.cwd(), prevPath);
+          if (existsSync(fsPath)) unlinkSync(fsPath);
+        } catch {
+          // Ignorar errores al borrar
+        }
+      }
+    }
+
+    const updated = await this.prisma.usuario.update({
+      where: { id: userId },
+      data: { fotoUrl },
+    });
+    return this.toSafeUser(updated);
   }
 
   async logout(payload?: JwtRefreshPayload) {

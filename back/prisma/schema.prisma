@@ -150,6 +150,7 @@ model Usuario {
   nombre    String
   role      String
   activo    Boolean  @default(true)
+  fotoUrl   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   resetTokens PasswordResetToken[]

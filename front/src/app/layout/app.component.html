@@ -69,10 +69,17 @@
 
         <span class="spacer"></span>
 
-        <div class="topbar__user">
-          <mat-icon class="user-icon">account_circle</mat-icon>
+        <button class="topbar__user-btn" type="button" (click)="goProfile()">
+          <div class="topbar__avatar" *ngIf="profilePhoto; else initialsTop">
+            <img [src]="profilePhoto" alt="Foto de perfil" />
+          </div>
+          <ng-template #initialsTop>
+            <div class="topbar__avatar topbar__avatar--fallback">
+              <span>{{ initials }}</span>
+            </div>
+          </ng-template>
           <span class="user-name">{{ user.name }}</span>
-        </div>
+        </button>
 
         <button
           mat-stroked-button

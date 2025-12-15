@@ -7,6 +7,9 @@ import {
   Res,
   UnauthorizedException,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
 import type { Response, Request } from 'express';
 import { AuthService } from './auth.service';
@@ -16,16 +19,28 @@ import { JwtCookieAuthGuard } from './guards/jwt-cookie-auth.guard';
 import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
 import { CsrfGuard } from './guards/csrf.guard';
 import { JwtRefreshPayload } from './types/jwt-payload';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname, join } from 'path';
+import { existsSync, mkdirSync } from 'fs';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
+  private makePublicUrl(req: Request, path?: string | null) {
+    if (!path) return path ?? null;
+    if (/^https?:\/\//i.test(path)) return path;
+    const prefix = path.startsWith('/') ? '' : '/';
+    return `${req.protocol}://${req.get('host')}${prefix}${path}`;
+  }
+
   @Post('login')
-  async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
+  async login(@Body() dto: LoginDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const { tokens, user, cookieCfg } = await this.auth.login(dto.email, dto.password);
     setAuthCookies(res, tokens, cookieCfg);
-    return { user, csrfToken: tokens.csrfToken, accessToken: tokens.accessToken };
+    const userWithUrl = { ...user, fotoUrl: this.makePublicUrl(req, user.fotoUrl) };
+    return { user: userWithUrl, csrfToken: tokens.csrfToken, accessToken: tokens.accessToken };
   }
 
   @Post('refresh')
@@ -34,7 +49,8 @@ export class AuthController {
     const payload = req.user as JwtRefreshPayload & { refreshToken: string };
     const { tokens, user, cookieCfg } = await this.auth.refresh(payload);
     setAuthCookies(res, tokens, cookieCfg);
-    return { ok: true, user, csrfToken: tokens.csrfToken, accessToken: tokens.accessToken };
+    const userWithUrl = { ...user, fotoUrl: this.makePublicUrl(req, user.fotoUrl) };
+    return { ok: true, user: userWithUrl, csrfToken: tokens.csrfToken, accessToken: tokens.accessToken };
   }
 
   @Post('logout')
@@ -50,12 +66,62 @@ export class AuthController {
   @UseGuards(JwtCookieAuthGuard)
   async me(@Req() req: Request) {
     if (!req.user) throw new UnauthorizedException();
-    return req.user;
+    const safeUser = await this.auth.findSafeUser((req.user as any)?.sub);
+    if (!safeUser) throw new UnauthorizedException();
+    return { ...safeUser, fotoUrl: this.makePublicUrl(req, safeUser.fotoUrl) };
   }
 
   @Post('protected-example')
   @UseGuards(CsrfGuard, JwtCookieAuthGuard)
   example(@Req() req: Request) {
     return { ok: true, user: req.user };
+  }
+
+  @Post('avatar')
+  @UseGuards(CsrfGuard, JwtCookieAuthGuard)
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: (req, file, cb) => {
+          const dest = join(process.cwd(), 'uploads', 'avatars');
+          if (!existsSync(dest)) {
+            mkdirSync(dest, { recursive: true });
+          }
+          cb(null, dest);
+        },
+        filename: (req, file, cb) => {
+          const ext = extname(file.originalname).toLowerCase();
+          const userId = (req as any)?.user?.sub ?? 'user';
+          cb(null, `user-${userId}${ext}`);
+        },
+      }),
+      fileFilter: (req, file, cb) => {
+        const isImage = file.mimetype?.startsWith('image/');
+        if (!isImage) {
+          return cb(new BadRequestException('Solo se permiten imagenes'), false);
+        }
+        cb(null, true);
+      },
+      limits: { fileSize: 1.5 * 1024 * 1024 }, // ~1.5MB
+    }),
+  )
+  async uploadAvatar(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
+    if (!file) {
+      throw new BadRequestException('Archivo no recibido o invalido');
+    }
+
+    const userId = Number(req.user?.sub);
+    if (!userId) {
+      throw new UnauthorizedException('Usuario no autenticado');
+    }
+
+    const relativePath = `/uploads/avatars/${file.filename}`;
+    const publicUrl = this.makePublicUrl(req, relativePath);
+
+    // Si existe una foto anterior con el mismo nombre (mismo usuario), se reemplaza automaticamente
+    // Si se quisiera borrar una foto con otro nombre, habria que consultar fotoUrl y eliminar el archivo
+    const updated = await this.auth.updateAvatar(userId, relativePath);
+    const userWithUrl = { ...updated, fotoUrl: publicUrl };
+    return { ok: true, url: publicUrl, user: userWithUrl };
   }
 }

@@ -10,6 +10,7 @@ export interface LoginResponse {
     email: string;
     nombre: string;
     role: 'jefatura' | 'vinculacion' | 'practicas';
+    fotoUrl?: string | null;
   };
   csrfToken?: string;
   accessToken?: string;
@@ -21,6 +22,7 @@ export class AuthService {
   private readonly TOKEN_KEY = 'app.token';
   private readonly USER_KEY = 'app.user';
   private readonly ACCESS_EXP_KEY = 'app.accessExp';
+  private readonly PHOTO_KEY = 'app.profilePhoto';
 
   login(email: string, password: string): Observable<LoginResponse> {
     return this.http
@@ -78,10 +80,39 @@ export class AuthService {
     );
   }
 
+  uploadAvatar(file: File): Observable<{ ok: boolean; url: string; user: LoginResponse['user'] }> {
+    const csrf = typeof localStorage !== 'undefined' ? localStorage.getItem(this.TOKEN_KEY) : null;
+    if (!csrf) {
+      return throwError(() => new Error('CSRF token no disponible'));
+    }
+
+    const form = new FormData();
+    form.append('file', file);
+
+    const headers = new HttpHeaders({ 'x-csrf-token': csrf });
+
+    return this.http
+      .post<{ ok: boolean; url: string; user: LoginResponse['user'] }>(
+        `${API}/avatar`,
+        form,
+        { headers },
+      )
+      .pipe(
+        tap((res) => {
+          if (res?.user) {
+            this.storeUser(res.user);
+          }
+          if (res?.url && typeof localStorage !== 'undefined') {
+            localStorage.setItem(this.PHOTO_KEY, res.url);
+          }
+        }),
+      );
+  }
+
   private setSession(res: LoginResponse) {
     // El backend usa cookies HTTP-only; guardamos un flag/csrf para saber que hay sesión
     localStorage.setItem(this.TOKEN_KEY, res.csrfToken || 'cookie');
-    localStorage.setItem(this.USER_KEY, JSON.stringify(res.user));
+    this.storeUser(res.user);
     localStorage.setItem('lastLogin', new Date().toISOString());
 
     if (res.accessToken) {
@@ -116,5 +147,14 @@ export class AuthService {
     const num = Number(raw);
     return Number.isFinite(num) ? num : null;
   }
-}
 
+  private storeUser(user: LoginResponse['user']) {
+    localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+    if (user?.role) {
+      // Persistir foto de perfil si existe
+      if (user.fotoUrl) {
+        localStorage.setItem(this.PHOTO_KEY, user.fotoUrl);
+      }
+    }
+  }
+}
