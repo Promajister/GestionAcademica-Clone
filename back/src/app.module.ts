@@ -19,6 +19,7 @@ import { ActividadesModule } from './actividades/actividades.module';
 import { AuthModule } from './auth/auth.module';
 import { EncuestasModule } from './encuestas/encuestas.module';
 import { UsuariosModule } from './usuarios/usuarios.module';
+import { HistorialModule } from './historial/historial.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { UsuariosModule } from './usuarios/usuarios.module';
     EncuestasModule,
     AuthModule,
     UsuariosModule,
+    HistorialModule,
   ],
   controllers: [AppController],
   providers: [AppService],

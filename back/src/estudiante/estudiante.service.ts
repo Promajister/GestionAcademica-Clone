@@ -2,16 +2,43 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { QueryEstudianteDto } from './dto/query-estudiante.dto';
+import dayjs from 'dayjs';
 
 @Injectable()
 export class EstudianteService {
   constructor(private prisma: PrismaService) {}
 
   async findAll(q: QueryEstudianteDto) {
+    const practicaFilter: Prisma.PracticaWhereInput = {
+      ...(q.estadoPractica ? { estado: q.estadoPractica as any } : {}),
+      ...(q.tipoPractica ? { tipo: { contains: q.tipoPractica } } : {}),
+      ...(q.anio || q.semestre
+        ? (() => {
+            const year = q.anio ?? dayjs().year();
+            const sem = q.semestre;
+            const start = sem === 2 ? dayjs(`${year}-07-01`) : dayjs(`${year}-01-01`);
+            const end =
+              sem === 2
+                ? dayjs(`${year}-12-31`).endOf('day')
+                : dayjs(`${year}-06-30`).endOf('day');
+            return { fecha_inicio: { gte: start.toDate(), lte: end.toDate() } };
+          })()
+        : q.anio
+        ? {
+            fecha_inicio: {
+              gte: dayjs(`${q.anio}-01-01`).toDate(),
+              lte: dayjs(`${q.anio}-12-31`).endOf('day').toDate(),
+            },
+          }
+        : {}),
+    };
+
     const where: Prisma.EstudianteWhereInput = {
       ...(q.nombre ? { nombre: { contains: q.nombre } } : {}),
       ...(q.carrera ? { plan: { contains: q.carrera } } : {}),
-      ...(q.estadoPractica
+      ...(Object.keys(practicaFilter).length
+        ? { practicas: { some: practicaFilter } }
+        : q.estadoPractica
         ? { practicas: { some: { estado: q.estadoPractica as any } } }
         : {}),
     };

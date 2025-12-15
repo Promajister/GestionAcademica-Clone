@@ -58,6 +58,7 @@ model Estudiante {
   numero_inscripciones Int?
 
   practicas Practica[]
+  historial HistorialEvento[]
 
   @@map("estudiante")
 }
@@ -338,6 +339,25 @@ model RespuestaSeleccionada {
   respuestaAbierta      String? @db.LongText
 
   @@map("respuesta_seleccionada")
+}
+
+/////////////////////////////////////
+//   HISTORIAL DE ESTUDIANTE
+/////////////////////////////////////
+
+model HistorialEvento {
+  id             Int        @id @default(autoincrement())
+  estudianteRut  String
+  estudiante     Estudiante @relation(fields: [estudianteRut], references: [rut], onDelete: Cascade)
+  fecha          DateTime   @default(now())
+  tipo           String
+  titulo         String?
+  descripcion    String?    @db.Text
+  responsable    String?
+  createdAt      DateTime   @default(now())
+
+  @@index([estudianteRut, fecha])
+  @@map("historial_evento")
 }
 
 /////////////////////////////////////

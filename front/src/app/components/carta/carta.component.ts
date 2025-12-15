@@ -133,6 +133,9 @@ export class CartaComponent {
   // ==========================
   private readonly JEFATURA_NOMBRE = 'Dr. IGNACIO JARA PARRA';
   private readonly JEFATURA_CARGO = 'Jefe de Carrera';
+  private readonly FECHA_FIJA = '22 de enero de 2026';
+  private readonly CIUDAD_FIJA = 'ARICA';
+  private readonly PREFIJO_FOLIO = 'PHGCS N°';
 
   get minFechaFin(): Date | null {
     return this.form.value.periodoInicio ?? null;
@@ -166,126 +169,90 @@ export class CartaComponent {
   }
 
   // Texto de referencia por tipo de práctica
+    // Texto de referencia por tipo de practica
   private referenciaPorTipo(tipo?: string | null): string {
     switch (tipo) {
       case 'Apoyo a la Docencia I':
-        return 'SOLICITUD DE AUTORIZACIÓN PARA APOYO A LA DOCENCIA I';
+        return 'SOLICITUD DE AUTORIZACION PARA APOYO A LA DOCENCIA I';
       case 'Apoyo a la Docencia II':
-        return 'SOLICITUD DE AUTORIZACIÓN PARA APOYO A LA DOCENCIA II';
+        return 'SOLICITUD DE AUTORIZACION PARA APOYO A LA DOCENCIA II';
       case 'Apoyo a la Docencia III':
-        return 'SOLICITUD DE AUTORIZACIÓN PARA APOYO A LA DOCENCIA III';
-      case 'Práctica Profesional':
-        return 'SOLICITUD DE AUTORIZACIÓN PARA PRÁCTICA PROFESIONAL';
+        return 'SOLICITUD DE AUTORIZACION PARA APOYO A LA DOCENCIA III';
+      case 'Practica Profesional':
+        return 'SOLICITUD DE AUTORIZACION PARA PRACTICA PROFESIONAL';
       default:
-        return 'SOLICITUD DE AUTORIZACIÓN PARA PRÁCTICA';
+        return 'SOLICITUD DE AUTORIZACION PARA PRACTICA';
     }
   }
 
-  private encabezado(refConFolio: boolean, folioBack?: string): string {
-    const ciudad = this.centroSeleccionado?.comuna || 'Arica';
-    const fecha = this.fechaHoy();
+  private buildCartaData(folioBack?: string) {
+    const centro = this.centroSeleccionado;
+    const referencia =
+      this.form.value.referencia?.trim() ||
+      this.referenciaPorTipo(this.form.value.tipoPractica);
 
     const folioManual = this.form.value.folioManual?.trim();
-    const folioUsado = folioManual || folioBack || '';
+    const folioUsado = folioBack || folioManual || '';
 
-    const folioTxt =
-      refConFolio && folioUsado
-        ? `\n\nPHG N° ${folioUsado}.-\n`
-        : '\n\n';
+    const estudiantes = this.alumnosSeleccionados.map((e) => ({
+      nombre: e.nombre,
+      rut: e.rut,
+    }));
 
-    return `${ciudad.toUpperCase()}, ${fecha}.-${folioTxt}`;
-  }
-
-  private saludo(): string {
-    const c = this.centroSeleccionado;
-    const { linea, cargo } = this.destinatario();
-    const centro = c?.nombre || '';
-    // ApiCentro no tiene 'direccion', así que la omitimos
-
-    const cargoLinea = cargo ? `\n${cargo}` : '';
-    return `Señor(a)\n${linea}${cargoLinea}\n${centro}\nPresente\n\nDe mi consideración:\n`;
-  }
-
-  private cuerpoSegunPDF(): string {
-    const tipo = this.form.value.tipoPractica;
-    const pi = this.fechaLarga(this.form.value.periodoInicio);
-    const pf = this.fechaLarga(this.form.value.periodoFin);
-    const periodoTxt = pi && pf ? `, entre el ${pi} y el ${pf}` : '';
-
-    const intro =
-      `Conforme a lo establecido en el currículo de la Carrera de Pedagogía en Historia y Geografía, ` +
-      `solicitamos su autorización para que ${this.plural ? 'los...s estudiantes realicen' : 'el siguiente estudiante realice'} ` +
-      `${this.plural ? 'sus' : 'su'} práctica ${tipo} en ese establecimiento${periodoTxt}:`;
-
-    // Supervisor dinámico
     const sup = this.supervisorSeleccionado;
-    const supLinea = sup
-      ? `La tutora de práctica responsable es la ${sup.trato ?? ''} ${sup.nombre}.`.replace(/\s+/g, ' ').trim()
-      : 'La tutora de práctica responsable es la Srta. Carolina Quintana Talvac.'; // fallback
+    const tutora =
+      sup?.nombre != null
+        ? `La tutora de practica responsable es ${sup.trato ? sup.trato + ' ' : ''}${sup.nombre}.`
+        : 'La tutora de practica responsable es la Srta. Carolina Quintana Talvac.';
 
-    const adjuntos = `${supLinea}
+    return {
+      referencia,
+      fechaCiudad: `${this.CIUDAD_FIJA}, ${this.FECHA_FIJA}.-`,
+      folio: folioUsado ? `${this.PREFIJO_FOLIO} ${folioUsado}. -` : '',
+      destinatario: [
+        'Senora/Senor',
+        `Director(a) ${centro?.nombre ?? 'del establecimiento'}`,
+        centro?.comuna ? centro.comuna : '',
+        'Presente',
+      ].filter(Boolean),
+            intro: 'Conforme a lo establecido en el curriculo de la carrera de Pedagogia en Historia y Geografia de la Facultad de Educacion y Humanidades de la Universidad de Tarapaca, me permito solicitar su autorizacion para que los siguientes estudiantes realicen su Practica Profesional Docente en el establecimiento que usted dirige durante el presente semestre:',
 
-Adjuntamos el detalle de la estructura de la práctica solicitada, junto con los siguientes documentos:
-• Credencial del profesor en práctica.
-• Perfiles de egreso.
-• Ficha de seguro escolar (Decreto Ley N.º 16.774) de cada estudiante.
-• Responsabilidades del docente colaborador en el aula.
-
-Agradecemos de antemano las facilidades y quedamos atentos a su respuesta.
-`;
-
-    const nombreJefatura =
-      this.form.value.jefaturaNombre?.trim() || this.JEFATURA_NOMBRE;
-    const cargoJefatura =
-      this.form.value.jefaturaCargo?.trim() || this.JEFATURA_CARGO;
-
-    const firma = `Se despide atentamente,
-
-${nombreJefatura}
-${cargoJefatura}
-Facultad de Educación y Humanidades
-Universidad de Tarapacá`;
-
-    return `${intro}\n\n${this.listaEstudiantes()}\n\n${adjuntos}\n${firma}`;
-  }
-
-  private documentoPlano(refConFolio: boolean, folio?: string): string {
-    return `${this.encabezado(refConFolio, folio)}\n${this.saludo()}\n${this.cuerpoSegunPDF()}`;
-  }
-
-  private fechaHoy(): string {
-    const hoy = new Date();
-    const dd = String(hoy.getDate()).padStart(2, '0');
-    const mm = String(hoy.getMonth() + 1).padStart(2, '0');
-    const yyyy = hoy.getFullYear();
-    return `${dd}/${mm}/${yyyy}`;
-  }
-
-  private fechaLarga(d?: Date | null): string | null {
-    if (!d) return null;
-    const date = new Date(d);
-    return date.toLocaleDateString('es-CL', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
-  }
-
-  private listaEstudiantes(): string {
-    const lista = this.alumnosSeleccionados
-      .map(
-        (e, index) =>
-          `${index + 1}. ${e.nombre} — Rut ${e.rut}`
-      )
-      .join('\n');
-    return `Detalle de estudiante(s):\n${lista}`;
+      estudiantes,
+      tutora,
+      adjuntos: [
+        'Credencial del profesor en practica.',
+        'Perfiles de egreso del grado de Licenciado en Educacion y Profesor de Historia y Geografia.',
+        'Ficha de seguro escolar (de acuerdo con el Decreto Ley Nro 16.774) de cada estudiante.',
+        'Responsabilidades del docente colaborador encargado en el aula.',
+      ],
+      importancia:
+        'Es importante subrayar que los procesos de practica son elementos cruciales en la formacion de futuros profesionales, contribuyendo significativamente a la consecucion de nuestro perfil de egreso tanto como Licenciados en Educacion como Profesores de Historia y Geografia.',
+      agradecimiento:
+        'Agradezco de antemano las facilidades brindadas por su establecimiento a nuestros estudiantes y quedo a la espera de su respuesta.',
+      despedida: 'Se despide atentamente,',
+      firmaNombre:
+        this.form.value.jefaturaNombre?.trim() || this.JEFATURA_NOMBRE,
+      firmaCargo:
+        this.form.value.jefaturaCargo?.trim() || this.JEFATURA_CARGO,
+      pie: {
+        direccion: 'Av. 18 de Septiembre Nro 2222, Arica - Chile',
+        correo: 'pedhg@gestion.uta.cl',
+        telefono: '+56 582205253',
+        web: 'www.uta.cl',
+      },
+    };
   }
 
   // ===========================================
-  //         GENERACIÓN DE PDF
+  //         GENERACION DE PDF
   // ===========================================
 
-  private async crearYMostrarPDF(texto: string, titulo: string, esPrevio: boolean): Promise<void> {
+  private async crearYMostrarPDF(
+    titulo: string,
+    esPrevio: boolean,
+    folioBack?: string
+  ): Promise<void> {
+    const data = this.buildCartaData(folioBack);
     const doc = new jsPDF({ unit: 'pt', format: 'letter' }); // 612 x 792 pt (carta)
     const margin = { left: 56, top: 64, right: 56, bottom: 64 };
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -296,7 +263,7 @@ Universidad de Tarapacá`;
     //  LOGOS [UTA] ........ [FEH]
     // ==========================
     const utaWidth = 90;
-    const fehWidth = 72; // más pequeño para que no se vea estirado
+    const fehWidth = 72; // mas pequeno para que no se vea estirado
     const logoHeightFallback = 40;
     const yLogos = 32;
 
@@ -318,11 +285,9 @@ Universidad de Tarapacá`;
     const usedLogoHeight =
       Math.max(leftLogoHeight, rightLogoHeight) || logoHeightFallback;
 
-    let y = yLogos + usedLogoHeight + 32; // espacio en blanco bajo los logos
+    let y = yLogos + usedLogoHeight + 20;
 
-    // ==========================
-    //  MARCA DE AGUA (solo previa)
-    // ==========================
+    // Marca de agua (solo previa)
     if (esPrevio) {
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(60);
@@ -331,30 +296,29 @@ Universidad de Tarapacá`;
         align: 'center',
         angle: 45,
       });
-      doc.setTextColor(0); // volver a negro
+      doc.setTextColor(0);
     }
 
-    // Encabezado textual bajo logos
+    // Bloque de referencia alineado a la derecha
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
-    doc.text('Carrera de Pedagogía en Historia y Geografía', margin.left, y);
+    doc.setFontSize(11);
+    doc.text(data.referencia, pageWidth - margin.right, y, { align: 'right' });
     y += 14;
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    doc.text(
-      'Facultad de Educación y Humanidades — Universidad de Tarapacá',
-      margin.left,
-      y
-    );
-    y += 12;
-    doc.setTextColor(100);
-    doc.text(
-      'Av. 18 de Septiembre N°2222 · Arica · pedhg@gestion.uta.cl · +56 58 2205253',
-      margin.left,
-      y
-    );
-    doc.setTextColor(0);
+    doc.text(data.fechaCiudad, pageWidth - margin.right, y, { align: 'right' });
     y += 14;
+    if (data.folio) {
+      doc.text(data.folio, pageWidth - margin.right, y, { align: 'right' });
+      y += 18;
+    } else {
+      y += 4;
+    }
+
+    // Destinatario
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(11);
+    y = this.writeLines(doc, data.destinatario, margin.left, y, contentWidth, 16);
+    y += 10;
 
     // Separador
     doc.setDrawColor(180);
@@ -365,21 +329,81 @@ Universidad de Tarapacá`;
     // ==========================
     //  CUERPO DE LA CARTA
     // ==========================
-    const paragraphs = texto.split('\n\n');
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(11);
-    doc.setLineHeightFactor(1.25);
+    doc.setLineHeightFactor(1.4);
+    y = this.writeParagraph(doc, data.intro, margin.left, y, contentWidth, {
+      fontSize: 11,
+    });
 
-    for (const p of paragraphs) {
-      const lines = doc.splitTextToSize(p, contentWidth);
-      const height = lines.length * 14; // 11pt * 1.25 ~ 14pt
-      if (y + height > pageHeight - margin.bottom) {
-        doc.addPage();
-        y = margin.top;
-      }
-      doc.text(lines, margin.left, y);
-      y += height + 8;
-    }
+    // Lista de estudiantes
+    const estudiantes = data.estudiantes.length
+      ? data.estudiantes
+      : [{ nombre: 'Nombre estudiante', rut: 'Rut' }];
+    y = this.writeBullets(
+      doc,
+      estudiantes.map((e) => `${e.nombre}, Rut ${e.rut}`),
+      margin.left,
+      y,
+      contentWidth
+    );
+
+    // Tutora
+    y = this.writeParagraph(doc, data.tutora, margin.left, y + 4, contentWidth, {
+      fontSize: 11,
+    });
+
+    // Adjuntos
+    y = this.writeParagraph(
+      doc,
+      'Adjunto a este correo el detalle de la estructura de la practica solicitada, junto con los siguientes documentos:',
+      margin.left,
+      y + 10,
+      contentWidth,
+      { fontSize: 11 }
+    );
+    y = this.writeBullets(doc, data.adjuntos, margin.left, y, contentWidth);
+
+    // Importancia y agradecimiento
+    y = this.writeParagraph(doc, data.importancia, margin.left, y + 8, contentWidth, {
+      fontSize: 11,
+    });
+    y = this.writeParagraph(doc, data.agradecimiento, margin.left, y + 8, contentWidth, {
+      fontSize: 11,
+    });
+
+    // Despedida y firma
+    y = this.writeParagraph(doc, data.despedida, margin.left, y + 12, contentWidth, {
+      fontSize: 11,
+    });
+    y += 24;
+    doc.setFont('helvetica', 'bold');
+    doc.text(data.firmaNombre, margin.left, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(data.firmaCargo, margin.left, y + 14);
+    doc.text('Licenciatura y Pedagogia en Historia y Geografia', margin.left, y + 28);
+
+    // Pie de pagina
+    const footerY = pageHeight - margin.bottom + 18;
+    doc.setFontSize(10);
+    doc.text(
+      `${data.pie.direccion}  |  ${data.pie.correo}  |  ${data.pie.telefono}  |  ${data.pie.web}`,
+      pageWidth / 2,
+      footerY,
+      { align: 'center' }
+    );
+
+    // Barra de colores
+    const barY = footerY + 10;
+    const barHeight = 8;
+    const segmentWidth = (pageWidth - margin.left - margin.right) / 4;
+    const barX = margin.left;
+    doc.setFillColor(7, 78, 146);
+    doc.rect(barX, barY, segmentWidth, barHeight, 'F');
+    doc.setFillColor(242, 179, 52);
+    doc.rect(barX + segmentWidth, barY, segmentWidth, barHeight, 'F');
+    doc.setFillColor(92, 110, 141);
+    doc.rect(barX + segmentWidth * 2, barY, segmentWidth, barHeight, 'F');
+    doc.setFillColor(26, 33, 63);
+    doc.rect(barX + segmentWidth * 3, barY, segmentWidth, barHeight, 'F');
 
     const pdfBlob = doc.output('blob');
     const pdfUrl = URL.createObjectURL(pdfBlob);
@@ -390,6 +414,61 @@ Universidad de Tarapacá`;
     });
     ref.afterClosed().subscribe(() => URL.revokeObjectURL(pdfUrl));
   }
+
+  private writeLines(
+    doc: jsPDF,
+    lines: string[],
+    x: number,
+    y: number,
+    width: number,
+    lineHeight: number
+  ): number {
+    let currentY = y;
+    for (const line of lines) {
+      const wrapped = doc.splitTextToSize(line, width);
+      doc.text(wrapped, x, currentY);
+      currentY += lineHeight * wrapped.length;
+    }
+    return currentY;
+  }
+
+  private writeParagraph(
+    doc: jsPDF,
+    text: string,
+    x: number,
+    y: number,
+    width: number,
+    opts?: { fontSize?: number }
+  ): number {
+    const fontSize = opts?.fontSize ?? 11;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(fontSize);
+    const wrapped = doc.splitTextToSize(text, width);
+    doc.text(wrapped, x, y);
+    return y + wrapped.length * fontSize * 1.25 + 6;
+  }
+
+  private writeBullets(
+    doc: jsPDF,
+    items: string[],
+    x: number,
+    y: number,
+    width: number
+  ): number {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(11);
+    let currentY = y;
+    for (const item of items) {
+      const wrapped = doc.splitTextToSize(item, width - 14);
+      doc.text('•', x, currentY);
+      doc.text(wrapped, x + 12, currentY);
+      currentY += wrapped.length * 14;
+    }
+    return currentY + 4;
+  }
+
+  // ===========================================
+  // ===========================================
 
   // ===========================================
   // --- Ciclo de Vida y Carga de Datos ---
@@ -555,8 +634,7 @@ Universidad de Tarapacá`;
       );
       return;
     }
-    const docPlano = this.documentoPlano(false);
-    this.crearYMostrarPDF(docPlano, 'Vista previa de carta', true).catch((err) => {
+    this.crearYMostrarPDF('Vista previa de carta', true).catch((err) => {
       console.error('No se pudo generar la vista previa', err);
       this.snack.open('No se pudo generar la vista previa', 'OK', {
         duration: 2400,
@@ -590,8 +668,7 @@ Universidad de Tarapacá`;
         // 2. Si es exitoso, usar el 'folio' devuelto para generar el PDF
         const folio = respuesta?.folio ?? 'S/F'; // Tomamos el folio del backend
 
-        const docPlano = this.documentoPlano(true, folio);
-        this.crearYMostrarPDF(docPlano, `Carta folio ${folio}`, false).catch((err) => {
+        this.crearYMostrarPDF(`Carta folio ${folio}`, false, folio).catch((err) => {
           console.error('Carta guardada, pero no se pudo generar el PDF', err);
           this.snack.open('Carta guardada, pero no se pudo generar el PDF', 'OK', {
             duration: 3000,

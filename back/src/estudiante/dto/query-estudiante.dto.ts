@@ -1,4 +1,5 @@
-import { IsOptional, IsString, IsEnum } from 'class-validator';
+import { IsOptional, IsString, IsEnum, IsIn, IsInt } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export enum EstadoPracticaFiltro {
   EN_CURSO = 'EN_CURSO',
@@ -18,4 +19,19 @@ export class QueryEstudianteDto {
   @IsOptional()
   @IsEnum(EstadoPracticaFiltro)
   estadoPractica?: EstadoPracticaFiltro;
+
+  @IsOptional()
+  @IsString()
+  tipoPractica?: string;
+
+  @IsOptional()
+  @Transform(({ value }) => (value !== undefined ? Number(value) : undefined))
+  @IsInt()
+  anio?: number;
+
+  @IsOptional()
+  @Transform(({ value }) => (value !== undefined ? Number(value) : undefined))
+  @IsInt()
+  @IsIn([1, 2])
+  semestre?: number;
 }

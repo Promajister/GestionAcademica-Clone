@@ -11,6 +11,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { jsPDF } from 'jspdf';
+import { LOGO_UTA_BASE64, LOGO_FEH_BASE64 } from '../carta/logos.base64';
 import {
   EstudiantesService,
   EstudianteResumen,
@@ -43,7 +44,16 @@ export class EstudiantesComponent implements OnInit {
   searchTerm = '';
   carreraSeleccionada: 'all' | string = 'all';
   estadoSeleccionado: 'all' | EstadoPractica = 'all';
+  tipoPracticaSeleccionada: string = '';
+  semestreSeleccionado: 'all' | 1 | 2 = 'all';
+  anioSeleccionado: number | null = null;
   carreras: string[] = [];
+  tiposPractica: string[] = [
+    'Apoyo a la Docencia I',
+    'Apoyo a la Docencia II',
+    'Apoyo a la Docencia III',
+    'Práctica Profesional',
+  ];
 
   estudiantes: EstudianteResumen[] = [];
   seleccionado: EstudianteResumen | null = null;
@@ -62,6 +72,9 @@ export class EstudiantesComponent implements OnInit {
       nombre: this.searchTerm || undefined,
       carrera: this.carreraSeleccionada !== 'all' ? this.carreraSeleccionada : undefined,
       estadoPractica: this.estadoSeleccionado !== 'all' ? this.estadoSeleccionado : undefined,
+      tipoPractica: this.tipoPracticaSeleccionada || undefined,
+      semestre: this.semestreSeleccionado === 'all' ? undefined : this.semestreSeleccionado,
+      anio: this.anioSeleccionado || undefined,
     };
   }
 
@@ -141,71 +154,137 @@ export class EstudiantesComponent implements OnInit {
   exportarPdf(): void {
     if (!this.detalle) return;
 
-    const doc = new jsPDF();
-    const { detalle } = this;
-    let y = 14;
+    const doc = new jsPDF({ unit: 'pt', format: 'letter' });
+    const marginX = 46;
+    let y = 52;
 
-    doc.setFontSize(16);
-    doc.text('Ficha de estudiante', 10, y);
-    y += 8;
+    // Encabezado con logos
+    doc.addImage(LOGO_UTA_BASE64, 'PNG', marginX, y - 12, 66, 66);
+    doc.addImage(
+      LOGO_FEH_BASE64,
+      'PNG',
+      doc.internal.pageSize.getWidth() - marginX - 66,
+      y - 12,
+      66,
+      66,
+    );
+
+    doc.setFontSize(10);
+    doc.setTextColor('#1f2937');
+    doc.text('Universidad de Tarapacá', marginX + 78, y + 6);
+    doc.text('Facultad de Educación y Humanidades', marginX + 78, y + 20);
+    doc.text('Departamento de Prácticas Pedagógicas', marginX + 78, y + 34);
+
+    y += 78;
 
     doc.setFontSize(11);
-    doc.text(`Nombre: ${detalle.nombre}`, 10, y);
-    y += 6;
-    doc.text(`RUT: ${detalle.rut}`, 10, y);
-    y += 6;
-    doc.text(`Carrera/Plan: ${detalle.plan || '-'}`, 10, y);
-    y += 6;
-    doc.text(`Correo: ${detalle.email || '-'}`, 10, y);
-    y += 6;
-    doc.text(`Teléfono: ${detalle.fono || '-'}`, 10, y);
-    y += 8;
+    doc.setTextColor('#111827');
+    doc.text('Ficha de Estudiante - Registro Académico y Prácticas', marginX, y);
+    y += 18;
 
-    doc.text('Historial de prácticas:', 10, y);
-    y += 6;
-    if (detalle.practicas && detalle.practicas.length) {
-      detalle.practicas.forEach((p) => {
-        if (y > 270) {
+    const detalle = this.detalle;
+    const infoRows: [string, string][] = [
+      ['Nombre', detalle.nombre],
+      ['RUT', detalle.rut],
+      ['Carrera / Plan', detalle.plan || '-'],
+      ['Correo', detalle.email || '-'],
+      ['Teléfono', detalle.fono ? String(detalle.fono) : '-'],
+      ['Año de ingreso', detalle.anio_ingreso ? String(detalle.anio_ingreso) : '-'],
+    ];
+
+    const drawCard = (rows: [string, string][]) => {
+      doc.setDrawColor('#e5e7eb');
+      doc.setFillColor('#f9fafb');
+      doc.roundedRect(
+        marginX - 6,
+        y - 10,
+        doc.internal.pageSize.getWidth() - marginX * 2 + 12,
+        rows.length * 24 + 20,
+        8,
+        8,
+        'FD',
+      );
+      let ly = y + 6;
+      doc.setFontSize(11);
+      rows.forEach(([label, value]) => {
+        doc.setTextColor('#6b7280');
+        doc.text(label, marginX + 6, ly);
+        doc.setTextColor('#111827');
+        doc.text(String(value), marginX + 160, ly);
+        ly += 24;
+      });
+      y = ly + 6;
+    };
+
+    drawCard(infoRows);
+
+    const sectionTitle = (title: string) => {
+      doc.setTextColor('#1f2937');
+      doc.setFontSize(13);
+      doc.text(title, marginX, y);
+      y += 10;
+    };
+
+    const bodyText = (text: string) => {
+      doc.setFontSize(11);
+      doc.setTextColor('#374151');
+      const split = doc.splitTextToSize(text, doc.internal.pageSize.getWidth() - marginX * 2);
+      doc.text(split, marginX, y);
+      y += split.length * 14;
+    };
+
+    // Historial de prácticas
+    sectionTitle('Historial de prácticas');
+    if (detalle.practicas?.length) {
+      detalle.practicas.forEach((p, idx) => {
+        if (y > doc.internal.pageSize.getHeight() - 100) {
           doc.addPage();
-          y = 14;
+          y = 52;
         }
+        doc.setFontSize(11);
+        doc.setTextColor('#0f172a');
         doc.text(
-          `#${p.id} - ${this.estadoLabel(p.estado)} (${this.formatearFecha(p.fecha_inicio)} - ${this.formatearFecha(p.fecha_termino)})`,
-          12,
+          `${idx + 1}. ${this.estadoLabel(p.estado)} • ${this.formatearFecha(p.fecha_inicio)} - ${this.formatearFecha(p.fecha_termino)}`,
+          marginX,
           y,
         );
-        y += 6;
-        if (p.centro) {
-          doc.text(`Centro: ${p.centro.nombre}`, 14, y);
-          y += 6;
+        y += 14;
+        const detalles: string[] = [];
+        if (p.tipo) detalles.push(`Tipo: ${p.tipo}`);
+        if (p.centro?.nombre) detalles.push(`Centro: ${p.centro.nombre}`);
+        if (detalles.length) {
+          bodyText(detalles.join(' • '));
         }
+        y += 6;
       });
     } else {
-      doc.text('Sin prácticas registradas', 12, y);
-      y += 6;
+      bodyText('Sin prácticas registradas.');
+      y += 8;
     }
 
-    y += 4;
-    doc.text('Actividades asociadas:', 10, y);
-    y += 6;
-    if (detalle.actividades && detalle.actividades.length) {
-      detalle.actividades.slice(0, 10).forEach((a) => {
-        if (y > 270) {
+    // Actividades asociadas
+    sectionTitle('Actividades asociadas');
+    if (detalle.actividades?.length) {
+      detalle.actividades.forEach((a, idx) => {
+        if (y > doc.internal.pageSize.getHeight() - 100) {
           doc.addPage();
-          y = 14;
+          y = 52;
         }
-        doc.text(`- ${a.nombre_actividad} (${this.formatearFecha(a.fecha)})`, 12, y);
-        y += 6;
+        doc.setFontSize(11);
+        doc.setTextColor('#0f172a');
+        doc.text(`${idx + 1}. ${a.nombre_actividad} • ${this.formatearFecha(a.fecha)}`, marginX, y);
+        y += 14;
+        if (a.lugar) {
+          doc.setFontSize(10);
+          doc.setTextColor('#6b7280');
+          doc.text(`Lugar: ${a.lugar}`, marginX, y);
+          y += 12;
+        }
       });
-      if (detalle.actividades.length > 10) {
-        doc.text(`... ${detalle.actividades.length - 10} más`, 12, y);
-        y += 6;
-      }
     } else {
-      doc.text('Sin actividades asociadas', 12, y);
-      y += 6;
+      bodyText('Sin actividades asociadas.');
     }
 
     doc.save(`estudiante_${detalle.rut}.pdf`);
   }
-}
+}

@@ -5,7 +5,7 @@ import { environment } from '../../environments/environment';
 
 export type EstadoPractica = 'EN_CURSO' | 'APROBADO' | 'REPROBADO';
 
-const API_URL = `${environment.apiUrl}/estudiante`;
+const API_URL = `${environment.apiUrl}/estudiantes`;
 
 
 export interface UltimaPractica {
@@ -66,6 +66,9 @@ export interface EstudianteQuery {
   nombre?: string;
   carrera?: string;
   estadoPractica?: EstadoPractica;
+  tipoPractica?: string;
+  semestre?: number;
+  anio?: number;
 }
 
 @Injectable({ providedIn: 'root' })

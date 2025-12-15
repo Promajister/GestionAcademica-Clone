@@ -41,6 +41,28 @@
                 <mat-option value="REPROBADO">Reprobado</mat-option>
               </mat-select>
             </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Tipo de práctica</mat-label>
+              <mat-select [(ngModel)]="tipoPracticaSeleccionada">
+                <mat-option value="">Todas</mat-option>
+                <mat-option *ngFor="let t of tiposPractica" [value]="t">{{ t }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Semestre</mat-label>
+              <mat-select [(ngModel)]="semestreSeleccionado">
+                <mat-option value="all">Todos</mat-option>
+                <mat-option [value]="1">1</mat-option>
+                <mat-option [value]="2">2</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Año</mat-label>
+              <input matInput type="number" [(ngModel)]="anioSeleccionado" placeholder="Ej: 2025" />
+            </mat-form-field>
           </div>
           <div class="filter-actions">
             <button mat-stroked-button color="primary" (click)="aplicarFiltros()">
@@ -112,7 +134,7 @@
             <div class="detail-head">
               <div>
                 <h2>{{ detalle.nombre }}</h2>
-                <p>{{ detalle.rut }} · {{ detalle.plan || 'Sin plan' }}</p>
+                <p>{{ detalle.rut }} • {{ detalle.plan || 'Sin plan' }}</p>
               </div>
               <div class="detail-actions">
                 <button mat-raised-button color="primary" (click)="exportarPdf()">
@@ -137,7 +159,7 @@
               <div *ngIf="!detalle.practicas?.length" class="muted">Sin prácticas registradas.</div>
               <div *ngFor="let p of detalle.practicas" class="pill-row">
                 <div>
-                  <strong>{{ estadoLabel(p.estado) }}</strong> ·
+                  <strong>{{ estadoLabel(p.estado) }}</strong> •
                   {{ formatearFecha(p.fecha_inicio) }} - {{ formatearFecha(p.fecha_termino) }}
                 </div>
                 <div class="muted">Centro: {{ p.centro?.nombre || '-' }}</div>
@@ -149,7 +171,7 @@
               <div *ngIf="!detalle.actividades?.length" class="muted">Sin actividades asociadas.</div>
               <div *ngFor="let a of detalle.actividades" class="pill-row">
                 <div>
-                  <strong>{{ a.nombre_actividad }}</strong> · {{ formatearFecha(a.fecha) }}
+                  <strong>{{ a.nombre_actividad }}</strong> • {{ formatearFecha(a.fecha) }}
                 </div>
                 <div class="muted">{{ a.lugar || 'Sin lugar' }}</div>
               </div>
@@ -160,4 +182,3 @@
     </div>
   </div>
 </div>
-
