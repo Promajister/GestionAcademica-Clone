@@ -66,6 +66,13 @@ export interface EstudianteQuery {
   estadoPractica?: EstadoPractica;
 }
 
+export interface ImportSummary {
+  inserted: number;
+  updated: number;
+  total: number;
+  errors: { row: number; rut?: string; message: string }[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class EstudiantesService {
   constructor(private http: HttpClient) {}
@@ -86,5 +93,11 @@ export class EstudiantesService {
 
   obtenerDetalle(rut: string): Observable<EstudianteDetalle> {
     return this.http.get<EstudianteDetalle>(`${API_URL}/${rut}`);
+  }
+
+  importarDesdeXlsx(file: File): Observable<ImportSummary> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<ImportSummary>(`${API_URL}/import`, formData);
   }
 }

@@ -1,9 +1,23 @@
-import { Controller, Get, Param, Query, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
+import {
+  BadRequestException,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+  UsePipes,
+  ValidationPipe,
+} from '@nestjs/common';
 import { EstudianteService } from './estudiante.service';
 import { QueryEstudianteDto } from './dto/query-estudiante.dto';
 import { JwtCookieAuthGuard } from '../auth/guards/jwt-cookie-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 
 @Controller('estudiante')
 @UseGuards(JwtCookieAuthGuard, RolesGuard)
@@ -20,5 +34,30 @@ export class EstudianteController {
   @Get(':rut')
   findOne(@Param('rut') rut: string) {
     return this.service.findOne(rut);
+  }
+
+  @Post('import')
+  @Roles('jefatura')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      fileFilter: (req, file, cb) => {
+        const isXlsx =
+          file.mimetype ===
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+          file.originalname.toLowerCase().endsWith('.xlsx');
+        if (!isXlsx) {
+          return cb(new BadRequestException('Solo se permiten archivos .xlsx'), false);
+        }
+        cb(null, true);
+      },
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
+  importEstudiantes(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('Debe adjuntar un archivo .xlsx');
+    }
+    return this.service.importFromXlsx(file);
   }
 }

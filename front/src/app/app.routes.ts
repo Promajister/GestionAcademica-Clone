@@ -76,6 +76,15 @@ export const routes: Routes = [
       import('./components/estudiante/estudiante.component').then(m => m.EstudiantesComponent),
   },
 
+  // Importar estudiantes desde XLSX (solo jefatura)
+  {
+    path: 'importar-estudiantes',
+    canActivate: [authGuard, roleGuard],
+    data: { allowedRoles: ['jefatura'] },
+    loadComponent: () =>
+      import('./components/importar-estudiantes/importar-estudiantes.component').then(m => m.ImportarEstudiantesComponent),
+  },
+
   // Registro de encuestas
   {
     path: 'encuestas',
@@ -145,4 +154,3 @@ export const routes: Routes = [
     redirectTo: 'dashboard',
   },
 ];
-
