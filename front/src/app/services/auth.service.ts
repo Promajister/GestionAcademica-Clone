@@ -109,6 +109,19 @@ export class AuthService {
       );
   }
 
+  changePassword(payload: {
+    currentPassword: string;
+    newPassword: string;
+    confirmPassword: string;
+  }): Observable<{ ok: boolean }> {
+    const csrf = typeof localStorage !== 'undefined' ? localStorage.getItem(this.TOKEN_KEY) : null;
+    if (!csrf) {
+      return throwError(() => new Error('CSRF token no disponible'));
+    }
+    const headers = new HttpHeaders({ 'x-csrf-token': csrf });
+    return this.http.post<{ ok: boolean }>(`${API}/change-password`, payload, { headers });
+  }
+
   private setSession(res: LoginResponse) {
     // El backend usa cookies HTTP-only; guardamos un flag/csrf para saber que hay sesión
     localStorage.setItem(this.TOKEN_KEY, res.csrfToken || 'cookie');

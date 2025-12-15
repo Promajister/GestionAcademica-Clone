@@ -33,6 +33,10 @@ export class MiCuentaComponent implements OnInit {
   private snack = inject(MatSnackBar);
   private photoKey = 'app.profilePhoto';
   loadingPhoto = false;
+  changingPassword = false;
+  showCurrent = false;
+  showNew = false;
+  showConfirm = false;
 
   user = this.auth.getCurrentUser() ?? {
     nombre: 'Usuario',
@@ -50,7 +54,7 @@ export class MiCuentaComponent implements OnInit {
   passwordForm: FormGroup = this.fb.group(
     {
       currentPassword: ['', Validators.required],
-      newPassword: ['', [Validators.required, Validators.minLength(6)]],
+      newPassword: ['', [Validators.required, Validators.minLength(8)]],
       confirmPassword: ['', Validators.required],
     },
     {
@@ -95,7 +99,7 @@ export class MiCuentaComponent implements OnInit {
     const tooLarge = file.size > 1.5 * 1024 * 1024; // ~1.5MB
 
     if (!isImage) {
-      this.snack.open('Selecciona una imagen válida.', 'Cerrar', { duration: 3000 });
+      this.snack.open('Selecciona una imagen valida.', 'Cerrar', { duration: 3000 });
       input.value = '';
       return;
     }
@@ -110,7 +114,6 @@ export class MiCuentaComponent implements OnInit {
     this.auth.uploadAvatar(file).subscribe({
       next: (res) => {
         this.photoDataUrl = res.url;
-        // user puede venir actualizado con fotoUrl
         if (res.user) {
           this.user = res.user;
         }
@@ -137,10 +140,23 @@ export class MiCuentaComponent implements OnInit {
       return;
     }
 
-    // No hay endpoint de cambio de contraseña aún; simulamos éxito para UX.
-    this.snack.open('Tu contraseña se actualizará cuando el endpoint esté disponible.', 'Cerrar', {
-      duration: 3500,
+    const { currentPassword, newPassword, confirmPassword } = this.passwordForm.value;
+    this.changingPassword = true;
+    this.auth.changePassword({ currentPassword, newPassword, confirmPassword }).subscribe({
+      next: () => {
+        this.snack.open('Contraseña actualizada', 'Cerrar', { duration: 3000 });
+        this.passwordForm.reset();
+      },
+      error: (err) => {
+        const msg =
+          err?.error?.message ||
+          err?.error ||
+          'No se pudo actualizar la contraseña. Revisa los datos e intenta de nuevo.';
+        this.snack.open(msg, 'Cerrar', { duration: 4000 });
+      },
+      complete: () => {
+        this.changingPassword = false;
+      },
     });
-    this.passwordForm.reset();
   }
 }

@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { randomBytes, randomUUID } from 'crypto';
@@ -194,6 +194,32 @@ export class AuthService {
     if (payload?.jti) {
       await this.refreshRepo.revoke(payload.jti);
     }
+    return;
+  }
+
+  async changePassword(userId: number, currentPassword: string, newPassword: string) {
+    const user = await this.prisma.usuario.findUnique({ where: { id: userId } });
+    if (!user || !user.activo) {
+      throw new UnauthorizedException('Usuario no encontrado o inactivo');
+    }
+
+    const match = await bcrypt.compare(currentPassword, user.password);
+    if (!match) {
+      throw new UnauthorizedException('Contrasena actual incorrecta');
+    }
+
+    if (currentPassword === newPassword) {
+      throw new BadRequestException('La nueva contrasena debe ser diferente');
+    }
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await this.prisma.usuario.update({
+      where: { id: userId },
+      data: { password: hashed },
+    });
+
+    // Revocar refresh tokens existentes para obligar a re-autenticacion
+    await this.refreshRepo.revokeAllForUser(userId);
     return;
   }
 }

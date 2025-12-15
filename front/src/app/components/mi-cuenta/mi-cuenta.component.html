@@ -33,7 +33,7 @@
       <div class="panel-header">
         <div>
           <p class="eyebrow">Datos personales</p>
-          <h2>Información de perfil</h2>
+          <h2>Informacion de perfil</h2>
         </div>
         <span class="tag">{{ user?.role }}</span>
       </div>
@@ -67,7 +67,20 @@
       <form [formGroup]="passwordForm" (ngSubmit)="submitPassword()" class="form-grid">
         <mat-form-field appearance="outline">
           <mat-label>Contraseña actual</mat-label>
-          <input matInput type="password" formControlName="currentPassword" />
+          <input
+            matInput
+            [type]="showCurrent ? 'text' : 'password'"
+            formControlName="currentPassword"
+          />
+          <button
+            mat-icon-button
+            matSuffix
+            type="button"
+            (click)="showCurrent = !showCurrent"
+            [attr.aria-label]="showCurrent ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+          >
+            <mat-icon>{{ showCurrent ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
           <mat-error *ngIf="passwordForm.get('currentPassword')?.touched && passwordForm.get('currentPassword')?.hasError('required')">
             Requerido
           </mat-error>
@@ -75,25 +88,51 @@
 
         <mat-form-field appearance="outline">
           <mat-label>Nueva contraseña</mat-label>
-          <input matInput type="password" formControlName="newPassword" />
+          <input
+            matInput
+            [type]="showNew ? 'text' : 'password'"
+            formControlName="newPassword"
+          />
+          <button
+            mat-icon-button
+            matSuffix
+            type="button"
+            (click)="showNew = !showNew"
+            [attr.aria-label]="showNew ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+          >
+            <mat-icon>{{ showNew ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
           <mat-error *ngIf="passwordForm.get('newPassword')?.touched && passwordForm.get('newPassword')?.hasError('required')">
             Requerido
           </mat-error>
           <mat-error *ngIf="passwordForm.get('newPassword')?.touched && passwordForm.get('newPassword')?.hasError('minlength')">
-            Mínimo 6 caracteres
+            Minimo 8 caracteres
           </mat-error>
         </mat-form-field>
 
         <mat-form-field appearance="outline">
           <mat-label>Confirmar contraseña</mat-label>
-          <input matInput type="password" formControlName="confirmPassword" />
+          <input
+            matInput
+            [type]="showConfirm ? 'text' : 'password'"
+            formControlName="confirmPassword"
+          />
+          <button
+            mat-icon-button
+            matSuffix
+            type="button"
+            (click)="showConfirm = !showConfirm"
+            [attr.aria-label]="showConfirm ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+          >
+            <mat-icon>{{ showConfirm ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
           <mat-error *ngIf="passwordForm.hasError('passwordMismatch') && passwordForm.get('confirmPassword')?.touched">
             Las contraseñas no coinciden
           </mat-error>
         </mat-form-field>
 
         <div class="actions">
-          <button mat-flat-button color="primary" type="submit">
+          <button mat-flat-button color="primary" type="submit" [disabled]="changingPassword || passwordForm.invalid">
             Guardar cambios
           </button>
         </div>

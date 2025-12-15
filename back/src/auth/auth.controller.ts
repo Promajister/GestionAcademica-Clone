@@ -14,6 +14,7 @@ import {
 import type { Response, Request } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { setAuthCookies, clearAuthCookies } from './utils/cookies.util';
 import { JwtCookieAuthGuard } from './guards/jwt-cookie-auth.guard';
 import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
@@ -99,6 +100,20 @@ export class AuthController {
   @UseGuards(CsrfGuard, JwtCookieAuthGuard)
   example(@Req() req: Request) {
     return { ok: true, user: req.user };
+  }
+
+  @Post('change-password')
+  @UseGuards(CsrfGuard, JwtCookieAuthGuard)
+  async changePassword(@Body() dto: ChangePasswordDto, @Req() req: any) {
+    const userId = Number(req.user?.sub);
+    if (!userId) {
+      throw new UnauthorizedException('Usuario no autenticado');
+    }
+    if (dto.newPassword !== dto.confirmPassword) {
+      throw new BadRequestException('La confirmacion no coincide con la nueva contrasena');
+    }
+    await this.auth.changePassword(userId, dto.currentPassword, dto.newPassword);
+    return { ok: true };
   }
 
   @Post('avatar')
