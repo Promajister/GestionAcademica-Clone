@@ -35,11 +35,35 @@ export class AuthController {
     return `${req.protocol}://${req.get('host')}${prefix}${path}`;
   }
 
+  private resolveFotoUrl(req: Request, fotoUrl?: string | null) {
+    if (!fotoUrl) return null;
+
+    let filePath = fotoUrl;
+    if (/^https?:\/\//i.test(filePath)) {
+      try {
+        filePath = new URL(filePath).pathname;
+      } catch {
+        return null;
+      }
+    }
+
+    if (!filePath.startsWith('/uploads')) {
+      filePath = `/uploads/${filePath.replace(/^\/+/, '')}`;
+    }
+
+    const fsPath = join(process.cwd(), filePath);
+    if (!existsSync(fsPath)) {
+      return null;
+    }
+
+    return this.makePublicUrl(req, filePath);
+  }
+
   @Post('login')
   async login(@Body() dto: LoginDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const { tokens, user, cookieCfg } = await this.auth.login(dto.email, dto.password);
     setAuthCookies(res, tokens, cookieCfg);
-    const userWithUrl = { ...user, fotoUrl: this.makePublicUrl(req, user.fotoUrl) };
+    const userWithUrl = { ...user, fotoUrl: this.resolveFotoUrl(req, user.fotoUrl) };
     return { user: userWithUrl, csrfToken: tokens.csrfToken, accessToken: tokens.accessToken };
   }
 
@@ -49,7 +73,7 @@ export class AuthController {
     const payload = req.user as JwtRefreshPayload & { refreshToken: string };
     const { tokens, user, cookieCfg } = await this.auth.refresh(payload);
     setAuthCookies(res, tokens, cookieCfg);
-    const userWithUrl = { ...user, fotoUrl: this.makePublicUrl(req, user.fotoUrl) };
+    const userWithUrl = { ...user, fotoUrl: this.resolveFotoUrl(req, user.fotoUrl) };
     return { ok: true, user: userWithUrl, csrfToken: tokens.csrfToken, accessToken: tokens.accessToken };
   }
 
@@ -68,7 +92,7 @@ export class AuthController {
     if (!req.user) throw new UnauthorizedException();
     const safeUser = await this.auth.findSafeUser((req.user as any)?.sub);
     if (!safeUser) throw new UnauthorizedException();
-    return { ...safeUser, fotoUrl: this.makePublicUrl(req, safeUser.fotoUrl) };
+    return { ...safeUser, fotoUrl: this.resolveFotoUrl(req, safeUser.fotoUrl) };
   }
 
   @Post('protected-example')
@@ -121,7 +145,7 @@ export class AuthController {
     // Si existe una foto anterior con el mismo nombre (mismo usuario), se reemplaza automaticamente
     // Si se quisiera borrar una foto con otro nombre, habria que consultar fotoUrl y eliminar el archivo
     const updated = await this.auth.updateAvatar(userId, relativePath);
-    const userWithUrl = { ...updated, fotoUrl: publicUrl };
+    const userWithUrl = { ...updated, fotoUrl: this.resolveFotoUrl(req, relativePath) };
     return { ok: true, url: publicUrl, user: userWithUrl };
   }
 }
