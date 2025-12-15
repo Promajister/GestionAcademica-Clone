@@ -7,6 +7,7 @@ import { RefreshTokenRepository } from './repositories/refresh-token.repository'
 import { JwtAccessPayload, JwtRefreshPayload } from './types/jwt-payload';
 import { existsSync, unlinkSync } from 'fs';
 import { join } from 'path';
+import { createTransport } from 'nodemailer';
 
 type SafeUser = {
   id: number;
@@ -193,6 +194,73 @@ export class AuthService {
   async logout(payload?: JwtRefreshPayload) {
     if (payload?.jti) {
       await this.refreshRepo.revoke(payload.jti);
+    }
+    return;
+  }
+
+  private async sendProvisionalEmail(to: string, provisional: string, name?: string | null) {
+    const host = process.env.SMTP_HOST;
+    const port = Number(process.env.SMTP_PORT || 587);
+    const user = process.env.SMTP_USER;
+    const pass = process.env.SMTP_PASS;
+    const from = process.env.SMTP_FROM || process.env.SMTP_USER || 'no-reply@example.com';
+
+    // Si no hay config SMTP, evitamos fallo y dejamos trazabilidad
+    if (!host || !user || !pass) {
+      console.warn('[auth] SMTP no configurado; no se envio correo de recuperacion.');
+      return;
+    }
+
+    const transporter = createTransport({
+      host,
+      port,
+      secure: port === 465 || process.env.SMTP_SECURE === 'true',
+      auth: { user, pass },
+    });
+
+    const safeName = name || 'usuario';
+    const subject = 'Recuperacion de contrasena';
+    const text = `Hola ${safeName},
+
+Se genero una contrasena provisional para tu cuenta: ${provisional}
+
+Inicia sesion y cambia tu contrasena cuanto antes.
+
+Si no solicitaste este cambio, contacta al administrador.`;
+
+    const html = `<p>Hola ${safeName},</p>
+<p>Se gener&oacute; una contrase&ntilde;a provisional para tu cuenta:</p>
+<p><strong>${provisional}</strong></p>
+<p>Inicia sesi&oacute;n y cambia tu contrase&ntilde;a cuanto antes.</p>
+<p>Si no solicitaste este cambio, contacta al administrador.</p>`;
+
+    await transporter.sendMail({ from, to, subject, text, html });
+  }
+
+  async forgotPassword(email: string) {
+    const user = await this.prisma.usuario.findUnique({ where: { email } });
+    // No revelar si el correo existe
+    if (!user || !user.activo) {
+      return;
+    }
+
+    // Generar contrasena provisional aleatoria (12 chars)
+    const provisional = randomBytes(9).toString('base64').replace(/[^a-zA-Z0-9]/g, '').slice(0, 12);
+    const hashed = await bcrypt.hash(provisional, 10);
+
+    await this.prisma.usuario.update({
+      where: { id: user.id },
+      data: { password: hashed },
+    });
+
+    // Revocar refresh tokens existentes
+    await this.refreshRepo.revokeAllForUser(user.id);
+
+    // Enviar correo (si SMTP configurado). En desarrollo queda log si falla.
+    try {
+      await this.sendProvisionalEmail(user.email, provisional, user.nombre);
+    } catch (e) {
+      console.error('[auth] Error enviando correo de recuperacion', e);
     }
     return;
   }

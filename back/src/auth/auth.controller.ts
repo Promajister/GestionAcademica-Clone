@@ -15,6 +15,7 @@ import type { Response, Request } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { setAuthCookies, clearAuthCookies } from './utils/cookies.util';
 import { JwtCookieAuthGuard } from './guards/jwt-cookie-auth.guard';
 import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
@@ -85,6 +86,15 @@ export class AuthController {
     await this.auth.logout(payload);
     clearAuthCookies(res, this.auth.getCookieConfig());
     return { ok: true };
+  }
+
+  @Post('forgot-password')
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    await this.auth.forgotPassword(dto.email);
+    return {
+      ok: true,
+      message: 'Si el correo existe, enviaremos una contrasena provisional al correo registrado.',
+    };
   }
 
   @Get('me')
