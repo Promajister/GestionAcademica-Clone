@@ -22,7 +22,7 @@
   padding: 12px 18px 10px;
 }
 
-.avatar {
+.side__avatar {
   width: 42px;
   height: 42px;
   border-radius: 999px;
@@ -30,8 +30,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #1d4ed8;
-  font-size: 24px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.04);
+}
+
+.side__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.side__avatar--fallback {
+  background: linear-gradient(135deg, #5b8def, #7f53ac);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9rem;
 }
 
 .who .name {
@@ -131,41 +145,6 @@
 
 .spacer {
   flex: 1;
-}
-
-.topbar__user-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin-right: 12px;
-  color: #2c2c2c;
-  font-weight: 600;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-}
-
-.topbar__avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  overflow: hidden;
-  display: grid;
-  place-items: center;
-  background: linear-gradient(135deg, #5b8def, #7f53ac);
-  color: #fff;
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.topbar__avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.topbar__avatar--fallback {
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.06);
 }
 
 .logout-btn {
