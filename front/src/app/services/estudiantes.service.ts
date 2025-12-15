@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 
 export type EstadoPractica = 'EN_CURSO' | 'APROBADO' | 'REPROBADO';
 
-const API_URL = 'http://localhost:3000/estudiante';
+const API_URL = 'http://localhost:3000/api/estudiante';
 
 export interface UltimaPractica {
   fecha_inicio: string;

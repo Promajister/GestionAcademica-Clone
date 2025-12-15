@@ -14,7 +14,7 @@ export interface ApiEncuesta {
 }
 
 // URL base del backend de encuestas
-const API_URL = 'http://localhost:3000/encuestas';
+const API_URL = 'http://localhost:3000/api/encuestas';
 
 @Injectable({
   providedIn: 'root'

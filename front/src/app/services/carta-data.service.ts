@@ -34,7 +34,7 @@ export interface CreateCartaDto {
 @Injectable({ providedIn: 'root' })
 export class CartaDataService {
 
-  private readonly API = 'http://localhost:3000';
+  private readonly API = 'http://localhost:3000/api';
   private readonly TIPOS_PRACTICA_DEFAULT = [
     'Apoyo a la Docencia I',
     'Apoyo a la Docencia II',
@@ -77,7 +77,7 @@ export class CartaDataService {
   // -------------------------
   getTiposPractica(): Observable<string[]> {
     return this.http
-      .get<string[]>(`${this.API}/api/practicas/tipos`)
+      .get<string[]>(`${this.API}/practicas/tipos`)
       .pipe(catchError(() => of(this.TIPOS_PRACTICA_DEFAULT)));
   }
 
@@ -86,7 +86,7 @@ export class CartaDataService {
   // -------------------------
   getEstudiantes(q = ''): Observable<ApiEstudiante[]> {
     const params = q ? new HttpParams().set('q', q) : undefined;
-    return this.http.get<ApiEstudiante[]>(`${this.API}/api/estudiantes`, { params });
+    return this.http.get<ApiEstudiante[]>(`${this.API}/estudiantes`, { params });
   }
 
   // -------------------------
@@ -94,17 +94,17 @@ export class CartaDataService {
   // -------------------------
   getSupervisores(q = ''): Observable<ApiSupervisor[]> {
     const params = q ? new HttpParams().set('q', q) : undefined;
-    return this.http.get<ApiSupervisor[]>(`${this.API}/api/supervisores`, { params });
+    return this.http.get<ApiSupervisor[]>(`${this.API}/supervisores`, { params });
   }
 
   // -------------------------
   // CARTAS
   // -------------------------
   crearCarta(dto: CreateCartaDto): Observable<any> {
-    return this.http.post(`${this.API}/api/cartas`, dto);
+    return this.http.post(`${this.API}/cartas`, dto);
   }
 
   generarPdf(id: number): Observable<Blob> {
-    return this.http.get(`${this.API}/api/cartas/${id}/pdf`, { responseType: 'blob' });
+    return this.http.get(`${this.API}/cartas/${id}/pdf`, { responseType: 'blob' });
   }
 }

@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
-const API = 'http://localhost:3000';
+const API = 'http://localhost:3000/api';
 
 export interface Trabajador {
   id: number;

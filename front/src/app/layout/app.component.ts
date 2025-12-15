@@ -234,6 +234,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     if (id === 'jefatura') {
       return [
         { label: 'Usuarios', icon: 'manage_accounts', route: '/usuarios' },
+        { label: 'Estudiantes', icon: 'school', route: '/estudiantes' },
         { label: 'Estudiantes en práctica', icon: 'school', route: '/estudiantes-en-practica' },
         { label: 'Tutores', icon: 'supervisor_account', route: '/tutores' },
         { label: 'Colaboradores', icon: 'groups', route: '/colaboradores' },

@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
-const API_URL = 'http://localhost:3000/colaboradores';
+const API_URL = 'http://localhost:3000/api/colaboradores';
 
 export interface Colaborador {
   id: number;
@@ -85,4 +85,3 @@ export class ColaboradoresService {
     return this.http.delete<void>(`${API_URL}/${id}`);
   }
 }
-

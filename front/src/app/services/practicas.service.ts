@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 
 import { Tutor } from './tutores.service';
 
-const API_URL = 'http://localhost:3000/practicas';
+const API_URL = 'http://localhost:3000/api/practicas';
 
 export interface Estudiante {
   rut: string;
@@ -133,4 +133,3 @@ export class PracticasService {
     return this.http.patch<{ message: string; data: Practica }>(`${API_URL}/${id}/estado`, { estado });
   }
 }
-

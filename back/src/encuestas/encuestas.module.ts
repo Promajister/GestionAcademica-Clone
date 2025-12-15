@@ -5,13 +5,9 @@ import { EncuestasService } from './encuestas.service';
 import { PrismaService } from '../../prisma/prisma.service';
 
 @Module({
-  // Controlador que expone las rutas HTTP
+  imports: [],
   controllers: [EncuestasController],
-
-  // Servicios que usa este módulo
   providers: [EncuestasService, PrismaService],
-
-  // Permite que otros módulos utilicen EncuestasService
   exports: [EncuestasService],
 })
 export class EncuestasModule {}

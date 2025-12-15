@@ -4,12 +4,24 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  // Habilitar CORS para permitir peticiones desde el frontend
-  app.enableCors();
+  // Prefix API to alinear con el frontend (`/api/*`)
+  app.setGlobalPrefix('api');
+
+  // Habilitar CORS para permitir peticiones desde el frontend SPA con cookies
+  app.enableCors({
+    origin: process.env.FRONTEND_ORIGIN?.split(',').map((o) => o.trim()) || true,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'X-CSRF-Token', 'X-XSRF-Token', 'Authorization'],
+  });
+
+  // Cookies (access/refresh/CSRF)
+  app.use(cookieParser());
 
   // Servir archivos estáticos desde la carpeta uploads
   // En desarrollo: __dirname = back/src, necesitamos subir un nivel
@@ -25,6 +37,6 @@ async function bootstrap() {
     transform: true,
     transformOptions: { enableImplicitConversion: true }
   }));
-  await app.listen(3000);
+  await app.listen(process.env.PORT || 3000);
 }
 bootstrap();

@@ -1,8 +1,13 @@
-import { Controller, Get, Param, Query, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
 import { EstudianteService } from './estudiante.service';
 import { QueryEstudianteDto } from './dto/query-estudiante.dto';
+import { JwtCookieAuthGuard } from '../auth/guards/jwt-cookie-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 @Controller('estudiante')
+@UseGuards(JwtCookieAuthGuard, RolesGuard)
+@Roles('vinculacion', 'practicas', 'jefatura')
 export class EstudianteController {
   constructor(private readonly service: EstudianteService) {}
 

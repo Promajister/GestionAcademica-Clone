@@ -153,6 +153,7 @@ model Usuario {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   resetTokens PasswordResetToken[]
+  refreshTokens RefreshToken[]
 }
 
 
@@ -187,6 +188,20 @@ model PasswordResetToken {
   used      Boolean  @default(false)
 
   @@map("password_reset_tokens")
+}
+
+model RefreshToken {
+  id         String   @id // jti
+  userId     Int
+  usuario    Usuario  @relation(fields: [userId], references: [id])
+  hashedToken String
+  expiresAt  DateTime
+  revoked    Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("refresh_tokens")
+  @@index([userId])
 }
 
 
@@ -383,4 +398,3 @@ model Cargo {
 
   @@map("cargo")
 }
-

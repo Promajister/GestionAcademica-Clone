@@ -3,7 +3,10 @@ import { provideRouter, withViewTransitions } from '@angular/router';
 import { routes } from './app.routes';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { provideAnimations } from '@angular/platform-browser/animations';
-import { provideHttpClient, withFetch /* , withInterceptors */ } from '@angular/common/http';
+import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
+import { credentialsInterceptor } from './interceptors/credentials.interceptor';
+import { authTokenInterceptor } from './interceptors/auth-token.interceptor';
+import { refreshTokenInterceptor } from './interceptors/refresh-token.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -13,7 +16,7 @@ export const appConfig: ApplicationConfig = {
     provideAnimations(),
     provideHttpClient(
       withFetch(),
-      // withInterceptors([authInterceptor]),
+      withInterceptors([authTokenInterceptor, credentialsInterceptor, refreshTokenInterceptor]),
     ),
   ],
 };

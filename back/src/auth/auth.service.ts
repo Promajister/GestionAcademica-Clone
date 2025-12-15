@@ -1,129 +1,142 @@
-import {Injectable,NotFoundException,BadRequestException,} from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { randomBytes, randomUUID } from 'crypto';
 import { PrismaService } from '../../prisma/prisma.service';
-import * as crypto from 'crypto';
-import * as nodemailer from 'nodemailer';
+import { RefreshTokenRepository } from './repositories/refresh-token.repository';
+import { JwtAccessPayload, JwtRefreshPayload } from './types/jwt-payload';
+
+type SafeUser = {
+  id: number;
+  email: string;
+  nombre: string;
+  role: string;
+  activo: boolean;
+};
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly prisma: PrismaService) {}
+  private accessTtl = Number(process.env.ACCESS_TTL ?? 900); // seconds
+  private refreshTtl = Number(process.env.REFRESH_TTL ?? 1209600); // seconds (14d)
 
-  // --------- LOGIN (ya lo tenías) ---------
-  async validateUser(email: string, password: string) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly jwt: JwtService,
+    private readonly refreshRepo: RefreshTokenRepository,
+  ) {}
+
+  private cookieConfig() {
+    const sameSiteEnv = (process.env.COOKIE_SAME_SITE as 'lax' | 'strict' | 'none') || 'lax';
+    // Permitir configurar secure explícitamente (útil en localhost http)
+    const secureEnv =
+      typeof process.env.COOKIE_SECURE !== 'undefined'
+        ? process.env.COOKIE_SECURE === 'true'
+        : process.env.NODE_ENV === 'production';
+    return {
+      accessTtl: this.accessTtl,
+      refreshTtl: this.refreshTtl,
+      sameSite: sameSiteEnv,
+      secure: secureEnv,
+    };
+  }
+
+  getCookieConfig() {
+    return this.cookieConfig();
+  }
+
+  private toSafeUser(user: any): SafeUser {
+    const { password, ...rest } = user;
+    return rest;
+  }
+
+  private async validateUser(email: string, password: string) {
     const user = await this.prisma.usuario.findUnique({ where: { email } });
     if (!user || !user.activo) return null;
-
     const ok = await bcrypt.compare(password, user.password);
     if (!ok) return null;
-
-    const { password: _pwd, ...safeUser } = user;
-    return safeUser;
+    return user;
   }
 
-  buildLoginResponse(user: any) {
-    return {
-      accessToken: `fake-token-${user.id}`,
-      user,
+  private async signTokens(user: SafeUser) {
+    const accessPayload: JwtAccessPayload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
     };
-  }
 
-  // --------- RECUPERAR CONTRASEÑA ---------
+    const refreshId = randomUUID();
+    const refreshPayload: JwtRefreshPayload = { ...accessPayload, jti: refreshId };
 
-  /** 1) Usuario pide recuperar contraseña: generamos token y enviamos correo */
-  async requestPasswordReset(email: string) {
-    const user = await this.prisma.usuario.findUnique({ where: { email } });
-
-    // Por seguridad, aunque no exista el usuario devolvemos OK "genérico"
-    if (!user || !user.activo) {
-      return {
-        message:
-          'Si el correo existe en el sistema, se enviaron instrucciones de recuperación.',
-      };
-    }
-
-    // Generar token aleatorio
-    const token = crypto.randomBytes(32).toString('hex');
-
-    // Guardar token en BD
-    await this.prisma.passwordResetToken.create({
-      data: {
-        token,
-        userId: user.id,
-      },
-    });
-
-    // Construir link al front, ej: http://localhost:4200/reset-password?token=...
-    const frontUrl = process.env.FRONT_URL || 'http://localhost:4200';
-    const resetLink = `${frontUrl}/restablecer-clave?token=${token}`;
-
-    // Enviar correo
-    await this.sendResetEmail(user.email, user.nombre, resetLink);
-
-    return {
-      message:
-        'Se enviaron instrucciones de recuperación al correo registrado.',
-    };
-  }
-
-  /** 2) Usuario llega con token + nueva contraseña */
-  async resetPassword(token: string, newPassword: string) {
-    const record = await this.prisma.passwordResetToken.findUnique({
-      where: { token },
-      include: { usuario: true },
-    });
-
-    if (!record || record.used) {
-      throw new BadRequestException('El enlace de recuperación no es válido.');
-    }
-
-    // Opcional: caducidad, ej. 1 hora
-    const oneHour = 60 * 60 * 1000;
-    if (Date.now() - record.createdAt.getTime() > oneHour) {
-      throw new BadRequestException('El enlace de recuperación ha expirado.');
-    }
-
-    const hash = await bcrypt.hash(newPassword, 10);
-
-    await this.prisma.$transaction([
-      this.prisma.usuario.update({
-        where: { id: record.userId },
-        data: { password: hash },
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwt.signAsync(accessPayload, {
+        secret: process.env.JWT_ACCESS_SECRET,
+        expiresIn: this.accessTtl,
       }),
-      this.prisma.passwordResetToken.update({
-        where: { id: record.id },
-        data: { used: true },
+      this.jwt.signAsync(refreshPayload, {
+        secret: process.env.JWT_REFRESH_SECRET,
+        expiresIn: this.refreshTtl,
       }),
     ]);
 
-    return { message: 'Tu contraseña ha sido actualizada correctamente.' };
+    const csrfToken = randomBytes(16).toString('hex');
+    return { accessToken, refreshToken, refreshId, csrfToken };
   }
 
-  // --------- helper para enviar correo ----------
-  private async sendResetEmail(email: string, nombre: string, link: string) {
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT || 587),
-      secure: false,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
+  async login(email: string, password: string) {
+    const user = await this.validateUser(email, password);
+    if (!user) {
+      throw new UnauthorizedException('Credenciales inválidas');
+    }
+    const safeUser = this.toSafeUser(user);
+    const tokens = await this.signTokens(safeUser);
+
+    await this.refreshRepo.save({
+      id: tokens.refreshId,
+      userId: safeUser.id,
+      hashedToken: await bcrypt.hash(tokens.refreshToken, 10),
+      expiresAt: new Date(Date.now() + this.refreshTtl * 1000),
+      revoked: false,
     });
 
-    const html = `
-      <p>Hola ${nombre},</p>
-      <p>Hemos recibido una solicitud para restablecer tu contraseña del Sistema de Prácticas.</p>
-      <p>Para continuar, haz clic en el siguiente enlace:</p>
-      <p><a href="${link}" target="_blank">${link}</a></p>
-      <p>Si tú no solicitaste este cambio, puedes ignorar este correo.</p>
-      <p>Saludos,<br/>Equipo de Prácticas</p>
-    `;
+    return { tokens, user: safeUser, cookieCfg: this.cookieConfig() };
+  }
 
-    await transporter.sendMail({
-      from: `"Sistema de Prácticas" <${process.env.SMTP_USER}>`,
-      to: email,
-      subject: 'Restablecer contraseña - Sistema de Prácticas',
-      html,
+  async refresh(payload: JwtRefreshPayload & { refreshToken: string }) {
+    const record = await this.refreshRepo.find(payload.jti);
+    if (!record || record.userId !== payload.sub || record.revoked) {
+      throw new UnauthorizedException('Refresh token inválido');
+    }
+    if (record.expiresAt.getTime() < Date.now()) {
+      throw new UnauthorizedException('Refresh token expirado');
+    }
+    const matches = await bcrypt.compare(payload.refreshToken, record.hashedToken);
+    if (!matches) throw new UnauthorizedException('Refresh token inválido');
+
+    const user = await this.prisma.usuario.findUnique({ where: { id: payload.sub } });
+    if (!user || !user.activo) {
+      await this.refreshRepo.revoke(payload.jti);
+      throw new UnauthorizedException('Usuario inactivo o no encontrado');
+    }
+
+    await this.refreshRepo.revoke(payload.jti);
+
+    const safeUser = this.toSafeUser(user);
+    const tokens = await this.signTokens(safeUser);
+    await this.refreshRepo.save({
+      id: tokens.refreshId,
+      userId: safeUser.id,
+      hashedToken: await bcrypt.hash(tokens.refreshToken, 10),
+      expiresAt: new Date(Date.now() + this.refreshTtl * 1000),
+      revoked: false,
     });
+
+    return { tokens, user: safeUser, cookieCfg: this.cookieConfig() };
+  }
+
+  async logout(payload?: JwtRefreshPayload) {
+    if (payload?.jti) {
+      await this.refreshRepo.revoke(payload.jti);
+    }
+    return;
   }
 }

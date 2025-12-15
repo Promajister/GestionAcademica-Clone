@@ -1,10 +1,15 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { CentrosService } from './centros.service';
 import { CreateCentroDto } from './dto/create-centro.dto';
 import { UpdateCentroDto } from './dto/update-centro.dto';
 import { QueryCentroDto } from './dto/query-centro.dto';
+import { JwtCookieAuthGuard } from '../auth/guards/jwt-cookie-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 @Controller('centros')
+@UseGuards(JwtCookieAuthGuard, RolesGuard)
+@Roles('vinculacion', 'practicas', 'jefatura')
 export class CentrosController {
   constructor(private readonly service: CentrosService) {}
 

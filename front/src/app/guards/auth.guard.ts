@@ -1,17 +1,28 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
+import { catchError, map, of } from 'rxjs';
 
 export const authGuard: CanActivateFn = (route, state) => {
   const auth = inject(AuthService);
   const router = inject(Router);
 
-  if (auth.isLoggedIn()) {
+  if (!auth.isLoggedIn()) {
+    router.navigate(['login'], { queryParams: { returnUrl: state.url } });
+    return false;
+  }
+
+  if (auth.hasValidAccessToken()) {
     return true;
   }
 
-  router.navigate(['login'], {
-    queryParams: { returnUrl: state.url },
-  });
-  return false;
+  // Intentar refrescar si el access token caducó o falta
+  return auth.refreshSession().pipe(
+    map(() => true),
+    catchError(() => {
+      auth.logout();
+      router.navigate(['login'], { queryParams: { returnUrl: state.url } });
+      return of(false);
+    }),
+  );
 };

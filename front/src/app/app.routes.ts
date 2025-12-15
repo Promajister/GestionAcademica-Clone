@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './guards/auth.guard';
+import { roleGuard } from './guards/role.guard';
 
 export const routes: Routes = [
   // Redirección inicial al login
@@ -34,7 +35,8 @@ export const routes: Routes = [
   // Gestión de colaboradores
   {
     path: 'colaboradores',
-    canActivate: [authGuard],
+    canActivate: [authGuard, roleGuard],
+    data: { allowedRoles: ['vinculacion', 'practicas', 'jefatura'] },
     loadComponent: () =>
       import('./components/colaboradores/colaboradores.component').then(m => m.ColaboradoresComponent),
   },
@@ -42,7 +44,8 @@ export const routes: Routes = [
   // Gestión de tutores
   {
     path: 'tutores',
-    canActivate: [authGuard],
+    canActivate: [authGuard, roleGuard],
+    data: { allowedRoles: ['vinculacion', 'practicas', 'jefatura'] },
     loadComponent: () =>
       import('./components/tutores/tutores.component').then(m => m.TutoresComponent),
   },
@@ -50,7 +53,8 @@ export const routes: Routes = [
   // Gestión de usuarios
   {
     path: 'usuarios',
-    canActivate: [authGuard],
+    canActivate: [authGuard, roleGuard],
+    data: { allowedRoles: ['jefatura'] },
     loadComponent: () =>
       import('./components/usuarios/usuarios.component').then(m => m.UsuariosComponent),
   },
@@ -58,7 +62,8 @@ export const routes: Routes = [
   // Gestión de estudiantes
   {
     path: 'estudiantes',
-    canActivate: [authGuard],
+    canActivate: [authGuard, roleGuard],
+    data: { allowedRoles: ['vinculacion', 'practicas', 'jefatura'] },
     loadComponent: () =>
       import('./components/estudiante/estudiante.component').then(m => m.EstudiantesComponent),
   },
@@ -66,7 +71,8 @@ export const routes: Routes = [
   // Registro de encuestas
   {
     path: 'encuestas',
-    canActivate: [authGuard],
+    canActivate: [authGuard, roleGuard],
+    data: { allowedRoles: ['vinculacion'] },
     loadComponent: () =>
       import('./components/encuestas/encuestas.component').then(m => m.EncuestasComponent),
   },
@@ -74,7 +80,8 @@ export const routes: Routes = [
   // Supervisión general
   {
     path: 'supervision',
-    canActivate: [authGuard],
+    canActivate: [authGuard, roleGuard],
+    data: { allowedRoles: ['jefatura'] },
     loadComponent: () =>
       import('./components/supervision/supervision.component').then(m => m.SupervisionComponent),
   },
@@ -82,7 +89,8 @@ export const routes: Routes = [
   // Gestión de prácticas
   {
     path: 'practicas',
-    canActivate: [authGuard],
+    canActivate: [authGuard, roleGuard],
+    data: { allowedRoles: ['practicas', 'jefatura'] },
     loadComponent: () =>
       import('./components/practicas/practicas.component').then(m => m.PracticasComponent),
   },
@@ -90,7 +98,8 @@ export const routes: Routes = [
   // Gestión de centros educativos
   {
     path: 'centros-educativos',
-    canActivate: [authGuard],
+    canActivate: [authGuard, roleGuard],
+    data: { allowedRoles: ['vinculacion', 'practicas', 'jefatura'] },
     loadComponent: () =>
       import('./components/centros-educativos/centros-educativos.component').then(m => m.CentrosEducativosComponent),
   },
@@ -98,7 +107,8 @@ export const routes: Routes = [
   // Generación de carta de solicitud
   {
     path: 'carta',
-    canActivate: [authGuard],
+    canActivate: [authGuard, roleGuard],
+    data: { allowedRoles: ['jefatura'] },
     loadComponent: () =>
       import('./components/carta/carta.component').then(m => m.CartaComponent),
   },
@@ -106,7 +116,8 @@ export const routes: Routes = [
   // Estudiantes en práctica (solo para jefatura de carrera)
   {
     path: 'estudiantes-en-practica',
-    canActivate: [authGuard],
+    canActivate: [authGuard, roleGuard],
+    data: { allowedRoles: ['jefatura'] },
     loadComponent: () =>
       import('./components/estudiantes-en-practica/estudiantes-en-practica.component').then(m => m.EstudiantesEnPracticaComponent),
   },
@@ -114,7 +125,8 @@ export const routes: Routes = [
   // Actividades de estudiantes
   {
     path: 'actividades-estudiantes',
-    canActivate: [authGuard],
+    canActivate: [authGuard, roleGuard],
+    data: { allowedRoles: ['practicas', 'jefatura'] },
     loadComponent: () =>
       import('./components/actividades-estudiantes/actividades-estudiantes.component').then(m => m.ActividadesEstudiantesComponent),
   },
