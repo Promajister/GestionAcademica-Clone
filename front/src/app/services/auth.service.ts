@@ -109,6 +109,26 @@ export class AuthService {
       );
   }
 
+  updateProfile(payload: { nombre?: string; email?: string }): Observable<{ ok: boolean; user: LoginResponse['user'] }> {
+    const csrf = typeof localStorage !== 'undefined' ? localStorage.getItem(this.TOKEN_KEY) : null;
+    if (!csrf) {
+      return throwError(() => new Error('CSRF token no disponible'));
+    }
+    const headers = new HttpHeaders({ 'x-csrf-token': csrf });
+    return this.http.post<{ ok: boolean; user: LoginResponse['user'] }>(`${API}/profile`, payload, {
+      headers,
+    }).pipe(
+      tap((res) => {
+        if (res?.user) {
+          this.storeUser(res.user);
+          if (res.user.fotoUrl && typeof localStorage !== 'undefined') {
+            localStorage.setItem(this.PHOTO_KEY, res.user.fotoUrl);
+          }
+        }
+      }),
+    );
+  }
+
   changePassword(payload: {
     currentPassword: string;
     newPassword: string;

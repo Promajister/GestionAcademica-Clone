@@ -290,4 +290,32 @@ Si no solicitaste este cambio, contacta al administrador.`;
     await this.refreshRepo.revokeAllForUser(userId);
     return;
   }
+
+  async updateProfile(userId: number, data: { nombre?: string; email?: string }) {
+    const current = await this.prisma.usuario.findUnique({ where: { id: userId } });
+    if (!current || !current.activo) {
+      throw new UnauthorizedException('Usuario no encontrado o inactivo');
+    }
+
+    const updates: { nombre?: string; email?: string } = {};
+    if (typeof data.nombre === 'string') updates.nombre = data.nombre.trim();
+    if (typeof data.email === 'string') updates.email = data.email.trim().toLowerCase();
+
+    if (updates.email && updates.email !== current.email) {
+      const exists = await this.prisma.usuario.findUnique({ where: { email: updates.email } });
+      if (exists) {
+        throw new BadRequestException('El correo ya esta en uso');
+      }
+    }
+
+    if (!updates.nombre && !updates.email) {
+      return this.toSafeUser(current);
+    }
+
+    const updated = await this.prisma.usuario.update({
+      where: { id: userId },
+      data: updates,
+    });
+    return this.toSafeUser(updated);
+  }
 }

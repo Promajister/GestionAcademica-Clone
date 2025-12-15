@@ -46,8 +46,8 @@ export class MiCuentaComponent implements OnInit {
   photoDataUrl: string | null = null;
 
   profileForm: FormGroup = this.fb.group({
-    nombre: [{ value: this.user.nombre, disabled: true }],
-    email: [{ value: this.user.email, disabled: true }],
+    nombre: [this.user.nombre, [Validators.required, Validators.minLength(3)]],
+    email: [this.user.email, [Validators.required, Validators.email]],
     role: [{ value: this.user.role, disabled: true }],
   });
 
@@ -84,6 +84,24 @@ export class MiCuentaComponent implements OnInit {
     const [a = '', b = ''] = parts;
     const letters = (a[0] || '') + (b[0] || '');
     return letters.toUpperCase() || 'U';
+  }
+
+  submitProfile(): void {
+    if (this.profileForm.invalid) {
+      this.profileForm.markAllAsTouched();
+      return;
+    }
+    const { nombre, email } = this.profileForm.value;
+    this.auth.updateProfile({ nombre, email }).subscribe({
+      next: (res) => {
+        this.user = res.user;
+        this.snack.open('Perfil actualizado', 'Cerrar', { duration: 3000 });
+      },
+      error: (err) => {
+        const msg = err?.error?.message || err?.error || 'No se pudo actualizar el perfil.';
+        this.snack.open(msg, 'Cerrar', { duration: 3500 });
+      },
+    });
   }
 
   onSelectPhoto(input: HTMLInputElement): void {

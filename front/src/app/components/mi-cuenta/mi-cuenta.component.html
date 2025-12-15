@@ -42,17 +42,34 @@
         <mat-form-field appearance="outline">
           <mat-label>Nombre completo</mat-label>
           <input matInput formControlName="nombre" />
+          <mat-error *ngIf="profileForm.get('nombre')?.touched && profileForm.get('nombre')?.hasError('required')">
+            Requerido
+          </mat-error>
+          <mat-error *ngIf="profileForm.get('nombre')?.touched && profileForm.get('nombre')?.hasError('minlength')">
+            Mínimo 3 caracteres
+          </mat-error>
         </mat-form-field>
 
         <mat-form-field appearance="outline">
           <mat-label>Correo institucional</mat-label>
           <input matInput formControlName="email" />
+          <mat-error *ngIf="profileForm.get('email')?.touched && profileForm.get('email')?.hasError('required')">
+            Requerido
+          </mat-error>
+          <mat-error *ngIf="profileForm.get('email')?.touched && profileForm.get('email')?.hasError('email')">
+            Correo inválido
+          </mat-error>
         </mat-form-field>
 
         <mat-form-field appearance="outline">
           <mat-label>Rol</mat-label>
           <input matInput formControlName="role" />
         </mat-form-field>
+        <div class="actions">
+          <button mat-flat-button color="primary" type="button" (click)="submitProfile()" [disabled]="profileForm.invalid">
+            Guardar perfil
+          </button>
+        </div>
       </form>
     </mat-card>
 

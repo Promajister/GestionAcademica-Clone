@@ -16,6 +16,7 @@ import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { setAuthCookies, clearAuthCookies } from './utils/cookies.util';
 import { JwtCookieAuthGuard } from './guards/jwt-cookie-auth.guard';
 import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
@@ -110,6 +111,17 @@ export class AuthController {
   @UseGuards(CsrfGuard, JwtCookieAuthGuard)
   example(@Req() req: Request) {
     return { ok: true, user: req.user };
+  }
+
+  @UseGuards(CsrfGuard, JwtCookieAuthGuard)
+  @Post('profile')
+  async updateProfile(@Body() dto: UpdateProfileDto, @Req() req: any) {
+    const userId = Number(req.user?.sub);
+    if (!userId) {
+      throw new UnauthorizedException('Usuario no autenticado');
+    }
+    const updated = await this.auth.updateProfile(userId, dto);
+    return { ok: true, user: { ...updated, fotoUrl: this.resolveFotoUrl(req, updated.fotoUrl) } };
   }
 
   @Post('change-password')
