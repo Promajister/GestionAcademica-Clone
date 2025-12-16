@@ -8,7 +8,7 @@ import * as nodemailer from 'nodemailer';
 export class AuthService {
   constructor(private readonly prisma: PrismaService) {}
 
-  // --------- LOGIN (ya lo tenías) ---------
+  // --------- LOGIN ---------
   async validateUser(email: string, password: string) {
     const user = await this.prisma.usuario.findUnique({ where: { email } });
     if (!user || !user.activo) return null;
