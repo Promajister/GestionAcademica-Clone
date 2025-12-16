@@ -23,15 +23,32 @@
       <div class="spacer"></div>
     </div>
 
-    <div class="row1" style="margin:12px 0;">
-    <button
+    <div class="row1" style="margin:12px 0; display:flex; gap:8px; flex-wrap:wrap;">
+      <button
         mat-stroked-button
         color="primary"
         routerLink="/reportes/estudiante"
-    >
+      >
         Reporte del estudiante
-    </button>
+      </button>
+
+      <button
+        mat-stroked-button
+        color="accent"
+        routerLink="/reportes/historico"
+      >
+        Reporte histórico
+      </button>
+
+      <button
+        mat-stroked-button
+        color="warn"
+        routerLink="/reportes/satisfaccion"
+      >
+        Reporte de satisfacción
+      </button>
     </div>
+
 
 
     <div class="kpi-grid">
@@ -72,9 +89,6 @@
 
     <mat-card class="kpi elev" *ngIf="satisfaccion">
         <mat-card-content>
-        <div class="kpi-value" style="color:#8b5cf6">
-            {{ satisfaccion.promedioSatisfaccion | number:'1.1-1' }}
-        </div>
         <div class="kpi-label">Satisfacción promedio</div>
         </mat-card-content>
     </mat-card>

@@ -23,16 +23,6 @@ export interface ReportesSummary {
     practicasPorMes: { mes: string; value: number }[];
   };
 
-  recientes: { id: number; nombre: string; fecha: string }[];
-
-  vencimientos: {
-    practicaId: number;
-    estudiante: string;
-    centro: string;
-    fechaTermino: string;
-    estado: EstadoPractica;
-  }[];
-
   generatedAt: string;
 }
 
@@ -49,8 +39,18 @@ export interface ReportesIndicadores {
 }
 
 export interface ReporteSatisfaccion {
-  totalRespuestas: number;
-  promedioSatisfaccion: number;
+  anio: number;
+  semestre: 1 | 2;
+  tipo: string | null;
+
+  totalEstudiantes: number;
+  porcentajeAprobacion: number;
+
+  encuestas: {
+    totalRespuestas: number;
+    promedioPuntaje: number;
+    porcentajeSatisfaccion: number;
+  };
 }
 
 export interface ReporteEstudiante {
@@ -74,6 +74,22 @@ export interface EstudianteSearchItem {
   plan?: string | null;
 }
 
+export interface ReportesHistoricoItem {
+  periodo: string; 
+  totalEstudiantes: number;
+  centrosPorTipo: { tipo: string; total: number }[];
+  supervisores: string[];
+  mentores: string[];
+}
+
+export interface ReportesHistoricoResponse {
+  fromYear: number;
+  toYear: number;
+  tipo: string | null;
+  groupBy: 'semester' | 'year';
+  series: ReportesHistoricoItem[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class ReportesService {
   private http = inject(HttpClient);
@@ -86,12 +102,21 @@ export class ReportesService {
     return this.http.get<ReportesIndicadores>(`${API}/indicadores`);
   }
 
-  getSatisfaccion(anio: number): Observable<ReporteSatisfaccion> {
-    return this.http.get<ReporteSatisfaccion>(
-      `${API}/satisfaccion?anio=${anio}`
-    );
+  getSatisfaccion(params: {
+    anio: number;
+    semestre: 1 | 2;
+    tipo?: string | null;
+  }): Observable<ReporteSatisfaccion> {
+    const q = new URLSearchParams({
+      anio: String(params.anio),
+      semestre: String(params.semestre),
+    });
+
+    if (params.tipo) q.append('tipo', params.tipo);
+
+    return this.http.get<ReporteSatisfaccion>(`${API}/satisfaccion?${q.toString()}`);
   }
-  
+
   getReporteEstudiante(
     rut: string
     ): Observable<ReporteEstudiante | null> {
@@ -105,5 +130,23 @@ export class ReportesService {
        `${API}/estudiantes/buscar?nombre=${encodeURIComponent(nombre)}`
       );
     }
+
+  getHistorico(params: {
+    fromYear: number;
+    toYear: number;
+    tipo?: string | null;
+    groupBy: 'semester' | 'year';
+  }): Observable<ReportesHistoricoResponse> {
+    const q = new URLSearchParams({
+      fromYear: String(params.fromYear),
+      toYear: String(params.toYear),
+      groupBy: params.groupBy,
+    });
+
+    if (params.tipo) q.append('tipo', params.tipo);
+
+    return this.http.get<ReportesHistoricoResponse>(`${API}/historico?${q.toString()}`);
+  }
+
 
 }

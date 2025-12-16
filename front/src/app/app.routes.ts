@@ -119,11 +119,14 @@ export const routes: Routes = [
     canActivate: [authGuard, RoleGuard],
     data: { roles: [ROLES.JEFATURA, ROLES.PRACTICAS] },
     loadComponent: () =>
-      import('./components/reportes/reportes.component').then(m => m.ReportesComponent)
+      import('./components/reportes/reportes.component')
+        .then(m => m.ReportesComponent)
   },
 
-  {
+   {
     path: 'reportes/estudiante',
+    canActivate: [authGuard, RoleGuard],
+    data: { roles: [ROLES.JEFATURA, ROLES.PRACTICAS] },
     loadComponent: () =>
       import('./components/reportes-estudiantes/reportes-estudiantes.component')
         .then(m => m.ReportesEstudianteComponent),
@@ -131,9 +134,21 @@ export const routes: Routes = [
 
   {
     path: 'reportes/satisfaccion',
+    canActivate: [authGuard, RoleGuard],
+    data: { roles: [ROLES.JEFATURA, ROLES.PRACTICAS] },
     loadComponent: () =>
       import('./components/reportes-satisfaccion/reportes-satisfaccion.component')
         .then(m => m.ReportesSatisfaccionComponent),
+  },
+
+
+  {
+    path: 'reportes/historico',
+    canActivate: [authGuard, RoleGuard],
+    data: { roles: [ROLES.JEFATURA, ROLES.PRACTICAS] },
+    loadComponent: () =>
+      import('./components/reportes-historico/reportes-historico.component')
+        .then(m => m.ReportesHistoricoComponent),
   },
 
   // Ruta comodín → redirige a login

@@ -16,8 +16,16 @@ export class ReportesController {
   }
 
   @Get('satisfaccion')
-  getSatisfaccion(@Query('anio') anio: string) {
-    return this.reportes.getReporteSatisfaccion(Number(anio));
+  getSatisfaccion(
+    @Query('anio') anio: string,
+    @Query('semestre') semestre: string,
+    @Query('tipo') tipo?: string,
+  ) {
+    return this.reportes.getReporteSatisfaccion({
+      anio: Number(anio),
+      semestre: Number(semestre) as 1 | 2,
+      tipo: tipo ?? null,
+    });
   }
 
   @Get('estudiante/:rut')
@@ -30,4 +38,18 @@ export class ReportesController {
     return this.reportes.buscarEstudiantes(nombre);
   }
 
+  @Get('historico')
+  getHistorico(
+    @Query('fromYear') fromYear: string,
+    @Query('toYear') toYear: string,
+    @Query('tipo') tipo?: string,
+    @Query('groupBy') groupBy: 'semester' | 'year' = 'semester',
+  ) {
+    return this.reportes.getHistorico({
+      fromYear: Number(fromYear),
+      toYear: Number(toYear),
+      tipo: tipo ?? null,
+      groupBy,
+    });
+  }
 }

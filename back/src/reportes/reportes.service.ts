@@ -1,9 +1,20 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'prisma/prisma.service';
 
 @Injectable()
 export class ReportesService {
   constructor(private readonly prisma: PrismaService) {}
+  
+  private calcularSemestre(fecha: Date): 1 | 2 {
+    const mes = fecha.getMonth(); // 0..11
+    return mes <= 5 ? 1 : 2;      // Ene-Jun = 1, Jul-Dic = 2
+  }
+
+  private rangoAnio(anio: number) {
+    const from = new Date(anio, 0, 1);
+    const to = new Date(anio + 1, 0, 1);
+    return { from, to };
+  }
 
   async getSummary() {
     const now = new Date();
@@ -119,7 +130,8 @@ export class ReportesService {
       generatedAt: new Date().toISOString(),
     };
   }
-    async getIndicadores() {
+  
+  async getIndicadores() {
     const totalPracticas = await this.prisma.practica.count();
 
     const aprobadas = await this.prisma.practica.count({
@@ -154,9 +166,9 @@ export class ReportesService {
         porcentajeAprobacion: Number(porcentajeAprobacion.toFixed(1)),
         },
     };
-    }
+  }
 
-    async getReporteEstudiante(rut: string) {
+  async getReporteEstudiante(rut: string) {
     const estudiante = await this.prisma.estudiante.findUnique({
         where: { rut },
         include: {
@@ -198,10 +210,10 @@ export class ReportesService {
         };
         })
     };
-    }
-
-    async buscarEstudiantes(nombre: string) {
-        const q = nombre.trim();
+  }
+  
+  async buscarEstudiantes(nombre: string) {
+    const q = nombre.trim();
         if (!q) return [];
 
         const rows = await this.prisma.estudiante.findMany({
@@ -218,36 +230,185 @@ export class ReportesService {
         });
         
         return rows;
-    }
-    
-    async getReporteSatisfaccion(anio: number) {
-    const from = new Date(anio, 0, 1);
-    const to = new Date(anio + 1, 0, 1);
+  }
+  
+  async getHistorico(params: { fromYear: number; toYear: number; tipo?: string | null; groupBy: 'semester' | 'year' }) {
+    const { fromYear, toYear, tipo, groupBy } = params;
 
-    const respuestas = await this.prisma.respuestaSeleccionada.findMany({
+    const from = new Date(fromYear, 0, 1);
+    const to = new Date(toYear + 1, 0, 1);
+
+    const practicas = await this.prisma.practica.findMany({
         where: {
-        encuestaEstudiante: {
-            fecha: { gte: from, lt: to },
-        },
-        alternativa: { isNot: null },
+        fecha_inicio: { gte: from, lt: to },
+        ...(tipo ? { tipo } : {}),
         },
         include: {
-        alternativa: true,
+        estudiante: { select: { rut: true } },
+        centro: { select: { tipo: true } },
+        practicaTutores: {
+            include: { tutor: { select: { id: true, nombre: true } } },
+        },
         },
     });
 
-    const total = respuestas.length;
-    const promedio =
-        total > 0
-        ? respuestas.reduce((sum, r) => sum + (r.alternativa?.puntaje ?? 0), 0) /
-            total
-        : 0;
+    type Key = string;
+    const buckets = new Map<Key, any>();
 
-    return {
-        totalRespuestas: total,
-        promedioSatisfaccion: Number(promedio.toFixed(2)),
+    const getKey = (d: Date) => {
+        const y = d.getFullYear();
+        if (groupBy === 'year') return `${y}`;
+        const s = d.getMonth() < 6 ? 1 : 2;
+        return `${y}-S${s}`;
     };
+
+    for (const p of practicas) {
+        const key = getKey(p.fecha_inicio);
+        if (!buckets.has(key)) {
+        buckets.set(key, {
+            key,
+            totalEstudiantesSet: new Set<string>(),
+            centrosPorTipo: new Map<string, number>(),
+            supervisoresSet: new Set<string>(),
+            mentoresSet: new Set<string>(),
+        });
+        }
+
+        const b = buckets.get(key);
+
+        // total estudiantes (únicos)
+        b.totalEstudiantesSet.add(p.estudianteRut);
+
+        // centros por tipo
+        const tipoCentro = p.centro?.tipo ?? 'SIN_TIPO';
+        b.centrosPorTipo.set(tipoCentro, (b.centrosPorTipo.get(tipoCentro) ?? 0) + 1);
+
+        // tutores por rol
+        for (const pt of p.practicaTutores) {
+        if (pt.rol === 'Supervisor') b.supervisoresSet.add(pt.tutor.nombre);
+        else b.mentoresSet.add(pt.tutor.nombre);
+        }
     }
 
+    // salida serializable
+    const series = Array.from(buckets.values())
+        .map(b => ({
+        periodo: b.key,
+        totalEstudiantes: b.totalEstudiantesSet.size,
+        centrosPorTipo: Array.from(b.centrosPorTipo.entries()).map(([tipo, total]) => ({ tipo, total })),
+        supervisores: Array.from(b.supervisoresSet),
+        mentores: Array.from(b.mentoresSet),
+        }))
+        .sort((a, b) => a.periodo.localeCompare(b.periodo));
+
+    return { fromYear, toYear, tipo: tipo ?? null, groupBy, series };
+  }
+  
+  async getReporteSatisfaccion(params: { anio: number; semestre: 1 | 2; tipo?: string | null }) {
+    const { anio, semestre, tipo } = params;
+
+    if (!anio || Number.isNaN(anio)) throw new BadRequestException('Año inválido');
+    if (semestre !== 1 && semestre !== 2) throw new BadRequestException('Semestre inválido (1 o 2)');
+
+    const { from, to } = this.rangoAnio(anio);
+
+    // -------------------------
+    // 1) PRACTICAS (para total estudiantes y % aprobación)
+    // -------------------------
+    const practicas = await this.prisma.practica.findMany({
+      where: {
+        fecha_inicio: { gte: from, lt: to },
+        ...(tipo ? { tipo } : {}),
+      },
+      select: {
+        estudianteRut: true,
+        estado: true,
+        fecha_inicio: true,
+      },
+    });
+
+    const practicasSemestre = practicas.filter(p =>
+      this.calcularSemestre(new Date(p.fecha_inicio)) === semestre
+    );
+
+    // Total estudiantes únicos con práctica en ese semestre
+    const totalEstudiantes = new Set(practicasSemestre.map(p => p.estudianteRut)).size;
+
+    // % aprobación usando estado (APROBADO / REPROBADO)
+    const totalEvaluadas = practicasSemestre.filter(
+      p => p.estado === 'APROBADO' || p.estado === 'REPROBADO'
+    ).length;
+
+    const aprobadas = practicasSemestre.filter(p => p.estado === 'APROBADO').length;
+
+    const porcentajeAprobacion =
+      totalEvaluadas > 0 ? (aprobadas / totalEvaluadas) * 100 : 0;
+
+    // -------------------------
+    // 2) ENCUESTAS (para promedio y % satisfacción)
+    //    - mezclamos encuestas estudiante + colaborador
+    //    - usamos RespuestaSeleccionada con alternativa.puntaje (1..5)
+    // -------------------------
+    const respuestas = await this.prisma.respuestaSeleccionada.findMany({
+      where: {
+        alternativaId: { not: null },
+        OR: [
+          {
+            encuestaEstudiante: {
+              fecha: { gte: from, lt: to },
+              ...(tipo ? { tipo_practica: tipo } : {}),
+            },
+          },
+          {
+            encuestaColaborador: {
+              fecha: { gte: from, lt: to },
+              ...(tipo ? { tipo_practica: tipo } : {}),
+            },
+          },
+        ],
+      },
+      select: {
+        alternativa: { select: { puntaje: true } },
+        encuestaEstudiante: { select: { fecha: true } },
+        encuestaColaborador: { select: { fecha: true } },
+      },
+    });
+
+    // Filtrar por semestre CALCULADO desde la fecha real de la encuesta
+    const puntajes = respuestas
+      .filter(r => {
+        const fecha = r.encuestaEstudiante?.fecha ?? r.encuestaColaborador?.fecha;
+        if (!fecha) return false;
+        return this.calcularSemestre(new Date(fecha)) === semestre;
+      })
+      .map(r => r.alternativa?.puntaje ?? 0)
+      .filter(p => p >= 1 && p <= 5);
+
+    const totalRespuestas = puntajes.length;
+
+    const promedioPuntaje =
+      totalRespuestas > 0
+        ? puntajes.reduce((sum, p) => sum + p, 0) / totalRespuestas
+        : 0;
+
+    // % satisfacción (definición: puntaje 4 o 5)
+    const satisfechas = puntajes.filter(p => p >= 4).length;
+    const porcentajeSatisfaccion =
+      totalRespuestas > 0 ? (satisfechas / totalRespuestas) * 100 : 0;
+
+    return {
+      anio,
+      semestre,
+      tipo: tipo ?? null,
+      totalEstudiantes,
+      porcentajeAprobacion: Number(porcentajeAprobacion.toFixed(1)),
+      encuestas: {
+        totalRespuestas,
+        promedioPuntaje: Number(promedioPuntaje.toFixed(2)),
+        porcentajeSatisfaccion: Number(porcentajeSatisfaccion.toFixed(1)),
+      },
+      generatedAt: new Date().toISOString(),
+    };
+  }
 
 }

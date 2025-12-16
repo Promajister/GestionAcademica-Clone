@@ -94,7 +94,11 @@ export class ReportesComponent implements OnInit {
       indicadores: this.reportesService.getIndicadores().pipe(
         catchError(() => of(null)) // si no existe aún el endpoint, no revienta la vista
       ),
-      satisfaccion: this.reportesService.getSatisfaccion(anio).pipe(
+      satisfaccion: this.reportesService.getSatisfaccion({
+        anio,
+        semestre: 1,
+        tipo: null, // "Todo"
+      }).pipe(
         catchError(() => of(null))
       ),
     }).subscribe({
@@ -123,29 +127,6 @@ export class ReportesComponent implements OnInit {
       schools: res.totals.centros,
       supervisors: res.totals.tutores,
     };
-
-    this.recentActivities = (res.recientes || []).map(a => ({
-      description: a.nombre,
-      date: this.formatDate(a.fecha),
-    }));
-
-    const today = new Date();
-    const LIMIT_DAYS = 7;
-
-    this.deadlines = (res.vencimientos || [])
-      .filter(v => {
-        const fecha = new Date(v.fechaTermino);
-        if (isNaN(fecha.getTime())) return false;
-
-        const diffDays =
-          (fecha.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
-
-        return diffDays >= 0 && diffDays <= LIMIT_DAYS;
-      })
-      .map(v => ({
-        task: `Práctica #${v.practicaId} — ${v.estudiante} (${v.centro})`,
-        date: this.formatDate(v.fechaTermino),
-      }));
   }
 
   private buildCharts(res: ReportesSummary): void {
