@@ -217,7 +217,7 @@
 
               <mat-form-field appearance="outline" class="FormField">
                 <mat-label>Rol Tutor 2</mat-label>
-                <mat-select formControlName="tutor2Rol" [disabled]="!formularioPractica.get('tutor2Id')?.value">
+                <mat-select formControlName="tutor2Rol">
                   <mat-option [value]="''">Sin rol asignado</mat-option>
                   @for (rol of rolesTutor; track rol) {
                     <mat-option [value]="rol">{{ rol }}</mat-option>

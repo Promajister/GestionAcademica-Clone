@@ -11,6 +11,7 @@ const API_URL = `${environment.apiUrl}/estudiantes`;
 export interface UltimaPractica {
   fecha_inicio: string;
   fecha_termino?: string | null;
+  tipo?: string | null;
 }
 
 export interface EstudianteResumen {

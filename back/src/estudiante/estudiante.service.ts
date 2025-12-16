@@ -50,7 +50,7 @@ export class EstudianteService {
         practicas: {
           orderBy: { fecha_inicio: 'desc' },
           take: 1,
-          select: { estado: true, fecha_inicio: true, fecha_termino: true },
+          select: { estado: true, fecha_inicio: true, fecha_termino: true, tipo: true },
         },
       },
     });
@@ -66,6 +66,7 @@ export class EstudianteService {
         ? {
             fecha_inicio: e.practicas[0].fecha_inicio,
             fecha_termino: e.practicas[0].fecha_termino,
+            tipo: e.practicas[0].tipo,
           }
         : null,
     }));
