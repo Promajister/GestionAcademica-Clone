@@ -1,14 +1,17 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export type EstadoPractica = 'EN_CURSO' | 'APROBADO' | 'REPROBADO';
 
-const API_URL = 'http://localhost:3000/estudiante';
+const API_URL = `${environment.apiUrl}/estudiantes`;
+
 
 export interface UltimaPractica {
   fecha_inicio: string;
   fecha_termino?: string | null;
+  tipo?: string | null;
 }
 
 export interface EstudianteResumen {
@@ -64,6 +67,9 @@ export interface EstudianteQuery {
   nombre?: string;
   carrera?: string;
   estadoPractica?: EstadoPractica;
+  tipoPractica?: string;
+  semestre?: number;
+  anio?: number;
 }
 
 @Injectable({ providedIn: 'root' })

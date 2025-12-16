@@ -6,7 +6,9 @@
   "scripts": {
     "start": "concurrently \"npm run frontend\" \"npm run backend\"",
     "frontend": "cd front && ng serve --open",
-    "backend": "cd back && npm run start:dev"
+    "backend": "cd back && npm run start:dev",
+
+    "build:prod": "cd front && ng build --configuration production && xcopy /E /I /Y dist\\gestion-academica\\browser ..\\back\\public && cd ..\\back && npm run build"
   },
   "repository": {
     "type": "git",

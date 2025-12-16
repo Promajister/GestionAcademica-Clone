@@ -1,16 +1,42 @@
-# Ignorar dependencias (¡NUNCA SUBIR!)
-/front/node_modules
-/back/node_modules
-/node_modules
+###############################################
+# IGNORAR DEPENDENCIAS
+###############################################
+# Node modules (NO subir nunca)
+node_modules/
+front/node_modules/
+back/node_modules/
 
-# Ignorar carpetas de build/compilación
-/front/dist
-/front/.angular
-/back/dist
+###############################################
+# IGNORAR BUILDS / ARCHIVOS GENERADOS AUTOMÁTICAMENTE
+###############################################
+# Build de Angular (frontend)
+front/dist/
+front/.angular/
 
-# Ignorar archivos de caché y sistema
+# Build del backend (Nest compila aquí)
+back/dist/
+
+# Build del frontend copiado al backend
+back/public/
+
+###############################################
+# ARCHIVOS DE ENTORNO (CONTRASEÑAS)
+###############################################
+back/.env
+.env
+
+###############################################
+# LOGS Y ARCHIVOS TEMPORALES
+###############################################
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+###############################################
+# SISTEMA / EDITOR / CACHE
+###############################################
 .DS_Store
-/npm-debug.log
-
-# Ignorar archivos de entorno (contienen contraseñas)
-/back/.env
+Thumbs.db
+.idea/
+.vscode/

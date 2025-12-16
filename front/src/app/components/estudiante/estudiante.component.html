@@ -1,118 +1,108 @@
 <div class="container section">
   <div class="header">
-    <button mat-stroked-button color="primary" routerLink="/dashboard" class="btn-back">
-      <mat-icon>arrow_back</mat-icon>
-      Volver
-    </button>
-    <h1>Estudiantes</h1>
+    <div class="headline">
+      <h1>Estudiantes</h1>
+      <p class="muted">Ver el historial de estudiantes y sus prácticas</p>
+    </div>
     <span class="pill-count">{{ estudiantes.length }} registrados</span>
     <div class="spacer"></div>
   </div>
 
+  <mat-card class="elev filters-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>search</mat-icon>
+        Filtros de Búsqueda
+      </mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="filters-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Buscar por nombre o RUT</mat-label>
+          <input
+            matInput
+            [(ngModel)]="searchTerm"
+            (keyup.enter)="aplicarFiltros()"
+            placeholder="Ej: Ana, 12.345.678-9"
+          />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Carrera / Plan</mat-label>
+          <mat-select [(ngModel)]="carreraSeleccionada">
+            <mat-option value="all">Todas</mat-option>
+            @for (c of carreras; track c) {
+              <mat-option [value]="c">{{ c }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Estado de práctica</mat-label>
+          <mat-select [(ngModel)]="estadoSeleccionado">
+            <mat-option value="all">Todos</mat-option>
+            <mat-option value="EN_CURSO">En curso</mat-option>
+            <mat-option value="APROBADO">Aprobado</mat-option>
+            <mat-option value="REPROBADO">Reprobado</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo de práctica</mat-label>
+          <mat-select [(ngModel)]="tipoPracticaSeleccionada">
+            <mat-option value="">Todas</mat-option>
+            @for (t of tiposPractica; track t) {
+              <mat-option [value]="t">{{ t }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Semestre</mat-label>
+          <mat-select [(ngModel)]="semestreSeleccionado">
+            <mat-option value="all">Todos</mat-option>
+            <mat-option [value]="1">1</mat-option>
+            <mat-option [value]="2">2</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Año</mat-label>
+          <input matInput type="number" [(ngModel)]="anioSeleccionado" placeholder="Ej: 2025" />
+        </mat-form-field>
+      </div>
+      <div class="filter-actions">
+        <button mat-stroked-button color="primary" (click)="aplicarFiltros()">
+          <mat-icon>refresh</mat-icon>
+          Aplicar filtros
+        </button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
   <div class="grid">
-    <div class="column">
-      <mat-card class="elev filters">
-        <mat-card-content>
-          <div class="filters-grid">
-            <mat-form-field appearance="outline">
-              <mat-label>Buscar por nombre o RUT</mat-label>
-              <input
-                matInput
-                [(ngModel)]="searchTerm"
-                (keyup.enter)="aplicarFiltros()"
-                placeholder="Ej: Ana, 12.345.678-9"
-              />
-            </mat-form-field>
-
-            <mat-form-field appearance="outline">
-              <mat-label>Carrera / Plan</mat-label>
-              <mat-select [(ngModel)]="carreraSeleccionada">
-                <mat-option value="all">Todas</mat-option>
-                <mat-option *ngFor="let c of carreras" [value]="c">{{ c }}</mat-option>
-              </mat-select>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline">
-              <mat-label>Estado de práctica</mat-label>
-              <mat-select [(ngModel)]="estadoSeleccionado">
-                <mat-option value="all">Todos</mat-option>
-                <mat-option value="EN_CURSO">En curso</mat-option>
-                <mat-option value="APROBADO">Aprobado</mat-option>
-                <mat-option value="REPROBADO">Reprobado</mat-option>
-              </mat-select>
-            </mat-form-field>
-          </div>
-          <div class="filter-actions">
-            <button mat-stroked-button color="primary" (click)="aplicarFiltros()">
-              <mat-icon>refresh</mat-icon>
-              Aplicar filtros
-            </button>
-          </div>
-        </mat-card-content>
-      </mat-card>
-
-      <mat-card class="elev list-card">
-        <mat-card-content>
-          <div class="loader" *ngIf="cargandoLista">
-            <mat-spinner diameter="32"></mat-spinner>
-            <span>Cargando estudiantes...</span>
-          </div>
-
-          <div *ngIf="mensajeError && !cargandoLista" class="error-box">
-            <mat-icon>error</mat-icon>
-            <span>{{ mensajeError }}</span>
-          </div>
-
-          <div *ngIf="!cargandoLista && estudiantes.length === 0" class="empty">
-            <mat-icon>school</mat-icon>
-            <p>No hay estudiantes registrados</p>
-          </div>
-
-          <div
-            class="row"
-            *ngFor="let s of estudiantes"
-            (click)="seleccionar(s)"
-            [class.active]="seleccionado?.rut === s.rut"
-          >
-            <div class="row-head">
-              <div>
-                <h3>{{ s.nombre }}</h3>
-                <small>{{ s.rut }}</small>
-              </div>
-              <mat-chip color="primary" selected>{{ estadoLabel(s.estadoPractica) }}</mat-chip>
-            </div>
-            <div class="row-body">
-              <div><b>Carrera:</b> {{ s.plan || '-' }}</div>
-              <div><b>Correo:</b> {{ s.email || '-' }}</div>
-              <div><b>Teléfono:</b> {{ s.fono || '-' }}</div>
-            </div>
-            <div class="row-foot" *ngIf="s.ultimaPractica">
-              Última práctica: {{ formatearFecha(s.ultimaPractica.fecha_inicio) }} -
-              {{ formatearFecha(s.ultimaPractica.fecha_termino) }}
-            </div>
-          </div>
-        </mat-card-content>
-      </mat-card>
-    </div>
-
     <div class="column detail-col">
       <mat-card class="elev detail-card">
         <mat-card-content>
-          <div *ngIf="!seleccionado && !cargandoDetalle" class="empty detail-empty">
-            <mat-icon>info</mat-icon>
-            <p>Selecciona un estudiante para ver su ficha</p>
-          </div>
+          @if (!seleccionado && !cargandoDetalle) {
+            <div class="empty detail-empty">
+              <mat-icon>info</mat-icon>
+              <p>Selecciona un estudiante para ver su ficha</p>
+            </div>
+          }
 
-          <div class="loader" *ngIf="cargandoDetalle">
-            <mat-spinner diameter="32"></mat-spinner>
-            <span>Cargando detalle...</span>
-          </div>
+          @if (cargandoDetalle) {
+            <div class="loader">
+              <mat-spinner diameter="32"></mat-spinner>
+              <span>Cargando detalle...</span>
+            </div>
+          }
 
-          <ng-container *ngIf="detalle && !cargandoDetalle">
+          @if (detalle && !cargandoDetalle) {
             <div class="detail-head">
               <div>
                 <h2>{{ detalle.nombre }}</h2>
-                <p>{{ detalle.rut }} · {{ detalle.plan || 'Sin plan' }}</p>
+                <p>{{ detalle.rut }} • {{ detalle.plan || 'Sin plan' }}</p>
               </div>
               <div class="detail-actions">
                 <button mat-raised-button color="primary" (click)="exportarPdf()">
@@ -134,30 +124,108 @@
 
             <div class="detail-section">
               <h4>Historial de prácticas</h4>
-              <div *ngIf="!detalle.practicas?.length" class="muted">Sin prácticas registradas.</div>
-              <div *ngFor="let p of detalle.practicas" class="pill-row">
-                <div>
-                  <strong>{{ estadoLabel(p.estado) }}</strong> ·
-                  {{ formatearFecha(p.fecha_inicio) }} - {{ formatearFecha(p.fecha_termino) }}
+              @if (!detalle.practicas || detalle.practicas.length === 0) {
+                <div class="muted">Sin prácticas registradas.</div>
+              }
+              @for (p of detalle.practicas || []; track p.id) {
+                <div class="pill-row">
+                  <div>
+                    <strong>{{ estadoLabel(p.estado) }}</strong> •
+                    {{ formatearFecha(p.fecha_inicio) }} - {{ formatearFecha(p.fecha_termino) }}
+                  </div>
+                  <div class="muted">Centro: {{ p.centro?.nombre || '-' }}</div>
                 </div>
-                <div class="muted">Centro: {{ p.centro?.nombre || '-' }}</div>
-              </div>
+              }
             </div>
 
             <div class="detail-section">
               <h4>Actividades asociadas</h4>
-              <div *ngIf="!detalle.actividades?.length" class="muted">Sin actividades asociadas.</div>
-              <div *ngFor="let a of detalle.actividades" class="pill-row">
-                <div>
-                  <strong>{{ a.nombre_actividad }}</strong> · {{ formatearFecha(a.fecha) }}
+              @if (!detalle.actividades || detalle.actividades.length === 0) {
+                <div class="muted">Sin actividades asociadas.</div>
+              }
+              @for (a of detalle.actividades || []; track a.id) {
+                <div class="pill-row">
+                  <div>
+                    <strong>{{ a.nombre_actividad }}</strong> • {{ formatearFecha(a.fecha) }}
+                  </div>
+                  <div class="muted">{{ a.lugar || 'Sin lugar' }}</div>
                 </div>
-                <div class="muted">{{ a.lugar || 'Sin lugar' }}</div>
-              </div>
+              }
             </div>
-          </ng-container>
+          }
         </mat-card-content>
       </mat-card>
     </div>
+
+    <div class="column">
+      @if (estudiantes.length > 0) {
+        <mat-card class="elev list-card">
+          <mat-card-content class="list-container">
+            @if (cargandoLista) {
+              <div class="loader">
+                <mat-spinner diameter="32"></mat-spinner>
+                <span>Cargando estudiantes...</span>
+              </div>
+            }
+
+            @if (mensajeError && !cargandoLista) {
+              <div class="error-box">
+                <mat-icon>error</mat-icon>
+                <span>{{ mensajeError }}</span>
+              </div>
+            }
+
+            @if (!cargandoLista) {
+              @for (s of estudiantes; track s.rut) {
+                <div
+                  class="list-item"
+                  (click)="seleccionar(s)"
+                  [class.active]="seleccionado?.rut === s.rut"
+                >
+                  <div class="item-content">
+                    <div class="item-main">
+                      <div class="item-info">
+                        <h3>{{ s.nombre }}</h3>
+                        <p class="muted">{{ s.rut }} • {{ s.plan || 'Sin plan' }}</p>
+                        @if (s.email) {
+                          <p class="muted">{{ s.email }}</p>
+                        }
+                        @if (s.ultimaPractica) {
+                          <div style="margin-top: 4px;">
+                            @if (s.ultimaPractica.tipo) {
+                              <p style="margin: 0; font-size: 12px; font-weight: 500; color: #374151;">
+                                {{ s.ultimaPractica.tipo }}
+                              </p>
+                            }
+                            <p class="muted" style="margin: 2px 0 0; font-size: 12px;">
+                              {{ formatearFecha(s.ultimaPractica.fecha_inicio) }} - {{ formatearFecha(s.ultimaPractica.fecha_termino) }}
+                            </p>
+                          </div>
+                        }
+                      </div>
+                    </div>
+
+                    <div class="item-status">
+                      <mat-chip color="primary" selected>{{ estadoLabel(s.estadoPractica) }}</mat-chip>
+                    </div>
+                  </div>
+                </div>
+              }
+            }
+          </mat-card-content>
+        </mat-card>
+      }
+
+      @if (!cargandoLista && estudiantes.length === 0) {
+        <div class="empty-card">
+          <mat-card class="elev empty">
+            <mat-card-content class="empty-content">
+              <mat-icon>school</mat-icon>
+              <p>No hay estudiantes registrados</p>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      }
+    </div>
   </div>
 </div>
-

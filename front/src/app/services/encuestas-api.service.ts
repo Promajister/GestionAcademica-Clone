@@ -2,6 +2,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
+
 
 // Estructura base de una encuesta devuelta por la API
 export interface ApiEncuesta {
@@ -14,7 +16,7 @@ export interface ApiEncuesta {
 }
 
 // URL base del backend de encuestas
-const API_URL = 'http://localhost:3000/encuestas';
+const API_URL = `${environment.apiUrl}/encuestas`;
 
 @Injectable({
   providedIn: 'root'

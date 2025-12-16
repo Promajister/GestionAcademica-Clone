@@ -1,11 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
-const API_URL = 'http://localhost:3000/actividad-practica';
-const API_BASE_URL = 'http://localhost:3000';
-
-// Interfaz que coincide con el modelo de Prisma (lo que devuelve el backend)
 export interface Actividad {
   id: number;
   mes: string;
@@ -43,6 +40,9 @@ export interface CreateActividadDto {
   fechaRegistro?: string;
   evidenciaUrl?: string;
 }
+
+const API_URL = `${environment.apiUrl}/actividad-practica`;
+const API_BASE_URL = '';
 
 @Injectable({
   providedIn: 'root'
@@ -155,7 +155,6 @@ export class ActividadesEstudiantesService {
       const fecha = typeof actividad.fecha === 'string' 
         ? new Date(actividad.fecha) 
         : actividad.fecha;
-      // Usar formato local para evitar problemas de zona horaria
       const fechaRegistro = this.formatearFechaLocal(fecha);
       formData.append('fechaRegistro', fechaRegistro);
     }
@@ -220,4 +219,3 @@ export class ActividadesEstudiantesService {
     return `${API_BASE_URL}${path}`;
   }
 }
-

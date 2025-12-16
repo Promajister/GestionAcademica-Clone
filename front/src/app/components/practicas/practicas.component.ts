@@ -27,6 +27,7 @@ import {
 import { ColaboradoresService } from '../../services/colaboradores.service';
 import { TutoresService, Tutor } from '../../services/tutores.service';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 // Tipos de práctica (como string libre)
 type TipoPractica = string;
@@ -179,7 +180,7 @@ export class PracticasComponent {
       tutor1Id: [null, [Validators.required]],
       tutor1Rol: ['', [Validators.required]],
       tutor2Id: [null],
-      tutor2Rol: [''],
+      tutor2Rol: [{value: '', disabled: true}],
       fecha_inicio: ['', Validators.required],
       fecha_termino: [''],
       tipo: [''],
@@ -223,8 +224,10 @@ export class PracticasComponent {
 
       const rolControl = this.formularioPractica.get('tutor2Rol');
       if (value !== null && value !== undefined && value !== '') {
+        rolControl?.enable();
         rolControl?.setValidators([Validators.required]);
       } else {
+        rolControl?.disable();
         rolControl?.clearValidators();
         rolControl?.setValue('', { emitEvent: false });
       }
@@ -274,7 +277,7 @@ export class PracticasComponent {
         });
 
         // Cargar estudiantes y filtrar solo los que tienen prácticas EN_CURSO
-        this.http.get<any[]>('http://localhost:3000/estudiante').subscribe({
+        this.http.get<any[]>(`${environment.apiUrl}/estudiantes`).subscribe({
           next: (estudiantes) => {
             this.estudiantes = estudiantes.filter(est => !rutConPracticasEnCurso.has(est.rut));
             this.estudianteFiltrado = this.estudiantes.slice(0, 5);
@@ -293,7 +296,7 @@ export class PracticasComponent {
   }
 
   cargarTodosEstudiantes() {
-    this.http.get<any[]>('http://localhost:3000/estudiante').subscribe({
+    this.http.get<any[]>(`${environment.apiUrl}/estudiantes`).subscribe({
       next: (estudiantes) => {
         this.estudiantes = estudiantes;
         this.estudianteFiltrado = this.estudiantes.slice(0, 5);
@@ -304,7 +307,7 @@ export class PracticasComponent {
 
   cargarCentrosColaboradoresYTutores() {
     // Cargar centros educativos
-    this.http.get<any>('http://localhost:3000/centros?page=1&limit=100').subscribe({
+    this.http.get<any>(`${environment.apiUrl}/centros?page=1&limit=100`).subscribe({
       next: (response) => {
         this.centros = response.items || [];
         this.centroFiltrado = this.centros.slice(0, 5);
@@ -360,7 +363,7 @@ export class PracticasComponent {
       }
     });
 
-    this.http.get<any[]>('http://localhost:3000/estudiante').subscribe({
+    this.http.get<any[]>(`${environment.apiUrl}/estudiantes`).subscribe({
       next: (estudiantes) => {
         this.estudiantes = estudiantes.filter(est => !rutConPracticasEnCurso.has(est.rut));
         this.estudianteFiltrado = this.estudiantes.slice(0, 5);

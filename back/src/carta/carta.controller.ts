@@ -1,11 +1,11 @@
 import { Controller, Get, Query, Post, Body } from '@nestjs/common';
 import { CartaService } from './carta.service';
 
-@Controller('api')
+@Controller()
 export class CartaController {
   constructor(private readonly svc: CartaService) {}
 
-  @Get('tipos-practica')
+  @Get('practicas/tipos')
   getTiposPractica() {
     return this.svc.getTiposPractica();
   }

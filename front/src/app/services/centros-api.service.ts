@@ -1,8 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
-const API = 'http://localhost:3000';
+const API = `${environment.apiUrl}/centros`;
 
 export interface TrabajadorDTO {
   id: number;
@@ -33,18 +34,17 @@ export interface PagedResult<T> {
   items: T[]; page: number; limit: number; total: number; pages: number;
 }
 
-// ==== Payloads limpios para crear/actualizar ====
 export interface CreateCentroPayload {
   nombre: string;
-  tipo: 'PARTICULAR' | 'PARTICULAR_SUBVENCIONADO' | 'SLEP' | 'NO_CONVENCIONAL' | string;
+  tipo: string;
   region: string;
   comuna: string;
-  convenio?: string;                   
+  convenio?: string;
   direccion?: string;
-  telefono?: number | string | null;     
+  telefono?: number | string | null;
   correo?: string;
   url_rrss?: string;
-  fecha_inicio_asociacion?: string | null; 
+  fecha_inicio_asociacion?: string | null;
 }
 
 export type UpdateCentroPayload = Partial<CreateCentroPayload>;
@@ -64,63 +64,23 @@ export class CentrosApiService {
     if (params?.tipo)          p = p.set('tipo', params.tipo);
     if (params?.orderBy)       p = p.set('orderBy', params.orderBy);
     if (params?.orderDir)      p = p.set('orderDir', params.orderDir);
-    return this.http.get<PagedResult<CentroEducativoDTO>>(`${API}/centros`, { params: p });
+    
+    return this.http.get<PagedResult<CentroEducativoDTO>>(API, { params: p });
   }
 
   getById(id: number): Observable<CentroEducativoDTO> {
-    return this.http.get<CentroEducativoDTO>(`${API}/centros/${id}`);
+    return this.http.get<CentroEducativoDTO>(`${API}/${id}`);
   }
 
-  // ========== CREATE ==========
   create(body: CreateCentroPayload) {
-    const toNumberOrNull = (v: any): number | null =>
-      (v == null || v === '' || isNaN(Number(v))) ? null : Number(v);
-
-    const isValidEmail = (e?: string) =>
-      !!e && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim());
-
-    const payload = {
-      nombre: body.nombre,
-      tipo: body.tipo,
-      region: body.region,
-      comuna: body.comuna,
-      convenio: body.convenio ?? undefined, 
-      direccion: body.direccion ?? undefined,
-      telefono: toNumberOrNull(body.telefono), 
-      correo: isValidEmail(body.correo) ? body.correo!.trim() : undefined,
-      url_rrss: body.url_rrss ?? undefined,
-      fecha_inicio_asociacion: body.fecha_inicio_asociacion ?? null, 
-    };
-
-    return this.http.post<CentroEducativoDTO>(`${API}/centros`, payload);
+    return this.http.post<CentroEducativoDTO>(API, body);
   }
 
-  // ========== UPDATE ==========
   update(id: number, body: UpdateCentroPayload) {
-    const toNumberOrNull = (v: any): number | null =>
-      (v == null || v === '' || isNaN(Number(v))) ? null : Number(v);
-
-    const isValidEmail = (e?: string) =>
-      !!e && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim());
-
-    const payload: any = {};
-
-    if (body.nombre !== undefined)  payload.nombre = body.nombre;
-    if (body.tipo !== undefined)    payload.tipo = body.tipo;
-    if (body.region !== undefined)  payload.region = body.region;
-    if (body.comuna !== undefined)  payload.comuna = body.comuna;
-    if (body.convenio !== undefined) payload.convenio = body.convenio ?? undefined;
-    if (body.direccion !== undefined) payload.direccion = body.direccion ?? undefined;
-    if (body.telefono !== undefined)  payload.telefono = toNumberOrNull(body.telefono);
-    if (body.correo !== undefined)    payload.correo = isValidEmail(body.correo) ? body.correo!.trim() : undefined;
-    if (body.url_rrss !== undefined)  payload.url_rrss = body.url_rrss ?? undefined;
-    if (body.fecha_inicio_asociacion !== undefined)
-      payload.fecha_inicio_asociacion = body.fecha_inicio_asociacion ?? null;
-
-    return this.http.patch<CentroEducativoDTO>(`${API}/centros/${id}`, payload);
+    return this.http.patch<CentroEducativoDTO>(`${API}/${id}`, body);
   }
 
   delete(id: number) {
-    return this.http.delete<void>(`${API}/centros/${id}`);
+    return this.http.delete<void>(`${API}/${id}`);
   }
 }

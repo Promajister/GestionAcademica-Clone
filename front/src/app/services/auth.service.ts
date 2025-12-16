@@ -1,8 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { Observable, tap, of } from 'rxjs';
+import { environment } from '../../environments/environment';
 
-const API = 'http://localhost:3000/api/auth';
+const API = `${environment.apiUrl}/auth`;
 
 export interface LoginResponse {
   accessToken: string;
@@ -21,6 +22,24 @@ export class AuthService {
   private readonly USER_KEY = 'app.user';
 
   login(email: string, password: string): Observable<LoginResponse> {
+    if (environment.skipAuth) {
+      const mock: LoginResponse = {
+        accessToken: 'dev-token',
+        user: {
+          id: 0,
+          email: email || 'dev@example.com',
+          nombre: 'Dev User',
+          role: 'jefatura',
+        },
+      };
+
+      localStorage.setItem(this.TOKEN_KEY, mock.accessToken);
+      localStorage.setItem(this.USER_KEY, JSON.stringify(mock.user));
+      localStorage.setItem('lastLogin', new Date().toISOString());
+
+      return of(mock);
+    }
+
     return this.http
       .post<LoginResponse>(`${API}/login`, { email, password })
       .pipe(
@@ -38,6 +57,7 @@ export class AuthService {
   }
 
   isLoggedIn(): boolean {
+    if (environment.skipAuth) return true;
     if (typeof localStorage === 'undefined') return false;
     return !!localStorage.getItem(this.TOKEN_KEY);
   }
@@ -49,9 +69,9 @@ export class AuthService {
   }
 
   forgotPassword(email: string) {
-    return this.http.post<{ message: string }>(
-      'http://localhost:3000/api/auth/forgot-password',
-      { email }
+  return this.http.post<{ message: string }>(
+    `${API}/forgot-password`,
+    { email }
     );
   }
 }
