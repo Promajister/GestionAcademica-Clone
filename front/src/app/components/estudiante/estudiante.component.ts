@@ -154,35 +154,79 @@ export class EstudiantesComponent implements OnInit {
   exportarPdf(): void {
     if (!this.detalle) return;
 
+    const detalle = this.detalle;
     const doc = new jsPDF({ unit: 'pt', format: 'letter' });
     const marginX = 46;
-    let y = 52;
+    let y = 32;
 
-    // Encabezado con logos
-    doc.addImage(LOGO_UTA_BASE64, 'PNG', marginX, y - 12, 66, 66);
-    doc.addImage(
-      LOGO_FEH_BASE64,
-      'PNG',
-      doc.internal.pageSize.getWidth() - marginX - 66,
-      y - 12,
-      66,
-      66,
-    );
+    // Header con logo UTA (manteniendo relación de aspecto)
+    const logoWidth = 80;
+    const logoHeight = 60; // Relación de aspecto aproximada 4:3
+    doc.addImage(LOGO_UTA_BASE64, 'PNG', marginX, y, logoWidth, logoHeight);
 
-    doc.setFontSize(10);
-    doc.setTextColor('#1f2937');
-    doc.text('Universidad de Tarapacá', marginX + 78, y + 6);
-    doc.text('Facultad de Educación y Humanidades', marginX + 78, y + 20);
-    doc.text('Departamento de Prácticas Pedagógicas', marginX + 78, y + 34);
-
-    y += 78;
-
-    doc.setFontSize(11);
+    // Información del documento a la derecha (en un cuadro)
+    const rightBoxX = doc.internal.pageSize.getWidth() - marginX - 165;
+    const rightBoxY = y;
+    const rightBoxWidth = 165;
+    const rightBoxHeight = 80;
+    
+    // Dibujar cuadro con mejor estilo
+    doc.setDrawColor('#cbd5e1');
+    doc.setFillColor('#ffffff');
+    doc.setLineWidth(1.5);
+    doc.roundedRect(rightBoxX, rightBoxY, rightBoxWidth, rightBoxHeight, 5, 5, 'FD');
+    
+    // Contenido del cuadro
+    const now = new Date();
+    const fecha = now.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const hora = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    
+    doc.setFontSize(8);
+    doc.setTextColor('#6b7280');
+    doc.setFont('helvetica', 'normal');
+    
+    const rightTextX = rightBoxX + 10;
+    let rightTextY = rightBoxY + 16;
+    
+    doc.setFontSize(8);
+    doc.text('Fecha:', rightTextX, rightTextY);
     doc.setTextColor('#111827');
-    doc.text('Ficha de Estudiante - Registro Académico y Prácticas', marginX, y);
-    y += 18;
+    doc.setFont('helvetica', 'normal');
+    doc.text(`: ${fecha}`, rightTextX + 38, rightTextY);
+    
+    rightTextY += 13;
+    doc.setTextColor('#6b7280');
+    doc.text('Hora:', rightTextX, rightTextY);
+    doc.setTextColor('#111827');
+    doc.text(`: ${hora}`, rightTextX + 38, rightTextY);
+    
+    rightTextY += 13;
+    doc.setTextColor('#6b7280');
+    doc.text('Páginas:', rightTextX, rightTextY);
+    doc.setTextColor('#111827');
+    doc.text(': 1/1', rightTextX + 48, rightTextY);
+    
+    rightTextY += 13;
+    doc.setTextColor('#6b7280');
+    doc.text('Cant. Prácticas:', rightTextX, rightTextY);
+    doc.setTextColor('#111827');
+    doc.text(`: ${detalle.practicas?.length || 0}`, rightTextX + 78, rightTextY);
 
-    const detalle = this.detalle;
+    // Título centrado
+    const headerBlockHeight = Math.max(logoHeight, rightBoxHeight);
+    y = y + headerBlockHeight + 20;
+    
+    doc.setFontSize(13);
+    doc.setTextColor('#111827');
+    doc.setFont('helvetica', 'bold');
+    const title = 'FICHA DE ESTUDIANTE - REGISTRO ACADÉMICO Y PRÁCTICAS';
+    const titleWidth = doc.getTextWidth(title);
+    const titleX = (doc.internal.pageSize.getWidth() - titleWidth) / 2;
+    doc.text(title, titleX, y);
+    
+    y += 24;
+
+    // Información del estudiante en una tarjeta
     const infoRows: [string, string][] = [
       ['Nombre', detalle.nombre],
       ['RUT', detalle.rut],
@@ -193,41 +237,52 @@ export class EstudiantesComponent implements OnInit {
     ];
 
     const drawCard = (rows: [string, string][]) => {
-      doc.setDrawColor('#e5e7eb');
-      doc.setFillColor('#f9fafb');
+      doc.setDrawColor('#d1d5db');
+      doc.setFillColor('#ffffff');
+      doc.setLineWidth(1.5);
       doc.roundedRect(
         marginX - 6,
         y - 10,
         doc.internal.pageSize.getWidth() - marginX * 2 + 12,
-        rows.length * 24 + 20,
-        8,
-        8,
+        rows.length * 26 + 24,
+        6,
+        6,
         'FD',
       );
-      let ly = y + 6;
+      let ly = y + 8;
       doc.setFontSize(11);
       rows.forEach(([label, value]) => {
         doc.setTextColor('#6b7280');
-        doc.text(label, marginX + 6, ly);
+        doc.setFont('helvetica', 'normal');
+        doc.text(label + ':', marginX + 8, ly);
         doc.setTextColor('#111827');
-        doc.text(String(value), marginX + 160, ly);
-        ly += 24;
+        doc.setFont('helvetica', 'normal');
+        const valueX = marginX + 170;
+        doc.text(String(value), valueX, ly);
+        ly += 26;
       });
-      y = ly + 6;
+      y = ly + 8;
     };
 
     drawCard(infoRows);
 
     const sectionTitle = (title: string) => {
+      y += 14; // Espacio antes del título
       doc.setTextColor('#1f2937');
-      doc.setFontSize(13);
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
       doc.text(title, marginX, y);
-      y += 10;
+      // Línea decorativa debajo del título de sección
+      doc.setDrawColor('#e5e7eb');
+      doc.setLineWidth(0.5);
+      doc.line(marginX, y + 5, marginX + 250, y + 5);
+      y += 18; // Espacio después del título
     };
 
     const bodyText = (text: string) => {
       doc.setFontSize(11);
-      doc.setTextColor('#374151');
+      doc.setTextColor('#6b7280');
+      doc.setFont('helvetica', 'normal');
       const split = doc.splitTextToSize(text, doc.internal.pageSize.getWidth() - marginX * 2);
       doc.text(split, marginX, y);
       y += split.length * 14;
@@ -241,48 +296,50 @@ export class EstudiantesComponent implements OnInit {
           doc.addPage();
           y = 52;
         }
-        doc.setFontSize(11);
-        doc.setTextColor('#0f172a');
-        doc.text(
-          `${idx + 1}. ${this.estadoLabel(p.estado)} • ${this.formatearFecha(p.fecha_inicio)} - ${this.formatearFecha(p.fecha_termino)}`,
-          marginX,
-          y,
-        );
-        y += 14;
-        const detalles: string[] = [];
-        if (p.tipo) detalles.push(`Tipo: ${p.tipo}`);
-        if (p.centro?.nombre) detalles.push(`Centro: ${p.centro.nombre}`);
-        if (detalles.length) {
-          bodyText(detalles.join(' • '));
+        
+        // Tipo de práctica en línea separada (si existe)
+        if (p.tipo) {
+          doc.setFontSize(11);
+          doc.setTextColor('#0f172a');
+          doc.setFont('helvetica', 'bold');
+          doc.text(`${idx + 1}. ${p.tipo}`, marginX, y);
+          y += 18;
+          
+          // Estado y fechas en línea siguiente
+          doc.setFontSize(10);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor('#4b5563');
+          doc.text(
+            `${this.estadoLabel(p.estado)} • ${this.formatearFecha(p.fecha_inicio)} - ${this.formatearFecha(p.fecha_termino)}`,
+            marginX + 18,
+            y,
+          );
+          y += 16;
+        } else {
+          // Si no hay tipo, mostrar número con estado y fechas
+          doc.setFontSize(11);
+          doc.setTextColor('#0f172a');
+          doc.setFont('helvetica', 'normal');
+          doc.text(
+            `${idx + 1}. ${this.estadoLabel(p.estado)} • ${this.formatearFecha(p.fecha_inicio)} - ${this.formatearFecha(p.fecha_termino)}`,
+            marginX,
+            y,
+          );
+          y += 16;
+        }
+        
+        // Centro educativo (si existe)
+        if (p.centro?.nombre) {
+          doc.setFontSize(9);
+          doc.setTextColor('#6b7280');
+          doc.text(`Centro: ${p.centro.nombre}`, marginX + 18, y);
+          y += 14;
         }
         y += 6;
       });
     } else {
       bodyText('Sin prácticas registradas.');
       y += 8;
-    }
-
-    // Actividades asociadas
-    sectionTitle('Actividades asociadas');
-    if (detalle.actividades?.length) {
-      detalle.actividades.forEach((a, idx) => {
-        if (y > doc.internal.pageSize.getHeight() - 100) {
-          doc.addPage();
-          y = 52;
-        }
-        doc.setFontSize(11);
-        doc.setTextColor('#0f172a');
-        doc.text(`${idx + 1}. ${a.nombre_actividad} • ${this.formatearFecha(a.fecha)}`, marginX, y);
-        y += 14;
-        if (a.lugar) {
-          doc.setFontSize(10);
-          doc.setTextColor('#6b7280');
-          doc.text(`Lugar: ${a.lugar}`, marginX, y);
-          y += 12;
-        }
-      });
-    } else {
-      bodyText('Sin actividades asociadas.');
     }
 
     doc.save(`estudiante_${detalle.rut}.pdf`);
