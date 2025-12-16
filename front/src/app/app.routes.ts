@@ -1,5 +1,8 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './guards/auth.guard';
+import { RoleGuard } from './guards/rol.guard';
+import { ROLES } from './components/auth/roles';
+
 
 export const routes: Routes = [
   // Redirección inicial al login
@@ -71,14 +74,6 @@ export const routes: Routes = [
       import('./components/encuestas/encuestas.component').then(m => m.EncuestasComponent),
   },
 
-  // Supervisión general
-  {
-    path: 'supervision',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import('./components/supervision/supervision.component').then(m => m.SupervisionComponent),
-  },
-
   // Gestión de prácticas
   {
     path: 'practicas',
@@ -119,9 +114,32 @@ export const routes: Routes = [
       import('./components/actividades-estudiantes/actividades-estudiantes.component').then(m => m.ActividadesEstudiantesComponent),
   },
 
+  {
+    path: 'reportes',
+    canActivate: [authGuard, RoleGuard],
+    data: { roles: [ROLES.JEFATURA, ROLES.PRACTICAS] },
+    loadComponent: () =>
+      import('./components/reportes/reportes.component').then(m => m.ReportesComponent)
+  },
+
+  {
+    path: 'reportes/estudiante',
+    loadComponent: () =>
+      import('./components/reportes-estudiantes/reportes-estudiantes.component')
+        .then(m => m.ReportesEstudianteComponent),
+  },
+
+  {
+    path: 'reportes/satisfaccion',
+    loadComponent: () =>
+      import('./components/reportes-satisfaccion/reportes-satisfaccion.component')
+        .then(m => m.ReportesSatisfaccionComponent),
+  },
+
   // Ruta comodín → redirige a login
   {
     path: '**',
     redirectTo: 'dashboard',
   },
+
 ];

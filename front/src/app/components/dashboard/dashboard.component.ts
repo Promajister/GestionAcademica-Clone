@@ -164,12 +164,6 @@ export class DashboardComponent implements OnInit {
           desc: 'Visualización de actividades',
         },
         {
-          title: 'Supervisión general',
-          icon: 'insights',
-          route: '/supervision',
-          desc: 'Indicadores y seguimiento',
-        },
-        {
           title: 'Reportes completos',
           icon: 'analytics',
           route: '/reportes',

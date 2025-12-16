@@ -1,0 +1,54 @@
+<mat-card>
+  <mat-card-title>Reporte de satisfacción en prácticas</mat-card-title>
+
+  <mat-card-content>
+    <!-- Filtro -->
+    <div style="display:flex; gap:12px; align-items:center">
+      <mat-form-field appearance="outline">
+        <mat-label>Año</mat-label>
+        <mat-select [(ngModel)]="anio">
+          <mat-option *ngFor="let y of [2022,2023,2024,2025]" [value]="y">
+            {{ y }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <button mat-raised-button color="primary" (click)="buscar()">
+        Buscar
+      </button>
+    </div>
+
+    <p *ngIf="loading">Cargando...</p>
+
+    <!-- Resultados -->
+    <div *ngIf="satisfaccion" style="margin-top:16px">
+
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap:12px">
+
+        <mat-card class="kpi elev">
+          <mat-card-content>
+            <div class="kpi-value" style="color:#0ea5e9">
+              {{ satisfaccion.totalRespuestas }}
+            </div>
+            <div class="kpi-label">Encuestas respondidas</div>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="kpi elev">
+          <mat-card-content>
+            <div class="kpi-value" style="color:#8b5cf6">
+              {{ satisfaccion.promedioSatisfaccion | number:'1.1-1' }}
+            </div>
+            <div class="kpi-label">Satisfacción promedio</div>
+          </mat-card-content>
+        </mat-card>
+
+      </div>
+
+      <p style="margin-top:12px" class="muted">
+        Resultados obtenidos a partir de encuestas post práctica aplicadas a estudiantes
+        y colaboradores durante el año {{ anio }}.
+      </p>
+    </div>
+  </mat-card-content>
+</mat-card>

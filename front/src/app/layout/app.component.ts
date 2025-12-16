@@ -234,13 +234,12 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     if (id === 'jefatura') {
       return [
         { label: 'Usuarios', icon: 'manage_accounts', route: '/usuarios' },
-        { label: 'Estudiantes en práctica', icon: 'school', route: '/estudiantes-en-practica' },
+        { label: 'Estudiantes en Práctica', icon: 'school', route: '/estudiantes-en-practica' },
         { label: 'Tutores', icon: 'supervisor_account', route: '/tutores' },
         { label: 'Colaboradores', icon: 'groups', route: '/colaboradores' },
-        { label: 'Actividades', icon: 'assignment', route: '/actividades-estudiantes' },
-        { label: 'Supervisión general', icon: 'insights', route: '/supervision' },
-        { label: 'Reportes completos', icon: 'analytics', route: '/reportes' },
-        { label: 'Generar solicitud', icon: 'description', route: '/carta' },
+        { label: 'Actividades', icon: 'event_note', route: '/actividades-estudiantes' },
+        { label: 'Supervisión General', icon: 'analytics', route: '/reportes' },
+        { label: 'Generar Solicitud', icon: 'description', route: '/carta' },
       ];
     }
 
@@ -249,7 +248,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
         { label: 'Encuestas', icon: 'assignment', route: '/encuestas' },
         { label: 'Estudiantes', icon: 'school', route: '/estudiantes' },
         { label: 'Colaboradores', icon: 'groups', route: '/colaboradores' },
-        { label: 'Centros educativos', icon: 'domain', route: '/centros-educativos' },
+        { label: 'Centros Educativos', icon: 'domain', route: '/centros-educativos' },
         { label: 'Tutores', icon: 'supervisor_account', route: '/tutores' },
       ];
     }
@@ -259,7 +258,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
         { label: 'Estudiantes', icon: 'school', route: '/estudiantes' },
         { label: 'Tutores', icon: 'supervisor_account', route: '/tutores' },
         { label: 'Colaboradores', icon: 'groups', route: '/colaboradores' },
-        { label: 'Centros educativos', icon: 'domain', route: '/centros-educativos' },
+        { label: 'Centros Educativos', icon: 'domain', route: '/centros-educativos' },
         { label: 'Prácticas', icon: 'event_note', route: '/practicas' },
         { label: 'Actividades', icon: 'assignment', route: '/actividades-estudiantes' },
         { label: 'Reportes/Historial', icon: 'timeline', route: '/reportes' },
