@@ -1,61 +1,263 @@
 <div class="container section">
   <!-- ===== HEADER ===== -->
   <div class="header">
-    <button mat-stroked-button color="primary" routerLink="/dashboard" class="btn-back">
-      <mat-icon>arrow_back</mat-icon>
-      Volver al Dashboard
-    </button>
-
     <div class="headline">
       <h1>Gestión de Usuarios</h1>
       <p class="muted">Administra roles, permisos y accesos</p>
     </div>
 
     <div class="spacer"></div>
+
+    <!-- BOTÓN NUEVO USUARIO -->
+    <button mat-flat-button color="primary" class="btn-add" (click)="abrirNuevoUsuario()">
+      <mat-icon>person_add</mat-icon>
+      Nuevo Usuario
+    </button>
   </div>
 
   <!-- ===== LISTADO ===== -->
-  <div class="list">
-    <mat-card class="usuarios elev card-click" *ngFor="let u of usuarios">
-      <mat-card-content>
-        <div class="grid">
-          <!-- Columna 1: Información básica -->
-          <div>
-            <h3 class="name">{{ u.name }}</h3>
-            <div class="muted">{{ u.email }}</div>
-            <div class="role" [style.background]="roleColor(u.role)">
-              {{ u.roleLabel }}
-            </div>
-          </div>
-
-          <!-- Columna 2: Estado y último acceso -->
-          <div>
-            <div class="label">Estado</div>
-            <div class="pill pill--ok">{{ u.status }}</div>
-            <div class="tiny">Último acceso: {{ u.lastLogin }}</div>
-          </div>
-
-          <!-- Columna 3: Permisos -->
-          <div>
-            <div class="label">Permisos</div>
-            <div class="chips">
-              <span class="chip" *ngFor="let p of u.permissions">{{ label(p) }}</span>
-            </div>
-          </div>
-
-          <!-- Columna 4: Acciones -->
-          <div class="actions">
-            <button mat-stroked-button>
-              <mat-icon>settings</mat-icon>
-              Editar
-            </button>
-            <button mat-stroked-button>
-              <mat-icon>verified_user</mat-icon>
-              Permisos
-            </button>
-          </div>
-        </div>
+  @if (loading) {
+    <div class="loading-container">
+      <mat-spinner diameter="50"></mat-spinner>
+      <p>Cargando usuarios...</p>
+    </div>
+  } @else if (usuarios.length === 0) {
+    <mat-card class="empty-card elev">
+      <mat-card-content class="empty-content">
+        <mat-icon>people_outline</mat-icon>
+        <h3>No se encontraron usuarios</h3>
+        <p>No hay usuarios registrados en el sistema</p>
       </mat-card-content>
     </mat-card>
-  </div>
+  } @else {
+    <mat-card class="elev usuarios-card">
+      <mat-card-content class="list-container">
+        @for (u of usuarios; track u.id) {
+          <div class="list-item">
+            <div class="item-content">
+              <!-- Información principal -->
+              <div class="item-main">
+                <div class="item-info">
+                  <h3>{{ u.nombre }}</h3>
+                  <p class="muted">{{ u.email }}</p>
+                </div>
+              </div>
+
+              <!-- Rol -->
+              <div class="item-role">
+                <span class="role-badge" [style.background]="roleColor(u.role)">
+                  {{ roleLabel(u.role) }}
+                </span>
+              </div>
+
+              <!-- Estado -->
+              <div class="item-status">
+                <div class="pill" [ngClass]="getEstadoPillClass(u.activo)">
+                  {{ u.activo ? 'Activo' : 'Inactivo' }}
+                </div>
+              </div>
+
+              <!-- Permisos -->
+              <div class="item-permissions">
+                <div class="chips">
+                  @if (u.rol && u.rol.permisos && u.rol.permisos.length > 0) {
+                    @for (p of getPermisosVisibles(u.rol.permisos, u.id); track p.id) {
+                      <span class="chip chip-small">{{ label(p) }}</span>
+                    }
+                    @if (u.rol.permisos.length > 3) {
+                      <button 
+                        mat-button 
+                        class="chip-link" 
+                        (click)="togglePermisos(u.id)"
+                        type="button">
+                        {{ isPermisosExpandidos(u.id) ? 'Ver menos' : 'Ver más (' + (u.rol.permisos.length - 3) + ')' }}
+                      </button>
+                    }
+                  } @else {
+                    <span class="chip chip-small muted">Sin permisos</span>
+                  }
+                </div>
+              </div>
+
+              <!-- Acciones -->
+              <div class="item-actions">
+                <button mat-icon-button color="primary" (click)="editarUsuario(u)" title="Editar">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button mat-icon-button color="accent" (click)="gestionarPermisos(u)" title="Gestionar permisos">
+                  <mat-icon>verified_user</mat-icon>
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+      </mat-card-content>
+    </mat-card>
+  }
+
+  <!-- MODAL CREAR/EDITAR USUARIO -->
+  @if (mostrarModalUsuario) {
+    <div class="modal-overlay" (click)="cerrarModalUsuario()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>{{ usuarioEditando ? 'Editar Usuario' : 'Nuevo Usuario' }}</h2>
+          <button mat-icon-button (click)="cerrarModalUsuario()" class="close-btn">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <form [formGroup]="formularioUsuario" class="form-grid">
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Nombre *</mat-label>
+              <input matInput formControlName="nombre" placeholder="Nombre completo" />
+              @if (formularioUsuario.get('nombre')?.hasError('required') && formularioUsuario.get('nombre')?.touched) {
+                <mat-error>El nombre es requerido</mat-error>
+              }
+              @if (formularioUsuario.get('nombre')?.hasError('minlength') && formularioUsuario.get('nombre')?.touched) {
+                <mat-error>El nombre debe tener al menos 3 caracteres</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Email *</mat-label>
+              <input matInput type="email" formControlName="email" placeholder="correo@ejemplo.com" />
+              @if (formularioUsuario.get('email')?.hasError('required') && formularioUsuario.get('email')?.touched) {
+                <mat-error>El email es requerido</mat-error>
+              }
+              @if (formularioUsuario.get('email')?.hasError('email') && formularioUsuario.get('email')?.touched) {
+                <mat-error>Email inválido</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Contraseña {{ usuarioEditando ? '(dejar vacío para no cambiar)' : '*' }}</mat-label>
+              <input matInput type="password" formControlName="password" 
+                     [placeholder]="usuarioEditando ? 'Nueva contraseña (opcional)' : 'Mínimo 4 caracteres'" />
+              @if (formularioUsuario.get('password')?.hasError('required') && formularioUsuario.get('password')?.touched && !usuarioEditando) {
+                <mat-error>La contraseña es requerida</mat-error>
+              }
+              @if (formularioUsuario.get('password')?.hasError('minlength') && formularioUsuario.get('password')?.touched) {
+                <mat-error>La contraseña debe tener al menos 4 caracteres</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Rol *</mat-label>
+              <mat-select formControlName="role">
+                <mat-option value="">Seleccione un rol</mat-option>
+                @for (rol of roles; track rol.id) {
+                  <mat-option [value]="rol.clave">{{ rol.nombre || rol.clave }}</mat-option>
+                }
+              </mat-select>
+              @if (formularioUsuario.get('role')?.hasError('required') && formularioUsuario.get('role')?.touched) {
+                <mat-error>El rol es requerido</mat-error>
+              }
+            </mat-form-field>
+
+            <div class="form-field">
+              <mat-checkbox formControlName="activo">Usuario activo</mat-checkbox>
+            </div>
+          </form>
+        </div>
+
+        <div class="modal-actions">
+          <button mat-stroked-button (click)="cerrarModalUsuario()" [disabled]="guardando">
+            Cancelar
+          </button>
+          <button mat-flat-button color="primary" (click)="guardarUsuario()" [disabled]="guardando || formularioUsuario.invalid">
+            @if (guardando) {
+              <mat-spinner diameter="20" style="display: inline-block; margin-right: 8px;"></mat-spinner>
+            }
+            {{ usuarioEditando ? 'Actualizar' : 'Crear' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL CONFIRMACIÓN GUARDAR USUARIO -->
+  @if (mostrarConfirmarGuardar) {
+    <div class="confirm-dialog">
+      <div class="dialog-overlay" (click)="cerrarConfirmarGuardar()" tabindex="0"></div>
+      <div class="dialog-content confirm-card" (click)="$event.stopPropagation()" (keydown.escape)="cerrarConfirmarGuardar()">
+        <div class="confirm-header">
+          <div class="warn-icon" [ngClass]="{'icon-password': seCambioPassword()}">
+            <mat-icon>{{ seCambioPassword() ? 'lock' : 'edit' }}</mat-icon>
+          </div>
+          <h2>
+            @if (seCambioPassword()) {
+              Confirmar cambio de contraseña
+            } @else {
+              Confirmar cambios
+            }
+          </h2>
+        </div>
+
+        <div class="confirm-body">
+          @if (seCambioPassword()) {
+            <p>¿Estás seguro de que quieres cambiar la contraseña del usuario <b>{{ datosPendientes?.nombre || usuarioEditando?.nombre }}</b>?</p>
+            <p class="Muted">El usuario deberá usar la nueva contraseña para iniciar sesión.</p>
+          } @else {
+            <p>¿Estás seguro de que quieres {{ usuarioEditando ? 'actualizar' : 'crear' }} el usuario <b>{{ datosPendientes?.nombre || usuarioEditando?.nombre }}</b>?</p>
+            @if (usuarioEditando) {
+              <p class="Muted">Los cambios se aplicarán inmediatamente.</p>
+            }
+          }
+        </div>
+
+        <div class="confirm-actions">
+          <button mat-stroked-button (click)="cerrarConfirmarGuardar()" [disabled]="guardando">
+            Cancelar
+          </button>
+          <button mat-flat-button color="primary" (click)="confirmarGuardarUsuario()" [disabled]="guardando">
+            @if (guardando) {
+              <mat-spinner diameter="20" style="display: inline-block; margin-right: 8px;"></mat-spinner>
+            }
+            {{ usuarioEditando ? 'Confirmar' : 'Crear' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL GESTIÓN DE PERMISOS -->
+  @if (mostrarModalPermisos && rolEditando) {
+    <div class="modal-overlay" (click)="cerrarModalPermisos()">
+      <div class="modal-content modal-permisos" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>Gestionar Permisos - {{ rolEditando.nombre || rolEditando.clave }}</h2>
+          <button mat-icon-button (click)="cerrarModalPermisos()" class="close-btn">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <p class="modal-subtitle">Selecciona los permisos que deseas asignar a este rol:</p>
+          
+          <div class="permisos-grid">
+            @for (perm of permisosDisponibles; track perm.id) {
+              <div class="permiso-item">
+                <mat-checkbox [formControl]="getPermisoControl(perm.id)">
+                  {{ perm.descripcion || perm.clave }}
+                </mat-checkbox>
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button mat-stroked-button (click)="cerrarModalPermisos()" [disabled]="guardando">
+            Cancelar
+          </button>
+          <button mat-flat-button color="primary" (click)="guardarPermisos()" [disabled]="guardando">
+            @if (guardando) {
+              <mat-spinner diameter="20" style="display: inline-block; margin-right: 8px;"></mat-spinner>
+            }
+            Guardar Permisos
+          </button>
+        </div>
+      </div>
+    </div>
+  }
 </div>

@@ -1,4 +1,4 @@
-﻿import { Component, inject, OnInit, PLATFORM_ID } from '@angular/core';
+import { Component, inject, OnInit, PLATFORM_ID } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 
 
@@ -75,6 +75,11 @@ export class ColaboradoresComponent implements OnInit {
     }
   }
 
+  // Está en modo solo lectura si es jefatura o vinculacion
+  get esSoloLectura(): boolean {
+    return this.esJefatura || this.soloLecturaVinculacion;
+  }
+
   // ===== paginación (back) =====
   pageIndex = 0;
   pageSize = 5;
@@ -91,7 +96,9 @@ export class ColaboradoresComponent implements OnInit {
 
   ngOnInit(): void {
     this.soloLecturaVinculacion = this.esRolVinculacionSoloLectura();
-    if (this.soloLecturaVinculacion) {
+    
+    // Asegurar que en solo lectura no quede el formulario abierto
+    if (this.esSoloLectura) {
       this.mostrarFormulario = false;
       this.estaEditando = false;
     }
@@ -211,7 +218,7 @@ export class ColaboradoresComponent implements OnInit {
 
   // Interfaz de usuario
   alternarFormulario() { 
-    if (this.soloLecturaVinculacion) return;
+    if (this.esSoloLectura) return;
     this.mostrarFormulario = !this.mostrarFormulario;
     if (!this.mostrarFormulario) {
       this.estaEditando = false;
@@ -227,7 +234,7 @@ export class ColaboradoresComponent implements OnInit {
 
   // Agregar
   agregarColaborador() {
-    if (this.soloLecturaVinculacion) return;
+    if (this.esSoloLectura) return;
     // Marcar todos los campos como tocados para mostrar errores
     if (this.formularioColaborador.invalid) {
       this.formularioColaborador.markAllAsTouched();
@@ -304,13 +311,13 @@ export class ColaboradoresComponent implements OnInit {
 
   // Eliminar
   eliminar(c: Colaborador) {
-    if (this.soloLecturaVinculacion) return;
+    if (this.esSoloLectura) return;
     this.colaboradorAEliminar = c;
     this.mostrarConfirmarEliminar = true;
   }
 
   confirmarEliminar() {
-    if (this.soloLecturaVinculacion) return;
+    if (this.esSoloLectura) return;
     if (this.colaboradorAEliminar?.id) {
       this.colaboradoresService.eliminar(this.colaboradorAEliminar.id).subscribe({
         next: () => {
@@ -398,9 +405,9 @@ export class ColaboradoresComponent implements OnInit {
     this.actualizarPaginacion();
   }
 
-  // Funciones de ediciÃ³n
+  // Funciones de edición
   editarColaborador(colaborador: Colaborador) {
-    if (this.soloLecturaVinculacion) return;
+    if (this.esSoloLectura) return;
     this.estaEditando = true;
     this.colaboradorEditando = colaborador;
     this.colaboradorSeleccionado = null; // Cerrar modal
@@ -425,7 +432,7 @@ export class ColaboradoresComponent implements OnInit {
   }
 
   actualizarColaborador() {
-    if (this.soloLecturaVinculacion) return;
+    if (this.esSoloLectura) return;
     const colaboradorOriginal = this.colaboradorEditando;
 
     // Marcar todos los campos como tocados para mostrar errores
