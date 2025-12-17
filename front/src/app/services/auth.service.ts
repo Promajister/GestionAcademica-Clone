@@ -28,6 +28,7 @@ export class AuthService {
   private readonly PHOTO_KEY = 'app.profilePhoto';
 
   login(email: string, password: string): Observable<LoginResponse> {
+    console.log('[AuthService.login] skipAuth=', environment.skipAuth, 'API=', API);
     if (environment.skipAuth) {
       // Determinar el rol basándose en el email
       let role: 'jefatura' | 'vinculacion' | 'practicas' = 'jefatura';
