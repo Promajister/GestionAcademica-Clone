@@ -89,7 +89,7 @@ model CentroEducativo {
   region                  String?
   comuna                  String?
   direccion               String?
-  telefono                String?
+  telefono                Int?
   correo                  String?
   tipo                    TipoCentro?
   convenio                String?
