@@ -78,6 +78,7 @@ model Practica {
 
   practicaColaboradores PracticaColaborador[]
   practicaTutores       PracticaTutor[]
+  observaciones         Observacion[]
 
   @@map("practica")
 }
@@ -424,3 +425,17 @@ model Cargo {
 
   @@map("cargo")
 }
+
+model Observacion {
+  id          Int      @id @default(autoincrement())
+  descripcion String   @db.Text
+  fecha       DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  practicaId Int
+  practica   Practica @relation(fields: [practicaId], references: [id], onDelete: Cascade)
+
+  @@map("observacion")
+}
+

@@ -408,15 +408,30 @@
                   }
                 </div>
               </div>
-            } @else {
-              <div class="DetailSection">
-                <h3 class="SectionTitle">
-                  <mat-icon>assignment</mat-icon>
-                  Observaciones
-                </h3>
-                <p class="NoActivities">No hay observaciones registradas para esta práctica.</p>
-              </div>
             }
+
+            <!-- Observaciones -->
+            <div class="DetailSection">
+              <h3 class="SectionTitle">
+                <mat-icon>note</mat-icon>
+                Observaciones
+              </h3>
+              
+              @if (observaciones && observaciones.length > 0) {
+                <div class="ObservationsList">
+                  @for (obs of observaciones; track obs.id) {
+                    <div class="ObservationItem">
+                      <div class="ObservationContent">
+                        <p class="ObservationText">{{ obs.descripcion }}</p>
+                        <span class="ObservationDate">{{ formatearFecha(obs.fecha) }}</span>
+                      </div>
+                    </div>
+                  }
+                </div>
+              } @else {
+                <p class="NoActivities">No hay observaciones registradas para esta práctica.</p>
+              }
+            </div>
 
           </div>
         </div>

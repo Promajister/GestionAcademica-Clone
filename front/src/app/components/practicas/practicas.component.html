@@ -558,13 +558,73 @@
                   }
                 </div>
               </div>
-            } @else {
-              <div class="DetailSection">
+            }
+
+            <!-- Observaciones -->
+            <div class="DetailSection">
+              <div class="SectionHeader">
                 <h3 class="SectionTitle">
-                  <mat-icon>assignment</mat-icon>
+                  <mat-icon>note</mat-icon>
                   Observaciones
                 </h3>
+                @if (esCoordinadoraPracticas) {
+                  <button mat-icon-button (click)="abrirFormularioObservacion()" class="AddBtn" title="Agregar observación">
+                    <mat-icon>add</mat-icon>
+                  </button>
+                }
+              </div>
+              
+              @if (observaciones && observaciones.length > 0) {
+                <div class="ObservationsList">
+                  @for (obs of observaciones; track obs.id) {
+                    <div class="ObservationItem">
+                      <div class="ObservationContent">
+                        <p class="ObservationText">{{ obs.descripcion }}</p>
+                        <span class="ObservationDate">{{ formatearFecha(obs.fecha) }}</span>
+                      </div>
+                      @if (esCoordinadoraPracticas) {
+                        <div class="ObservationActions">
+                          <button mat-icon-button (click)="abrirFormularioObservacion(obs)" title="Editar observación">
+                            <mat-icon>edit</mat-icon>
+                          </button>
+                          <button mat-icon-button (click)="eliminarObservacion(obs)" title="Eliminar observación" color="warn">
+                            <mat-icon>delete</mat-icon>
+                          </button>
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              } @else {
                 <p class="NoActivities">No hay observaciones registradas para esta práctica.</p>
+              }
+            </div>
+
+            <!-- Formulario de observación -->
+            @if (mostrarFormularioObservacion && esCoordinadoraPracticas) {
+              <div class="DetailSection ObservationForm">
+                <h3 class="SectionTitle">
+                  <mat-icon>{{ observacionEditando ? 'edit' : 'add' }}</mat-icon>
+                  {{ observacionEditando ? 'Editar Observación' : 'Nueva Observación' }}
+                </h3>
+                <form [formGroup]="formularioObservacion" (ngSubmit)="guardarObservacion()">
+                  <mat-form-field appearance="outline" class="FullWidth">
+                    <mat-label>Descripción</mat-label>
+                    <textarea matInput formControlName="descripcion" rows="4" placeholder="Ingrese la observación..."></textarea>
+                    @if (formularioObservacion.get('descripcion')?.hasError('required') && formularioObservacion.get('descripcion')?.touched) {
+                      <mat-error>La descripción es requerida</mat-error>
+                    }
+                    @if (formularioObservacion.get('descripcion')?.hasError('minlength') && formularioObservacion.get('descripcion')?.touched) {
+                      <mat-error>La descripción debe tener al menos 3 caracteres</mat-error>
+                    }
+                  </mat-form-field>
+                  <div class="FormActions">
+                    <button mat-stroked-button type="button" (click)="cerrarFormularioObservacion()">Cancelar</button>
+                    <button mat-raised-button color="primary" type="submit" [disabled]="formularioObservacion.invalid">
+                      {{ observacionEditando ? 'Actualizar' : 'Crear' }}
+                    </button>
+                  </div>
+                </form>
               </div>
             }
 

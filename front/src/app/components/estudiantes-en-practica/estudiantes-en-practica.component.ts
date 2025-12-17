@@ -1,5 +1,5 @@
-import { Component, inject, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, inject, OnInit, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 // Angular Material
@@ -21,6 +21,7 @@ import {
   Colaborador,
 } from '../../services/practicas.service';
 import { Tutor } from '../../services/tutores.service';
+import { ObservacionesService, Observacion } from '../../services/observaciones.service';
 
 interface Actividad {
   id: number;
@@ -41,6 +42,7 @@ interface PracticaEstudiante {
   colaboradores?: Colaborador[];
   tutores?: { tutor: Tutor; rol: string }[];
   actividades?: Actividad[];
+  observaciones?: Observacion[];
 }
 
 @Component({
@@ -63,7 +65,9 @@ interface PracticaEstudiante {
 })
 export class EstudiantesEnPracticaComponent implements OnInit {
   private practicasService = inject(PracticasService);
+  private observacionesService = inject(ObservacionesService);
   private snack = inject(MatSnackBar);
+  private platformId = inject(PLATFORM_ID);
 
   // Filtros
   terminoBusqueda = '';
@@ -88,6 +92,7 @@ export class EstudiantesEnPracticaComponent implements OnInit {
   // Estado para modal de detalles
   mostrarModalDetalles = false;
   practicaSeleccionada: PracticaEstudiante | null = null;
+  observaciones: Observacion[] = [];
 
   // Opciones de filtros
   estadosPractica: EstadoPractica[] = [
@@ -317,10 +322,36 @@ export class EstudiantesEnPracticaComponent implements OnInit {
   verDetalles(practica: PracticaEstudiante) {
     this.practicaSeleccionada = practica;
     this.mostrarModalDetalles = true;
+    this.cargarObservaciones(practica.id);
   }
 
   cerrarDetalles() {
     this.practicaSeleccionada = null;
     this.mostrarModalDetalles = false;
+    this.observaciones = [];
+  }
+
+  cargarObservaciones(practicaId: number) {
+    this.observacionesService.listar(practicaId).subscribe({
+      next: (obs) => {
+        this.observaciones = obs;
+      },
+      error: (err) => {
+        console.error('Error al cargar observaciones:', err);
+        this.observaciones = [];
+      }
+    });
+  }
+
+  formatearFecha(fecha: string): string {
+    if (!fecha) return '';
+    const date = new Date(fecha);
+    return date.toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   }
 }

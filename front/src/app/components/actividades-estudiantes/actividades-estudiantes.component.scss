@@ -74,8 +74,10 @@
 
 .FiltersGrid {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 1rem;
+  align-items: flex-start;
+  flex-wrap: nowrap;
 }
 
 .FiltersRow {
@@ -84,11 +86,13 @@
 }
 
 .SearchField {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
 }
 
 .FilterField {
-  flex: 1; 
+  flex: 0 0 200px;
+  min-width: 200px;
 }
 
 .FiltersRow3 {
@@ -106,14 +110,19 @@
 }
 
 
-@media (max-width: 768px) {
+@media (max-width: 600px) {
   .FiltersGrid {
-    grid-template-columns: 1fr;
+    flex-direction: column;
     gap: 12px;
   }
   
   .FilterField {
     min-width: auto;
+    flex: 1 1 auto;
+  }
+  
+  .SearchField {
+    flex: 1 1 auto;
   }
 }
 
@@ -386,6 +395,24 @@
   width: 20px;
   height: 20px;
   color: #6b7280;
+}
+
+.EvidenceLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.EvidenceLink:hover {
+  color: #3b82f6;
+}
+
+.EvidenceLink:hover mat-icon {
+  color: #3b82f6;
 }
 
 .ActionButtons {
@@ -811,6 +838,33 @@
   font-size: 20px;
   width: 20px;
   height: 20px;
+}
+
+.EditFileMessage {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+  align-items: flex-start;
+}
+
+.InfoIcon {
+  color: #f59e0b;
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.EditFileMessageText {
+  margin: 0;
+  color: #92400e;
+  font-size: 14px;
+  line-height: 1.5;
+  flex: 1;
 }
 
 .FileInfo {

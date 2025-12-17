@@ -343,11 +343,58 @@ export class ActividadesEstudiantesComponent implements OnInit {
   async onFileSelected(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
-      // Convertir FileList a Array
-      this.archivosSeleccionados = Array.from(input.files);
+      // Convertir FileList a Array y agregar a la lista existente
+      const nuevosArchivos = Array.from(input.files);
       
-      // Comprimir archivos en ZIP
-      await this.comprimirArchivos();
+      // Validar y filtrar solo archivos permitidos (PDF, JPG, PNG)
+      const archivosPermitidos: File[] = [];
+      const archivosRechazados: string[] = [];
+      
+      for (const nuevoArchivo of nuevosArchivos) {
+        const extension = nuevoArchivo.name.toLowerCase().split('.').pop();
+        const tipoMime = nuevoArchivo.type.toLowerCase();
+        
+        // Validar extensión y tipo MIME
+        const esValido = 
+          (extension === 'pdf' || extension === 'jpg' || extension === 'jpeg' || extension === 'png') &&
+          (tipoMime === 'application/pdf' || tipoMime === 'image/jpeg' || tipoMime === 'image/png' || tipoMime === '');
+        
+        if (esValido) {
+          // Verificar si ya existe (evitando duplicados)
+          const existe = this.archivosSeleccionados.some(
+            archivo => archivo.name === nuevoArchivo.name && archivo.size === nuevoArchivo.size
+          );
+          if (!existe) {
+            archivosPermitidos.push(nuevoArchivo);
+          }
+        } else {
+          archivosRechazados.push(nuevoArchivo.name);
+        }
+      }
+      
+      // Mostrar mensaje si hay archivos rechazados
+      if (archivosRechazados.length > 0) {
+        this.snack.open(
+          `Los siguientes archivos no son válidos (solo se permiten PDF, JPG y PNG): ${archivosRechazados.join(', ')}`,
+          'Cerrar',
+          {
+            duration: 5000,
+            horizontalPosition: 'center',
+            verticalPosition: 'bottom',
+            panelClass: ['error-snackbar']
+          }
+        );
+      }
+      
+      // Agregar archivos válidos a la lista
+      if (archivosPermitidos.length > 0) {
+        this.archivosSeleccionados.push(...archivosPermitidos);
+        // Comprimir archivos en ZIP
+        await this.comprimirArchivos();
+      }
+      
+      // Limpiar el input para permitir seleccionar el mismo archivo nuevamente si es necesario
+      input.value = '';
     }
   }
 
@@ -444,34 +491,28 @@ export class ActividadesEstudiantesComponent implements OnInit {
     // Determinar qué archivo enviar (el ZIP comprimido)
     let archivoParaEnviar: File | undefined = undefined;
     
-    // Si hay un ZIP comprimido, usarlo
-    if (this.archivoZip) {
-      archivoParaEnviar = this.archivoZip;
-    }
-    // Si estamos editando y hay un archivo base64 en el formulario, convertirlo a File
-    else if (this.estaEditando && formValue.archivo_adjunto && formValue.archivo_adjunto.startsWith('data:')) {
-      try {
-        archivoParaEnviar = this.actividadesService.base64ToFile(
-          formValue.archivo_adjunto,
-          'archivo_adjunto.zip'
-        );
-      } catch (error) {
-        console.error('Error al convertir base64 a File:', error);
+    if (this.estaEditando && this.actividadEditando) {
+      // Al editar, NO se permiten cambios en los archivos adjuntos
+      // Mantener el archivo existente si hay uno
+      if (this.actividadEditando.archivo_adjunto) {
+        actividadData.archivo_adjunto = this.actividadEditando.archivo_adjunto;
       }
-    }
-    
-    // Si hay una URL existente y no hay archivo nuevo, mantenerla en el DTO
-    if (!archivoParaEnviar && formValue.archivo_adjunto && !formValue.archivo_adjunto.startsWith('data:')) {
-      actividadData.archivo_adjunto = formValue.archivo_adjunto;
+      // NO enviar archivoParaEnviar (será undefined)
+    } else {
+      // Al crear nueva actividad, permitir subir archivos
+      // Si hay un ZIP comprimido, usarlo
+      if (this.archivoZip) {
+        archivoParaEnviar = this.archivoZip;
+      }
     }
 
     if (this.estaEditando && this.actividadEditando) {
-      // Editar actividad existente
+      // Editar actividad existente (sin modificar archivos)
       this.cargando = true;
       this.actividadesService.actualizar(
         this.actividadEditando.id,
         actividadData,
-        archivoParaEnviar
+        undefined // No enviar archivo nuevo al editar
       ).subscribe({
         next: (actividadActualizada) => {
           const index = this.actividades.findIndex(a => a.id === actividadActualizada.id);

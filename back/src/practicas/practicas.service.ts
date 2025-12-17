@@ -217,6 +217,9 @@ export class PracticasService {
         centro: true,
         practicaColaboradores: { include: { colaborador: true } },
         practicaTutores: { include: { tutor: true } },
+        observaciones: {
+          orderBy: { fecha: 'desc' },
+        },
       },
     });
     if (!p) throw new NotFoundException('Práctica no encontrada');

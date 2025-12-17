@@ -1,5 +1,5 @@
-import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, inject, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 
 // Angular Material
@@ -14,6 +14,7 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { MatDialogModule } from '@angular/material/dialog';
 
 // Servicios
 import {
@@ -26,6 +27,7 @@ import {
 } from '../../services/practicas.service';
 import { ColaboradoresService } from '../../services/colaboradores.service';
 import { TutoresService, Tutor } from '../../services/tutores.service';
+import { ObservacionesService, Observacion } from '../../services/observaciones.service';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 
@@ -52,6 +54,7 @@ interface Practica {
   colaboradores: Colaborador[];
   tutores: { tutor: Tutor; rol: TutorRol }[];
   actividades?: Actividad[];
+  observaciones?: Observacion[];
 }
 
 @Component({
@@ -73,7 +76,8 @@ interface Practica {
     MatNativeDateModule,
     MatSnackBarModule,
     MatAutocompleteModule,
-    MatPaginatorModule
+    MatPaginatorModule,
+    MatDialogModule
   ]
 })
 export class PracticasComponent {
@@ -82,7 +86,9 @@ export class PracticasComponent {
   private practicasService = inject(PracticasService);
   private colaboradoresService = inject(ColaboradoresService);
   private tutoresService = inject(TutoresService);
+  private observacionesService = inject(ObservacionesService);
   private http = inject(HttpClient);
+  private platformId = inject(PLATFORM_ID);
 
   // Filtros
   terminoBusqueda = '';
@@ -98,6 +104,25 @@ export class PracticasComponent {
   // Estado para modal de detalles
   practicaSeleccionada: Practica | null = null;
   mostrarModalDetalles = false;
+  
+  // Estado para observaciones
+  observaciones: Observacion[] = [];
+  mostrarFormularioObservacion = false;
+  observacionEditando: Observacion | null = null;
+  formularioObservacion: FormGroup;
+  
+  // Verificar si el usuario es coordinadora de prácticas
+  get esCoordinadoraPracticas(): boolean {
+    if (!isPlatformBrowser(this.platformId)) return false;
+    try {
+      const roleStr = localStorage.getItem('app.selectedRole');
+      if (!roleStr) return false;
+      const role = JSON.parse(roleStr);
+      return role?.id === 'practicas';
+    } catch {
+      return false;
+    }
+  }
 
   // Estado para modal de formulario
   mostrarFormulario = false;
@@ -186,6 +211,11 @@ export class PracticasComponent {
       tipo: [''],
       estado: ['PENDIENTE']
     }, { validators: this.validarFechas });
+
+    // Inicializar formulario de observaciones
+    this.formularioObservacion = this.fb.group({
+      descripcion: ['', [Validators.required, Validators.minLength(3)]]
+    });
 
     // Validación para evitar que tutor2 sea igual a tutor1
     this.formularioPractica.get('tutor1Id')?.valueChanges.subscribe((value) => {
@@ -407,6 +437,15 @@ export class PracticasComponent {
         }))
       : [];
 
+    const observaciones = p.observaciones ? p.observaciones.map((obs: any) => ({
+      id: obs.id,
+      descripcion: obs.descripcion,
+      fecha: obs.fecha,
+      createdAt: obs.createdAt,
+      updatedAt: obs.updatedAt,
+      practicaId: obs.practicaId
+    })) : undefined;
+
     return {
       id: p.id,
       estado: p.estado,
@@ -430,7 +469,8 @@ export class PracticasComponent {
       },
       colaboradores,
       tutores,
-      actividades: []
+      actividades: [],
+      observaciones
     };
   }
 
@@ -724,7 +764,7 @@ export class PracticasComponent {
       return;
     }
 
-    const fechaInicio = this.formatearFecha(formData.fecha_inicio);
+    const fechaInicio = this.formatearFechaISO(formData.fecha_inicio);
     if (!fechaInicio) {
       this.snack.open('La fecha de inicio es obligatoria.', 'Cerrar', {
         duration: 3000,
@@ -742,7 +782,7 @@ export class PracticasComponent {
       tutorIds,
       tutorRoles: tutorEntries.map((entry) => entry.rol as TutorRol),
       fecha_inicio: fechaInicio,
-      fecha_termino: formData.fecha_termino ? this.formatearFecha(formData.fecha_termino) : undefined,
+      fecha_termino: formData.fecha_termino ? this.formatearFechaISO(formData.fecha_termino) : undefined,
       tipo: formData.tipo || undefined,
       estado: formData.estado || 'EN_CURSO'
     };
@@ -771,15 +811,147 @@ export class PracticasComponent {
   verDetalles(practica: Practica) {
     this.practicaSeleccionada = practica;
     this.mostrarModalDetalles = true;
+    this.cargarObservaciones(practica.id);
   }
 
   cerrarDetalles() {
     this.practicaSeleccionada = null;
     this.mostrarModalDetalles = false;
+    this.observaciones = [];
+    this.mostrarFormularioObservacion = false;
+    this.observacionEditando = null;
+    this.formularioObservacion.reset();
+  }
+
+  cargarObservaciones(practicaId: number) {
+    this.observacionesService.listar(practicaId).subscribe({
+      next: (obs) => {
+        this.observaciones = obs;
+      },
+      error: (err) => {
+        console.error('Error al cargar observaciones:', err);
+        this.observaciones = [];
+      }
+    });
+  }
+
+  abrirFormularioObservacion(observacion?: Observacion) {
+    if (observacion) {
+      this.observacionEditando = observacion;
+      this.formularioObservacion.patchValue({ descripcion: observacion.descripcion });
+    } else {
+      this.observacionEditando = null;
+      this.formularioObservacion.reset();
+    }
+    this.mostrarFormularioObservacion = true;
+  }
+
+  cerrarFormularioObservacion() {
+    this.mostrarFormularioObservacion = false;
+    this.observacionEditando = null;
+    this.formularioObservacion.reset();
+  }
+
+  guardarObservacion() {
+    if (this.formularioObservacion.invalid || !this.practicaSeleccionada) {
+      this.formularioObservacion.markAllAsTouched();
+      return;
+    }
+
+    const descripcion = this.formularioObservacion.value.descripcion;
+    const practicaId = this.practicaSeleccionada.id;
+
+    if (this.observacionEditando) {
+      // Editar observación existente
+      this.observacionesService.actualizar(practicaId, this.observacionEditando.id, { descripcion }).subscribe({
+        next: () => {
+          this.snack.open('Observación actualizada exitosamente', 'Cerrar', {
+            duration: 3000,
+            horizontalPosition: 'center',
+            verticalPosition: 'bottom'
+          });
+          this.cargarObservaciones(practicaId);
+          this.cerrarFormularioObservacion();
+        },
+        error: (err) => {
+          console.error('Error al actualizar observación:', err);
+          this.snack.open('Error al actualizar la observación', 'Cerrar', {
+            duration: 3000,
+            horizontalPosition: 'center',
+            verticalPosition: 'bottom',
+            panelClass: ['error-snackbar']
+          });
+        }
+      });
+    } else {
+      // Crear nueva observación
+      this.observacionesService.crear(practicaId, { descripcion }).subscribe({
+        next: () => {
+          this.snack.open('Observación creada exitosamente', 'Cerrar', {
+            duration: 3000,
+            horizontalPosition: 'center',
+            verticalPosition: 'bottom'
+          });
+          this.cargarObservaciones(practicaId);
+          this.cerrarFormularioObservacion();
+        },
+        error: (err) => {
+          console.error('Error al crear observación:', err);
+          const mensaje = err.error?.message || 'Error al crear la observación';
+          this.snack.open(mensaje, 'Cerrar', {
+            duration: 3000,
+            horizontalPosition: 'center',
+            verticalPosition: 'bottom',
+            panelClass: ['error-snackbar']
+          });
+        }
+      });
+    }
+  }
+
+  eliminarObservacion(observacion: Observacion) {
+    if (!this.practicaSeleccionada) return;
+    
+    if (!confirm('¿Está seguro de que desea eliminar esta observación?')) {
+      return;
+    }
+
+    this.observacionesService.eliminar(this.practicaSeleccionada.id, observacion.id).subscribe({
+      next: () => {
+        this.snack.open('Observación eliminada exitosamente', 'Cerrar', {
+          duration: 3000,
+          horizontalPosition: 'center',
+          verticalPosition: 'bottom'
+        });
+        this.cargarObservaciones(this.practicaSeleccionada!.id);
+      },
+      error: (err) => {
+        console.error('Error al eliminar observación:', err);
+        const mensaje = err.error?.message || 'Error al eliminar la observación';
+        this.snack.open(mensaje, 'Cerrar', {
+          duration: 3000,
+          horizontalPosition: 'center',
+          verticalPosition: 'bottom',
+          panelClass: ['error-snackbar']
+        });
+      }
+    });
+  }
+
+  formatearFecha(fecha: string): string {
+    if (!fecha) return '';
+    const date = new Date(fecha);
+    return date.toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   }
 
   // Formatear fecha a ISO string
-  private formatearFecha(fecha: any): string {
+  private formatearFechaISO(fecha: any): string {
     if (!fecha) return '';
     if (fecha instanceof Date) return fecha.toISOString().split('T')[0];
     if (typeof fecha === 'string') return fecha;

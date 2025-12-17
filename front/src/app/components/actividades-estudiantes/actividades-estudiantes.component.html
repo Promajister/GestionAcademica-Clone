@@ -101,65 +101,78 @@
               </mat-form-field>
             </div>
 
-            <div class="FormRow">
-              <div class="FormField FullWidth">
-                <label class="FormLabel">Archivos adjuntos</label>
-                <div class="FileUploadContainer" style="margin-top: 8px;">
-                  <input 
-                    type="file" 
-                    #fileInput
-                    (change)="onFileSelected($event)"
-                    accept=".pdf,.jpg,.jpeg,.png,.gif,.bmp,.webp"
-                    multiple
-                    style="display: none;"
-                    id="fileInput" />
-                  <button 
-                    type="button"
-                    mat-stroked-button 
-                    (click)="fileInput.click()"
-                    class="FileUploadBtn"
-                    [disabled]="estaComprimiendo">
-                    <mat-icon>attach_file</mat-icon>
-                    {{ archivosSeleccionados.length > 0 ? `Seleccionar más archivos (${archivosSeleccionados.length} archivo${archivosSeleccionados.length > 1 ? 's' : ''})` : 'Seleccionar archivos (PDF, imágenes)' }}
-                  </button>
-                  
-                  @if (estaComprimiendo) {
-                    <div class="CompressingIndicator">
-                      <mat-spinner diameter="20"></mat-spinner>
-                      <span>Comprimiendo archivos...</span>
-                    </div>
-                  }
-                  
-                  @if (archivosSeleccionados.length > 0 && !estaComprimiendo) {
-                    <div class="FilesList">
-                      @for (file of archivosSeleccionados; track $index) {
-                        <div class="FileInfo">
-                          <mat-icon class="FileIcon">description</mat-icon>
-                          <span class="FileName" [title]="file.name">{{ file.name }}</span>
-                          <span class="FileSize">({{ formatFileSize(file.size) }})</span>
-                          <button 
-                            type="button"
-                            mat-icon-button 
-                            (click)="eliminarArchivo($index)"
-                            class="RemoveFileBtn">
-                            <mat-icon>close</mat-icon>
-                          </button>
-                        </div>
-                      }
-                      @if (archivoZip) {
-                        <div class="FileInfo" style="background: #f0fdf4; border-color: #86efac;">
-                          <mat-icon class="FileIcon" style="color: #16a34a;">folder_zip</mat-icon>
-                          <span class="FileName" [title]="archivoZip.name">{{ archivoZip.name }}</span>
-                          <span class="FileSize">({{ formatFileSize(archivoZip.size) }})</span>
-                          <span style="font-size: 12px; color: #16a34a; font-weight: 500;">✓ Comprimido</span>
-                        </div>
-                      }
-                    </div>
-                  }
-                  <mat-hint>Puedes seleccionar múltiples archivos. Se comprimirán automáticamente en un ZIP. Formatos permitidos: PDF, JPG, PNG, GIF, BMP, WEBP</mat-hint>
+            @if (!estaEditando) {
+              <div class="FormRow">
+                <div class="FormField FullWidth">
+                  <label class="FormLabel">Archivos adjuntos</label>
+                  <div class="FileUploadContainer" style="margin-top: 8px;">
+                    <input 
+                      type="file" 
+                      #fileInput
+                      (change)="onFileSelected($event)"
+                      accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                      multiple
+                      style="display: none;"
+                      id="fileInput" />
+                    <button 
+                      type="button"
+                      mat-stroked-button 
+                      (click)="fileInput.click()"
+                      class="FileUploadBtn"
+                      [disabled]="estaComprimiendo">
+                      <mat-icon>attach_file</mat-icon>
+                      {{ archivosSeleccionados.length > 0 ? `Seleccionar más archivos (${archivosSeleccionados.length} archivo${archivosSeleccionados.length > 1 ? 's' : ''})` : 'Seleccionar archivos (PDF, JPG, PNG)' }}
+                    </button>
+                    
+                    @if (estaComprimiendo) {
+                      <div class="CompressingIndicator">
+                        <mat-spinner diameter="20"></mat-spinner>
+                        <span>Comprimiendo archivos...</span>
+                      </div>
+                    }
+                    
+                    @if (archivosSeleccionados.length > 0 && !estaComprimiendo) {
+                      <div class="FilesList">
+                        @for (file of archivosSeleccionados; track $index) {
+                          <div class="FileInfo">
+                            <mat-icon class="FileIcon">description</mat-icon>
+                            <span class="FileName" [title]="file.name">{{ file.name }}</span>
+                            <span class="FileSize">({{ formatFileSize(file.size) }})</span>
+                            <button 
+                              type="button"
+                              mat-icon-button 
+                              (click)="eliminarArchivo($index)"
+                              class="RemoveFileBtn">
+                              <mat-icon>close</mat-icon>
+                            </button>
+                          </div>
+                        }
+                        @if (archivoZip) {
+                          <div class="FileInfo" style="background: #f0fdf4; border-color: #86efac;">
+                            <mat-icon class="FileIcon" style="color: #16a34a;">folder_zip</mat-icon>
+                            <span class="FileName" [title]="archivoZip.name">{{ archivoZip.name }}</span>
+                            <span class="FileSize">({{ formatFileSize(archivoZip.size) }})</span>
+                            <span style="font-size: 12px; color: #16a34a; font-weight: 500;">✓ Comprimido</span>
+                          </div>
+                        }
+                      </div>
+                    }
+                    <mat-hint>Puedes seleccionar uno o múltiples archivos a la vez. Se agregarán a la lista y se comprimirán automáticamente en un ZIP. Formatos permitidos: PDF, JPG, PNG</mat-hint>
+                  </div>
                 </div>
               </div>
-            </div>
+            } @else {
+              <div class="FormRow">
+                <div class="FormField FullWidth">
+                  <div class="EditFileMessage">
+                    <mat-icon class="InfoIcon">info</mat-icon>
+                    <p class="EditFileMessageText">
+                      Por transparencia y trazabilidad, los archivos adjuntos no pueden ser modificados al editar una actividad.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            }
           </form>
 
           <div class="FormActions">
@@ -215,7 +228,16 @@
           </div>
           <div class="TableCell TableCell--evidence">
             <div class="EvidenceText">
-              <mat-icon *ngIf="actividad.archivo_adjunto">attach_file</mat-icon>
+              <a 
+                *ngIf="actividad.archivo_adjunto" 
+                [href]="getArchivoUrl(actividad.archivo_adjunto)!" 
+                [download]="'archivos_adjuntos.zip'" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                class="EvidenceLink"
+                title="Descargar archivos adjuntos">
+                <mat-icon>attach_file</mat-icon>
+              </a>
               <span *ngIf="!actividad.archivo_adjunto">—</span>
             </div>
           </div>
@@ -289,11 +311,6 @@
             <div class="DetailItem">
               <label>Hora:</label>
               <span>{{ formatHorario(actividadSeleccionada) }}</span>
-            </div>
-
-            <div class="DetailItem">
-              <label>Horario:</label>
-              <span>{{ actividadSeleccionada.horario || 'No especificado' }}</span>
             </div>
 
             <div class="DetailItem">

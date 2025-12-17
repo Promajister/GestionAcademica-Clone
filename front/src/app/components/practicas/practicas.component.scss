@@ -447,3 +447,92 @@
   .FormActions { flex-direction: column; }
   .FormActions button { width: 100%; }
 }
+
+/* Observaciones */
+.SectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.AddBtn {
+  color: #3b82f6;
+  transition: all 0.2s ease;
+}
+
+.AddBtn:hover {
+  background-color: #eff6ff;
+  color: #2563eb;
+}
+
+.ObservationsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ObservationItem {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  transition: box-shadow 0.2s ease;
+}
+
+.ObservationItem:hover {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.ObservationContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ObservationText {
+  margin: 0;
+  font-size: 14px;
+  color: #1f2937;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.ObservationDate {
+  font-size: 12px;
+  color: #9ca3af;
+  font-style: italic;
+}
+
+.ObservationActions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.ObservationForm {
+  margin-top: 16px;
+  background: #ffffff;
+  border: 2px solid #e5e7eb;
+}
+
+.ObservationForm .SectionTitle {
+  margin-bottom: 20px;
+}
+
+.ObservationForm .FullWidth {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.ObservationForm .FormActions {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+}
