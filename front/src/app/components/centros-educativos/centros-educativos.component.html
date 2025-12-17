@@ -287,10 +287,10 @@
           <div class="detail-item" *ngIf="selectedCentroEducativo.trabajadores?.length">
             <label>Trabajadores:</label>
             <div *ngFor="let t of selectedCentroEducativo.trabajadores">
-              â€¢ {{ t.rol || 'â€”' }} â€” {{ t.nombre }}
+               {{ t.rol || '-' }}  {{ t.nombre }}
               <span *ngIf="t.rut">({{ t.rut }})</span>
-              <span *ngIf="t.correo">â€” {{ t.correo }}</span>
-              <span *ngIf="t.telefono">â€” {{ t.telefono }}</span>
+              <span *ngIf="t.correo"> {{ t.correo }}</span>
+              <span *ngIf="t.telefono"> {{ t.telefono }}</span>
             </div>
           </div>
         </div>
