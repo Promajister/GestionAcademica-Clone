@@ -7,7 +7,7 @@ import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [PrismaModule, AuthModule],
-  controllers: [EstudianteController],
+  controllers: [EstudianteController, EstudiantesAliasController],
   providers: [EstudianteService],
   exports: [EstudianteService],
 })

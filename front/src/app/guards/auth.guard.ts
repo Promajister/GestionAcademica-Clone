@@ -5,12 +5,16 @@ import { environment } from '../../environments/environment';
 import { catchError, map, of } from 'rxjs';
 
 export const authGuard: CanActivateFn = (route, state) => {
-  if (environment.skipAuth) {
-    return true;
-  }
-
   const auth = inject(AuthService);
   const router = inject(Router);
+
+  if (environment.skipAuth) {
+    if (!auth.isLoggedIn()) {
+      router.navigate(['login'], { queryParams: { returnUrl: state.url } });
+      return false;
+    }
+    return true;
+  }
 
   if (!auth.isLoggedIn()) {
     router.navigate(['login'], { queryParams: { returnUrl: state.url } });

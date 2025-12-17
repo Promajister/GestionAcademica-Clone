@@ -39,8 +39,9 @@ export class AuthService {
         role = 'vinculacion';
       }
       
+      const accessToken = 'dev-token';
       const mock: LoginResponse = {
-        accessToken: 'dev-token',
+        accessToken,
         user: {
           id: 0,
           email: email || 'dev@example.com',
@@ -49,7 +50,7 @@ export class AuthService {
         },
       };
 
-      localStorage.setItem(this.TOKEN_KEY, mock.accessToken);
+      localStorage.setItem(this.TOKEN_KEY, accessToken);
       localStorage.setItem(this.USER_KEY, JSON.stringify(mock.user));
       localStorage.setItem('lastLogin', new Date().toISOString());
       localStorage.removeItem('app.loggedOut'); // Limpiar flag de logout
@@ -64,6 +65,7 @@ export class AuthService {
 
   logout(): void {
     if (typeof localStorage === 'undefined') return;
+    localStorage.setItem('app.loggedOut', 'true');
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.USER_KEY);
     localStorage.removeItem(this.ACCESS_EXP_KEY);
@@ -184,6 +186,9 @@ export class AuthService {
 
   private setSession(res: LoginResponse) {
     // El backend usa cookies HTTP-only; guardamos un flag/csrf para saber que hay sesión
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem('app.loggedOut');
+    }
     localStorage.setItem(this.TOKEN_KEY, res.csrfToken || 'cookie');
     this.storeUser(res.user);
     localStorage.setItem('lastLogin', new Date().toISOString());

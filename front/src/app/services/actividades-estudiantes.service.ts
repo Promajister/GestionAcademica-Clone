@@ -3,8 +3,8 @@ import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
-const API_URL = 'http://localhost:3000/api/actividad-practica';
-const API_BASE_URL = 'http://localhost:3000';
+const API_URL = `${environment.apiUrl}/actividad-practica`;
+const API_BASE_URL = environment.apiUrl.replace(/\/api$/, '');
 
 // Interfaz que coincide con el modelo de Prisma (lo que devuelve el backend)
 export interface Actividad {
@@ -44,9 +44,6 @@ export interface CreateActividadDto {
   fechaRegistro?: string;
   evidenciaUrl?: string;
 }
-
-const API_URL = `${environment.apiUrl}/actividad-practica`;
-const API_BASE_URL = '';
 
 @Injectable({
   providedIn: 'root'

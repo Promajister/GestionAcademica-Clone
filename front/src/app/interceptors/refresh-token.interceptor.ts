@@ -2,11 +2,16 @@ import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { AuthService } from '../services/auth.service';
 import { catchError, finalize, switchMap, throwError } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 let refreshRequest$: ReturnType<AuthService['refreshSession']> | null = null;
 
 export const refreshTokenInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
+
+  if (environment.skipAuth) {
+    return next(req);
+  }
 
   const isAuthRoute = req.url.includes('/auth/login') || req.url.includes('/auth/refresh');
   if (isAuthRoute) return next(req);
