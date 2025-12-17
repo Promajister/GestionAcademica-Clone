@@ -136,4 +136,3 @@ export class PracticasService {
     return this.http.patch<{ message: string; data: Practica }>(`${API_URL}/${id}/estado`, { estado });
   }
 }
-

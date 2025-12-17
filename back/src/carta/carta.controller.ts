@@ -1,7 +1,13 @@
-import { Controller, Get, Query, Post, Body } from '@nestjs/common';
+import { Controller, Get, Query, Post, Body, UseGuards } from '@nestjs/common';
 import { CartaService } from './carta.service';
+import { JwtCookieAuthGuard } from '../auth/guards/jwt-cookie-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 
+// Las rutas quedan bajo /api/* gracias al prefijo global. No repetir "api" aquí.
 @Controller()
+@UseGuards(JwtCookieAuthGuard, RolesGuard)
+@Roles('jefatura')
 export class CartaController {
   constructor(private readonly svc: CartaService) {}
 

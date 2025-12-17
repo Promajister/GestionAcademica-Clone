@@ -1,13 +1,21 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { QueryEstudianteDto } from './dto/query-estudiante.dto';
 import dayjs from 'dayjs';
+import { Workbook } from 'exceljs';
 
 @Injectable()
 export class EstudianteService {
   constructor(private prisma: PrismaService) {}
 
+  /* ============================
+     LISTADO
+  ============================ */
   async findAll(q: QueryEstudianteDto) {
     const practicaFilter: Prisma.PracticaWhereInput = {
       ...(q.estadoPractica ? { estado: q.estadoPractica as any } : {}),
@@ -72,23 +80,26 @@ export class EstudianteService {
     }));
   }
 
+  /* ============================
+     DETALLE
+  ============================ */
   async findOne(rut: string) {
-    const normalizedRut = rut.replace(/[.-]/g, '').toUpperCase();
+    const normalizedRut = this.normalizeRut(rut);
 
     const estudiante = await this.prisma.estudiante.findFirst({
       where: {
-        OR: [
-          { rut },
-          { rut: normalizedRut },
-          { rut: rut.toUpperCase() },
-        ],
+        OR: [{ rut }, { rut: normalizedRut }],
       },
       include: {
         practicas: {
           orderBy: { fecha_inicio: 'desc' },
           include: {
-            practicaColaboradores: { include: { colaborador: true } },
-            practicaTutores: { include: { tutor: true } },
+            practicaColaboradores: {
+              include: { colaborador: true },
+            },
+            practicaTutores: {
+              include: { tutor: true },
+            },
           },
         },
       },
@@ -118,12 +129,243 @@ export class EstudianteService {
         },
       });
     } catch (err: any) {
-      // Si la tabla tiene columnas desalineadas con el schema Prisma, retornamos sin actividades
-      if (err?.code !== 'P2022') {
-        throw err;
-      }
+      if (err?.code !== 'P2022') throw err;
     }
 
     return { ...estudiante, actividades };
+  }
+
+  /* ============================
+     IMPORTACIÓN XLSX (SOLUCIONADA)
+  ============================ */
+  async importFromXlsx(file: Express.Multer.File) {
+    if (!file?.buffer?.length) {
+      throw new BadRequestException('Archivo vacío o no recibido');
+    }
+
+    const workbook = new Workbook();
+
+try {
+  const rawBuffer = Buffer.from(file.buffer); // Buffer global de Node
+  await workbook.xlsx.load(rawBuffer as any); // cast mínimo por typings de exceljs
+} catch {
+  throw new BadRequestException(
+    'No se pudo leer el XLSX. Verifique el archivo.',
+  );
+}
+
+    const sheet = workbook.worksheets[0];
+    if (!sheet) {
+      throw new BadRequestException('El XLSX no tiene hojas');
+    }
+
+    const headerRow = sheet.getRow(1);
+    const headers: Record<string, number> = {};
+    const headerAliases: Record<string, string> = {
+      ano_ingreso: 'anio_ingreso',
+      ano_nacimiento: 'anio_nacimiento',
+      ano_nacimento: 'anio_nacimiento',
+      anio_nacimento: 'anio_nacimiento',
+      sist_ingreso: 'sistema_ingreso',
+      ptj_ponderado: 'puntaje_ponderado',
+      ptj_psu: 'puntaje_psu',
+      nro_inscripciones: 'numero_inscripciones',
+    };
+    headerRow.eachCell((cell, colNumber) => {
+      const key = String(cell.value ?? '').trim().toLowerCase();
+      let normalized = key
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '')
+        .replace(/__+/g, '_')
+        .replace(/\bano/g, 'anio');
+
+      normalized = headerAliases[normalized] ?? normalized;
+      if (normalized) headers[normalized] = colNumber;
+    });
+
+    const required = ['rut', 'nombre'];
+    const missing = required.filter((k) => !headers[k]);
+    if (missing.length) {
+      throw new BadRequestException(
+        `Faltan columnas obligatorias: ${missing.join(', ')}`,
+      );
+    }
+
+    const summary = {
+      inserted: 0,
+      updated: 0,
+      total: 0,
+      errors: [] as { row: number; rut?: string; message: string }[],
+    };
+
+    for (let i = 2; i <= sheet.rowCount; i++) {
+      const row = sheet.getRow(i);
+
+      const rutRaw = this.getCellString(row, headers, 'rut');
+      const nombre = this.getCellString(row, headers, 'nombre');
+      if (!rutRaw && !nombre) continue;
+
+      const rut = this.normalizeRut(rutRaw);
+      if (!rut || !nombre) {
+        summary.errors.push({
+          row: i,
+          rut: rutRaw,
+          message: 'Rut y nombre son obligatorios',
+        });
+        continue;
+      }
+
+      const data: Prisma.EstudianteUncheckedCreateInput = {
+        rut,
+        nombre,
+        genero: this.getCellString(row, headers, 'genero'),
+        anio_nacimiento: this.getCellDate(row, headers, 'anio_nacimiento'),
+        anio_ingreso: this.getCellInt(row, headers, 'anio_ingreso'),
+        plan: this.getCellString(row, headers, 'plan'),
+        avance: this.getCellFloat(row, headers, 'avance'),
+        puntaje_ponderado: this.getCellFloat(
+          row,
+          headers,
+          'puntaje_ponderado',
+        ),
+        puntaje_psu: this.getCellFloat(row, headers, 'puntaje_psu'),
+        promedio: this.getCellFloat(row, headers, 'promedio'),
+        email: this.getCellString(row, headers, 'email'),
+        fono: this.getCellInt(row, headers, 'fono'),
+        direccion: this.getCellString(row, headers, 'direccion'),
+        sistema_ingreso: this.getCellString(row, headers, 'sistema_ingreso'),
+        numero_inscripciones: this.getCellInt(
+          row,
+          headers,
+          'numero_inscripciones',
+        ),
+      };
+
+      try {
+        const existing = await this.prisma.estudiante.findFirst({
+          where: { rut },
+        });
+
+        if (existing) {
+          await this.prisma.estudiante.update({
+            where: { rut },
+            data: { ...data, rut: undefined },
+          });
+          summary.updated++;
+        } else {
+          await this.prisma.estudiante.create({ data });
+          summary.inserted++;
+        }
+      } catch (err: any) {
+        summary.errors.push({
+          row: i,
+          rut: rutRaw,
+          message: err?.message ?? 'Error al guardar',
+        });
+      }
+
+      summary.total++;
+    }
+
+    return summary;
+  }
+
+  /* ============================
+     HELPERS
+  ============================ */
+  private normalizeRut(raw: string): string {
+    return raw?.replace(/[.\s-]/g, '').toUpperCase() ?? '';
+  }
+
+  private getCellString(
+    row: import('exceljs').Row,
+    headers: Record<string, number>,
+    key: string,
+  ): string {
+    const col = headers[key];
+    if (!col) return '';
+    const cell = row.getCell(col);
+    const value: any = cell?.text ?? cell?.result ?? cell?.value;
+    return value ? String(value).trim() : '';
+  }
+
+  private getCellNumber(
+    row: import('exceljs').Row,
+    headers: Record<string, number>,
+    key: string,
+  ): number | null {
+    return this.parseNumberString(this.getCellString(row, headers, key));
+  }
+
+  private getCellInt(
+    row: import('exceljs').Row,
+    headers: Record<string, number>,
+    key: string,
+  ): number | null {
+    const n = this.parseNumberString(this.getCellString(row, headers, key));
+    return Number.isFinite(n) ? Math.trunc(n as number) : null;
+  }
+
+  private getCellFloat(
+    row: import('exceljs').Row,
+    headers: Record<string, number>,
+    key: string,
+  ): number | null {
+    const n = this.parseNumberString(this.getCellString(row, headers, key));
+    return Number.isFinite(n) ? n : null;
+  }
+
+  private getCellDate(
+    row: import('exceljs').Row,
+    headers: Record<string, number>,
+    key: string,
+  ): Date | null {
+    const col = headers[key];
+    if (!col) return null;
+    const cell = row.getCell(col);
+    const value: any = cell?.value ?? cell?.text ?? cell?.result;
+
+    if (value instanceof Date) return value;
+
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      const year = Math.trunc(value);
+      return new Date(year, 0, 1);
+    }
+
+    const text = String(value ?? '').trim();
+    if (!text) return null;
+
+    const parsedNumber = Number(text);
+    if (Number.isFinite(parsedNumber)) {
+      return new Date(Math.trunc(parsedNumber), 0, 1);
+    }
+
+    const parsedDate = new Date(text);
+    return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
+  }
+
+  private parseNumberString(raw: string): number | null {
+    const trimmed = raw?.trim();
+    if (!trimmed) return null;
+
+    let candidate = trimmed.replace(/\s/g, '');
+
+    // Formato 1.234,56 -> 1234.56
+    if (/^\d{1,3}(\.\d{3})+(,\d+)?$/.test(candidate)) {
+      candidate = candidate.replace(/\./g, '').replace(',', '.');
+    }
+    // Formato 1,234.56 -> 1234.56
+    else if (/^\d{1,3}(,\d{3})+(\.\d+)?$/.test(candidate)) {
+      candidate = candidate.replace(/,/g, '');
+    }
+    // Formato simple: usa coma como decimal si existe; punto queda
+    else {
+      candidate = candidate.replace(',', '.');
+    }
+
+    const n = Number(candidate);
+    return Number.isFinite(n) ? n : null;
   }
 }

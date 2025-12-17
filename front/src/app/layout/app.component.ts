@@ -19,10 +19,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 
-/** IDs de rol válidos en toda la app */
 type RoleId = 'jefatura' | 'vinculacion' | 'practicas';
 
-/** Estructura que guardas en localStorage */
 interface SavedRole {
   id: RoleId;
   title: string;
@@ -58,6 +56,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   private router = inject(Router);
   private platformId = inject(PLATFORM_ID);
   private auth = inject(AuthService);
+  private photoKey = 'app.profilePhoto';
 
   @ViewChild(MatSidenav) sidenav?: MatSidenav;
 
@@ -68,11 +67,6 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     this.sidenav?.close();
   };
 
-  /**
-   * true cuando la ruta actual es de autenticación:
-   * - /login
-   * - /recuperar-clave
-   */
   isAuthRoute = false;
 
   isSidenavOpened = true;
@@ -81,36 +75,38 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   user = { name: 'Invitado', roleLabel: 'Sin rol', icon: 'account_circle' };
   rolePermissions: string[] = [];
   nav: NavItem[] = [];
+  profilePhoto: string | null = null;
 
   ngOnInit(): void {
-    // Fallback por defecto (SSR / antes de que cargue usuario real)
     this.applyRole('practicas');
 
     if (isPlatformBrowser(this.platformId)) {
       window.addEventListener('app:close-sidenav', this.closeSidenavListener);
 
-      // Evaluar URL actual al iniciar
       this.isAuthRoute = this.isAuthUrl(this.router.url);
       this.loadRoleFromStorage();
+      this.loadProfilePhoto();
 
-      // Escuchar cambios de navegación
       this.navigationSub = this.router.events
-        .pipe(filter(event => event instanceof NavigationEnd))
+        .pipe(filter((event) => event instanceof NavigationEnd))
         .subscribe((event: NavigationEnd) => {
           const url = event.urlAfterRedirects || event.url;
           this.isAuthRoute = this.isAuthUrl(url);
           this.loadRoleFromStorage();
+          this.loadProfilePhoto();
         });
     }
   }
 
   ngAfterViewInit(): void {
     if (isPlatformBrowser(this.platformId)) {
-      queueMicrotask(() => this.loadRoleFromStorage());
+      queueMicrotask(() => {
+        this.loadRoleFromStorage();
+        this.loadProfilePhoto();
+      });
     }
   }
 
-  /** Devuelve true si la URL corresponde a login o recuperar clave */
   private isAuthUrl(url: string): boolean {
     const cleanUrl = url.split('?')[0].split('#')[0];
 
@@ -122,7 +118,6 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     );
   }
 
-  // ------- Lógica de rol -------
   private loadRoleFromStorage() {
     try {
       const saved = isPlatformBrowser(this.platformId)
@@ -137,7 +132,6 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       }
 
-      // Si no hay rol guardado, intentamos usar el usuario autenticado
       this.syncRoleFromAuthUser();
     } catch {
       this.syncRoleFromAuthUser();
@@ -145,7 +139,6 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private syncRoleFromAuthUser() {
-    // usamos el usuario guardado por AuthService (app.user)
     const authUser = this.auth.getCurrentUser?.();
     if (!authUser?.role) return;
 
@@ -155,28 +148,21 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
       id,
       title: this.mapRoleLabel(id),
       name: authUser.nombre || authUser.email,
-      icon:
-        id === 'jefatura'
-          ? 'school'
-          : id === 'vinculacion'
-          ? 'groups'
-          : 'assignment_ind',
-      permissions: [], // si después quieres, aquí metes permisos por rol
-      color:
-        id === 'jefatura'
-          ? 'purple'
-          : id === 'vinculacion'
-          ? 'green'
-          : 'blue',
+      icon: id === 'jefatura' ? 'school' : id === 'vinculacion' ? 'groups' : 'assignment_ind',
+      permissions: [],
+      color: id === 'jefatura' ? 'purple' : id === 'vinculacion' ? 'green' : 'blue',
     };
 
-    // aplicamos el rol al layout
     this.applyRole(id, savedRole);
 
-    // y además lo guardamos para futuras recargas
     if (isPlatformBrowser(this.platformId)) {
       localStorage.setItem('app.selectedRole', JSON.stringify(savedRole));
     }
+  }
+
+  private loadProfilePhoto() {
+    if (!isPlatformBrowser(this.platformId)) return;
+    this.profilePhoto = localStorage.getItem(this.photoKey);
   }
 
   private applyRole(id: RoleId, r?: SavedRole) {
@@ -187,7 +173,6 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     this.nav = this.buildNav(id);
   }
 
-  // ------- UI -------
   onSidenavChange(opened: boolean) {
     this.isSidenavOpened = opened;
   }
@@ -209,6 +194,10 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     this.router.navigate(['/dashboard']);
   }
 
+  goProfile() {
+    this.router.navigate(['/mi-cuenta']);
+  }
+
   ngOnDestroy(): void {
     if (isPlatformBrowser(this.platformId)) {
       window.removeEventListener('app:close-sidenav', this.closeSidenavListener);
@@ -216,7 +205,6 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     this.navigationSub?.unsubscribe();
   }
 
-  // ------- Helpers -------
   private mapRoleLabel(id: RoleId): string {
     switch (id) {
       case 'jefatura':
@@ -231,9 +219,14 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private buildNav(id: RoleId): NavItem[] {
+    const base: NavItem[] = [{ label: 'Mi cuenta', icon: 'person', route: '/mi-cuenta' }];
+
     if (id === 'jefatura') {
       return [
+        ...base,
         { label: 'Usuarios', icon: 'manage_accounts', route: '/usuarios' },
+        { label: 'Estudiantes', icon: 'school', route: '/estudiantes' },
+        { label: 'Importar estudiantes', icon: 'upload_file', route: '/importar-estudiantes' },
         { label: 'Estudiantes en práctica', icon: 'school', route: '/estudiantes-en-practica' },
         { label: 'Tutores', icon: 'supervisor_account', route: '/tutores' },
         { label: 'Colaboradores', icon: 'groups', route: '/colaboradores' },
@@ -246,6 +239,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
 
     if (id === 'vinculacion') {
       return [
+        ...base,
         { label: 'Encuestas', icon: 'assignment', route: '/encuestas' },
         { label: 'Estudiantes', icon: 'school', route: '/estudiantes' },
         { label: 'Colaboradores', icon: 'groups', route: '/colaboradores' },
@@ -256,6 +250,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
 
     if (id === 'practicas') {
       return [
+        ...base,
         { label: 'Estudiantes', icon: 'school', route: '/estudiantes' },
         { label: 'Tutores', icon: 'supervisor_account', route: '/tutores' },
         { label: 'Colaboradores', icon: 'groups', route: '/colaboradores' },
@@ -266,6 +261,14 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
       ];
     }
 
-    return [];
+    return base;
+  }
+
+  get initials(): string {
+    const n = this.user?.name || '';
+    const parts = n.trim().split(/\s+/);
+    const [a = '', b = ''] = parts;
+    const letters = (a[0] || '') + (b[0] || '');
+    return letters.toUpperCase() || 'U';
   }
 }

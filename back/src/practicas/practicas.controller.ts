@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, Patch, Query, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Post, Patch, Query, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
 import { PracticasService } from './practicas.service';
 import { CreatePracticaDto } from './dto/crear-practica.dto';
 import { ConsultasPracticasDto } from './dto/consultar-practicas-dto';
@@ -6,9 +6,14 @@ import { ConsultasJefaturaDto } from './dto/consultar-jefatura.dto';
 import { ActualizarEstadoDto } from './dto/actualizar-estado.dto';
 import { Sse } from '@nestjs/common';
 import { Observable, map } from 'rxjs';
+import { JwtCookieAuthGuard } from '../auth/guards/jwt-cookie-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 
 @Controller('practicas')
+@UseGuards(JwtCookieAuthGuard, RolesGuard)
+@Roles('practicas', 'jefatura')
 export class PracticasController {
   constructor(private readonly service: PracticasService) {}
 

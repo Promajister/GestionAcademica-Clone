@@ -15,9 +15,16 @@
 
       <!-- Header usuario -->
       <div class="side__header">
-        <div class="avatar">
-          <mat-icon>{{ user.icon }}</mat-icon>
-        </div>
+        <ng-container *ngIf="profilePhoto; else fallbackAvatar">
+          <div class="side__avatar">
+            <img [src]="profilePhoto" alt="Foto de perfil" />
+          </div>
+        </ng-container>
+        <ng-template #fallbackAvatar>
+          <div class="side__avatar side__avatar--fallback">
+            <span>{{ initials }}</span>
+          </div>
+        </ng-template>
         <div class="who">
           <div class="name">{{ user.name }}</div>
           <div class="role">{{ user.roleLabel }}</div>
@@ -68,11 +75,6 @@
         </button>
 
         <span class="spacer"></span>
-
-        <div class="topbar__user">
-          <mat-icon class="user-icon">account_circle</mat-icon>
-          <span class="user-name">{{ user.name }}</span>
-        </div>
 
         <button
           mat-stroked-button

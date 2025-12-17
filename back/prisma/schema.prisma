@@ -154,9 +154,11 @@ model Usuario {
   rolId     Int?
   rol       Rol?     @relation(fields: [rolId], references: [id])
   activo    Boolean  @default(true)
+  fotoUrl   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   resetTokens PasswordResetToken[]
+  refreshTokens RefreshToken[]
 }
 
 model Rol {
@@ -210,6 +212,20 @@ model PasswordResetToken {
   used      Boolean  @default(false)
 
   @@map("password_reset_tokens")
+}
+
+model RefreshToken {
+  id         String   @id // jti
+  userId     Int
+  usuario    Usuario  @relation(fields: [userId], references: [id])
+  hashedToken String
+  expiresAt  DateTime
+  revoked    Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("refresh_tokens")
+  @@index([userId])
 }
 
 

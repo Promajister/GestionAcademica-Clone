@@ -1,0 +1,159 @@
+<div class="mi-cuenta">
+  <div class="header">
+    <div class="avatar" (click)="onSelectPhoto(fileInput)">
+      <ng-container *ngIf="photoDataUrl; else initialsTpl">
+        <img [src]="photoDataUrl" alt="Foto de perfil" />
+      </ng-container>
+      <ng-template #initialsTpl>
+        <span>{{ initials }}</span>
+      </ng-template>
+      <button type="button" mat-icon-button class="edit-btn" aria-label="Cambiar foto" [disabled]="loadingPhoto">
+        <mat-icon *ngIf="!loadingPhoto; else loadingCam">photo_camera</mat-icon>
+        <ng-template #loadingCam>
+          <mat-icon>hourglass_empty</mat-icon>
+        </ng-template>
+      </button>
+      <input
+        #fileInput
+        type="file"
+        accept="image/*"
+        class="visually-hidden"
+        (change)="onFileSelected($event)"
+      />
+    </div>
+    <div class="title">
+      <p class="eyebrow">Mi cuenta</p>
+      <h1>{{ user?.nombre || 'Usuario' }}</h1>
+      <p class="subtitle">{{ user?.email }}</p>
+    </div>
+  </div>
+
+  <div class="grid">
+    <mat-card class="panel">
+      <div class="panel-header">
+        <div>
+          <p class="eyebrow">Datos personales</p>
+          <h2>Informacion de perfil</h2>
+        </div>
+        <span class="tag">{{ user?.role }}</span>
+      </div>
+
+      <form [formGroup]="profileForm" class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Nombre completo</mat-label>
+          <input matInput formControlName="nombre" />
+          <mat-error *ngIf="profileForm.get('nombre')?.touched && profileForm.get('nombre')?.hasError('required')">
+            Requerido
+          </mat-error>
+          <mat-error *ngIf="profileForm.get('nombre')?.touched && profileForm.get('nombre')?.hasError('minlength')">
+            Mínimo 3 caracteres
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Correo institucional</mat-label>
+          <input matInput formControlName="email" />
+          <mat-error *ngIf="profileForm.get('email')?.touched && profileForm.get('email')?.hasError('required')">
+            Requerido
+          </mat-error>
+          <mat-error *ngIf="profileForm.get('email')?.touched && profileForm.get('email')?.hasError('email')">
+            Correo inválido
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Rol</mat-label>
+          <input matInput formControlName="role" />
+        </mat-form-field>
+        <div class="actions">
+          <button mat-flat-button color="primary" type="button" (click)="submitProfile()" [disabled]="profileForm.invalid">
+            Guardar perfil
+          </button>
+        </div>
+      </form>
+    </mat-card>
+
+    <mat-card class="panel">
+      <div class="panel-header">
+        <div>
+          <p class="eyebrow">Seguridad</p>
+          <h2>Cambiar contraseña</h2>
+        </div>
+      </div>
+
+      <form [formGroup]="passwordForm" (ngSubmit)="submitPassword()" class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Contraseña actual</mat-label>
+          <input
+            matInput
+            [type]="showCurrent ? 'text' : 'password'"
+            formControlName="currentPassword"
+          />
+          <button
+            mat-icon-button
+            matSuffix
+            type="button"
+            (click)="showCurrent = !showCurrent"
+            [attr.aria-label]="showCurrent ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+          >
+            <mat-icon>{{ showCurrent ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          <mat-error *ngIf="passwordForm.get('currentPassword')?.touched && passwordForm.get('currentPassword')?.hasError('required')">
+            Requerido
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Nueva contraseña</mat-label>
+          <input
+            matInput
+            [type]="showNew ? 'text' : 'password'"
+            formControlName="newPassword"
+          />
+          <button
+            mat-icon-button
+            matSuffix
+            type="button"
+            (click)="showNew = !showNew"
+            [attr.aria-label]="showNew ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+          >
+            <mat-icon>{{ showNew ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          <mat-error *ngIf="passwordForm.get('newPassword')?.touched && passwordForm.get('newPassword')?.hasError('required')">
+            Requerido
+          </mat-error>
+          <mat-error *ngIf="passwordForm.get('newPassword')?.touched && passwordForm.get('newPassword')?.hasError('minlength')">
+            Minimo 8 caracteres
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Confirmar contraseña</mat-label>
+          <input
+            matInput
+            [type]="showConfirm ? 'text' : 'password'"
+            formControlName="confirmPassword"
+          />
+          <button
+            mat-icon-button
+            matSuffix
+            type="button"
+            (click)="showConfirm = !showConfirm"
+            [attr.aria-label]="showConfirm ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+          >
+            <mat-icon>{{ showConfirm ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          <mat-error *ngIf="passwordForm.hasError('passwordMismatch') && passwordForm.get('confirmPassword')?.touched">
+            Las contraseñas no coinciden
+          </mat-error>
+        </mat-form-field>
+
+        <div class="actions">
+          <button mat-flat-button color="primary" type="submit" [disabled]="changingPassword || passwordForm.invalid">
+            Guardar cambios
+          </button>
+        </div>
+      </form>
+    </mat-card>
+  </div>
+</div>

@@ -1,10 +1,15 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { TutorService } from './tutor.service';
 import { CreateTutorDto } from './dto/create-tutor.dto';
 import { UpdateTutorDto } from './dto/update-tutor.dto';
 import { QueryTutorDto } from './dto/query-tutor.dto';
+import { JwtCookieAuthGuard } from '../auth/guards/jwt-cookie-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 @Controller('tutores')
+@UseGuards(JwtCookieAuthGuard, RolesGuard)
+@Roles('vinculacion', 'practicas', 'jefatura')
 export class TutorController {
   constructor(private readonly service: TutorService) {}
 
@@ -33,4 +38,3 @@ export class TutorController {
     return this.service.remove(id);
   }
 }
-

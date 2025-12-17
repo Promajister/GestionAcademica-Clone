@@ -1,0 +1,108 @@
+<div class="container section">
+  <div class="header">
+    <div>
+      <p class="eyebrow">Jefatura · Estudiantes</p>
+      <h1>Importar estudiantes desde Excel</h1>
+      <p class="muted">Sube un archivo .xlsx con la fila 1 como encabezado para crear o actualizar estudiantes en la base.</p>
+    </div>
+    <div class="spacer"></div>
+    <button mat-stroked-button color="primary" routerLink="/estudiantes">
+      <mat-icon>arrow_back</mat-icon>
+      Ir a estudiantes
+    </button>
+  </div>
+
+  <div class="layout">
+    <mat-card class="elev upload-card">
+      <mat-card-content>
+        <div class="upload-box" [class.upload-box--active]="selectedFile">
+          <div class="upload-icon">
+            <mat-icon>{{ selectedFile ? 'check_circle' : 'upload_file' }}</mat-icon>
+          </div>
+          <div class="upload-copy">
+            <h3>{{ selectedFile ? 'Archivo listo para importar' : 'Arrastra o selecciona un XLSX' }}</h3>
+            <p class="muted">
+              Solo se acepta .xlsx. Los ruts se normalizan automáticamente; si ya existen, se actualizan.
+            </p>
+            <div class="actions">
+              <label class="btn-file" [class.btn-file--secondary]="!!selectedFile">
+                <input type="file" accept=".xlsx" (change)="onFileSelected($event)" hidden />
+                <mat-icon>attach_file</mat-icon>
+                {{ selectedFile ? 'Reemplazar archivo' : 'Elegir archivo' }}
+              </label>
+              <button mat-stroked-button color="primary" (click)="subirArchivo()" [disabled]="isUploading || !selectedFile">
+                <mat-icon>cloud_upload</mat-icon>
+                Importar
+              </button>
+              <button mat-button color="warn" *ngIf="selectedFile" (click)="clearFile()">Quitar</button>
+            </div>
+            <div class="file-chip" *ngIf="selectedFile">
+              <mat-icon>description</mat-icon>
+              <span>{{ selectedFile.name }}</span>
+              <small>{{ (selectedFile.size / 1024 | number : '1.0-0') }} KB</small>
+            </div>
+          </div>
+        </div>
+
+        <mat-progress-bar *ngIf="isUploading" mode="indeterminate" color="primary" class="progress"></mat-progress-bar>
+
+        <div class="alert error" *ngIf="errorMsg">
+          <mat-icon>error</mat-icon>
+          <span>{{ errorMsg }}</span>
+        </div>
+
+        <div class="summary" *ngIf="result">
+          <div class="summary-row">
+            <div class="stat">
+              <span class="label">Insertados</span>
+              <strong>{{ result.inserted }}</strong>
+            </div>
+            <div class="stat">
+              <span class="label">Actualizados</span>
+              <strong>{{ result.updated }}</strong>
+            </div>
+            <div class="stat">
+              <span class="label">Filas leídas</span>
+              <strong>{{ result.total }}</strong>
+            </div>
+          </div>
+
+          <div class="alert warn" *ngIf="hasErrors(result)">
+            <mat-icon>warning</mat-icon>
+            <div>
+              <p><b>{{ result.errors.length }}</b> filas con errores. Revísalas y vuelve a importar.</p>
+              <mat-list dense>
+                <mat-list-item *ngFor="let err of result.errors">
+                  <mat-icon matListItemIcon color="warn">report</mat-icon>
+                  <div matListItemTitle>Fila {{ err.row }} {{ err.rut ? ('· ' + err.rut) : '' }}</div>
+                  <div matListItemLine>{{ err.message }}</div>
+                </mat-list-item>
+              </mat-list>
+            </div>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="elev tips-card">
+      <mat-card-content>
+        <div class="tips-header">
+          <mat-icon>lightbulb</mat-icon>
+          <div>
+            <h3>Formato esperado</h3>
+            <p class="muted">Fila 1 con estos encabezados; RUT y nombre son obligatorios.</p>
+          </div>
+        </div>
+        <div class="headers">
+          <span class="chip" *ngFor="let header of expectedHeaders">{{ header }}</span>
+        </div>
+        <ul class="tips-list">
+          <li>RUT sin puntos ni guión, se normaliza automáticamente.</li>
+          <li>anios como número (ej: 2024) o fecha; se guarda solo el año.</li>
+          <li>Si el RUT ya existe, se actualizan los datos.</li>
+          <li>Límite: 5 MB por archivo.</li>
+        </ul>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

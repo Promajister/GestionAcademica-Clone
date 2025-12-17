@@ -8,6 +8,7 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
   UseInterceptors,
   UploadedFile,
   BadRequestException
@@ -19,8 +20,13 @@ import { ActividadPracticaService } from './actividad-practica.service';
 import { CreateActividadPracticaDto } from './dto/crear-act-practica.dto';
 import { UpdateActividadPracticaDto } from './dto/actualizar-act-practica.dto';
 import { QueryActividadPracticaDto } from './dto/consulta-act-practica.dto';
+import { JwtCookieAuthGuard } from '../auth/guards/jwt-cookie-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 @Controller('actividad-practica')
+@UseGuards(JwtCookieAuthGuard, RolesGuard)
+@Roles('practicas', 'jefatura')
 export class ActividadPracticaController {
   constructor(private readonly service: ActividadPracticaService) {}
 

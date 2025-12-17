@@ -3,6 +3,10 @@ import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
+const API_URL = 'http://localhost:3000/api/actividad-practica';
+const API_BASE_URL = 'http://localhost:3000';
+
+// Interfaz que coincide con el modelo de Prisma (lo que devuelve el backend)
 export interface Actividad {
   id: number;
   mes: string;
