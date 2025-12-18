@@ -142,7 +142,7 @@
                     <mat-option
                       [value]="colaborador.id"
                       [disabled]="isColaboradorSeleccionado(colaborador.id, 'colaborador1Id')">
-                      {{ colaborador.nombre }}{{ colaborador.cargo ? ' (' + colaborador.cargo + ')' : '' }}
+                      {{ colaborador.nombre }}
                     </mat-option>
                   }
                 </mat-select>
@@ -469,7 +469,7 @@
                 </div>
                 <div class="DetailItem">
                   <label>Tipo:</label>
-                  <span>{{ practicaSeleccionada.centro.tipo || 'Sin especificar' }}</span>
+                  <span>{{ formatearTipoCentro(practicaSeleccionada.centro.tipo) }}</span>
                 </div>
                 <div class="DetailItem">
                   <label>Dirección:</label>
