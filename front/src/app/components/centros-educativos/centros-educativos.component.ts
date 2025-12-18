@@ -216,6 +216,15 @@ export class CentrosEducativosComponent implements OnInit {
       });
   }
 
+  readonly TIPO_OPTIONS: { value: 'all' | TipoCentro; label: string }[] = [
+  { value: 'all', label: 'Todos' },
+  { value: 'PARTICULAR', label: 'Particular' },
+  { value: 'PARTICULAR_SUBVENCIONADO', label: 'Particular subvencionado' },
+  { value: 'SLEP', label: 'SLEP' },
+  { value: 'NO_CONVENCIONAL', label: 'No convencional' },
+];
+
+
   private mapDTOtoUI = (dto: CentroEducativoDTO): CentroEducativo => ({
     id: dto.id,
     nombre: dto.nombre,
@@ -363,6 +372,33 @@ export class CentrosEducativosComponent implements OnInit {
     this.newCentroEducativo = { ...c };
     this.onRegionChange();
   }
+
+  editFromDetails() {
+  if (this.soloLecturaVinculacion) return;
+  if (!this.selectedCentroEducativo) return;
+
+  // Guardamos una copia antes de cerrar el modal
+  const centro = { ...this.selectedCentroEducativo };
+
+  // Cerrar modal de detalle
+  this.closeDetails();
+
+  // Abrir formulario en modo edición
+  this.editCentro(centro);
+}
+
+readonly TIPO_LABEL: Record<TipoCentro, string> = {
+  PARTICULAR: 'Particular',
+  PARTICULAR_SUBVENCIONADO: 'Particular subvencionado',
+  SLEP: 'SLEP',
+  NO_CONVENCIONAL: 'No convencional',
+};
+
+tipoLabel(tipo: TipoCentro | string | null | undefined): string {
+  if (!tipo) return '';
+  return (this.TIPO_LABEL as any)[tipo] ?? String(tipo);
+}
+
 
   // ===== Confirmación de eliminación =====
   askDelete(c: CentroEducativo) {
