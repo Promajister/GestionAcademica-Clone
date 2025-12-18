@@ -308,6 +308,9 @@
                 <h3>{{ assignment.estudiante.nombre }}</h3>
                 <div class="StudentDetails">
                   <span class="Rut">RUT: {{ assignment.estudiante.rut }}</span>
+                  @if (assignment.estudiante.nivel) {
+                    <span class="PlanBadge">{{ assignment.estudiante.nivel }}</span>
+                  }
                 </div>
               </div>
             </div>
@@ -633,6 +636,31 @@
         
         <div class="DialogActions">
           <button mat-stroked-button (click)="cerrarDetalles()">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL DE CONFIRMACIÓN PARA ELIMINAR OBSERVACIÓN -->
+  @if (observacionAEliminar) {
+    <div class="confirm-dialog">
+      <div class="dialog-overlay" (click)="cancelarEliminarObservacion()" tabindex="0"></div>
+      <div class="dialog-content confirm-card" (keydown.escape)="cancelarEliminarObservacion()">
+        <div class="confirm-header">
+          <div class="warn-icon">
+            <mat-icon>warning_amber</mat-icon>
+          </div>
+          <h2>Confirmar eliminación</h2>
+        </div>
+        <div class="confirm-body">
+          <p>¿Estás seguro de que quieres eliminar esta observación?</p>
+          <p class="Muted">Esta acción no se puede deshacer.</p>
+        </div>
+        <div class="confirm-actions">
+          <button mat-stroked-button (click)="cancelarEliminarObservacion()">Cancelar</button>
+          <button mat-flat-button color="warn" (click)="confirmarEliminarObservacion()" class="btn-danger">
+            <mat-icon>delete</mat-icon> Eliminar
+          </button>
         </div>
       </div>
     </div>

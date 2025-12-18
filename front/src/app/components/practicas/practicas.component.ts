@@ -109,6 +109,7 @@ export class PracticasComponent {
   observaciones: Observacion[] = [];
   mostrarFormularioObservacion = false;
   observacionEditando: Observacion | null = null;
+  observacionAEliminar: Observacion | null = null;
   formularioObservacion: FormGroup;
   
   // Verificar si el usuario es coordinadora de prácticas
@@ -923,19 +924,28 @@ export class PracticasComponent {
 
   eliminarObservacion(observacion: Observacion) {
     if (!this.practicaSeleccionada) return;
-    
-    if (!confirm('¿Está seguro de que desea eliminar esta observación?')) {
-      return;
-    }
+    this.observacionAEliminar = observacion;
+  }
 
-    this.observacionesService.eliminar(this.practicaSeleccionada.id, observacion.id).subscribe({
+  cancelarEliminarObservacion() {
+    this.observacionAEliminar = null;
+  }
+
+  confirmarEliminarObservacion() {
+    if (!this.practicaSeleccionada || !this.observacionAEliminar) return;
+
+    const practicaId = this.practicaSeleccionada.id;
+    const observacionId = this.observacionAEliminar.id;
+
+    this.observacionesService.eliminar(practicaId, observacionId).subscribe({
       next: () => {
         this.snack.open('Observación eliminada exitosamente', 'Cerrar', {
           duration: 3000,
           horizontalPosition: 'center',
           verticalPosition: 'bottom'
         });
-        this.cargarObservaciones(this.practicaSeleccionada!.id);
+        this.observacionAEliminar = null;
+        this.cargarObservaciones(practicaId);
       },
       error: (err) => {
         console.error('Error al eliminar observación:', err);
@@ -946,6 +956,7 @@ export class PracticasComponent {
           verticalPosition: 'bottom',
           panelClass: ['error-snackbar']
         });
+        this.observacionAEliminar = null;
       }
     });
   }
