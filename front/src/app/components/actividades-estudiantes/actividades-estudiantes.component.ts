@@ -122,6 +122,14 @@ export class ActividadesEstudiantesComponent implements OnInit {
     { value: 'NOVIEMBRE', label: 'Noviembre' },
     { value: 'DICIEMBRE', label: 'Diciembre' }
   ];
+
+  // Función para formatear el mes a minúsculas
+  formatearMes(mes: string | null | undefined): string {
+    if (!mes) return 'No especificado';
+    const mesEncontrado = this.meses.find(m => m.value === mes);
+    return mesEncontrado ? mesEncontrado.label : mes;
+  }
+
   mostrarFormulario: boolean = false;
   estaEditando: boolean = false;
   actividadEditando: Actividad | null = null;
