@@ -320,6 +320,7 @@ export class CentrosEducativosComponent implements OnInit {
     }
 
     const telefonoStr = (c.telefono ?? '').toString().trim();
+    const telefonoNum = telefonoStr !== '' ? Number(telefonoStr) : null;
 
     const payloadCentro: CreateCentroPayload = {
       nombre: c.nombre!.trim(),
@@ -329,7 +330,7 @@ export class CentrosEducativosComponent implements OnInit {
       convenio: c.convenio ? String(c.convenio) : undefined,
       direccion: c.direccion?.trim() || undefined,
       url_rrss: c.url_rrss?.trim() || undefined,
-      telefono: telefonoStr !== '' ? telefonoStr : null,
+      telefono: Number.isFinite(telefonoNum as number) ? telefonoNum : null,
       correo: c.correo?.toString().trim() || undefined,
       fecha_inicio_asociacion: c.fecha_inicio_asociacion ?? null,
     };
