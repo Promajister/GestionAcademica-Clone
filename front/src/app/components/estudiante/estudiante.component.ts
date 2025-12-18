@@ -12,7 +12,6 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { jsPDF } from 'jspdf';
-import { LOGO_UTA_BASE64, LOGO_FEH_BASE64 } from '../carta/logos.base64';
 import {
   EstudiantesService,
   EstudianteResumen,
@@ -46,15 +45,8 @@ export class EstudiantesComponent implements OnInit {
   searchTerm = '';
   carreraSeleccionada: 'all' | string = 'all';
   estadoSeleccionado: 'all' | EstadoPractica = 'all';
-  tipoPracticaSeleccionada: string = '';
   anioIngresoSeleccionado: number | null = null;
   carreras: string[] = [];
-  tiposPractica: string[] = [
-    'Apoyo a la Docencia I',
-    'Apoyo a la Docencia II',
-    'Apoyo a la Docencia III',
-    'Práctica Profesional',
-  ];
 
   estudiantes: EstudianteResumen[] = [];
   seleccionado: EstudianteResumen | null = null;
@@ -81,7 +73,6 @@ export class EstudiantesComponent implements OnInit {
       rut: rutTerm,
       carrera: this.carreraSeleccionada !== 'all' ? this.carreraSeleccionada : undefined,
       estadoPractica: this.estadoSeleccionado !== 'all' ? this.estadoSeleccionado : undefined,
-      tipoPractica: this.tipoPracticaSeleccionada || undefined,
       anioIngreso: this.anioIngresoSeleccionado || undefined,
     };
   }
@@ -128,7 +119,6 @@ export class EstudiantesComponent implements OnInit {
     this.searchTerm = '';
     this.carreraSeleccionada = 'all';
     this.estadoSeleccionado = 'all';
-    this.tipoPracticaSeleccionada = '';
     this.anioIngresoSeleccionado = null;
     this.pageIndex = 0;
     this.cargar();
@@ -211,7 +201,32 @@ export class EstudiantesComponent implements OnInit {
     return isNaN(date.getTime()) ? value : date.toLocaleDateString('es-CL');
   }
 
-  exportarPdf(): void {
+  private async cargarLogo(
+    path: string,
+  ): Promise<{ data: string; width: number; height: number } | null> {
+    try {
+      const response = await fetch(path);
+      if (!response.ok) return null;
+      const blob = await response.blob();
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(blob);
+      });
+      const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error('No se pudo cargar el logo'));
+        img.src = dataUrl;
+      });
+      return { data: dataUrl, width: image.width, height: image.height };
+    } catch {
+      return null;
+    }
+  }
+
+  async exportarPdf(): Promise<void> {
     if (!this.detalle) return;
 
     const detalle = this.detalle;
@@ -220,16 +235,43 @@ export class EstudiantesComponent implements OnInit {
     const marginX = 46;
     let y = 32;
 
-    // Header con logos (UTA a la izquierda, Depto. a la derecha)
-    const logoWidth = 76;
-    const logoHeight = 56;
-    doc.addImage(LOGO_UTA_BASE64, 'PNG', marginX, y, logoWidth, logoHeight);
-    doc.addImage(LOGO_FEH_BASE64, 'PNG', pageWidth - marginX - logoWidth, y, logoWidth, logoHeight);
+    const [logoUta, logoFeh] = await Promise.all([
+      this.cargarLogo('assets/img/uta.png'),
+      this.cargarLogo('assets/img/feh.png'),
+    ]);
 
-    // Información del documento debajo del header (alineada a la derecha)
-    const rightBoxX = pageWidth - marginX - 165;
-    const rightBoxY = y + logoHeight + 8;
+    // Header con logos (UTA a la izquierda, Depto. a la derecha)
+    const logoUtaBox = { width: 76, height: 56 };
+    const logoFehBox = { width: 76, height: 76 };
+    const logosHeight = Math.max(logoUtaBox.height, logoFehBox.height);
+    const drawLogo = (
+      logo: { data: string; width: number; height: number } | null,
+      boxX: number,
+      boxY: number,
+      boxWidth: number,
+      boxHeight: number,
+    ) => {
+      if (!logo) return;
+      const scale = Math.min(boxWidth / logo.width, boxHeight / logo.height);
+      const width = logo.width * scale;
+      const height = logo.height * scale;
+      const x = boxX + (boxWidth - width) / 2;
+      const yPos = boxY + (boxHeight - height) / 2;
+      doc.addImage(logo.data, 'PNG', x, yPos, width, height);
+    };
+    drawLogo(logoUta, marginX, y, logoUtaBox.width, logoUtaBox.height);
+    drawLogo(
+      logoFeh,
+      pageWidth - marginX - logoFehBox.width,
+      y,
+      logoFehBox.width,
+      logoFehBox.height,
+    );
+
+    // Información del documento debajo del header (centrada)
     const rightBoxWidth = 165;
+    const rightBoxX = pageWidth - marginX - rightBoxWidth;
+    const rightBoxY = y + logosHeight + 8;
     const rightBoxHeight = 80;
     
     // Dibujar cuadro con mejor estilo
@@ -246,36 +288,29 @@ export class EstudiantesComponent implements OnInit {
     doc.setFontSize(8);
     doc.setTextColor('#6b7280');
     doc.setFont('helvetica', 'normal');
-    
-    const rightTextX = rightBoxX + 10;
-    let rightTextY = rightBoxY + 16;
-    
-    doc.setFontSize(8);
-    doc.text('Fecha:', rightTextX, rightTextY);
-    doc.setTextColor('#111827');
-    doc.setFont('helvetica', 'normal');
-    doc.text(`: ${fecha}`, rightTextX + 38, rightTextY);
-    
-    rightTextY += 13;
-    doc.setTextColor('#6b7280');
-    doc.text('Hora:', rightTextX, rightTextY);
-    doc.setTextColor('#111827');
-    doc.text(`: ${hora}`, rightTextX + 38, rightTextY);
-    
-    rightTextY += 13;
-    doc.setTextColor('#6b7280');
-    doc.text('Páginas:', rightTextX, rightTextY);
-    doc.setTextColor('#111827');
-    doc.text(': 1/1', rightTextX + 48, rightTextY);
-    
-    rightTextY += 13;
-    doc.setTextColor('#6b7280');
-    doc.text('Cant. Prácticas:', rightTextX, rightTextY);
-    doc.setTextColor('#111827');
-    doc.text(`: ${detalle.practicas?.length || 0}`, rightTextX + 78, rightTextY);
 
+    const labelX = rightBoxX + 12;
+    const labelWidth = 70;
+    const valueX = labelX + labelWidth;
+    const lineHeight = 14;
+    let lineY = rightBoxY + 22;
+
+    const drawRow = (label: string, value: string) => {
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor('#6b7280');
+      doc.text(label, labelX, lineY);
+      doc.setTextColor('#111827');
+      doc.text(value, valueX, lineY);
+      lineY += lineHeight;
+    };
+
+    drawRow('Fecha:', fecha);
+    drawRow('Hora:', hora);
+    drawRow('Paginas:', '1/1');
+    drawRow('Cant. Practicas:', String(detalle.practicas?.length || 0));
     // Título centrado
-    const headerBlockHeight = logoHeight + 8 + rightBoxHeight;
+    const headerBlockHeight = logosHeight + 8 + rightBoxHeight;
     y = y + headerBlockHeight + 18;
     
     doc.setFontSize(13);
@@ -426,3 +461,6 @@ export class EstudiantesComponent implements OnInit {
     doc.save(`estudiante_${detalle.rut}.pdf`);
   }
 }
+
+
+

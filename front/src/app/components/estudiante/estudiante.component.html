@@ -48,16 +48,6 @@
         </mat-form-field>
 
         <mat-form-field appearance="outline">
-          <mat-label>Tipo de práctica</mat-label>
-          <mat-select [(ngModel)]="tipoPracticaSeleccionada">
-            <mat-option value="">Todas</mat-option>
-            @for (t of tiposPractica; track t) {
-              <mat-option [value]="t">{{ t }}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
           <mat-label>Año de ingreso</mat-label>
           <input matInput type="number" [(ngModel)]="anioIngresoSeleccionado" placeholder="Ej: 2025" />
         </mat-form-field>
