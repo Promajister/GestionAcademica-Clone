@@ -32,21 +32,21 @@ export class ImportarEstudiantesComponent {
   result: ImportSummary | null = null;
 
   expectedHeaders = [
-    'rut',
-    'nombre',
-    'plan',
-    'email',
-    'fono',
-    'genero',
-    'anio_nacimiento',
-    'anio_ingreso',
-    'direccion',
-    'sistema_ingreso',
-    'numero_inscripciones',
-    'avance',
-    'puntaje_ponderado',
-    'puntaje_psu',
-    'promedio',
+    'Rut',
+    'Nombre',
+    'Genero',
+    'Plan',
+    'Año Ingreso',
+    'Año Nacimiento',
+    'Sist. Ingreso',
+    'E-mail',
+    'Fono',
+    'Direccion',
+    'Ptj. Ponderado',
+    'Ptj. PSU',
+    'Nro Inscripciones',
+    'Promedio',
+    'Avance',
   ];
 
   onFileSelected(event: Event) {

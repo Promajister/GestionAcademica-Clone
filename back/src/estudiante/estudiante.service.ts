@@ -170,6 +170,8 @@ try {
       ptj_ponderado: 'puntaje_ponderado',
       ptj_psu: 'puntaje_psu',
       nro_inscripciones: 'numero_inscripciones',
+      e_mail: 'email',
+      correo: 'email',
     };
     headerRow.eachCell((cell, colNumber) => {
       const key = String(cell.value ?? '').trim().toLowerCase();
@@ -288,7 +290,8 @@ try {
     if (!col) return '';
     const cell = row.getCell(col);
     const value: any = cell?.text ?? cell?.result ?? cell?.value;
-    return value ? String(value).trim() : '';
+    // Normalize to NFC so tildes/acentos se guarden correctamente en DB.
+    return value ? String(value).trim().normalize('NFC') : '';
   }
 
   private getCellNumber(
