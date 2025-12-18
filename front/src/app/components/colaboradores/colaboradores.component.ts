@@ -116,41 +116,48 @@ export class ColaboradoresComponent implements OnInit {
     }
   }
 
-  // Validador personalizado para RUT chileno (bÃ¡sico)
+  // Validador personalizado para RUT chileno (básico)
   validarRut(control: AbstractControl): ValidationErrors | null {
     const rut = control.value;
     if (!rut) return null;
 
     const rutLimpio = rut.replace(/\./g, '').replace(/-/g, '').trim();
     
-    // Validar longitud (3-20 caracteres segÃºn backend)
+    // Validar longitud (3-20 caracteres según backend)
     if (rutLimpio.length < 3 || rutLimpio.length > 20) {
       return { rutInvalido: true, mensaje: 'RUT debe tener entre 3 y 20 caracteres' };
     }
 
-    // Validar que contenga solo nÃºmeros y posible K/k al final (formato flexible)
+    // Validar que contenga solo números y posible K/k al final (formato flexible)
     const rutRegex = /^[0-9]+[0-9kK]?$/;
     if (!rutRegex.test(rutLimpio)) {
-      return { rutInvalido: true, mensaje: 'RUT solo puede contener nÃºmeros y letra K (ej: 12345678-9 o 12345678-K)' };
+      return { rutInvalido: true, mensaje: 'RUT solo puede contener números y letra K (ej: 12345678-9 o 12345678-K)' };
     }
 
     return null;
   }
 
-  // Validador personalizado para telÃ©fono (debe ser numÃ©rico)
+  // Validador personalizado para teléfono (debe ser numérico y máximo 8 dígitos)
   validarTelefono(control: AbstractControl): ValidationErrors | null {
     const telefono = control.value;
     if (!telefono) return null;
 
-    // Si es string, verificar que sean solo nÃºmeros
-    if (typeof telefono === 'string' && !/^\d+$/.test(telefono)) {
-      return { telefonoInvalido: true, mensaje: 'El telÃ©fono debe contener solo nÃºmeros' };
+    const telefonoStr = String(telefono);
+
+    // Si es string, verificar que sean solo números
+    if (!/^\d+$/.test(telefonoStr)) {
+      return { telefonoInvalido: true, mensaje: 'El teléfono debe contener solo números' };
     }
 
-    // Verificar que sea un nÃºmero positivo
+    // Verificar máximo 8 dígitos
+    if (telefonoStr.length > 8) {
+      return { telefonoInvalido: true, mensaje: 'El teléfono debe tener máximo 8 dígitos' };
+    }
+
+    // Verificar que sea un número positivo
     const num = Number(telefono);
     if (isNaN(num) || num < 0) {
-      return { telefonoInvalido: true, mensaje: 'El telÃ©fono debe ser un nÃºmero vÃ¡lido' };
+      return { telefonoInvalido: true, mensaje: 'El teléfono debe ser un número válido' };
     }
 
     return null;
@@ -456,29 +463,20 @@ export class ColaboradoresComponent implements OnInit {
 
     const valores = this.formularioColaborador.value as ColaboradorForm;
 
-    // Preparar datos para enviar a la API
+    // En actualización, enviamos todos los campos (incluyendo null para vaciar)
     const datosParaEnviar: any = {
       rut: valores.rut?.trim(),
       nombre: valores.nombre?.trim(),
+      correo: valores.correo?.trim() || null,
+      telefono: valores.telefono ? Number(valores.telefono) : null,
+      direccion: valores.direccion?.trim() || null,
+      universidad_egreso: valores.universidad_egreso?.trim() || null,
     };
 
-    // Agregar campos opcionales solo si tienen valor
-    if (valores.correo?.trim()) {
-      datosParaEnviar.correo = valores.correo.trim();
-    }
-    if (valores.telefono) {
-      datosParaEnviar.telefono = Number(valores.telefono);
-    }
-    if (valores.direccion?.trim()) {
-      datosParaEnviar.direccion = valores.direccion.trim();
-    }
     const cargosUpd: string[] = [valores.cargo1, valores.cargo2]
       .filter((c): c is string => !!c && !!c.trim())
       .map((c) => c.trim());
     datosParaEnviar.cargos = cargosUpd;
-    if (valores.universidad_egreso?.trim()) {
-      datosParaEnviar.universidad_egreso = valores.universidad_egreso.trim();
-    }
 
     this.colaboradoresService.actualizar(colaboradorOriginal.id, datosParaEnviar).subscribe({
       next: () => {
@@ -531,9 +529,9 @@ export class ColaboradoresComponent implements OnInit {
     } else if (form.get('rut')?.hasError('minlength')) {
       errores.push('El RUT debe tener al menos 3 caracteres');
     } else if (form.get('rut')?.hasError('maxlength')) {
-      errores.push('El RUT no puede tener mÃ¡s de 20 caracteres');
+      errores.push('El RUT no puede tener más de 20 caracteres');
     } else if (form.get('rut')?.hasError('rutInvalido')) {
-      errores.push(form.get('rut')?.errors?.['mensaje'] || 'RUT invÃ¡lido');
+      errores.push(form.get('rut')?.errors?.['mensaje'] || 'RUT inválido');
     }
 
     // Nombre
@@ -542,17 +540,17 @@ export class ColaboradoresComponent implements OnInit {
     } else if (form.get('nombre')?.hasError('minlength')) {
       errores.push('El nombre debe tener al menos 3 caracteres');
     } else if (form.get('nombre')?.hasError('maxlength')) {
-      errores.push('El nombre no puede tener mÃ¡s de 120 caracteres');
+      errores.push('El nombre no puede tener más de 120 caracteres');
     }
 
     // Correo
     if (form.get('correo')?.hasError('email')) {
-      errores.push('El correo electrÃ³nico no tiene un formato vÃ¡lido');
+      errores.push('El correo electrónico no tiene un formato válido');
     }
 
-    // TelÃ©fono
+    // Teléfono
     if (form.get('telefono')?.hasError('telefonoInvalido')) {
-      errores.push(form.get('telefono')?.errors?.['mensaje'] || 'TelÃ©fono invÃ¡lido');
+      errores.push(form.get('telefono')?.errors?.['mensaje'] || 'Teléfono inválido');
     }
 
     // Sin campo tipo/rol
@@ -560,13 +558,13 @@ export class ColaboradoresComponent implements OnInit {
     return errores;
   }
 
-  // MÃ©todos auxiliares para obtener errores de campos especÃ­ficos (para mostrar en el template)
+  // Métodos auxiliares para obtener errores de campos específicos (para mostrar en el template)
   getErrorRut(): string {
     const control = this.formularioColaborador.get('rut');
     if (control?.hasError('required')) return 'El RUT es obligatorio';
     if (control?.hasError('minlength')) return 'El RUT debe tener al menos 3 caracteres';
-    if (control?.hasError('maxlength')) return 'El RUT no puede tener mÃ¡s de 20 caracteres';
-    if (control?.hasError('rutInvalido')) return control.errors?.['mensaje'] || 'RUT invÃ¡lido';
+    if (control?.hasError('maxlength')) return 'El RUT no puede tener más de 20 caracteres';
+    if (control?.hasError('rutInvalido')) return control.errors?.['mensaje'] || 'RUT inválido';
     return '';
   }
 
@@ -574,19 +572,19 @@ export class ColaboradoresComponent implements OnInit {
     const control = this.formularioColaborador.get('nombre');
     if (control?.hasError('required')) return 'El nombre es obligatorio';
     if (control?.hasError('minlength')) return 'El nombre debe tener al menos 3 caracteres';
-    if (control?.hasError('maxlength')) return 'El nombre no puede tener mÃ¡s de 120 caracteres';
+    if (control?.hasError('maxlength')) return 'El nombre no puede tener más de 120 caracteres';
     return '';
   }
 
   getErrorCorreo(): string {
     const control = this.formularioColaborador.get('correo');
-    if (control?.hasError('email')) return 'Correo electrÃ³nico invÃ¡lido';
+    if (control?.hasError('email')) return 'Correo electrónico inválido';
     return '';
   }
 
   getErrorTelefono(): string {
     const control = this.formularioColaborador.get('telefono');
-    if (control?.hasError('telefonoInvalido')) return control.errors?.['mensaje'] || 'TelÃ©fono invÃ¡lido';
+    if (control?.hasError('telefonoInvalido')) return control.errors?.['mensaje'] || 'Teléfono inválido';
     return '';
   }
 }

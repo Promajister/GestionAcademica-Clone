@@ -155,10 +155,20 @@ export class TutoresComponent implements OnInit {
     const telefono = control.value;
     if (!telefono) return null;
 
-    if (typeof telefono === 'string' && !/^\d+$/.test(telefono)) {
+    const telefonoStr = String(telefono);
+
+    if (!/^\d+$/.test(telefonoStr)) {
       return {
         telefonoInvalido: true,
         mensaje: 'El teléfono debe contener solo números',
+      };
+    }
+
+    // Verificar máximo 8 dígitos
+    if (telefonoStr.length > 8) {
+      return {
+        telefonoInvalido: true,
+        mensaje: 'El teléfono debe tener máximo 8 dígitos',
       };
     }
 
@@ -495,27 +505,20 @@ export class TutoresComponent implements OnInit {
 
     const valores = this.formularioTutor.value as TutorForm;
 
+    // En actualización, enviamos todos los campos (incluyendo null para vaciar)
     const datosParaEnviar: any = {
       rut: valores.rut?.trim(),
       nombre: valores.nombre?.trim(),
+      correo: valores.correo?.trim() || null,
+      telefono: valores.telefono ? Number(valores.telefono) : null,
+      direccion: valores.direccion?.trim() || null,
+      universidad_egreso: valores.universidad_egreso?.trim() || null,
     };
 
-    if (valores.correo?.trim()) {
-      datosParaEnviar.correo = valores.correo.trim();
-    }
-    if (valores.telefono) {
-      datosParaEnviar.telefono = Number(valores.telefono);
-    }
-    if (valores.direccion?.trim()) {
-      datosParaEnviar.direccion = valores.direccion.trim();
-    }
     const cargosUpd: string[] = [valores.cargo1, valores.cargo2]
       .filter((c): c is string => !!c && !!c.trim())
       .map((c) => c.trim());
     datosParaEnviar.cargos = cargosUpd;
-    if (valores.universidad_egreso?.trim()) {
-      datosParaEnviar.universidad_egreso = valores.universidad_egreso.trim();
-    }
 
     this.tutoresService.actualizar(tutorOriginal.id, datosParaEnviar).subscribe({
       next: () => {

@@ -57,6 +57,7 @@ export class ColaboradoresService {
           nombre: true,
           correo: true,
           telefono: true,
+          direccion: true,
           universidad_egreso: true,
           cargos: { select: { id: true, cargo: true } },
         },

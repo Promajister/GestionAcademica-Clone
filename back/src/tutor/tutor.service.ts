@@ -65,6 +65,7 @@ export class TutorService {
           nombre: true,
           correo: true,
           telefono: true,
+          direccion: true,
           universidad_egreso: true,
           cargos: { select: { id: true, cargo: true } },
         },
@@ -125,7 +126,6 @@ export class TutorService {
           ...(cargo !== undefined || cargos !== undefined
             ? { cargos: { deleteMany: {}, ...(cargosList.length ? { create: cargosList } : {}) } }
             : {}),
-          // Sin relación roles que actualizar
         },
         include: { cargos: true },
       });
