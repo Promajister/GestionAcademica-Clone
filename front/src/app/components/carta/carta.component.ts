@@ -213,7 +213,7 @@ export class CartaComponent {
       fechaCiudad: `${this.CIUDAD_FIJA}, ${this.FECHA_FIJA}.-`,
       folio: folioUsado ? `${this.PREFIJO_FOLIO} ${folioUsado}. -` : '',
       destinatario: [
-        'Senora/Senor',
+        'Señor',
         `Director(a) ${centro?.nombre ?? 'del establecimiento'}`,
         centro?.comuna ? centro.comuna : '',
         'Presente',
