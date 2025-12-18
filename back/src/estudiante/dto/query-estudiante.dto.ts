@@ -14,6 +14,10 @@ export class QueryEstudianteDto {
 
   @IsOptional()
   @IsString()
+  rut?: string;
+
+  @IsOptional()
+  @IsString()
   carrera?: string;
 
   @IsOptional()
@@ -28,6 +32,11 @@ export class QueryEstudianteDto {
   @Transform(({ value }) => (value !== undefined ? Number(value) : undefined))
   @IsInt()
   anio?: number;
+
+  @IsOptional()
+  @Transform(({ value }) => (value !== undefined ? Number(value) : undefined))
+  @IsInt()
+  anioIngreso?: number;
 
   @IsOptional()
   @Transform(({ value }) => (value !== undefined ? Number(value) : undefined))

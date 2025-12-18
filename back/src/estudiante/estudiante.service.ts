@@ -17,6 +17,11 @@ export class EstudianteService {
      LISTADO
   ============================ */
   async findAll(q: QueryEstudianteDto) {
+    const nombreTerm = q.nombre?.trim();
+    const rutRaw = q.rut?.trim();
+    const rutTerm = rutRaw ? this.normalizeRut(rutRaw) : '';
+    const rutFromNombre = nombreTerm ? this.normalizeRut(nombreTerm) : '';
+
     const practicaFilter: Prisma.PracticaWhereInput = {
       ...(q.estadoPractica ? { estado: q.estadoPractica as any } : {}),
       ...(q.tipoPractica ? { tipo: { contains: q.tipoPractica } } : {}),
@@ -41,9 +46,29 @@ export class EstudianteService {
         : {}),
     };
 
+    const orFilters: Prisma.EstudianteWhereInput[] = [];
+
+    if (nombreTerm) {
+      orFilters.push({ nombre: { contains: nombreTerm } });
+      if (/[0-9kK]/.test(nombreTerm)) {
+        orFilters.push({ rut: { contains: nombreTerm } });
+      }
+      if (rutFromNombre) {
+        orFilters.push({ rut: { contains: rutFromNombre } });
+      }
+    }
+
+    if (rutRaw) {
+      orFilters.push({ rut: { contains: rutRaw } });
+    }
+    if (rutTerm) {
+      orFilters.push({ rut: { contains: rutTerm } });
+    }
+
     const where: Prisma.EstudianteWhereInput = {
-      ...(q.nombre ? { nombre: { contains: q.nombre } } : {}),
+      ...(orFilters.length ? { OR: orFilters } : {}),
       ...(q.carrera ? { plan: { contains: q.carrera } } : {}),
+      ...(q.anioIngreso ? { anio_ingreso: q.anioIngreso } : {}),
       ...(Object.keys(practicaFilter).length
         ? { practicas: { some: practicaFilter } }
         : q.estadoPractica

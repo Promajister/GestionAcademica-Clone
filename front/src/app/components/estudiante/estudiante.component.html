@@ -58,23 +58,18 @@
         </mat-form-field>
 
         <mat-form-field appearance="outline">
-          <mat-label>Semestre</mat-label>
-          <mat-select [(ngModel)]="semestreSeleccionado">
-            <mat-option value="all">Todos</mat-option>
-            <mat-option [value]="1">1</mat-option>
-            <mat-option [value]="2">2</mat-option>
-          </mat-select>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>Año</mat-label>
-          <input matInput type="number" [(ngModel)]="anioSeleccionado" placeholder="Ej: 2025" />
+          <mat-label>Año de ingreso</mat-label>
+          <input matInput type="number" [(ngModel)]="anioIngresoSeleccionado" placeholder="Ej: 2025" />
         </mat-form-field>
       </div>
       <div class="filter-actions">
         <button mat-stroked-button color="primary" (click)="aplicarFiltros()">
           <mat-icon>refresh</mat-icon>
           Aplicar filtros
+        </button>
+        <button mat-button type="button" (click)="limpiarFiltros()">
+          <mat-icon>close</mat-icon>
+          Limpiar filtros
         </button>
       </div>
     </mat-card-content>
@@ -102,7 +97,7 @@
             <div class="detail-head">
               <div>
                 <h2>{{ detalle.nombre }}</h2>
-                <p>{{ detalle.rut }} • {{ detalle.plan || 'Sin plan' }}</p>
+                <p>{{ formatearRut(detalle.rut) }} • {{ detalle.plan || 'Sin plan' }}</p>
               </div>
               <div class="detail-actions">
                 <button mat-raised-button color="primary" (click)="exportarPdf()">
@@ -113,12 +108,34 @@
             </div>
 
             <div class="detail-section">
+              <h4>Datos personales</h4>
+              <div class="grid2">
+                <div><b>RUT:</b> {{ formatearRut(detalle.rut) }}</div>
+                <div><b>Género:</b> {{ detalle.genero || '-' }}</div>
+                <div><b>Año nacimiento:</b> {{ formatearFecha(detalle.anio_nacimiento) }}</div>
+                <div><b>Dirección:</b> {{ detalle.direccion || '-' }}</div>
+              </div>
+            </div>
+
+            <div class="detail-section">
+              <h4>Datos académicos</h4>
+              <div class="grid2">
+                <div><b>Plan:</b> {{ detalle.plan || '-' }}</div>
+                <div><b>Año de ingreso:</b> {{ detalle.anio_ingreso ?? '-' }}</div>
+                <div><b>Sistema de ingreso:</b> {{ detalle.sistema_ingreso || '-' }}</div>
+                <div><b>N° inscripciones:</b> {{ detalle.numero_inscripciones ?? '-' }}</div>
+                <div><b>Avance:</b> {{ formatearNumero(detalle.avance) }}</div>
+                <div><b>Puntaje ponderado:</b> {{ formatearNumero(detalle.puntaje_ponderado) }}</div>
+                <div><b>Puntaje PSU:</b> {{ formatearNumero(detalle.puntaje_psu) }}</div>
+                <div><b>Promedio:</b> {{ formatearNumero(detalle.promedio) }}</div>
+              </div>
+            </div>
+
+            <div class="detail-section">
               <h4>Contacto</h4>
               <div class="grid2">
                 <div><b>Correo:</b> {{ detalle.email || '-' }}</div>
-                <div><b>Teléfono:</b> {{ detalle.fono || '-' }}</div>
-                <div><b>Dirección:</b> {{ detalle.direccion || '-' }}</div>
-                <div><b>Ingreso:</b> {{ detalle.anio_ingreso || '-' }}</div>
+                <div><b>Teléfono:</b> {{ detalle.fono ?? '-' }}</div>
               </div>
             </div>
 
@@ -176,7 +193,7 @@
             }
 
             @if (!cargandoLista) {
-              @for (s of estudiantes; track s.rut) {
+              @for (s of estudiantesPaginados; track s.rut) {
                 <div
                   class="list-item"
                   (click)="seleccionar(s)"
@@ -186,7 +203,7 @@
                     <div class="item-main">
                       <div class="item-info">
                         <h3>{{ s.nombre }}</h3>
-                        <p class="muted">{{ s.rut }} • {{ s.plan || 'Sin plan' }}</p>
+                        <p class="muted">{{ formatearRut(s.rut) }} • {{ s.plan || 'Sin plan' }}</p>
                         @if (s.email) {
                           <p class="muted">{{ s.email }}</p>
                         }
@@ -213,6 +230,15 @@
               }
             }
           </mat-card-content>
+          <div class="list-paginator" *ngIf="totalItems > 0">
+            <mat-paginator
+              [length]="totalItems"
+              [pageIndex]="pageIndex"
+              [pageSize]="pageSize"
+              [pageSizeOptions]="pageSizeOptions"
+              (page)="onPageChange($event)">
+            </mat-paginator>
+          </div>
         </mat-card>
       }
 

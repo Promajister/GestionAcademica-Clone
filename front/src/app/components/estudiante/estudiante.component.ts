@@ -10,6 +10,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { jsPDF } from 'jspdf';
 import { LOGO_UTA_BASE64, LOGO_FEH_BASE64 } from '../carta/logos.base64';
 import {
@@ -36,6 +37,7 @@ import {
     MatSelectModule,
     MatChipsModule,
     MatProgressSpinnerModule,
+    MatPaginatorModule,
   ],
 })
 export class EstudiantesComponent implements OnInit {
@@ -45,8 +47,7 @@ export class EstudiantesComponent implements OnInit {
   carreraSeleccionada: 'all' | string = 'all';
   estadoSeleccionado: 'all' | EstadoPractica = 'all';
   tipoPracticaSeleccionada: string = '';
-  semestreSeleccionado: 'all' | 1 | 2 = 'all';
-  anioSeleccionado: number | null = null;
+  anioIngresoSeleccionado: number | null = null;
   carreras: string[] = [];
   tiposPractica: string[] = [
     'Apoyo a la Docencia I',
@@ -63,18 +64,25 @@ export class EstudiantesComponent implements OnInit {
   cargandoDetalle = false;
   mensajeError: string | null = null;
 
+  pageIndex = 0;
+  pageSize = 5;
+  totalItems = 0;
+  readonly pageSizeOptions = [5, 10, 20, 50];
+
   ngOnInit(): void {
     this.cargar();
   }
 
   private filtros() {
+    const term = this.searchTerm?.trim();
+    const rutTerm = term && /[0-9kK]/.test(term) ? term : undefined;
     return {
-      nombre: this.searchTerm || undefined,
+      nombre: term || undefined,
+      rut: rutTerm,
       carrera: this.carreraSeleccionada !== 'all' ? this.carreraSeleccionada : undefined,
       estadoPractica: this.estadoSeleccionado !== 'all' ? this.estadoSeleccionado : undefined,
       tipoPractica: this.tipoPracticaSeleccionada || undefined,
-      semestre: this.semestreSeleccionado === 'all' ? undefined : this.semestreSeleccionado,
-      anio: this.anioSeleccionado || undefined,
+      anioIngreso: this.anioIngresoSeleccionado || undefined,
     };
   }
 
@@ -84,6 +92,7 @@ export class EstudiantesComponent implements OnInit {
     this.service.listar(this.filtros()).subscribe({
       next: (items) => {
         this.estudiantes = items;
+        this.actualizarPaginacion();
         this.carreras = Array.from(
           new Set(
             items
@@ -111,7 +120,37 @@ export class EstudiantesComponent implements OnInit {
   }
 
   aplicarFiltros(): void {
+    this.pageIndex = 0;
     this.cargar();
+  }
+
+  limpiarFiltros(): void {
+    this.searchTerm = '';
+    this.carreraSeleccionada = 'all';
+    this.estadoSeleccionado = 'all';
+    this.tipoPracticaSeleccionada = '';
+    this.anioIngresoSeleccionado = null;
+    this.pageIndex = 0;
+    this.cargar();
+  }
+
+  get estudiantesPaginados(): EstudianteResumen[] {
+    const startIndex = this.pageIndex * this.pageSize;
+    return this.estudiantes.slice(startIndex, startIndex + this.pageSize);
+  }
+
+  actualizarPaginacion(): void {
+    this.totalItems = this.estudiantes.length;
+    const maxPage = Math.max(0, Math.ceil(this.totalItems / this.pageSize) - 1);
+    if (this.pageIndex > maxPage) {
+      this.pageIndex = maxPage;
+    }
+  }
+
+  onPageChange(event: PageEvent): void {
+    this.pageIndex = event.pageIndex;
+    this.pageSize = event.pageSize;
+    this.actualizarPaginacion();
   }
 
   seleccionar(estudiante: EstudianteResumen): void {
@@ -145,6 +184,27 @@ export class EstudiantesComponent implements OnInit {
     return estado ? map[estado] : 'Sin práctica';
   }
 
+  formatearRut(rut?: string | null): string {
+    if (!rut) return '-';
+    const clean = rut.replace(/[^0-9kK]/g, '').toUpperCase();
+    if (clean.length <= 1) return clean;
+    const cuerpo = clean.slice(0, -1);
+    const dv = clean.slice(-1);
+    const reversed = cuerpo.split('').reverse();
+    const withDots = reversed
+      .map((digit, index) =>
+        (index + 1) % 3 === 0 && index + 1 !== reversed.length ? `${digit}.` : digit,
+      )
+      .join('');
+    return `${withDots.split('').reverse().join('')}-${dv}`;
+  }
+
+  formatearNumero(value?: number | null): string {
+    if (value === null || value === undefined) return '-';
+    if (Number.isInteger(value)) return value.toString();
+    return value.toFixed(2);
+  }
+
   formatearFecha(value?: string | null): string {
     if (!value) return '-';
     const date = new Date(value);
@@ -156,17 +216,19 @@ export class EstudiantesComponent implements OnInit {
 
     const detalle = this.detalle;
     const doc = new jsPDF({ unit: 'pt', format: 'letter' });
+    const pageWidth = doc.internal.pageSize.getWidth();
     const marginX = 46;
     let y = 32;
 
-    // Header con logo UTA (manteniendo relación de aspecto)
-    const logoWidth = 80;
-    const logoHeight = 60; // Relación de aspecto aproximada 4:3
+    // Header con logos (UTA a la izquierda, Depto. a la derecha)
+    const logoWidth = 76;
+    const logoHeight = 56;
     doc.addImage(LOGO_UTA_BASE64, 'PNG', marginX, y, logoWidth, logoHeight);
+    doc.addImage(LOGO_FEH_BASE64, 'PNG', pageWidth - marginX - logoWidth, y, logoWidth, logoHeight);
 
-    // Información del documento a la derecha (en un cuadro)
-    const rightBoxX = doc.internal.pageSize.getWidth() - marginX - 165;
-    const rightBoxY = y;
+    // Información del documento debajo del header (alineada a la derecha)
+    const rightBoxX = pageWidth - marginX - 165;
+    const rightBoxY = y + logoHeight + 8;
     const rightBoxWidth = 165;
     const rightBoxHeight = 80;
     
@@ -213,15 +275,15 @@ export class EstudiantesComponent implements OnInit {
     doc.text(`: ${detalle.practicas?.length || 0}`, rightTextX + 78, rightTextY);
 
     // Título centrado
-    const headerBlockHeight = Math.max(logoHeight, rightBoxHeight);
-    y = y + headerBlockHeight + 20;
+    const headerBlockHeight = logoHeight + 8 + rightBoxHeight;
+    y = y + headerBlockHeight + 18;
     
     doc.setFontSize(13);
     doc.setTextColor('#111827');
     doc.setFont('helvetica', 'bold');
     const title = 'FICHA DE ESTUDIANTE - REGISTRO ACADÉMICO Y PRÁCTICAS';
     const titleWidth = doc.getTextWidth(title);
-    const titleX = (doc.internal.pageSize.getWidth() - titleWidth) / 2;
+    const titleX = (pageWidth - titleWidth) / 2;
     doc.text(title, titleX, y);
     
     y += 24;
@@ -229,39 +291,58 @@ export class EstudiantesComponent implements OnInit {
     // Información del estudiante en una tarjeta
     const infoRows: [string, string][] = [
       ['Nombre', detalle.nombre],
-      ['RUT', detalle.rut],
+      ['RUT', this.formatearRut(detalle.rut)],
       ['Carrera / Plan', detalle.plan || '-'],
+      ['Género', detalle.genero || '-'],
+      ['Año nacimiento', this.formatearFecha(detalle.anio_nacimiento)],
       ['Correo', detalle.email || '-'],
-      ['Teléfono', detalle.fono ? String(detalle.fono) : '-'],
-      ['Año de ingreso', detalle.anio_ingreso ? String(detalle.anio_ingreso) : '-'],
+      ['Teléfono', String(detalle.fono ?? '-')],
+      ['Dirección', detalle.direccion || '-'],
+      ['Año de ingreso', String(detalle.anio_ingreso ?? '-')],
+      ['Sistema de ingreso', detalle.sistema_ingreso || '-'],
+      ['N° inscripciones', String(detalle.numero_inscripciones ?? '-')],
+      ['Avance', this.formatearNumero(detalle.avance)],
+      ['Puntaje ponderado', this.formatearNumero(detalle.puntaje_ponderado)],
+      ['Puntaje PSU', this.formatearNumero(detalle.puntaje_psu)],
+      ['Promedio', this.formatearNumero(detalle.promedio)],
     ];
 
     const drawCard = (rows: [string, string][]) => {
+      const labelWidth = 140;
+      const valueWidth = pageWidth - marginX * 2 - labelWidth - 16;
+      const rowHeights = rows.map(([, value]) => {
+        const split = doc.splitTextToSize(String(value ?? '-'), valueWidth);
+        return Math.max(18, split.length * 12);
+      });
+      const cardHeight = rowHeights.reduce((total, height) => total + height, 0) + 14;
+
       doc.setDrawColor('#d1d5db');
       doc.setFillColor('#ffffff');
       doc.setLineWidth(1.5);
       doc.roundedRect(
         marginX - 6,
         y - 10,
-        doc.internal.pageSize.getWidth() - marginX * 2 + 12,
-        rows.length * 26 + 24,
+        pageWidth - marginX * 2 + 12,
+        cardHeight,
         6,
         6,
         'FD',
       );
       let ly = y + 8;
-      doc.setFontSize(11);
-      rows.forEach(([label, value]) => {
+      const valueX = marginX + 8 + labelWidth;
+      doc.setFontSize(10);
+      rows.forEach(([label, value], index) => {
+        const safeValue = String(value ?? '-');
         doc.setTextColor('#6b7280');
         doc.setFont('helvetica', 'normal');
-        doc.text(label + ':', marginX + 8, ly);
+        doc.text(`${label}:`, marginX + 8, ly);
         doc.setTextColor('#111827');
         doc.setFont('helvetica', 'normal');
-        const valueX = marginX + 170;
-        doc.text(String(value), valueX, ly);
-        ly += 26;
+        const split = doc.splitTextToSize(safeValue, valueWidth);
+        doc.text(split, valueX, ly);
+        ly += rowHeights[index];
       });
-      y = ly + 8;
+      y = ly + 6;
     };
 
     drawCard(infoRows);
@@ -283,7 +364,7 @@ export class EstudiantesComponent implements OnInit {
       doc.setFontSize(11);
       doc.setTextColor('#6b7280');
       doc.setFont('helvetica', 'normal');
-      const split = doc.splitTextToSize(text, doc.internal.pageSize.getWidth() - marginX * 2);
+      const split = doc.splitTextToSize(text, pageWidth - marginX * 2);
       doc.text(split, marginX, y);
       y += split.length * 14;
     };
