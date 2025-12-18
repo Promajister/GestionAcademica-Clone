@@ -7,7 +7,7 @@
     </div>
     <div class="spacer"></div>
 
-    <button mat-flat-button color="primary" (click)="toggleForm()" class="btn-add" *ngIf="!soloLecturaVinculacion">
+    <button mat-flat-button color="primary" (click)="toggleForm()" class="btn-add" *ngIf="!esSoloLectura">
       <mat-icon>{{ showForm ? 'close' : 'add_business' }}</mat-icon>
       {{ showForm ? 'Cerrar' : 'Agregar centro' }}
     </button>
@@ -50,7 +50,7 @@
 
 
   <!-- FORMULARIO (crear/editar) -->
-  <div class="form-container" [class.form-open]="showForm" *ngIf="!soloLecturaVinculacion">
+  <div class="form-container" [class.form-open]="showForm" *ngIf="!esSoloLectura">
     <mat-card class="elev form-card" *ngIf="showForm">
       <mat-card-header class="form-header">
         <div class="form-title-section">
@@ -219,13 +219,13 @@
             <button mat-icon-button (click)="viewCentro(c)" title="Ver detalles">
               <mat-icon>visibility</mat-icon>
             </button>
-            <button mat-icon-button color="primary" (click)="editCentro(c)" title="Editar" *ngIf="!soloLecturaVinculacion">
+            <button mat-icon-button color="primary" (click)="editCentro(c)" title="Editar" *ngIf="!esSoloLectura">
               <mat-icon>edit</mat-icon>
             </button>
-            <button mat-icon-button color="accent" (click)="openContacts(c)" title="Añadir contactos" *ngIf="!soloLecturaVinculacion">
+            <button mat-icon-button color="accent" (click)="openContacts(c)" title="Añadir contactos" *ngIf="!esSoloLectura">
               <mat-icon>person_add</mat-icon>
             </button>
-            <button mat-icon-button color="warn" (click)="askDelete(c)" title="Eliminar" *ngIf="!soloLecturaVinculacion">
+            <button mat-icon-button color="warn" (click)="askDelete(c)" title="Eliminar" *ngIf="!esSoloLectura">
               <mat-icon>delete</mat-icon>
             </button>
           </div>
@@ -312,7 +312,7 @@
 
       <div class="dialog-actions">
         <button mat-stroked-button (click)="closeDetails()">Cerrar</button>
-        <button mat-raised-button color="primary" (click)="editFromDetails()" *ngIf="!soloLecturaVinculacion">
+        <button mat-raised-button color="primary" (click)="editFromDetails()" *ngIf="!esSoloLectura">
           <mat-icon>edit</mat-icon> Editar
         </button>
       </div>

@@ -83,6 +83,24 @@ export class CentrosEducativosComponent implements OnInit {
   isLoading = false;
   soloLecturaVinculacion = false;
 
+  // Verificar si el usuario es jefatura (solo lectura)
+  get esJefatura(): boolean {
+    if (!isPlatformBrowser(this.platformId)) return false;
+    try {
+      const roleStr = localStorage.getItem('app.selectedRole');
+      if (!roleStr) return false;
+      const role = JSON.parse(roleStr);
+      return role?.id === 'jefatura';
+    } catch {
+      return false;
+    }
+  }
+
+  // Está en modo solo lectura si es jefatura o vinculacion
+  get esSoloLectura(): boolean {
+    return this.esJefatura || this.soloLecturaVinculacion;
+  }
+
   // ===== paginación (back) =====
   pageIndex = 0;        
   pageSize = 5;
@@ -162,7 +180,7 @@ export class CentrosEducativosComponent implements OnInit {
 
   ngOnInit(): void {
     this.soloLecturaVinculacion = this.esRolVinculacionSoloLectura();
-    if (this.soloLecturaVinculacion) {
+    if (this.esSoloLectura) {
       this.showForm = false;
       this.isEditing = false;
     }
@@ -262,7 +280,7 @@ export class CentrosEducativosComponent implements OnInit {
 
   // ===== helpers UI =====
   toggleForm() {
-    if (this.soloLecturaVinculacion) return;
+    if (this.esSoloLectura) return;
     this.showForm = !this.showForm;
     if (!this.showForm) this.resetForm();
   }
@@ -309,7 +327,7 @@ export class CentrosEducativosComponent implements OnInit {
 
   // ===== CRUD centro =====
   addOrUpdateCentro() {
-    if (this.soloLecturaVinculacion) return;
+    if (this.esSoloLectura) return;
     const c = this.newCentroEducativo;
 
     if (!c.nombre?.trim() || !c.tipo || !c.region || !c.comuna || !c.convenio) {
@@ -374,7 +392,7 @@ export class CentrosEducativosComponent implements OnInit {
   }
 
   editCentro(c: CentroEducativo) {
-    if (this.soloLecturaVinculacion) return;
+    if (this.esSoloLectura) return;
     this.isEditing = true;
     this.editId = c.id;
     this.showForm = true;
@@ -383,7 +401,7 @@ export class CentrosEducativosComponent implements OnInit {
   }
 
   editFromDetails() {
-  if (this.soloLecturaVinculacion) return;
+  if (this.esSoloLectura) return;
   if (!this.selectedCentroEducativo) return;
 
   // Guardamos una copia antes de cerrar el modal
@@ -411,7 +429,7 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
 
   // ===== Confirmación de eliminación =====
   askDelete(c: CentroEducativo) {
-    if (this.soloLecturaVinculacion) return;
+    if (this.esSoloLectura) return;
     this.pendingDelete = c;
   }
 
@@ -420,7 +438,7 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
   }
 
   confirmDelete() {
-    if (this.soloLecturaVinculacion) return;
+    if (this.esSoloLectura) return;
     if (!this.pendingDelete) return;
     const id = this.pendingDelete.id;
 
@@ -474,7 +492,7 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
 
   // ===== Añadir/Editar contactos (modal) =====
   openContacts(c: CentroEducativo) {
-    if (this.soloLecturaVinculacion) return;
+    if (this.esSoloLectura) return;
     this.contactsForCentro = c;
 
     this.contactoDirectorId = null;
@@ -530,7 +548,7 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
   }
 
   saveContactsForCentro() {
-    if (this.soloLecturaVinculacion) return;
+    if (this.esSoloLectura) return;
     if (!this.contactsForCentro) return;
     const centroId = this.contactsForCentro.id;
 
