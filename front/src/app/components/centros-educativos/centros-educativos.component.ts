@@ -37,8 +37,8 @@ interface CentroEducativo {
   region: string;
   comuna: string;
   convenio?: Convenio;
-  direccion?: string;
-  url_rrss?: string;
+  direccion?: string | null;
+  url_rrss?: string | null;
   telefono?: number | string | null;
   correo?: string | null;
   fecha_inicio_asociacion?: string | null; // YYYY-MM-DD
@@ -319,6 +319,11 @@ export class CentrosEducativosComponent implements OnInit {
       return;
     }
 
+    const cleanOrNull = (v: any) => {
+      const s = (v ?? '').toString().trim();
+      return s === '' ? null : s;
+    };
+
     const telefonoStr = (c.telefono ?? '').toString().trim();
     const telefonoNum = telefonoStr !== '' ? Number(telefonoStr) : null;
 
@@ -327,13 +332,16 @@ export class CentrosEducativosComponent implements OnInit {
       tipo: c.tipo as any,
       region: c.region!,
       comuna: c.comuna!,
-      convenio: c.convenio ? String(c.convenio) : undefined,
-      direccion: c.direccion?.trim() || undefined,
-      url_rrss: c.url_rrss?.trim() || undefined,
-      telefono: Number.isFinite(telefonoNum as number) ? telefonoNum : null,
-      correo: c.correo?.toString().trim() || undefined,
-      fecha_inicio_asociacion: c.fecha_inicio_asociacion ?? null,
-    };
+
+      convenio: String(c.convenio),
+      direccion: cleanOrNull(c.direccion),
+      url_rrss: cleanOrNull(c.url_rrss),
+      correo: cleanOrNull(c.correo),
+
+  telefono: Number.isFinite(telefonoNum as number) ? telefonoNum : null,
+  fecha_inicio_asociacion: c.fecha_inicio_asociacion ?? null,
+};
+
 
     const req$ =
       this.isEditing && this.editId != null

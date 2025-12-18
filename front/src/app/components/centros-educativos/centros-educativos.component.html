@@ -295,13 +295,18 @@
 
           <div class="detail-item" *ngIf="selectedCentroEducativo.trabajadores?.length">
             <label>Trabajadores:</label>
-            <div *ngFor="let t of selectedCentroEducativo.trabajadores">
-              {{ t.rol || ':' }}: {{ t.nombre }}
-              <span *ngIf="t.rut">({{ t.rut }})</span>
-              <span *ngIf="t.correo"> Email: {{ t.correo }}</span>
-              <span *ngIf="t.telefono"> Teléfono: {{ t.telefono }}</span>
-            </div>
+
+            <ul class="workers-list">
+              <li *ngFor="let t of selectedCentroEducativo.trabajadores">
+                <b>{{ t.rol }}</b> – {{ t.nombre }}
+                <span *ngIf="t.rut"> · {{ t.rut }}</span>
+                <span *ngIf="t.correo"> · {{ t.correo }}</span>
+                <span *ngIf="t.telefono"> · {{ t.telefono }}</span>
+              </li>
+            </ul>
           </div>
+
+
         </div>
       </div>
 
