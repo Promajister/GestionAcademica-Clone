@@ -192,6 +192,8 @@ export class AuthService {
     }
     localStorage.setItem(this.TOKEN_KEY, res.csrfToken || 'cookie');
     this.storeUser(res.user);
+    // Limpiar rol persistido para que se cargue el rol real del nuevo usuario
+    localStorage.removeItem('app.selectedRole');
     localStorage.setItem('lastLogin', new Date().toISOString());
 
     if (res.accessToken) {

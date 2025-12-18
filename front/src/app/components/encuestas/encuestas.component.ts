@@ -893,12 +893,14 @@ downloadEstadisticasEstudiantilesExcel(): void {
 
   // Abre modal de detalle de una encuesta
   verDetalles(encuesta: EncuestaRegistro): void {
+    this.requestCloseSidenav();
     this.selectedEncuesta = encuesta;
     this.tipoRegistroActivo = null;
   }
 
   // Abre modal de edición de preguntas abiertas (clonando objeto)
   editarEncuesta(encuesta: EncuestaRegistro): void {
+    this.requestCloseSidenav();
     this.encuestaEnEdicion = JSON.parse(JSON.stringify(encuesta));
     this.selectedEncuesta = null;
   }
