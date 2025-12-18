@@ -59,17 +59,23 @@ export interface EstudianteDetalle extends EstudianteResumen {
   direccion?: string | null;
   sistema_ingreso?: string | null;
   numero_inscripciones?: number | null;
+  avance?: number | null;
+  puntaje_ponderado?: number | null;
+  puntaje_psu?: number | null;
+  promedio?: number | null;
   practicas: PracticaDetalle[];
   actividades: Actividad[];
 }
 
 export interface EstudianteQuery {
   nombre?: string;
+  rut?: string;
   carrera?: string;
   estadoPractica?: EstadoPractica;
   tipoPractica?: string;
   semestre?: number;
   anio?: number;
+  anioIngreso?: number;
 }
 
 export interface ImportSummary {
