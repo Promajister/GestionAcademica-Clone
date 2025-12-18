@@ -5,6 +5,7 @@ const TIPOS_PRACTICA = [
   'Apoyo a la Docencia I',
   'Apoyo a la Docencia II',
   'Apoyo a la Docencia III',
+  'Apoyo a la Docencia IV',
   'Práctica Profesional',
 ] as const;
 

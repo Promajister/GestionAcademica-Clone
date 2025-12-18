@@ -1,23 +1,150 @@
-.filters {
+.historico {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.header {
   display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 12px;
+
+  .headline {
+    flex: 1;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 700;
+  }
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: 140px 140px 1fr 160px auto;
   gap: 12px;
-  flex-wrap: wrap;
-  align-items: center;
+  align-items: end;
+}
+
+@media (max-width: 900px) {
+  .filters {
+    grid-template-columns: 1fr;
+  }
 }
 
 .actions {
   display: flex;
-  gap: 8px;
-  margin-top: 12px;
+  gap: 10px;
+  margin-top: 14px;
+  justify-content: flex-end;
   flex-wrap: wrap;
 }
-
 .center {
   display: flex;
   justify-content: center;
   align-items: center;
+  min-height: 80px;
+}
+
+.center-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
 }
 
 .muted {
-  opacity: 0.75;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.card {
+  border-radius: 14px;
+}
+
+.elev {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+}
+
+th {
+  font-weight: 600;
+  font-size: 13px;
+  color: #374151;
+}
+
+td {
+  font-size: 13px;
+}
+
+.meta {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 13px;
+  color: #6b7280;
+  margin-bottom: 12px;
+}
+
+.pill {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: #e5e7eb;
+}
+
+.empty {
+  text-align: center;
+
+  mat-icon {
+    font-size: 40px;
+    opacity: 0.6;
+  }
+
+  .empty-title {
+    font-weight: 600;
+    margin-top: 6px;
+  }
+}
+
+/* ====== CHARTS ====== */
+.charts-card {
+  margin-top: 12px;
+}
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 900px) {
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.chart-box {
+  border: 1px solid #e2e6ef;
+  background: #f9fbff;
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.chart-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: #111827;
+}
+
+.chart-wrap {
+  height: 280px; /* clave para que Chart.js se vea bien */
 }

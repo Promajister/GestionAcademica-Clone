@@ -558,6 +558,7 @@
     <mat-option value="Apoyo a la Docencia I">Apoyo a la Docencia I</mat-option>
     <mat-option value="Apoyo a la Docencia II">Apoyo a la Docencia II</mat-option>
     <mat-option value="Apoyo a la Docencia III">Apoyo a la Docencia III</mat-option>
+    <mat-option value="Apoyo a la Docencia IV">Apoyo a la Docencia IV</mat-option>
     <mat-option value="Práctica Profesional">Práctica Profesional</mat-option>
   </mat-select>
   <mat-error *ngIf="registroForm.get('tipoPractica')?.hasError('required')">
@@ -1453,13 +1454,14 @@
 
               <mat-form-field appearance="outline" class="field">
               <mat-label>Tipo de práctica</mat-label>
-              <mat-select formControlName="tipoPractica" required>
-                <mat-option value="Apoyo a la Docencia I">Apoyo a la Docencia I</mat-option>
-                <mat-option value="Apoyo a la Docencia II">Apoyo a la Docencia II</mat-option>
-                <mat-option value="Apoyo a la Docencia III">Apoyo a la Docencia III</mat-option>
-                <mat-option value="Práctica Profesional">Práctica Profesional</mat-option>
-              </mat-select>
-              <mat-error *ngIf="registroForm.get('tipoPractica')?.hasError('required')">
+                <mat-select formControlName="tipoPractica" required>
+                  <mat-option value="Apoyo a la Docencia I">Apoyo a la Docencia I</mat-option>
+                  <mat-option value="Apoyo a la Docencia II">Apoyo a la Docencia II</mat-option>
+                  <mat-option value="Apoyo a la Docencia III">Apoyo a la Docencia III</mat-option>
+                  <mat-option value="Apoyo a la Docencia IV">Apoyo a la Docencia IV</mat-option>
+                  <mat-option value="Práctica Profesional">Práctica Profesional</mat-option>
+                </mat-select>
+                <mat-error *ngIf="registroForm.get('tipoPractica')?.hasError('required')">
                 Requerido
               </mat-error>
             </mat-form-field>

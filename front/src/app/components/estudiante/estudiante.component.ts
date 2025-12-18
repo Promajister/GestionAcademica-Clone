@@ -47,6 +47,13 @@ export class EstudiantesComponent implements OnInit {
   estadoSeleccionado: 'all' | EstadoPractica = 'all';
   anioIngresoSeleccionado: number | null = null;
   carreras: string[] = [];
+  tiposPractica: string[] = [
+    'Apoyo a la Docencia I',
+    'Apoyo a la Docencia II',
+    'Apoyo a la Docencia III',
+    'Apoyo a la Docencia IV',
+    'Práctica Profesional',
+  ];
 
   estudiantes: EstudianteResumen[] = [];
   seleccionado: EstudianteResumen | null = null;

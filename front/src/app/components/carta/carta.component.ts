@@ -81,7 +81,8 @@ export class CartaComponent {
     'Apoyo a la Docencia I',
     'Apoyo a la Docencia II',
     'Apoyo a la Docencia III',
-    'Practica Profesional',
+    'Apoyo a la Docencia IV',
+    'Práctica Profesional',
   ];
 
   // --- Catálogos ---
@@ -178,6 +179,8 @@ export class CartaComponent {
         return 'SOLICITUD DE AUTORIZACION PARA APOYO A LA DOCENCIA II';
       case 'Apoyo a la Docencia III':
         return 'SOLICITUD DE AUTORIZACION PARA APOYO A LA DOCENCIA III';
+      case 'Apoyo a la Docencia IV':
+        return 'SOLICITUD DE AUTORIZACION PARA APOYO A LA DOCENCIA IV';
       case 'Practica Profesional':
         return 'SOLICITUD DE AUTORIZACION PARA PRACTICA PROFESIONAL';
       default:

@@ -21,7 +21,7 @@ export class ReportesController {
     @Query('semestre') semestre: string,
     @Query('tipo') tipo?: string,
   ) {
-    return this.reportes.getReporteSatisfaccion({
+    return this.reportes.getSatisfaccion({
       anio: Number(anio),
       semestre: Number(semestre) as 1 | 2,
       tipo: tipo ?? null,

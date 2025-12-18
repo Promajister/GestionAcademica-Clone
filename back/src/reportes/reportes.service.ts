@@ -284,10 +284,18 @@ export class ReportesService {
         b.centrosPorTipo.set(tipoCentro, (b.centrosPorTipo.get(tipoCentro) ?? 0) + 1);
 
         // tutores por rol
-        for (const pt of p.practicaTutores) {
-        if (pt.rol === 'Supervisor') b.supervisoresSet.add(pt.tutor.nombre);
-        else b.mentoresSet.add(pt.tutor.nombre);
+        // tutores por rol (defensivo: evita crash si tutor es null)
+        for (const pt of p.practicaTutores ?? []) {
+          const nombreTutor = pt.tutor?.nombre;
+          if (!nombreTutor) continue;
+
+          if (pt.rol === 'Supervisor') {
+            b.supervisoresSet.add(nombreTutor);
+          } else {
+            b.mentoresSet.add(nombreTutor);
+          }
         }
+
     }
 
     // salida serializable
@@ -304,16 +312,24 @@ export class ReportesService {
     return { fromYear, toYear, tipo: tipo ?? null, groupBy, series };
   }
   
-  async getReporteSatisfaccion(params: { anio: number; semestre: 1 | 2; tipo?: string | null }) {
+  async getSatisfaccion(params: { anio: number; semestre: 1 | 2; tipo?: string | null }) {
     const { anio, semestre, tipo } = params;
 
-    if (!anio || Number.isNaN(anio)) throw new BadRequestException('Año inválido');
-    if (semestre !== 1 && semestre !== 2) throw new BadRequestException('Semestre inválido (1 o 2)');
-
-    const { from, to } = this.rangoAnio(anio);
+    if (!anio || Number.isNaN(anio)) {
+      throw new BadRequestException('Año inválido');
+    }
+    if (semestre !== 1 && semestre !== 2) {
+      throw new BadRequestException('Semestre inválido');
+    }
 
     // -------------------------
-    // 1) PRACTICAS (para total estudiantes y % aprobación)
+    // RANGO FECHAS
+    // -------------------------
+    const from = new Date(anio, semestre === 1 ? 0 : 6, 1);
+    const to   = new Date(anio, semestre === 1 ? 6 : 12, 1);
+
+    // -------------------------
+    // PRÁCTICAS
     // -------------------------
     const practicas = await this.prisma.practica.findMany({
       where: {
@@ -323,90 +339,128 @@ export class ReportesService {
       select: {
         estudianteRut: true,
         estado: true,
-        fecha_inicio: true,
       },
     });
 
-    const practicasSemestre = practicas.filter(p =>
-      this.calcularSemestre(new Date(p.fecha_inicio)) === semestre
-    );
+    const totalPracticas = practicas.length;
+    const estudiantesUnicos = new Set(practicas.map(p => p.estudianteRut)).size;
 
-    // Total estudiantes únicos con práctica en ese semestre
-    const totalEstudiantes = new Set(practicasSemestre.map(p => p.estudianteRut)).size;
+    const aprobadas = practicas.filter(p => p.estado === 'APROBADO').length;
+    const reprobadas = practicas.filter(p => p.estado === 'REPROBADO').length;
+    const enCurso = practicas.filter(p => p.estado === 'EN_CURSO').length;
 
-    // % aprobación usando estado (APROBADO / REPROBADO)
-    const totalEvaluadas = practicasSemestre.filter(
-      p => p.estado === 'APROBADO' || p.estado === 'REPROBADO'
-    ).length;
+    const pct = (n: number) =>
+      totalPracticas > 0 ? Number(((n / totalPracticas) * 100).toFixed(1)) : 0;
 
-    const aprobadas = practicasSemestre.filter(p => p.estado === 'APROBADO').length;
+    const porcentajes = {
+      aprobadas: pct(aprobadas),
+      reprobadas: pct(reprobadas),
+      enCurso: pct(enCurso),
+    };
 
-    const porcentajeAprobacion =
-      totalEvaluadas > 0 ? (aprobadas / totalEvaluadas) * 100 : 0;
+    const evaluadas = aprobadas + reprobadas;
+    const porcentajeAprobacionEvaluadas =
+      evaluadas > 0 ? Number(((aprobadas / evaluadas) * 100).toFixed(1)) : 0;
 
     // -------------------------
-    // 2) ENCUESTAS (para promedio y % satisfacción)
-    //    - mezclamos encuestas estudiante + colaborador
-    //    - usamos RespuestaSeleccionada con alternativa.puntaje (1..5)
+    // ENCUESTAS: CANTIDAD = ENCUESTAS REGISTRADAS (NO respuestas por alternativa)
     // -------------------------
-    const respuestas = await this.prisma.respuestaSeleccionada.findMany({
+    const [totalEncuestasEstudiantes, totalEncuestasColaboradores] = await Promise.all([
+      this.prisma.encuestaEstudiante.count({
+        where: {
+          fecha: { gte: from, lt: to },
+          ...(tipo ? { tipo_practica: tipo } : {}),
+        },
+      }),
+      this.prisma.encuestaColaborador.count({
+        where: {
+          fecha: { gte: from, lt: to },
+          ...(tipo ? { tipo_practica: tipo } : {}),
+        },
+      }),
+    ]);
+
+    // -------------------------
+    // SATISFACCIÓN: SOLO ALTERNATIVAS (preguntas cerradas)
+    // -------------------------
+    const calcSatisfaccion = (puntajes: number[], max = 5) => {
+      const totalAlternativasRespondidas = puntajes.length;
+
+      const promedio =
+        totalAlternativasRespondidas > 0
+          ? puntajes.reduce((s, p) => s + p, 0) / totalAlternativasRespondidas
+          : 0;
+
+      const porcentaje =
+        totalAlternativasRespondidas > 0 ? (promedio / max) * 100 : 0;
+
+      return {
+        totalAlternativasRespondidas,
+        promedioPuntaje: Number(promedio.toFixed(2)),
+        porcentajeSatisfaccion: Number(porcentaje.toFixed(1)),
+      };
+    };
+
+    // --------- RESPUESTAS (ALTERNATIVAS) ESTUDIANTES ----------
+    const respuestasEst = await this.prisma.respuestaSeleccionada.findMany({
       where: {
         alternativaId: { not: null },
-        OR: [
-          {
-            encuestaEstudiante: {
-              fecha: { gte: from, lt: to },
-              ...(tipo ? { tipo_practica: tipo } : {}),
-            },
-          },
-          {
-            encuestaColaborador: {
-              fecha: { gte: from, lt: to },
-              ...(tipo ? { tipo_practica: tipo } : {}),
-            },
-          },
-        ],
+        alternativa: { puntaje: { gt: 0 } },
+        encuestaEstudiante: {
+          fecha: { gte: from, lt: to },
+          ...(tipo ? { tipo_practica: tipo } : {}),
+        },
       },
-      select: {
-        alternativa: { select: { puntaje: true } },
-        encuestaEstudiante: { select: { fecha: true } },
-        encuestaColaborador: { select: { fecha: true } },
-      },
+      select: { alternativa: { select: { puntaje: true } } },
     });
 
-    // Filtrar por semestre CALCULADO desde la fecha real de la encuesta
-    const puntajes = respuestas
-      .filter(r => {
-        const fecha = r.encuestaEstudiante?.fecha ?? r.encuestaColaborador?.fecha;
-        if (!fecha) return false;
-        return this.calcularSemestre(new Date(fecha)) === semestre;
-      })
-      .map(r => r.alternativa?.puntaje ?? 0)
-      .filter(p => p >= 1 && p <= 5);
+    const puntajesEst = respuestasEst.map(r => r.alternativa!.puntaje);
 
-    const totalRespuestas = puntajes.length;
+    // --------- RESPUESTAS (ALTERNATIVAS) COLABORADORES ----------
+    const respuestasCol = await this.prisma.respuestaSeleccionada.findMany({
+      where: {
+        alternativaId: { not: null },
+        alternativa: { puntaje: { gt: 0 } },
+        encuestaColaborador: {
+          fecha: { gte: from, lt: to },
+          ...(tipo ? { tipo_practica: tipo } : {}),
+        },
+      },
+      select: { alternativa: { select: { puntaje: true } } },
+    });
 
-    const promedioPuntaje =
-      totalRespuestas > 0
-        ? puntajes.reduce((sum, p) => sum + p, 0) / totalRespuestas
-        : 0;
+    const puntajesCol = respuestasCol.map(r => r.alternativa!.puntaje);
 
-    // % satisfacción (definición: puntaje 4 o 5)
-    const satisfechas = puntajes.filter(p => p >= 4).length;
-    const porcentajeSatisfaccion =
-      totalRespuestas > 0 ? (satisfechas / totalRespuestas) * 100 : 0;
+    const MAX_PUNTAJE = 5;
 
+    // -------------------------
+    // RESPUESTA FINAL
+    // -------------------------
     return {
       anio,
       semestre,
       tipo: tipo ?? null,
-      totalEstudiantes,
-      porcentajeAprobacion: Number(porcentajeAprobacion.toFixed(1)),
-      encuestas: {
-        totalRespuestas,
-        promedioPuntaje: Number(promedioPuntaje.toFixed(2)),
-        porcentajeSatisfaccion: Number(porcentajeSatisfaccion.toFixed(1)),
+
+      practicas: {
+        totalPracticas,
+        estudiantesUnicos,
+        aprobadas,
+        reprobadas,
+        enCurso,
+        porcentajes,
+        porcentajeAprobacionEvaluadas,
       },
+
+      encuestasEstudiantes: {
+        totalEncuestas: totalEncuestasEstudiantes, // ✅ esto es lo que tú llamas “cantidad de respuestas”
+        ...calcSatisfaccion(puntajesEst, MAX_PUNTAJE),
+      },
+
+      encuestasColaboradores: {
+        totalEncuestas: totalEncuestasColaboradores, // ✅ idem
+        ...calcSatisfaccion(puntajesCol, MAX_PUNTAJE),
+      },
+
       generatedAt: new Date().toISOString(),
     };
   }

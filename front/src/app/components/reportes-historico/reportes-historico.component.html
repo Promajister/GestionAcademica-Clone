@@ -1,4 +1,4 @@
-<div class="container section">
+<div class="container section historico">
 
   <!-- HEADER -->
   <div class="header">
@@ -9,34 +9,36 @@
 
     <div class="headline">
       <h1>Reporte histórico de prácticas</h1>
-      <p class="muted">Filtra por rango de años y agrupa por semestre o anual.</p>
+      <p class="muted">
+        Filtra por rango de años, tipo de práctica y agrupa por semestre o anual.
+      </p>
     </div>
 
     <div class="spacer"></div>
   </div>
 
   <!-- FILTROS -->
-  <mat-card class="elev" style="margin-top: 12px;">
+  <mat-card class="elev card">
     <mat-card-content>
 
       <div class="filters">
         <mat-form-field appearance="outline">
           <mat-label>Año desde</mat-label>
-          <input matInput type="number" [(ngModel)]="fromYear">
+          <input matInput type="number" [(ngModel)]="fromYear" />
         </mat-form-field>
 
         <mat-form-field appearance="outline">
           <mat-label>Año hasta</mat-label>
-          <input matInput type="number" [(ngModel)]="toYear">
+          <input matInput type="number" [(ngModel)]="toYear" />
         </mat-form-field>
 
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="outline" class="ff-lg">
           <mat-label>Tipo de práctica</mat-label>
           <mat-select [(ngModel)]="tipo">
             <mat-option [value]="null">Todas</mat-option>
-            <mat-option value="Intermedia">Intermedia</mat-option>
-            <mat-option value="Profesional I">Profesional I</mat-option>
-            <mat-option value="Profesional II">Profesional II</mat-option>
+            <mat-option *ngFor="let t of tiposPractica" [value]="t.value">
+              {{ t.label }}
+            </mat-option>
           </mat-select>
         </mat-form-field>
 
@@ -48,116 +50,119 @@
           </mat-select>
         </mat-form-field>
 
-        <button mat-raised-button color="primary" (click)="buscar()">
+        <button mat-raised-button color="primary" (click)="buscar()" [disabled]="loading">
+          <mat-icon>search</mat-icon>
           Buscar
         </button>
       </div>
 
       <!-- ACCIONES -->
       <div class="actions" *ngIf="rows.length">
-        <button mat-stroked-button color="primary" (click)="exportarPDF()">
+        <button mat-stroked-button color="primary" (click)="exportarPDF()" [disabled]="loading">
           <mat-icon>picture_as_pdf</mat-icon>
           Exportar PDF
         </button>
 
-        <button mat-stroked-button color="accent" (click)="exportarExcel()">
+        <button mat-stroked-button color="accent" (click)="exportarExcel()" [disabled]="loading">
           <mat-icon>grid_on</mat-icon>
           Exportar Excel
         </button>
       </div>
 
       <!-- LOADING -->
-      <div class="center" *ngIf="loading" style="margin-top: 12px;">
+      <div class="center" *ngIf="loading">
         <mat-spinner diameter="32"></mat-spinner>
       </div>
 
       <!-- ERROR -->
-      <p class="muted" *ngIf="!loading && error" style="margin-top: 12px;">
+      <p class="muted" *ngIf="!loading && error">
         {{ error }}
-      </p>
-
-      <!-- SIN DATOS -->
-      <p
-        class="muted"
-        *ngIf="!loading && !error && data && !rows.length"
-        style="margin-top: 12px;"
-      >
-        No hay datos disponibles para mostrar.
       </p>
 
     </mat-card-content>
   </mat-card>
 
-  <!-- TABLA -->
-  <mat-card
-    class="elev"
-    style="margin-top:12px;"
-    *ngIf="!loading && rows.length"
-  >
+  <!-- CHARTS -->
+<!-- CHARTS -->
+  <mat-card class="elev card charts-card" *ngIf="showCharts">
     <mat-card-content>
 
-      <table
-        mat-table
-        [dataSource]="rows"
-        class="mat-elevation-z0"
-        style="width:100%;"
-      >
+      <div class="charts-grid">
 
-        <!-- PERIODO -->
-        <ng-container matColumnDef="periodo">
-          <th mat-header-cell *matHeaderCellDef>
-            {{ data?.groupBy === 'year' ? 'Año' : 'Periodo' }}
-          </th>
-          <td mat-cell *matCellDef="let r">
-            {{ r.periodo }}
-          </td>
-        </ng-container>
+        <div class="chart-box">
+          <div class="chart-title">Evolución de estudiantes</div>
+          <div class="chart-wrap">
+            <canvas baseChart [type]="'line'" [data]="lineData" [options]="lineOptions"></canvas>
+          </div>
+        </div>
 
-        <!-- TOTAL -->
-        <ng-container matColumnDef="totalEstudiantes">
-          <th mat-header-cell *matHeaderCellDef>
-            Total estudiantes
-          </th>
-          <td mat-cell *matCellDef="let r">
-            {{ r.totalEstudiantes }}
-          </td>
-        </ng-container>
+        <div class="chart-box">
+          <div class="chart-title">Centros por tipo (apilado)</div>
+          <div class="chart-wrap">
+            <canvas baseChart [type]="'bar'" [data]="stackedBarData" [options]="stackedBarOptions"></canvas>
+          </div>
+        </div>
 
-        <!-- CENTROS -->
-        <ng-container matColumnDef="centrosPorTipo">
-          <th mat-header-cell *matHeaderCellDef>
-            Centros por tipo
-          </th>
-          <td mat-cell *matCellDef="let r">
-            {{ centrosToText(r) }}
-          </td>
-        </ng-container>
+      </div>
 
-        <!-- SUPERVISORES -->
-        <ng-container matColumnDef="supervisores">
-          <th mat-header-cell *matHeaderCellDef>
-            Supervisores
-          </th>
-          <td mat-cell *matCellDef="let r">
-            {{ listToText(r.supervisores) }}
-          </td>
-        </ng-container>
+    </mat-card-content>
+  </mat-card>
 
-        <!-- MENTORES -->
-        <ng-container matColumnDef="mentores">
-          <th mat-header-cell *matHeaderCellDef>
-            Mentores
-          </th>
-          <td mat-cell *matCellDef="let r">
-            {{ listToText(r.mentores) }}
-          </td>
-        </ng-container>
 
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+  <!-- RESULTADOS (TABLA) -->
+  <mat-card class="elev card" *ngIf="!loading && rows.length">
+    <mat-card-content>
 
-      </table>
+      <div class="table-wrap">
+        <table mat-table [dataSource]="rows" class="mat-elevation-z0">
 
+          <!-- PERIODO -->
+          <ng-container matColumnDef="periodo">
+            <th mat-header-cell *matHeaderCellDef>
+              {{ data?.groupBy === 'year' ? 'Año' : 'Periodo' }}
+            </th>
+            <td mat-cell *matCellDef="let r">{{ r.periodo }}</td>
+          </ng-container>
+
+          <!-- TOTAL -->
+          <ng-container matColumnDef="totalEstudiantes">
+            <th mat-header-cell *matHeaderCellDef>Total estudiantes</th>
+            <td mat-cell *matCellDef="let r">{{ r.totalEstudiantes }}</td>
+          </ng-container>
+
+          <!-- CENTROS -->
+          <ng-container matColumnDef="centrosPorTipo">
+            <th mat-header-cell *matHeaderCellDef>Centros por tipo</th>
+            <td mat-cell *matCellDef="let r">{{ centrosToText(r) }}</td>
+          </ng-container>
+
+          <!-- SUPERVISORES -->
+          <ng-container matColumnDef="supervisores">
+            <th mat-header-cell *matHeaderCellDef>Supervisores</th>
+            <td mat-cell *matCellDef="let r">{{ listToText(r.supervisores) }}</td>
+          </ng-container>
+
+          <!-- MENTORES -->
+          <ng-container matColumnDef="mentores">
+            <th mat-header-cell *matHeaderCellDef>Mentores</th>
+            <td mat-cell *matCellDef="let r">{{ listToText(r.mentores) }}</td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+
+        </table>
+      </div>
+
+    </mat-card-content>
+  </mat-card>
+
+  <!-- EMPTY STATE -->
+  <mat-card class="elev card empty" *ngIf="!loading && !error && !rows.length">
+    <mat-card-content class="center-col">
+      <mat-icon>info</mat-icon>
+      <div class="empty-title">Sin resultados</div>
+      <div class="muted">Prueba cambiando el rango de años, el tipo o el agrupado.</div>
     </mat-card-content>
   </mat-card>
 

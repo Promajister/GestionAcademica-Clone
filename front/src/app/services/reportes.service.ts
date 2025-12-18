@@ -43,15 +43,35 @@ export interface ReporteSatisfaccion {
   semestre: 1 | 2;
   tipo: string | null;
 
-  totalEstudiantes: number;
-  porcentajeAprobacion: number;
+  practicas: {
+    totalPracticas: number;
+    estudiantesUnicos: number;
+    aprobadas: number;
+    reprobadas: number;
+    enCurso: number;
+    porcentajes: {
+      aprobadas: number;
+      reprobadas: number;
+      enCurso: number;
+    };
+    porcentajeAprobacionEvaluadas: number;
+  };
 
-  encuestas: {
-    totalRespuestas: number;
-    promedioPuntaje: number;
+  encuestasEstudiantes: {
+    totalEncuestas: number;
+    totalAlternativasRespondidas: number;
     porcentajeSatisfaccion: number;
   };
+
+  encuestasColaboradores: {
+    totalEncuestas: number;
+    totalAlternativasRespondidas: number;
+    porcentajeSatisfaccion: number;
+  };
+
+  generatedAt: string;
 }
+
 
 export interface ReporteEstudiante {
   rut: string;
