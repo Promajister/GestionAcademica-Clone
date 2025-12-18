@@ -1109,9 +1109,10 @@ downloadEstadisticasEstudiantilesExcel(): void {
   }
 
   onVerEstadisticas(): void {
-  if (!this.filtroTipoStats) return;
-  this.mostrarEstadisticas(this.filtroTipoStats);
-}
+    if (!this.filtroTipoStats) return;
+    this.requestCloseSidenav();
+    this.mostrarEstadisticas(this.filtroTipoStats);
+  }
 
 
 
