@@ -38,18 +38,15 @@ import {
     MatProgressSpinnerModule,
     MatDividerModule,
     BaseChartDirective,
+
   ],
 })
-
-
 export class ReportesComponent implements OnInit {
-    
   private reportesService = inject(ReportesService);
 
   loading = true;
   error: string | null = null;
 
-  // KPIs (los que ya tienes)
   reporteData = {
     totalStudents: 0,
     activeInternships: 0,
@@ -58,7 +55,6 @@ export class ReportesComponent implements OnInit {
     supervisors: 0,
   };
 
-  // NUEVO: indicadores/satisfacción para mostrar después si quieres (en la vista o debug)
   indicadores: ReportesIndicadores | null = null;
   satisfaccion: ReporteSatisfaccion | null = null;
 
@@ -69,16 +65,45 @@ export class ReportesComponent implements OnInit {
   donutType: ChartType = 'doughnut';
   donutData: ChartData<'doughnut'> = { labels: [], datasets: [{ data: [] }] };
 
+  //relleno (sin agujero) + mejoras visuales
+  donutOptions: ChartConfiguration<'doughnut'>['options'] = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      position: 'right', 
+      align: 'start', 
+      labels: {
+        boxWidth: 12,
+        boxHeight: 12,
+        padding: 12,
+        usePointStyle: true, // se ve más fino
+        pointStyle: 'rectRounded',
+      },
+    },
+    tooltip: {
+      enabled: true,
+    },
+  },
+};
+
+
+
   lineData: ChartData<'line'> = {
     labels: [],
-    datasets: [{ data: [], label: 'Prácticas' }],
+    datasets: [{ data: [], label: 'Prácticas', tension: 0.35, pointRadius: 3 }],
   };
 
   lineOptions: ChartConfiguration<'line'>['options'] = {
     responsive: true,
-    maintainAspectRatio: false, // recomendado si le diste altura al contenedor
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { enabled: true },
+    },
     scales: {
       y: { beginAtZero: true, ticks: { precision: 0 } },
+      x: { ticks: { maxRotation: 0 } },
     },
   };
 
@@ -88,16 +113,15 @@ export class ReportesComponent implements OnInit {
 
     const anio = new Date().getFullYear();
 
-    // Cargamos todo junto: summary + indicadores + satisfacción
     forkJoin({
       summary: this.reportesService.getSummary(),
       indicadores: this.reportesService.getIndicadores().pipe(
-        catchError(() => of(null)) // si no existe aún el endpoint, no revienta la vista
+        catchError(() => of(null))
       ),
       satisfaccion: this.reportesService.getSatisfaccion({
         anio,
         semestre: 1,
-        tipo: null, // "Todo"
+        tipo: null,
       }).pipe(
         catchError(() => of(null))
       ),
@@ -137,7 +161,14 @@ export class ReportesComponent implements OnInit {
 
     this.lineData = {
       labels: res.charts.practicasPorMes.map(x => x.mes),
-      datasets: [{ data: res.charts.practicasPorMes.map(x => x.value), label: 'Prácticas' }],
+      datasets: [
+        {
+          data: res.charts.practicasPorMes.map(x => x.value),
+          label: 'Prácticas',
+          tension: 0.35,
+          pointRadius: 3,
+        },
+      ],
     };
   }
 
@@ -145,6 +176,4 @@ export class ReportesComponent implements OnInit {
     const d = new Date(value);
     return isNaN(d.getTime()) ? value : d.toLocaleDateString('es-CL');
   }
-
-
 }
