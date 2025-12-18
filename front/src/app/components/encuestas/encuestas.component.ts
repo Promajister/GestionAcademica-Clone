@@ -407,6 +407,8 @@ downloadEstadisticasEstudiantilesExcel(): void {
     fecha: 'Fecha de evaluación',
     semestre: 'Semestre',
     tipo_practica: 'Tipo de práctica',
+    semestreEncuesta: 'Semestre Encuesta',
+    anioEncuesta: 'Año Encuesta',
   };
 
   mapMetadataLabel(key: string): string {
@@ -1119,7 +1121,7 @@ downloadEstadisticasEstudiantilesExcel(): void {
   // Columnas de metadatos a mostrar en tabla de detalle (oculta campos técnicos)
   getDetailColumns(encuesta: EncuestaRegistro | null): string[] {
     if (!encuesta || !encuesta.metadata) return [];
-    const ocultar = new Set(['respuestas', 'tipo', 'id', 'semestreId']);
+    const ocultar = new Set(['respuestas', 'tipo', 'id', 'semestreId', 'semestre']);
     return Object.keys(encuesta.metadata).filter((k) => !ocultar.has(k));
   }
 
