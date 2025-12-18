@@ -70,6 +70,17 @@
 }
 .form-footer button mat-icon { margin-right: 6px; }
 
+.workers-list {
+  margin: 0.25rem 0 0;
+  padding-left: 1rem;
+
+  li {
+    margin-bottom: 0.25rem;
+    line-height: 1.4;
+  }
+}
+
+
 /* === LISTADO (alineado) === */
 .list-container { padding: 0 !important; }
 .elev:has(.list-container) { margin-top: 0; border-top-left-radius: 0; border-top-right-radius: 0; border-top: none; border-radius: 0 0 12px 12px; }

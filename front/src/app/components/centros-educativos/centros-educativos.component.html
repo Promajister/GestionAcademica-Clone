@@ -3,7 +3,7 @@
   <div class="header">
     <div class="headline">
       <h1>Gestión de Centros Educativos</h1>
-      <p class="muted">Registrar, editar y buscar centros educativos asociados</p>
+      <p class="muted"></p>
     </div>
     <div class="spacer"></div>
 
@@ -13,7 +13,7 @@
     </button>
   </div>
 
-  <!-- FILTROS -->
+    <!-- FILTROS -->
   <div class="filters-section">
     <div class="filters-header">
       <mat-icon>search</mat-icon>
@@ -23,22 +23,31 @@
     <div class="filters">
       <mat-form-field appearance="outline" class="flex1">
         <mat-label>Buscar</mat-label>
-        <input matInput [(ngModel)]="searchTerm" name="searchTerm" />
+        <input
+          matInput
+          [(ngModel)]="searchTerm"
+          name="searchTerm"
+          (ngModelChange)="onFiltersChange()"
+        />
         <mat-icon matSuffix>search</mat-icon>
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="role-filter">
         <mat-label>Tipo (filtro)</mat-label>
-        <mat-select [(ngModel)]="selectedTipo" name="selectedTipo">
-          <mat-option value="all">Todos</mat-option>
-          <mat-option value="PARTICULAR">Particular</mat-option>
-          <mat-option value="PARTICULAR_SUBVENCIONADO">Particular subvencionado</mat-option>
-          <mat-option value="SLEP">SLEP</mat-option>
-          <mat-option value="NO_CONVENCIONAL">No Convencional</mat-option>
+        <mat-select
+          [(ngModel)]="selectedTipo"
+          name="selectedTipo"
+          (selectionChange)="onFiltersChange()"
+        >
+          <mat-option *ngFor="let opt of TIPO_OPTIONS" [value]="opt.value">
+            {{ opt.label }}
+          </mat-option>
         </mat-select>
       </mat-form-field>
     </div>
   </div>
+
+
 
   <!-- FORMULARIO (crear/editar) -->
   <div class="form-container" [class.form-open]="showForm" *ngIf="!soloLecturaVinculacion">
@@ -101,8 +110,8 @@
           <!-- Dirección (único campo) -->
           <div class="form-row">
             <mat-form-field appearance="outline" class="form-field full-width">
-              <mat-label>Dirección *</mat-label>
-              <input matInput [(ngModel)]="newCentroEducativo.direccion" name="direccion" required />
+              <mat-label>Dirección</mat-label>
+              <input matInput [(ngModel)]="newCentroEducativo.direccion" name="direccion" />
             </mat-form-field>
           </div>
 
@@ -188,7 +197,7 @@
 
           <!-- Col 2: Tipo/Convenio -->
           <div class="col col-type">
-            <div class="type-badge truncate">{{ c.tipo }}</div>
+            <div class="type-badge truncate">{{ tipoLabel(c.tipo) }}</div>
             <div class="conv muted truncate" *ngIf="c.convenio">{{ c.convenio }}</div>
           </div>
 
@@ -262,7 +271,7 @@
       <div class="dialog-body" *ngIf="selectedCentroEducativo">
         <div class="details-grid">
           <div class="detail-item"><label>Nombre:</label><span>{{ selectedCentroEducativo.nombre }}</span></div>
-          <div class="detail-item"><label>Tipo:</label><span>{{ selectedCentroEducativo.tipo }}</span></div>
+          <div class="detail-item"><label>Tipo:</label><span>{{ tipoLabel(selectedCentroEducativo.tipo) }}</span></div>
           <div class="detail-item"><label>Región:</label><span>{{ selectedCentroEducativo.region }}</span></div>
           <div class="detail-item"><label>Comuna:</label><span>{{ selectedCentroEducativo.comuna }}</span></div>
           <div class="detail-item" *ngIf="selectedCentroEducativo.direccion">
@@ -286,19 +295,24 @@
 
           <div class="detail-item" *ngIf="selectedCentroEducativo.trabajadores?.length">
             <label>Trabajadores:</label>
-            <div *ngFor="let t of selectedCentroEducativo.trabajadores">
-               {{ t.rol || '-' }}  {{ t.nombre }}
-              <span *ngIf="t.rut">({{ t.rut }})</span>
-              <span *ngIf="t.correo"> {{ t.correo }}</span>
-              <span *ngIf="t.telefono"> {{ t.telefono }}</span>
-            </div>
+
+            <ul class="workers-list">
+              <li *ngFor="let t of selectedCentroEducativo.trabajadores">
+                <b>{{ t.rol }}</b> – {{ t.nombre }}
+                <span *ngIf="t.rut"> · {{ t.rut }}</span>
+                <span *ngIf="t.correo"> · {{ t.correo }}</span>
+                <span *ngIf="t.telefono"> · {{ t.telefono }}</span>
+              </li>
+            </ul>
           </div>
+
+
         </div>
       </div>
 
       <div class="dialog-actions">
         <button mat-stroked-button (click)="closeDetails()">Cerrar</button>
-        <button mat-raised-button color="primary" (click)="editCentro(selectedCentroEducativo!)" *ngIf="!soloLecturaVinculacion">
+        <button mat-raised-button color="primary" (click)="editFromDetails()" *ngIf="!soloLecturaVinculacion">
           <mat-icon>edit</mat-icon> Editar
         </button>
       </div>

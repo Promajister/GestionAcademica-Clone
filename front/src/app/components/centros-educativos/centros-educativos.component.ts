@@ -37,8 +37,8 @@ interface CentroEducativo {
   region: string;
   comuna: string;
   convenio?: Convenio;
-  direccion?: string;
-  url_rrss?: string;
+  direccion?: string | null;
+  url_rrss?: string | null;
   telefono?: number | string | null;
   correo?: string | null;
   fecha_inicio_asociacion?: string | null; // YYYY-MM-DD
@@ -216,6 +216,15 @@ export class CentrosEducativosComponent implements OnInit {
       });
   }
 
+  readonly TIPO_OPTIONS: { value: 'all' | TipoCentro; label: string }[] = [
+  { value: 'all', label: 'Todos' },
+  { value: 'PARTICULAR', label: 'Particular' },
+  { value: 'PARTICULAR_SUBVENCIONADO', label: 'Particular subvencionado' },
+  { value: 'SLEP', label: 'SLEP' },
+  { value: 'NO_CONVENCIONAL', label: 'No convencional' },
+];
+
+
   private mapDTOtoUI = (dto: CentroEducativoDTO): CentroEducativo => ({
     id: dto.id,
     nombre: dto.nombre,
@@ -310,20 +319,29 @@ export class CentrosEducativosComponent implements OnInit {
       return;
     }
 
+    const cleanOrNull = (v: any) => {
+      const s = (v ?? '').toString().trim();
+      return s === '' ? null : s;
+    };
+
     const telefonoStr = (c.telefono ?? '').toString().trim();
+    const telefonoNum = telefonoStr !== '' ? Number(telefonoStr) : null;
 
     const payloadCentro: CreateCentroPayload = {
       nombre: c.nombre!.trim(),
       tipo: c.tipo as any,
       region: c.region!,
       comuna: c.comuna!,
-      convenio: c.convenio ? String(c.convenio) : undefined,
-      direccion: c.direccion?.trim() || undefined,
-      url_rrss: c.url_rrss?.trim() || undefined,
-      telefono: telefonoStr !== '' ? telefonoStr : null,
-      correo: c.correo?.toString().trim() || undefined,
-      fecha_inicio_asociacion: c.fecha_inicio_asociacion ?? null,
-    };
+
+      convenio: String(c.convenio),
+      direccion: cleanOrNull(c.direccion),
+      url_rrss: cleanOrNull(c.url_rrss),
+      correo: cleanOrNull(c.correo),
+
+  telefono: Number.isFinite(telefonoNum as number) ? telefonoNum : null,
+  fecha_inicio_asociacion: c.fecha_inicio_asociacion ?? null,
+};
+
 
     const req$ =
       this.isEditing && this.editId != null
@@ -363,6 +381,33 @@ export class CentrosEducativosComponent implements OnInit {
     this.newCentroEducativo = { ...c };
     this.onRegionChange();
   }
+
+  editFromDetails() {
+  if (this.soloLecturaVinculacion) return;
+  if (!this.selectedCentroEducativo) return;
+
+  // Guardamos una copia antes de cerrar el modal
+  const centro = { ...this.selectedCentroEducativo };
+
+  // Cerrar modal de detalle
+  this.closeDetails();
+
+  // Abrir formulario en modo edición
+  this.editCentro(centro);
+}
+
+readonly TIPO_LABEL: Record<TipoCentro, string> = {
+  PARTICULAR: 'Particular',
+  PARTICULAR_SUBVENCIONADO: 'Particular subvencionado',
+  SLEP: 'SLEP',
+  NO_CONVENCIONAL: 'No convencional',
+};
+
+tipoLabel(tipo: TipoCentro | string | null | undefined): string {
+  if (!tipo) return '';
+  return (this.TIPO_LABEL as any)[tipo] ?? String(tipo);
+}
+
 
   // ===== Confirmación de eliminación =====
   askDelete(c: CentroEducativo) {
