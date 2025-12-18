@@ -12,6 +12,33 @@
   </div>
 
   <div class="layout">
+    <!-- Formato esperado arriba -->
+    <mat-card class="elev tips-card">
+      <mat-card-content>
+        <div class="tips-content">
+          <div class="tips-header">
+            <mat-icon>lightbulb</mat-icon>
+            <div>
+              <h3>Formato esperado</h3>
+              <p class="muted">Fila 1 con estos encabezados; RUT y nombre son obligatorios.</p>
+            </div>
+          </div>
+          <div class="headers">
+            <span class="chip" *ngFor="let header of expectedHeaders">{{ header }}</span>
+          </div>
+        </div>
+        <ul class="tips-list">
+          <li>RUT sin puntos ni guión, se normaliza automáticamente.</li>
+          <li>Correo puede llamarse "email", "E-mail" o "correo".</li>
+          <li>El orden sugerido es el que se muestra arriba (como en tu plantilla).</li>
+          <li>Años como número (ej: 2024) o fecha; se guarda solo el año.</li>
+          <li>Si el RUT ya existe, se actualizan los datos.</li>
+          <li>Límite: 5 MB por archivo.</li>
+        </ul>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Upload card abajo -->
     <mat-card class="elev upload-card">
       <mat-card-content>
         <div class="upload-box" [class.upload-box--active]="selectedFile">
@@ -80,29 +107,6 @@
             </div>
           </div>
         </div>
-      </mat-card-content>
-    </mat-card>
-
-    <mat-card class="elev tips-card">
-      <mat-card-content>
-        <div class="tips-header">
-          <mat-icon>lightbulb</mat-icon>
-          <div>
-            <h3>Formato esperado</h3>
-            <p class="muted">Fila 1 con estos encabezados; RUT y nombre son obligatorios.</p>
-          </div>
-        </div>
-        <div class="headers">
-          <span class="chip" *ngFor="let header of expectedHeaders">{{ header }}</span>
-        </div>
-        <ul class="tips-list">
-          <li>RUT sin puntos ni guión, se normaliza automáticamente.</li>
-          <li>Correo puede llamarse "email", "E-mail" o "correo".</li>
-          <li>El orden sugerido es el que se muestra arriba (como en tu plantilla).</li>
-          <li>Años como número (ej: 2024) o fecha; se guarda solo el año.</li>
-          <li>Si el RUT ya existe, se actualizan los datos.</li>
-          <li>Límite: 5 MB por archivo.</li>
-        </ul>
       </mat-card-content>
     </mat-card>
   </div>
