@@ -1,0 +1,107 @@
+<div class="container section">
+
+  <div class="header">
+    <button mat-stroked-button color="primary" routerLink="/reportes">
+      <mat-icon>arrow_back</mat-icon>
+      Volver a Reportes
+    </button>
+
+    <div class="headline">
+      <h1>Reporte de satisfacción en prácticas</h1>
+      <p class="muted">Filtra por año, semestre y tipo de práctica (o “Todo”).</p>
+    </div>
+
+    <div class="spacer"></div>
+  </div>
+
+  <mat-card class="elev">
+    <mat-card-content>
+
+      <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center">
+
+        <mat-form-field appearance="outline">
+          <mat-label>Año</mat-label>
+          <mat-select [(ngModel)]="anio">
+            <mat-option *ngFor="let y of [2022,2023,2024,2025]" [value]="y">{{ y }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Semestre</mat-label>
+          <mat-select [(ngModel)]="semestre">
+            <mat-option [value]="1">1</mat-option>
+            <mat-option [value]="2">2</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo de práctica</mat-label>
+          <mat-select [(ngModel)]="tipo">
+            <mat-option [value]="null">Todo</mat-option>
+            <mat-option value="Intermedia">Intermedia</mat-option>
+            <mat-option value="Profesional I">Profesional I</mat-option>
+            <mat-option value="Profesional II">Profesional II</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <button mat-raised-button color="primary" (click)="buscar()">
+          Buscar
+        </button>
+
+        <button mat-stroked-button color="primary" (click)="exportarPDF()" [disabled]="!data">
+          <mat-icon>picture_as_pdf</mat-icon>
+          PDF
+        </button>
+
+        <button mat-stroked-button color="accent" (click)="exportarExcel()" [disabled]="!data">
+          <mat-icon>grid_on</mat-icon>
+          Excel
+        </button>
+
+      </div>
+
+      <div class="center" *ngIf="loading" style="margin-top:12px;">
+        <mat-spinner diameter="32"></mat-spinner>
+      </div>
+
+      <p class="muted" *ngIf="!loading && error" style="margin-top:12px;">
+        {{ error }}
+      </p>
+
+      <div *ngIf="!loading && data" style="margin-top:16px; display:grid; gap:12px; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));">
+
+        <mat-card class="kpi elev">
+          <mat-card-content>
+            <div class="kpi-value" style="color:#0ea5e9">{{ data.totalEstudiantes }}</div>
+            <div class="kpi-label">Total estudiantes</div>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="kpi elev">
+          <mat-card-content>
+            <div class="kpi-value" style="color:#16a34a">{{ data.porcentajeAprobacion | number:'1.0-0' }}%</div>
+            <div class="kpi-label">Porcentaje de Aprobación</div>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="kpi elev">
+          <mat-card-content>
+            <div class="kpi-value" style="color:#f59e0b">{{ data.encuestas.porcentajeSatisfaccion | number:'1.0-0' }}%</div>
+            <div class="kpi-label">Porcentaje de Satisfacción (encuestas)</div>
+          </mat-card-content>
+        </mat-card>
+
+      </div>
+
+      <p class="muted" *ngIf="!loading && data" style="margin-top:12px;">
+        Encuestas consideradas: {{ data.encuestas.totalRespuestas }} (promedio puntaje: {{ data.encuestas.promedioPuntaje | number:'1.1-2' }})
+      </p>
+
+      <p class="muted" *ngIf="!loading && data && data.totalEstudiantes === 0" style="margin-top:12px;">
+        No hay datos disponibles para mostrar.
+      </p>
+
+    </mat-card-content>
+  </mat-card>
+
+</div>

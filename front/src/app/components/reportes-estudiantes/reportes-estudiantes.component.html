@@ -1,0 +1,157 @@
+<div class="container section">
+  <!-- HEADER -->
+  <div class="header">
+    <button mat-stroked-button color="primary" routerLink="/reportes" class="btn-back">
+      <mat-icon>arrow_back</mat-icon>
+      Volver a Reportes
+    </button>
+
+    <div class="headline">
+      <h1>Reporte del estudiante</h1>
+      <p class="muted">Búsqueda por RUT o por nombre para visualizar prácticas, centros y supervisores</p>
+    </div>
+
+    <div class="spacer"></div>
+  </div>
+
+  <div style="display:flex; gap:8px; margin-bottom:12px;">
+    <button mat-stroked-button color="primary" (click)="exportarPDF()">
+      <mat-icon>picture_as_pdf</mat-icon>
+      Exportar PDF
+    </button>
+    <button mat-stroked-button color="accent" (click)="exportarExcel()">
+      <mat-icon>grid_on</mat-icon>
+      Exportar Excel
+    </button>
+  </div>
+
+  <!-- TARJETA BUSCADOR -->
+  <mat-card class="elev">
+    <mat-card-content>
+
+      <!-- BUSCAR POR NOMBRE -->
+      <div style="display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap;">
+        <mat-form-field appearance="outline" style="min-width:320px; flex:1;">
+          <mat-label>Buscar por nombre</mat-label>
+          <input
+            matInput
+            [value]="nombreQuery"
+            (input)="onNombreInput($any($event.target).value)"
+            placeholder="Ej: Ana"
+          />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" style="min-width:240px;">
+          <mat-label>RUT del estudiante</mat-label>
+          <input matInput [(ngModel)]="rut" placeholder="12.345.678-9" />
+        </mat-form-field>
+
+        <button mat-raised-button color="primary" (click)="buscar()">
+          Buscar
+        </button>
+      </div>
+
+      <!-- RESULTADOS POR NOMBRE -->
+      <mat-card class="elev" *ngIf="resultados?.length" style="margin-top:10px;">
+        <mat-card-content>
+          <div class="muted" style="margin-bottom:8px;">
+            Resultados (click para seleccionar):
+          </div>
+
+          <mat-nav-list>
+            <a mat-list-item *ngFor="let e of resultados" (click)="seleccionar(e.rut)">
+              <div style="display:flex; flex-direction:column;">
+                <strong>{{ e.nombre }}</strong>
+                <span class="muted">{{ e.rut }} • {{ e.plan || 'Sin plan' }}</span>
+              </div>
+            </a>
+          </mat-nav-list>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- LOADING -->
+      <div class="center" *ngIf="loading" style="margin-top:12px;">
+        <mat-spinner diameter="32"></mat-spinner>
+      </div>
+
+      <!-- ERROR -->
+      <p class="muted" *ngIf="!loading && error" style="margin-top:12px;">
+        {{ error }}
+      </p>
+
+    </mat-card-content>
+  </mat-card>
+
+  <!-- RESULTADO DEL ESTUDIANTE -->
+  <mat-card class="elev" style="margin-top:12px;" *ngIf="!loading && estudiante">
+    <mat-card-content>
+
+      <div style="margin:12px 0;">
+        <div style="font-weight:700; font-size:18px;">
+          {{ estudiante.nombre }}
+        </div>
+        <div class="muted">RUT: {{ estudiante.rut }}</div>
+        <div class="muted" *ngIf="estudiante.plan">Plan: {{ estudiante.plan }}</div>
+      </div>
+
+      <table mat-table [dataSource]="estudiante.practicas"
+            class="mat-elevation-z0"
+            style="width:100%;">
+
+        <!-- tipo -->
+        <ng-container matColumnDef="tipo">
+          <th mat-header-cell *matHeaderCellDef>Tipo</th>
+          <td mat-cell *matCellDef="let p">{{ p.tipo || '—' }}</td>
+        </ng-container>
+
+        <!-- estado -->
+        <ng-container matColumnDef="estado">
+          <th mat-header-cell *matHeaderCellDef>Estado</th>
+          <td mat-cell *matCellDef="let p">{{ p.estado }}</td>
+        </ng-container>
+
+        <!-- 🔹 AQUÍ VA SEMESTRE -->
+        <ng-container matColumnDef="semestre">
+          <th mat-header-cell *matHeaderCellDef>Semestre</th>
+          <td mat-cell *matCellDef="let p">
+            {{ p.semestre }}° {{ p.anio }}
+          </td>
+        </ng-container>
+
+        <!-- centro -->
+        <ng-container matColumnDef="centro">
+          <th mat-header-cell *matHeaderCellDef>Centro</th>
+          <td mat-cell *matCellDef="let p">{{ p.centro || '—' }}</td>
+        </ng-container>
+
+        <!-- tutores -->
+        <ng-container matColumnDef="tutores">
+          <th mat-header-cell *matHeaderCellDef>Supervisores</th>
+          <td mat-cell *matCellDef="let p">
+            {{ p.tutores?.length ? p.tutores.join(', ') : '—' }}
+          </td>
+        </ng-container>
+
+        <!-- inicio -->
+        <ng-container matColumnDef="inicio">
+          <th mat-header-cell *matHeaderCellDef>Inicio</th>
+          <td mat-cell *matCellDef="let p">{{ formatDate(p.fechaInicio) }}</td>
+        </ng-container>
+
+        <!-- termino -->
+        <ng-container matColumnDef="termino">
+          <th mat-header-cell *matHeaderCellDef>Término</th>
+          <td mat-cell *matCellDef="let p">{{ formatDate(p.fechaTermino) }}</td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+      </table>
+
+      <p class="muted" *ngIf="!estudiante.practicas?.length" style="margin-top:12px;">
+        El estudiante no registra prácticas.
+      </p>
+
+    </mat-card-content>
+  </mat-card>
+</div>

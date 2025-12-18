@@ -1,6 +1,9 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './guards/auth.guard';
 import { roleGuard } from './guards/role.guard';
+import { RoleGuard } from './guards/rol.guard';
+import { ROLES } from './components/auth/roles';
+
 
 export const routes: Routes = [
   // Redirecci�n inicial al dashboard
@@ -105,6 +108,7 @@ export const routes: Routes = [
   },
 
   // Gesti�n de pr�cticas
+  // Gestión de prácticas
   {
     path: 'practicas',
     canActivate: [authGuard, roleGuard],
@@ -149,10 +153,47 @@ export const routes: Routes = [
       import('./components/actividades-estudiantes/actividades-estudiantes.component').then(m => m.ActividadesEstudiantesComponent),
   },
 
-  // Ruta comod�n ? redirige a dashboard
-  // Ruta comodín -> redirige a dashboard
+  {
+    path: 'reportes',
+    canActivate: [authGuard, RoleGuard],
+    data: { roles: [ROLES.JEFATURA, ROLES.PRACTICAS] },
+    loadComponent: () =>
+      import('./components/reportes/reportes.component')
+        .then(m => m.ReportesComponent)
+  },
+
+   {
+    path: 'reportes/estudiante',
+    canActivate: [authGuard, RoleGuard],
+    data: { roles: [ROLES.JEFATURA, ROLES.PRACTICAS] },
+    loadComponent: () =>
+      import('./components/reportes-estudiantes/reportes-estudiantes.component')
+        .then(m => m.ReportesEstudianteComponent),
+  },
+
+  {
+    path: 'reportes/satisfaccion',
+    canActivate: [authGuard, RoleGuard],
+    data: { roles: [ROLES.JEFATURA, ROLES.PRACTICAS] },
+    loadComponent: () =>
+      import('./components/reportes-satisfaccion/reportes-satisfaccion.component')
+        .then(m => m.ReportesSatisfaccionComponent),
+  },
+
+
+  {
+    path: 'reportes/historico',
+    canActivate: [authGuard, RoleGuard],
+    data: { roles: [ROLES.JEFATURA, ROLES.PRACTICAS] },
+    loadComponent: () =>
+      import('./components/reportes-historico/reportes-historico.component')
+        .then(m => m.ReportesHistoricoComponent),
+  },
+
+  // Ruta comodín → redirige a login
   {
     path: '**',
     redirectTo: 'dashboard',
   },
+
 ];

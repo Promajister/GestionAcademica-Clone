@@ -1,0 +1,129 @@
+<div class="container section">
+  <ng-container *ngIf="loading">
+    <div class="center">
+      <mat-spinner></mat-spinner>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="!loading && error">
+    <mat-card class="elev" style="padding: 12px;">
+      <mat-card-title>Error</mat-card-title>
+      <mat-card-content>{{ error }}</mat-card-content>
+    </mat-card>
+  </ng-container>
+
+  <ng-container *ngIf="!loading && !error">
+
+    <div class="header">
+
+      <div class="headline">
+        <h1>Reportes y Estadísticas</h1>
+      </div>
+
+      <div class="spacer"></div>
+    </div>
+
+    <div class="row1" style="margin:12px 0; display:flex; gap:8px; flex-wrap:wrap;">
+      <button
+        mat-stroked-button
+        color="primary"
+        routerLink="/reportes/estudiante"
+      >
+        Reporte del estudiante
+      </button>
+
+      <button
+        mat-stroked-button
+        color="accent"
+        routerLink="/reportes/historico"
+      >
+        Reporte histórico
+      </button>
+
+      <button
+        mat-stroked-button
+        color="warn"
+        routerLink="/reportes/satisfaccion"
+      >
+        Reporte de satisfacción
+      </button>
+    </div>
+
+
+
+    <div class="kpi-grid">
+      <mat-card class="kpi elev" *ngFor="let c of [
+        {k:'Total Estudiantes',v:reporteData.totalStudents,color:'#1e88e5'},
+        {k:'Prácticas Activas',v:reporteData.activeInternships,color:'#2e7d32'},
+        {k:'Completadas',v:reporteData.completedInternships,color:'#8e24aa'},
+        {k:'Colegios',v:reporteData.schools,color:'#00897b'},
+        {k:'Supervisores',v:reporteData.supervisors,color:'#3949ab'},
+      ]">
+        <mat-card-content>
+          <div class="kpi-value" [style.color]="c.color">{{ c.v }}</div>
+          <div class="kpi-label">{{ c.k }}</div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- INDICADORES DE ACREDITACIÓN -->
+    <div class="kpi-grid" *ngIf="indicadores || satisfaccion">
+
+    <mat-card class="kpi elev" *ngIf="indicadores">
+        <mat-card-content>
+        <div class="kpi-value" style="color:#0ea5e9">
+            {{ indicadores.cobertura.estudiantesEnPractica }}
+        </div>
+        <div class="kpi-label">Estudiantes en práctica</div>
+        </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi elev" *ngIf="indicadores">
+        <mat-card-content>
+        <div class="kpi-value" style="color:#16a34a">
+            {{ indicadores.evaluacion.porcentajeAprobacion | number:'1.0-0' }}%
+        </div>
+        <div class="kpi-label">Aprobación de prácticas</div>
+        </mat-card-content>
+    </mat-card>
+
+    <mat-card class="kpi elev" *ngIf="satisfaccion">
+        <mat-card-content>
+        <div class="kpi-label">Satisfacción promedio</div>
+        </mat-card-content>
+    </mat-card>
+
+    </div>
+
+    <mat-divider></mat-divider>
+
+    <div class="grid-charts">
+      <mat-card class="elev chart-card">
+        <mat-card-title>Prácticas por estado</mat-card-title>
+        <mat-card-content>
+          <p class="muted" *ngIf="!donutData?.datasets?.[0]?.data?.length">No hay datos para graficar.</p>
+          <canvas *ngIf="donutData?.datasets?.[0]?.data?.length"
+            baseChart
+            [data]="donutData"
+            [type]="donutType">
+          </canvas>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="elev chart-card">
+        <mat-card-title>Prácticas por mes</mat-card-title>
+        <mat-card-content>
+          <p class="muted" *ngIf="!lineData?.datasets?.[0]?.data?.length">No hay datos para graficar.</p>
+          <canvas *ngIf="lineData?.datasets?.[0]?.data?.length"
+            baseChart
+            [data]="lineData"
+            [options]="lineOptions"
+            type="line">
+          </canvas>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <mat-divider></mat-divider>
+    <div class="grid2">
+</div>
