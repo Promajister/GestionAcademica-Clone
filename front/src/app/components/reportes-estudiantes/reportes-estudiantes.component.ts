@@ -42,6 +42,7 @@ import { saveAs } from 'file-saver';
     MatListModule,
   ],
   templateUrl: './reportes-estudiantes.component.html',
+  
 })
 export class ReportesEstudianteComponent {
   private reportesService = inject(ReportesService);

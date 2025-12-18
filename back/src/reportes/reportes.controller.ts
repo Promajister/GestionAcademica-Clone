@@ -1,7 +1,7 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ReportesService } from './reportes.service';
 
-@Controller('api/reportes')
+@Controller('/reportes')
 export class ReportesController {
   constructor(private readonly reportes: ReportesService) {}
 
@@ -21,7 +21,7 @@ export class ReportesController {
     @Query('semestre') semestre: string,
     @Query('tipo') tipo?: string,
   ) {
-    return this.reportes.getReporteSatisfaccion({
+    return this.reportes.getSatisfaccion({
       anio: Number(anio),
       semestre: Number(semestre) as 1 | 2,
       tipo: tipo ?? null,

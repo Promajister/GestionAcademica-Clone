@@ -10,11 +10,6 @@ export type TipoEncuesta = 'ESTUDIANTIL' | 'COLABORADORES_JEFES';
 export class EncuestasService {
   constructor(private readonly prisma: PrismaService) {}
 
-  // -----------------------
-  //  LISTA / DETALLE
-  // -----------------------
-
-  // Retorna todas las encuestas (estudiantes + colaboradores) normalizadas con "tipo"
   async findAll(): Promise<any[]> {
     try {
       const encEst = await this.prisma.encuestaEstudiante.findMany({
@@ -153,34 +148,35 @@ async create(payload: {
       });
     }
 
-    if (tipo === 'COLABORADORES_JEFES') {
-      // Crea encuesta de colaborador + respuestas en una transacción
-      return this.prisma.$transaction(async (tx) => {
-        const createData: any = {
-          nombre_colaborador: data.nombreColaborador ?? null,
-          nombre_colegio: data.centroEducativo ?? null,
-          // observación = comentarios adicionales sobre la práctica
-          observacion: data.comentariosAdicionalesPractica ?? null,
-          semestreId: semestreRecord ? semestreRecord.id : null,
-        };
+if (tipo === 'COLABORADORES_JEFES') {
+  return this.prisma.$transaction(async (tx) => {
+    const createData: any = {
+      nombre_colaborador: data.nombreColaborador ?? null,
+      nombre_colegio: data.centroEducativo ?? null,
 
-        if (data.fechaEvaluacion) {
-          createData.fecha = new Date(data.fechaEvaluacion);
-        }
+      // ✅ agrega el tipo de práctica para que después se pueda filtrar en reportes
+      tipo_practica: data.tipo_practica ?? null,
 
-        const created = await tx.encuestaColaborador.create({
-          data: createData,
-        });
+      // observación = comentarios adicionales sobre la práctica
+      observacion: data.comentariosAdicionalesPractica ?? null,
 
-        await this.saveRespuestasGenericas(tx, {
-          tipo,
-          encuestaId: created.id,
-          data,
-        });
+      semestreId: semestreRecord ? semestreRecord.id : null,
+    };
 
-        return { success: true, created };
-      });
-    }
+    const created = await tx.encuestaColaborador.create({
+      data: createData,
+    });
+
+    await this.saveRespuestasGenericas(tx, {
+      tipo,
+      encuestaId: created.id,
+      data,
+    });
+
+    return { success: true, created };
+  });
+}
+
 
     throw new BadRequestException('Tipo de encuesta no soportado');
   } catch (err) {

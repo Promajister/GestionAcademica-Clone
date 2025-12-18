@@ -1,0 +1,200 @@
+/* ====== RAÍZ ====== */
+.satisfaccion {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 4px 8px 18px;
+}
+
+/* Cards consistentes */
+.satisfaccion .card {
+  border-radius: 16px;
+}
+
+/* Un poco más de aire dentro de los mat-card */
+.satisfaccion ::ng-deep .mat-mdc-card-content {
+  padding: 18px !important;
+}
+
+/* ====== HEADER ====== */
+.satisfaccion .header {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.satisfaccion .headline h1 {
+  margin: 0;
+  font-size: 26px;
+  letter-spacing: -0.2px;
+}
+
+.satisfaccion .headline p {
+  margin: 6px 0 0;
+}
+
+/* ====== FILTROS ====== */
+.satisfaccion .filters {
+  display: grid;
+  grid-template-columns: 160px 160px minmax(260px, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.satisfaccion .filters button {
+  height: 56px; /* igual que mat-form-field outline */
+  border-radius: 12px;
+}
+
+@media (max-width: 900px) {
+  .satisfaccion .filters {
+    grid-template-columns: 1fr;
+  }
+  .satisfaccion .filters button {
+    width: 100%;
+  }
+}
+
+/* ====== ACCIONES ====== */
+.satisfaccion .actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.satisfaccion .actions button {
+  border-radius: 999px;
+}
+
+/* ====== GRID RESULTADOS ====== */
+.satisfaccion .grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .satisfaccion .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ====== SECCIONES ====== */
+.satisfaccion .section-title {
+  font-size: 15px;
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+
+.satisfaccion .meta {
+  font-size: 13px;
+  color: #6b7280;
+  margin-bottom: 14px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.satisfaccion .pill {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #eef2f7;
+  border: 1px solid #dde3ee;
+}
+
+/* ====== KPIs (más estéticos y compactos) ====== */
+.satisfaccion .kpis {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.satisfaccion .kpis.two {
+  grid-template-columns: repeat(3, minmax(0, 1fr)); /* 3 en desktop */
+}
+
+@media (max-width: 900px) {
+  .satisfaccion .kpis,
+  .satisfaccion .kpis.two {
+    grid-template-columns: 1fr;
+  }
+}
+
+.satisfaccion .kpi {
+  padding: 14px;
+  border-radius: 14px;
+  background: #f7f9fc;
+  border: 1px solid #e3e8f2;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 86px;
+}
+
+.satisfaccion .kpi-label {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.satisfaccion .kpi-value {
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: -0.4px;
+  line-height: 1.1;
+}
+
+/* KPI destacado */
+.satisfaccion .kpi.accent {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+}
+
+/* ====== ESTADOS (filas más “pro”) ====== */
+.satisfaccion .rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.satisfaccion .row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #f7f9fc;
+  border: 1px solid #e3e8f2;
+}
+
+.satisfaccion .row-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.satisfaccion .row-left mat-icon {
+  opacity: 0.9;
+}
+
+.satisfaccion .row-right {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+
+/* ====== UTIL ====== */
+.satisfaccion .muted {
+  opacity: 0.8;
+}
+
+.satisfaccion .center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}

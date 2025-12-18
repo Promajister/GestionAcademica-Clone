@@ -8,6 +8,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { ReportesService, ReporteSatisfaccion } from '../../services/reportes.service';
@@ -16,6 +17,16 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+
+const TIPOS_PRACTICA = [
+  { label: 'PRÁCTICA DE APOYO A LA DOCENCIA I',   value: 'Apoyo a la Docencia I' },
+  { label: 'PRÁCTICA DE APOYO A LA DOCENCIA II',  value: 'Apoyo a la Docencia II' },
+  { label: 'PRÁCTICA DE APOYO A LA DOCENCIA III', value: 'Apoyo a la Docencia III' },
+  { label: 'PRÁCTICA DE APOYO A LA DOCENCIA IV',  value: 'Apoyo a la Docencia IV' },
+  { label: 'PRÁCTICA PROFESIONAL DOCENTE',        value: 'Práctica Profesional Docente' },
+] as const;
+
+type TipoPracticaValue = typeof TIPOS_PRACTICA[number]['value'];
 
 @Component({
   standalone: true,
@@ -30,20 +41,26 @@ import { saveAs } from 'file-saver';
     MatFormFieldModule,
     MatIconModule,
     MatProgressSpinnerModule,
+    MatInputModule,
   ],
   templateUrl: './reportes-satisfaccion.component.html',
+  styleUrls: ['./reportes-satisfaccion.component.scss'], 
 })
+
 export class ReportesSatisfaccionComponent {
   private reportesService = inject(ReportesService);
 
   anio = new Date().getFullYear();
   semestre: 1 | 2 = 1;
-  tipo: string | null = null; // null = Todo
 
   loading = false;
   error: string | null = null;
 
   data: ReporteSatisfaccion | null = null;
+
+  tiposPractica = TIPOS_PRACTICA;
+  tipo: TipoPracticaValue | null = null;
+
 
   buscar() {
     this.loading = true;
@@ -81,11 +98,27 @@ export class ReportesSatisfaccionComponent {
     );
 
     const rows = [
-      ['Total estudiantes', String(this.data.totalEstudiantes)],
-      ['% aprobación', `${this.data.porcentajeAprobacion}%`],
-      ['Encuestas respondidas', String(this.data.encuestas.totalRespuestas)],
-      ['Promedio puntaje encuestas', String(this.data.encuestas.promedioPuntaje)],
-      ['% satisfacción', `${this.data.encuestas.porcentajeSatisfaccion}%`],
+      ['Año', String(this.data.anio)],
+      ['Semestre', String(this.data.semestre)],
+      ['Tipo', String(this.data.tipo ?? 'Todo')],
+
+      ['Prácticas (total)', String(this.data.practicas.totalPracticas)],
+      ['Estudiantes', String(this.data.practicas.estudiantesUnicos)],
+
+      ['Aprobadas', `${this.data.practicas.aprobadas} (${this.data.practicas.porcentajes.aprobadas}%)`],
+      ['Reprobadas', `${this.data.practicas.reprobadas} (${this.data.practicas.porcentajes.reprobadas}%)`],
+      ['En curso', `${this.data.practicas.enCurso} (${this.data.practicas.porcentajes.enCurso}%)`],
+
+      ['% aprobación (solo evaluadas)', `${this.data.practicas.porcentajeAprobacionEvaluadas}%`],
+
+      ['Encuestas Estudiantes (registradas)', String(this.data.encuestasEstudiantes.totalEncuestas)],
+      ['Alternativas respondidas (Estudiantes)', String(this.data.encuestasEstudiantes.totalAlternativasRespondidas)],
+      ['% Satisfacción Estudiantes', `${this.data.encuestasEstudiantes.porcentajeSatisfaccion}%`],
+
+      ['Encuestas Colaboradores (registradas)', String(this.data.encuestasColaboradores.totalEncuestas)],
+      ['Alternativas respondidas (Colaboradores)', String(this.data.encuestasColaboradores.totalAlternativasRespondidas)],
+      ['% Satisfacción Colaboradores', `${this.data.encuestasColaboradores.porcentajeSatisfaccion}%`],
+
     ];
 
     autoTable(doc, {
@@ -104,11 +137,28 @@ export class ReportesSatisfaccionComponent {
       { Indicador: 'Año', Valor: this.data.anio },
       { Indicador: 'Semestre', Valor: this.data.semestre },
       { Indicador: 'Tipo', Valor: this.data.tipo ?? 'Todo' },
-      { Indicador: 'Total estudiantes', Valor: this.data.totalEstudiantes },
-      { Indicador: '% aprobación', Valor: this.data.porcentajeAprobacion },
-      { Indicador: 'Encuestas respondidas', Valor: this.data.encuestas.totalRespuestas },
-      { Indicador: 'Promedio puntaje encuestas', Valor: this.data.encuestas.promedioPuntaje },
-      { Indicador: '% satisfacción', Valor: this.data.encuestas.porcentajeSatisfaccion },
+
+      { Indicador: 'Prácticas (total)', Valor: this.data.practicas.totalPracticas },
+      { Indicador: 'Estudiantes', Valor: this.data.practicas.estudiantesUnicos },
+
+      { Indicador: 'Aprobadas', Valor: this.data.practicas.aprobadas },
+      { Indicador: '% Aprobadas', Valor: this.data.practicas.porcentajes.aprobadas },
+
+      { Indicador: 'Reprobadas', Valor: this.data.practicas.reprobadas },
+      { Indicador: '% Reprobadas', Valor: this.data.practicas.porcentajes.reprobadas },
+
+      { Indicador: 'En curso', Valor: this.data.practicas.enCurso },
+      { Indicador: '% En curso', Valor: this.data.practicas.porcentajes.enCurso },
+
+      { Indicador: '% aprobación (solo evaluadas)', Valor: this.data.practicas.porcentajeAprobacionEvaluadas },
+
+      { Indicador: 'Encuestas Estudiantes (registradas)', Valor: this.data.encuestasEstudiantes.totalEncuestas },
+      { Indicador: 'Alternativas respondidas (Estudiantes)', Valor: this.data.encuestasEstudiantes.totalAlternativasRespondidas },
+      { Indicador: '% Satisfacción Estudiantes', Valor: this.data.encuestasEstudiantes.porcentajeSatisfaccion },
+
+      { Indicador: 'Encuestas Colaboradores (registradas)', Valor: this.data.encuestasColaboradores.totalEncuestas },
+      { Indicador: 'Alternativas respondidas (Colaboradores)', Valor: this.data.encuestasColaboradores.totalAlternativasRespondidas },
+      { Indicador: '% Satisfacción Colaboradores', Valor: this.data.encuestasColaboradores.porcentajeSatisfaccion },
     ];
 
     const ws = XLSX.utils.json_to_sheet(json);

@@ -14,6 +14,10 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTableModule } from '@angular/material/table';
 import { MatDividerModule } from '@angular/material/divider';
 
+// Charts
+import { BaseChartDirective } from 'ng2-charts';
+import type { ChartConfiguration, ChartData } from 'chart.js';
+
 import { ReportesService, ReportesHistoricoResponse } from '../../services/reportes.service';
 
 // Export
@@ -23,6 +27,32 @@ import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 
 type GroupBy = 'semester' | 'year';
+
+const TIPOS_PRACTICA = [
+  {
+    label: 'PRÁCTICA DE APOYO A LA DOCENCIA I',
+    value: 'PRÁCTICA DE APOYO A LA DOCENCIA I',
+  },
+  {
+    label: 'PRÁCTICA DE APOYO A LA DOCENCIA II',
+    value: 'PRÁCTICA DE APOYO A LA DOCENCIA II',
+  },
+  {
+    label: 'PRÁCTICA DE APOYO A LA DOCENCIA III',
+    value: 'PRÁCTICA DE APOYO A LA DOCENCIA III',
+  },
+  {
+    label: 'PRÁCTICA DE APOYO A LA DOCENCIA IV',
+    value: 'PRÁCTICA DE APOYO A LA DOCENCIA IV',
+  },
+    {
+    label: 'PRÁCTICA PROFESIONAL DOCENTE',
+    value: 'PRÁCTICA PROFESIONAL DOCENTE',
+  },
+] as const;
+
+type TipoPracticaValue = typeof TIPOS_PRACTICA[number]['value'];
+
 
 @Component({
   standalone: true,
@@ -42,25 +72,64 @@ type GroupBy = 'semester' | 'year';
     MatProgressSpinnerModule,
     MatTableModule,
     MatDividerModule,
+    BaseChartDirective, 
   ],
 })
+
 export class ReportesHistoricoComponent {
   private reportes = inject(ReportesService);
 
-  // filtros
   fromYear = new Date().getFullYear() - 2;
   toYear = new Date().getFullYear();
-  tipo: string | null = null; // null => "Todas"
   groupBy: GroupBy = 'semester';
 
   loading = false;
   error: string | null = null;
 
   data: ReportesHistoricoResponse | null = null;
-
   rows: any[] = [];
 
   displayedColumns = ['periodo', 'totalEstudiantes', 'centrosPorTipo', 'supervisores', 'mentores'];
+
+  tiposPractica = TIPOS_PRACTICA;
+  tipo: TipoPracticaValue | null = null;
+
+  get showCharts(): boolean {
+    return !!this.data
+      && !this.loading
+      && (this.tipo === null)
+      && (this.groupBy === 'semester');
+  }
+
+
+  // 1) Línea: estudiantes por periodo
+  lineData: ChartData<'line'> = { labels: [], datasets: [] };
+  lineOptions: ChartConfiguration<'line'>['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { intersect: false },
+    },
+    scales: {
+      y: { beginAtZero: true },
+    },
+  };
+
+  // 2) Barras apiladas: centros por tipo por periodo
+  stackedBarData: ChartData<'bar'> = { labels: [], datasets: [] };
+  stackedBarOptions: ChartConfiguration<'bar'>['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'bottom' },
+      tooltip: { intersect: false },
+    },
+    scales: {
+      x: { stacked: true },
+      y: { stacked: true, beginAtZero: true },
+    },
+  };
 
   buscar() {
     this.loading = true;
@@ -81,6 +150,7 @@ export class ReportesHistoricoComponent {
       next: (res) => {
         this.data = res;
         this.rows = res.series ?? [];
+        this.buildChartsFromSeries(this.rows);
         this.loading = false;
       },
       error: () => {
@@ -91,13 +161,63 @@ export class ReportesHistoricoComponent {
     });
   }
 
+  private buildChartsFromSeries(series: any[]) {
+    if (!series?.length) {
+      this.lineData = { labels: [], datasets: [] };
+      this.stackedBarData = { labels: [], datasets: [] };
+      return;
+    }
 
-  // helpers para mostrar en tabla
+    const labels = series.map(s => s.periodo);
+
+    // --------- CHART 1: LINEA (estudiantes) ----------
+    this.lineData = {
+      labels,
+      datasets: [
+        {
+          data: series.map(s => Number(s.totalEstudiantes ?? 0)),
+          label: 'Estudiantes',
+          tension: 0.3,
+          pointRadius: 3,
+          fill: false,
+        },
+      ],
+    };
+
+    // --------- CHART 2: BARRAS APILADAS (centros por tipo) ----------
+    // Unificamos todos los tipos que aparezcan en cualquier periodo
+    const tiposSet = new Set<string>();
+    for (const s of series) {
+      for (const c of (s.centrosPorTipo ?? [])) {
+        tiposSet.add(String(c.tipo ?? 'SIN_TIPO'));
+      }
+    }
+    const tipos = Array.from(tiposSet).sort((a, b) => a.localeCompare(b));
+
+    // Dataset por tipo: un array con el total en cada periodo
+    const datasets = tipos.map((tipoCentro) => {
+      const data = series.map((s) => {
+        const found = (s.centrosPorTipo ?? []).find((x: any) => String(x.tipo ?? 'SIN_TIPO') === tipoCentro);
+        return Number(found?.total ?? 0);
+      });
+
+      return {
+        label: tipoCentro,
+        data,
+      };
+    });
+
+    this.stackedBarData = {
+      labels,
+      datasets,
+    };
+
+  }
+
+  // helpers tabla (tu código igual)
   centrosToText(row: any): string {
     if (!row?.centrosPorTipo?.length) return '—';
-    return row.centrosPorTipo
-      .map((x: any) => `${x.tipo}: ${x.total}`)
-      .join(' • ');
+    return row.centrosPorTipo.map((x: any) => `${x.tipo}: ${x.total}`).join(' • ');
   }
 
   listToText(list: string[]): string {
@@ -164,4 +284,5 @@ export class ReportesHistoricoComponent {
       `reporte_historico_${this.data.fromYear}_${this.data.toYear}.xlsx`
     );
   }
+
 }
