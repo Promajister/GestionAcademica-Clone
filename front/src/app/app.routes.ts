@@ -98,16 +98,9 @@ export const routes: Routes = [
       import('./components/encuestas/encuestas.component').then(m => m.EncuestasComponent),
   },
 
-  // Supervisi�n general
-  {
-    path: 'supervision',
-    canActivate: [authGuard, roleGuard],
-    data: { allowedRoles: ['jefatura'] },
-    loadComponent: () =>
-      import('./components/supervision/supervision.component').then(m => m.SupervisionComponent),
-  },
+  // Supervision general
 
-  // Gesti�n de pr�cticas
+
   // Gestión de prácticas
   {
     path: 'practicas',
