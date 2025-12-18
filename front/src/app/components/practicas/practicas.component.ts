@@ -170,6 +170,18 @@ export class PracticasComponent {
     return formato[estado] || estado;
   }
 
+  // Función para formatear el tipo de centro educativo
+  formatearTipoCentro(tipo: string | null | undefined): string {
+    if (!tipo) return 'Sin especificar';
+    const formato: Record<string, string> = {
+      'PARTICULAR': 'Particular',
+      'PARTICULAR_SUBVENCIONADO': 'Particular Subvencionado',
+      'SLEP': 'SLEP',
+      'NO_CONVENCIONAL': 'No Convencional'
+    };
+    return formato[tipo] || tipo;
+  }
+
   // Propiedades para las fechas mínimas del datepicker
   fechaMinimaTermino: Date | null = null;
 

@@ -93,7 +93,7 @@
                     <h4>{{ practica.centro.nombre }}</h4>
                     <div class="CenterMeta">
                       @if (practica.centro.tipo) {
-                        <span class="CenterType">{{ practica.centro.tipo }}</span>
+                        <span class="CenterType">{{ formatearTipoCentro(practica.centro.tipo) }}</span>
                       }
                     </div>
                   </div>
@@ -310,7 +310,7 @@
                 @if (practicaSeleccionada.centro.tipo) {
                   <div class="DetailItem">
                     <label>Tipo:</label>
-                    <span>{{ practicaSeleccionada.centro.tipo }}</span>
+                    <span>{{ formatearTipoCentro(practicaSeleccionada.centro.tipo) }}</span>
                   </div>
                 }
                 @if (practicaSeleccionada.centro.direccion) {

@@ -18,7 +18,7 @@ async function bootstrap() {
     origin: process.env.FRONTEND_ORIGIN?.split(',').map((o) => o.trim()) || true,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'X-CSRF-Token', 'X-XSRF-Token', 'Authorization', 'X-Role'],
+    allowedHeaders: ['Content-Type', 'X-CSRF-Token', 'X-XSRF-Token', 'Authorization', 'X-Role', 'x-user-role'],
   });
 
   // Cookies (access/refresh/CSRF)
