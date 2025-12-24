@@ -641,3 +641,223 @@
     width: 100%;
   }
 }
+
+/* ===== Modal detalles unificado (igual a Centros) ===== */
+.DialogContent--details {
+  max-width: 920px;
+  width: 95%;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+}
+
+.DialogHeader--details {
+  padding: 18px 18px 14px;
+  border-bottom: 1px solid #eef2f7;
+  margin-bottom: 0;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(37,99,235,.10), transparent 55%),
+    radial-gradient(circle at 100% 0%, rgba(124,58,237,.10), transparent 55%),
+    #ffffff;
+}
+
+.DialogHeaderLeft {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+}
+
+.DialogAvatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+  flex: 0 0 auto;
+
+  mat-icon {
+    font-size: 22px;
+    height: 22px;
+    width: 22px;
+    line-height: 22px;
+  }
+}
+
+.DialogTitles {
+  min-width: 0;
+
+  h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: 0.2px;
+  }
+}
+
+.DialogSubtitle {
+  margin-top: 3px;
+  font-size: 13px;
+  color: #475569;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.DetailsTop {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 2px 0 14px;
+}
+
+.Chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #111827;
+  font-size: 12.5px;
+  min-width: 0;
+
+  mat-icon {
+    font-size: 16px;
+    height: 16px;
+    width: 16px;
+    line-height: 16px;
+    color: #334155;
+  }
+}
+
+.Chip--primary {
+  border-color: rgba(37,99,235,.25);
+  background: rgba(37,99,235,.06);
+
+  mat-icon { color: #2563eb; }
+}
+
+.ChipText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.DetailsSection {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed #e5e7eb;
+}
+
+.DetailsSection:first-of-type {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.SectionHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+
+  mat-icon {
+    font-size: 20px;
+    height: 20px;
+    width: 20px;
+    line-height: 20px;
+    color: #1f2937;
+  }
+
+  h3 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: #111827;
+  }
+}
+
+/* para Observaciones con botón a la derecha */
+.SectionHead--row { justify-content: space-between; }
+.SectionHeadLeft { display: flex; align-items: center; gap: 8px; }
+
+.DetailsGrid--2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.KV {
+  border: 1px solid #eef2f7;
+  background: #f8fafc;
+  border-radius: 14px;
+  padding: 10px 12px;
+  min-width: 0;
+
+  .K {
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+
+  .V {
+    font-size: 14px;
+    color: #0f172a;
+    font-weight: 600;
+    min-width: 0;
+    word-break: break-word;
+  }
+}
+
+.KV--full { grid-column: 1 / -1; }
+
+.DialogActions--details {
+  background: #fff;
+  border-top: 1px solid #eef2f7;
+  margin-top: 0;
+  padding: 14px 18px 16px;
+}
+
+/* Listas “personas” (colaboradores / tutores) estilo tarjeta */
+.PeopleList {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.PeopleCard {
+  border: 1px solid #eef2f7;
+  background: #fff;
+  border-radius: 14px;
+  padding: 10px 12px;
+}
+
+.PeopleTop {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+
+  mat-icon {
+    font-size: 20px;
+    height: 20px;
+    width: 20px;
+    line-height: 20px;
+    color: #2563eb;
+    margin-top: 2px;
+  }
+}
+
+.PeopleText { min-width: 0; }
+.PeopleName { font-size: 14px; font-weight: 700; color: #0f172a; }
+.PeopleMeta { font-size: 13px; color: #64748b; display: flex; flex-wrap: wrap; gap: 6px; }
+
+@media (max-width: 720px) {
+  .DetailsGrid--2 { grid-template-columns: 1fr; }
+  .PeopleList { grid-template-columns: 1fr; }
+}
