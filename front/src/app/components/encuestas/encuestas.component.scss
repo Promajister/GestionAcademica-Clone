@@ -1031,3 +1031,122 @@ mat-card-actions {
     width: auto;
   }
 }
+
+
+/* =========================
+   MODAL ESTADÍSTICAS (PRO)
+   ========================= */
+
+.stats-modal .modal-body {
+  gap: 1rem;
+}
+
+.head-actions {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.head-pill {
+  border-radius: 999px !important;
+  height: 36px;
+  padding: 0 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* Acordeón más limpio */
+.stats-accordion .mat-expansion-panel {
+  border-radius: 14px !important;
+  overflow: hidden;
+  border: 1px solid rgba(0,0,0,0.06);
+  box-shadow: none;
+  margin-top: 0.75rem;
+}
+.stats-accordion .mat-expansion-panel:first-child {
+  margin-top: 0;
+}
+.stats-accordion .mat-expansion-panel-header {
+  background: #f8fafc;
+}
+.stats-accordion .mat-expansion-panel-header:hover {
+  background: #f3f4f6;
+}
+
+/* Tabla: evita que se vea apretada */
+.stats-modal .stats-table th,
+.stats-modal .stats-table td {
+  padding: 0.45rem 0.55rem;
+  font-size: 0.8rem;
+  text-align: center;
+  white-space: nowrap;
+}
+.stats-modal .stats-table th:first-child,
+.stats-modal .stats-table td:first-child {
+  text-align: left;
+  white-space: normal;
+  min-width: 320px;
+}
+
+/* Contenedor tabla más bonito */
+.stats-modal .table-wrapper {
+  margin-top: 0.75rem;
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* Charts: más espacio y mejor lectura */
+.stats-modal .charts-container {
+  margin-top: 0.9rem;
+  padding: 0.75rem 0.75rem 0.9rem;
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.stats-modal .chart-row {
+  gap: 0.85rem;
+}
+
+.stats-modal .chart-row-label {
+  flex: 0 0 320px;
+  font-size: 0.85rem;
+  color: rgba(0,0,0,0.78);
+}
+
+.stats-modal .chart-row-bar {
+  height: 26px;
+  border-radius: 6px;
+}
+
+.stats-modal .chart-legend {
+  margin-top: 0.75rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid rgba(0,0,0,0.06);
+}
+
+@media (max-width: 960px) {
+  .stats-modal .stats-table th:first-child,
+  .stats-modal .stats-table td:first-child {
+    min-width: 260px;
+  }
+  .stats-modal .chart-row-label {
+    flex: 0 0 260px;
+  }
+}
+
+@media (max-width: 720px) {
+  .head-pill { display: none; }
+
+  .stats-modal .chart-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .stats-modal .chart-row-label {
+    flex: none;
+  }
+}

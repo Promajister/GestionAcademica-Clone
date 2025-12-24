@@ -246,57 +246,83 @@
 
     <!-- ESTADÍSTICAS ENCUESTA ESTUDIANTIL (VENTANA MODAL) -->
   <mat-card
-    class="elev detail-card custom-modal"
-    *ngIf="
-      tipoStatsVisible === 'ESTUDIANTIL' &&
-      estadisticasEstudiantiles?.length &&
-      totalEncuestasEstudiantiles
-    "
-  >
-    <mat-card-header>
-      <mat-card-title>
-        Estadísticas – Percepción estudiantil sobre la práctica
-      </mat-card-title>
+  class="elev detail-card custom-modal stats-modal"
+  *ngIf="
+    tipoStatsVisible === 'ESTUDIANTIL' &&
+    estadisticasEstudiantiles?.length &&
+    totalEncuestasEstudiantiles
+  "
+>
+  <!-- HEADER sticky con acciones a la derecha -->
+  <mat-card-header class="modal-head">
+    <div class="modal-head-text">
+      <mat-card-title>Estadísticas</mat-card-title>
       <mat-card-subtitle>
-        Basado en {{ totalEncuestasEstudiantiles }} encuestas registradas
+        Percepción estudiantil sobre la práctica — Basado en
+        <strong>{{ totalEncuestasEstudiantiles }}</strong> encuestas
       </mat-card-subtitle>
+    </div>
+
+    <div class="head-actions">
+      <button
+        mat-stroked-button
+        color="primary"
+        class="head-pill"
+        type="button"
+        (click)="downloadEstadisticasEstudiantilesExcel()"
+      >
+        <mat-icon>download</mat-icon>
+        Exportar Excel
+      </button>
 
       <button mat-icon-button class="close-btn" (click)="cerrarEstadisticas()">
         <mat-icon>close</mat-icon>
       </button>
-    </mat-card-header>
+    </div>
+  </mat-card-header>
 
+  <!-- OJO: modal-body para usar tu diseño pro -->
+  <mat-card-content class="modal-body">
+    <!-- CHIPS resumen (como Detalle Encuesta) -->
+    <div class="detail-summary">
+      <div class="summary-chip">
+        <mat-icon>bar_chart</mat-icon>
+        <span><strong>Total:</strong> {{ totalEncuestasEstudiantiles }}</span>
+      </div>
 
-  <mat-card-actions align="end" style="padding-top: 0;">
-    <button
-      mat-stroked-button
-      color="primary"
-      type="button"
-      (click)="downloadEstadisticasEstudiantilesExcel()"
-    >
-      <mat-icon>download</mat-icon>
-      Exportar estadísticas a Excel
-    </button>
-  </mat-card-actions>
+      <div class="summary-chip">
+        <mat-icon>perm_identity</mat-icon>
+        <span>Estudiantes</span>
+      </div>
 
+      <div class="summary-chip" *ngIf="filtroAnioStats">
+        <mat-icon>event</mat-icon>
+        <span>Año: {{ filtroAnioStats }}</span>
+      </div>
 
-    <mat-card-content>
-      <!-- Acordeón: cada grupo (I, II, III...) se despliega al hacer clic -->
-      <mat-accordion>
+      <div class="summary-chip" *ngIf="filtroSemestreStats">
+        <mat-icon>school</mat-icon>
+        <span>Semestre: {{ filtroSemestreStats }}</span>
+      </div>
+    </div>
+
+    <!-- CONTENIDO en sección (para que no quede “tirado”) -->
+    <section class="detail-section">
+      <div class="section-head">
+        <h3 class="section-title">Resultados por sección</h3>
+        <span class="scale-hint">Haz clic en un grupo para desplegar</span>
+      </div>
+
+      <mat-accordion class="stats-accordion">
         <mat-expansion-panel
           *ngFor="let grupo of estadisticasEstudiantiles"
           class="stats-group"
         >
           <mat-expansion-panel-header>
-            <mat-panel-title>
-              {{ grupo.titulo }}
-            </mat-panel-title>
-            <mat-panel-description>
-              Ver estadísticas
-            </mat-panel-description>
+            <mat-panel-title>{{ grupo.titulo }}</mat-panel-title>
+            <mat-panel-description>Ver estadísticas</mat-panel-description>
           </mat-expansion-panel-header>
 
-          <!-- Tabla de conteos -->
           <div class="table-wrapper">
             <table class="detail-plain-table stats-table">
               <thead>
@@ -311,24 +337,18 @@
               <tbody>
                 <tr *ngFor="let p of grupo.preguntas">
                   <td>{{ p.label }}</td>
-
-                  <!-- Conteos por categoría -->
                   <td *ngFor="let col of getColumnasPorEscala(grupo.escala)">
                     {{ p.conteos[col.value] || 0 }}
                   </td>
-
                   <td>{{ p.totalEncuestas }}</td>
                 </tr>
               </tbody>
             </table>
           </div>
 
-          <!-- Gráfico tipo barras apiladas -->
           <div class="charts-container">
             <div class="chart-row" *ngFor="let p of grupo.preguntas">
-              <div class="chart-row-label">
-                {{ p.label }}
-              </div>
+              <div class="chart-row-label">{{ p.label }}</div>
 
               <div class="chart-row-bar">
                 <div
@@ -337,17 +357,13 @@
                   [style.width.%]="getPorcentaje(p, col.value)"
                   [attr.title]="col.label + ': ' + getPorcentaje(p, col.value) + '%'"
                 >
-                  <span
-                    class="chart-segment-text"
-                    *ngIf="getPorcentaje(p, col.value) >= 8"
-                  >
+                  <span class="chart-segment-text" *ngIf="getPorcentaje(p, col.value) >= 8">
                     {{ getPorcentaje(p, col.value) }}%
                   </span>
                 </div>
               </div>
             </div>
 
-            <!-- Leyenda -->
             <div class="chart-legend">
               <span *ngFor="let col of getColumnasPorEscala(grupo.escala)">
                 <span class="legend-color scale-{{ col.value }}"></span>
@@ -357,107 +373,129 @@
           </div>
         </mat-expansion-panel>
       </mat-accordion>
-    </mat-card-content>
-  </mat-card>
+    </section>
+  </mat-card-content>
+</mat-card>
+
 
 
   <!-- ESTADÍSTICAS ENCUESTA COLABORADORES / JEFES UTP (VENTANA MODAL) -->
 <mat-card
-  class="elev detail-card custom-modal"
+  class="elev detail-card custom-modal stats-modal"
   *ngIf="
     tipoStatsVisible === 'COLABORADORES_JEFES' &&
     estadisticasColaboradores?.length &&
     totalEncuestasColaboradores
   "
 >
-  <mat-card-header>
-    <mat-card-title>
-      Estadísticas – Colaboradores / Jefes UTP
-    </mat-card-title>
-    <mat-card-subtitle>
-      Basado en {{ totalEncuestasColaboradores }} encuestas registradas
-    </mat-card-subtitle>
+  <mat-card-header class="modal-head">
+    <div class="modal-head-text">
+      <mat-card-title>Estadísticas</mat-card-title>
+      <mat-card-subtitle>
+        Colaboradores / Jefes UTP — Basado en
+        <strong>{{ totalEncuestasColaboradores }}</strong> encuestas
+      </mat-card-subtitle>
+    </div>
 
-    <button mat-icon-button class="close-btn" (click)="cerrarEstadisticas()">
-      <mat-icon>close</mat-icon>
-    </button>
+    <div class="head-actions">
+      <button mat-icon-button class="close-btn" (click)="cerrarEstadisticas()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
   </mat-card-header>
 
-  <mat-card-content>
-    <mat-accordion>
-      <mat-expansion-panel
-        *ngFor="let grupo of estadisticasColaboradores"
-        class="stats-group"
-      >
-        <mat-expansion-panel-header>
-          <mat-panel-title>
-            {{ grupo.titulo }}
-          </mat-panel-title>
-          <mat-panel-description>
-            Ver estadísticas
-          </mat-panel-description>
-        </mat-expansion-panel-header>
+  <mat-card-content class="modal-body">
+    <div class="detail-summary">
+      <div class="summary-chip">
+        <mat-icon>bar_chart</mat-icon>
+        <span><strong>Total:</strong> {{ totalEncuestasColaboradores }}</span>
+      </div>
 
-        <!-- Tabla de conteos -->
-        <div class="table-wrapper">
-          <table class="detail-plain-table stats-table">
-            <thead>
-              <tr>
-                <th>Aspecto a evaluar</th>
-                <th *ngFor="let col of getColumnasPorEscala(grupo.escala)">
-                  {{ col.label }}
-                </th>
-                <th>Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let p of grupo.preguntas">
-                <td>{{ p.label }}</td>
+      <div class="summary-chip">
+        <mat-icon>groups</mat-icon>
+        <span>Colaboradores / UTP</span>
+      </div>
 
-                <!-- Conteos por categoría -->
-                <td *ngFor="let col of getColumnasPorEscala(grupo.escala)">
-                  {{ p.conteos[col.value] || 0 }}
-                </td>
+      <div class="summary-chip" *ngIf="filtroAnioStats">
+        <mat-icon>event</mat-icon>
+        <span>Año: {{ filtroAnioStats }}</span>
+      </div>
 
-                <td>{{ p.totalEncuestas }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+      <div class="summary-chip" *ngIf="filtroSemestreStats">
+        <mat-icon>school</mat-icon>
+        <span>Semestre: {{ filtroSemestreStats }}</span>
+      </div>
+    </div>
 
-        <!-- Gráfico tipo barras apiladas -->
-        <div class="charts-container">
-          <div class="chart-row" *ngFor="let p of grupo.preguntas">
-            <div class="chart-row-label">
-              {{ p.label }}
-            </div>
+    <section class="detail-section">
+      <div class="section-head">
+        <h3 class="section-title">Resultados por sección</h3>
+        <span class="scale-hint">Haz clic en un grupo para desplegar</span>
+      </div>
 
-            <div class="chart-row-bar">
-              <div
-                *ngFor="let col of getColumnasPorEscala(grupo.escala)"
-                class="chart-segment scale-{{ col.value }}"
-                [style.width.%]="getPorcentaje(p, col.value)"
-                [attr.title]="col.label + ': ' + getPorcentaje(p, col.value) + '%'"
-              >
-                <span
-                  class="chart-segment-text"
-                  *ngIf="getPorcentaje(p, col.value) >= 8"
+      <mat-accordion class="stats-accordion">
+        <!-- tu contenido igual -->
+        <mat-expansion-panel
+          *ngFor="let grupo of estadisticasColaboradores"
+          class="stats-group"
+        >
+          <mat-expansion-panel-header>
+            <mat-panel-title>{{ grupo.titulo }}</mat-panel-title>
+            <mat-panel-description>Ver estadísticas</mat-panel-description>
+          </mat-expansion-panel-header>
+
+          <!-- Tabla + barras igual a tu código actual -->
+          <div class="table-wrapper">
+            <table class="detail-plain-table stats-table">
+              <thead>
+                <tr>
+                  <th>Aspecto a evaluar</th>
+                  <th *ngFor="let col of getColumnasPorEscala(grupo.escala)">
+                    {{ col.label }}
+                  </th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let p of grupo.preguntas">
+                  <td>{{ p.label }}</td>
+                  <td *ngFor="let col of getColumnasPorEscala(grupo.escala)">
+                    {{ p.conteos[col.value] || 0 }}
+                  </td>
+                  <td>{{ p.totalEncuestas }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="charts-container">
+            <div class="chart-row" *ngFor="let p of grupo.preguntas">
+              <div class="chart-row-label">{{ p.label }}</div>
+
+              <div class="chart-row-bar">
+                <div
+                  *ngFor="let col of getColumnasPorEscala(grupo.escala)"
+                  class="chart-segment scale-{{ col.value }}"
+                  [style.width.%]="getPorcentaje(p, col.value)"
+                  [attr.title]="col.label + ': ' + getPorcentaje(p, col.value) + '%'"
                 >
-                  {{ getPorcentaje(p, col.value) }}%
-                </span>
+                  <span class="chart-segment-text" *ngIf="getPorcentaje(p, col.value) >= 8">
+                    {{ getPorcentaje(p, col.value) }}%
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div class="chart-legend">
-            <span *ngFor="let col of getColumnasPorEscala(grupo.escala)">
-              <span class="legend-color scale-{{ col.value }}"></span>
-              {{ col.label }}
-            </span>
+            <div class="chart-legend">
+              <span *ngFor="let col of getColumnasPorEscala(grupo.escala)">
+                <span class="legend-color scale-{{ col.value }}"></span>
+                {{ col.label }}
+              </span>
+            </div>
           </div>
-        </div>
-      </mat-expansion-panel>
-    </mat-accordion>
+        </mat-expansion-panel>
+      </mat-accordion>
+    </section>
   </mat-card-content>
 </mat-card>
 
