@@ -192,65 +192,141 @@
   }
 
   @if (tutorSeleccionado) {
-    <div class="DetailsDialog">
-      <div class="DialogOverlay" (click)="cerrarDetalles()"></div>
-      <div class="DialogContent">
-        <div class="DialogHeader">
-          <h2>Información del Tutor</h2>
-          <button mat-icon-button (click)="cerrarDetalles()" class="CloseBtn">
-            <mat-icon>close</mat-icon>
-          </button>
-        </div>
+  <div class="DetailsDialog">
+    <div class="DialogOverlay" (click)="cerrarDetalles()"></div>
 
-        <div class="DialogBody">
-          <div class="DetailsGrid">
-            <div class="DetailItem">
-              <label>Nombre completo:</label>
-              <span>{{ tutorSeleccionado.nombre }}</span>
-            </div>
+    <div class="DialogContent DialogContent--details">
+      <!-- Header pro -->
+      <div class="DialogHeader DialogHeader--details">
+        <div class="DialogHeaderLeft">
+          <div class="DialogAvatar">
+            <mat-icon>school</mat-icon>
+          </div>
 
-            <div class="DetailItem">
-              <label>RUT:</label>
-              <span>{{ tutorSeleccionado.rut || 'No especificado' }}</span>
-            </div>
-
-            <div class="DetailItem">
-              <label>Email:</label>
-              <span>{{ tutorSeleccionado.correo || 'No especificado' }}</span>
-            </div>
-
-            <div class="DetailItem">
-              <label>Dirección:</label>
-              <span>{{ tutorSeleccionado.direccion || 'No especificada' }}</span>
-            </div>
-
-            <div class="DetailItem">
-              <label>Teléfono:</label>
-              <span>{{ tutorSeleccionado.telefono || 'No especificado' }}</span>
-            </div>
-
-            <div class="DetailItem">
-              <label>Cargo:</label>
-              <span>{{ tutorSeleccionado.cargo || 'No especificado' }}</span>
-            </div>
-
-            <div class="DetailItem">
-              <label>Universidad de egreso:</label>
-              <span>{{ tutorSeleccionado.universidad_egreso || 'No especificada' }}</span>
+          <div class="DialogTitles">
+            <h2>Información del Tutor</h2>
+            <div class="DialogSubtitle">
+              {{ tutorSeleccionado.nombre }}
             </div>
           </div>
         </div>
 
-        <div class="DialogActions">
-          <button mat-stroked-button (click)="cerrarDetalles()">Cerrar</button>
-          <button mat-raised-button color="primary" (click)="editarTutor(tutorSeleccionado!)" *ngIf="!esSoloLectura">
-            <mat-icon>edit</mat-icon>
-            Editar tutor
-          </button>
+        <button mat-icon-button (click)="cerrarDetalles()" class="CloseBtn" aria-label="Cerrar detalles">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <div class="DialogBody">
+        <!-- Chips -->
+        <div class="DetailsTop">
+          <span class="Chip Chip--primary">
+            <mat-icon>work</mat-icon>
+            <span class="ChipText">{{ tutorSeleccionado.cargo || 'Sin cargo' }}</span>
+          </span>
+
+          <span class="Chip" *ngIf="tutorSeleccionado.rut">
+            <mat-icon>person</mat-icon>
+            <span class="ChipText">{{ tutorSeleccionado.rut }}</span>
+          </span>
+
+          <span class="Chip" *ngIf="tutorSeleccionado.universidad_egreso">
+            <mat-icon>school</mat-icon>
+            <span class="ChipText">{{ tutorSeleccionado.universidad_egreso }}</span>
+          </span>
+        </div>
+
+        <!-- Sección: Datos personales -->
+        <div class="DetailsSection">
+          <div class="SectionHead">
+            <mat-icon>person</mat-icon>
+            <h3>Datos personales</h3>
+          </div>
+
+          <div class="DetailsGrid DetailsGrid--2">
+            <div class="KV">
+              <div class="K">Nombre completo</div>
+              <div class="V">{{ tutorSeleccionado.nombre }}</div>
+            </div>
+
+            <div class="KV">
+              <div class="K">RUT</div>
+              <div class="V">{{ tutorSeleccionado.rut || 'No especificado' }}</div>
+            </div>
+
+            <div class="KV KV--full">
+              <div class="K">Dirección</div>
+              <div class="V">{{ tutorSeleccionado.direccion || 'No especificada' }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sección: Contacto -->
+        <div class="DetailsSection">
+          <div class="SectionHead">
+            <mat-icon>contact_phone</mat-icon>
+            <h3>Contacto</h3>
+          </div>
+
+          <div class="ContactCards">
+            <div class="ContactCard" *ngIf="tutorSeleccionado.telefono">
+              <mat-icon>call</mat-icon>
+              <div class="ContactMeta">
+                <div class="ContactLabel">Teléfono</div>
+                <div class="ContactValue">{{ tutorSeleccionado.telefono }}</div>
+              </div>
+            </div>
+
+            <div class="ContactCard" *ngIf="tutorSeleccionado.correo">
+              <mat-icon>email</mat-icon>
+              <div class="ContactMeta">
+                <div class="ContactLabel">Correo</div>
+                <div class="ContactValue">{{ tutorSeleccionado.correo }}</div>
+              </div>
+            </div>
+
+            <div class="ContactCard ContactCard--empty"
+                 *ngIf="!tutorSeleccionado.telefono && !tutorSeleccionado.correo">
+              <mat-icon>info</mat-icon>
+              <div class="ContactMeta">
+                <div class="ContactLabel">Contacto</div>
+                <div class="ContactValue">No hay datos de contacto registrados.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sección: Información laboral -->
+        <div class="DetailsSection">
+          <div class="SectionHead">
+            <mat-icon>workspace_premium</mat-icon>
+            <h3>Información laboral</h3>
+          </div>
+
+          <div class="DetailsGrid DetailsGrid--2">
+            <div class="KV">
+              <div class="K">Cargo</div>
+              <div class="V">{{ tutorSeleccionado.cargo || 'No especificado' }}</div>
+            </div>
+
+            <div class="KV">
+              <div class="K">Universidad de egreso</div>
+              <div class="V">{{ tutorSeleccionado.universidad_egreso || 'No especificada' }}</div>
+            </div>
+          </div>
         </div>
       </div>
+
+      <div class="DialogActions DialogActions--details">
+        <button mat-stroked-button (click)="cerrarDetalles()">Cerrar</button>
+        <button mat-raised-button color="primary" (click)="editarTutor(tutorSeleccionado!)" *ngIf="!esSoloLectura">
+          <mat-icon>edit</mat-icon>
+          Editar tutor
+        </button>
+      </div>
     </div>
-  }
+  </div>
+}
+
 
   @if (mostrarConfirmarEliminar && tutorAEliminar) {
     <div class="confirm-dialog">
