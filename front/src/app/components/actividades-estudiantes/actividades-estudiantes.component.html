@@ -281,70 +281,146 @@
 
   <!-- DIALOG DETALLES -->
   @if (actividadSeleccionada) {
-    <div class="DetailsDialog">
-      <div class="DialogOverlay" (click)="cerrarDetalles()"></div>
-      <div class="DialogContent">
-        <div class="DialogHeader">
-          <h2>Información de la Actividad</h2>
-          <button mat-icon-button (click)="cerrarDetalles()" class="CloseBtn">
-            <mat-icon>close</mat-icon>
-          </button>
-        </div>
+  <div class="DetailsDialog">
+    <div class="DialogOverlay" (click)="cerrarDetalles()"></div>
 
-        <div class="DialogBody">
-          <div class="DetailsGrid">
-            <div class="DetailItem">
-              <label>Nombre de la actividad:</label>
-              <span>{{ actividadSeleccionada.nombre_actividad }}</span>
-            </div>
+    <div class="DialogContent DialogContent--details">
+      <!-- Header unificado -->
+      <div class="DialogHeader DialogHeader--details">
+        <div class="DialogHeaderLeft">
+          <div class="DialogAvatar">
+            <mat-icon>event</mat-icon>
+          </div>
 
-            <div class="DetailItem">
-              <label>Mes:</label>
-              <span>{{ formatearMes(actividadSeleccionada.mes) }}</span>
-            </div>
-
-            <div class="DetailItem">
-              <label>Fecha:</label>
-              <span>{{ formatDate(actividadSeleccionada.fecha) }}</span>
-            </div>
-
-            <div class="DetailItem">
-              <label>Hora:</label>
-              <span>{{ formatHorario(actividadSeleccionada) }}</span>
-            </div>
-
-            <div class="DetailItem">
-              <label>Ubicación:</label>
-              <span>{{ actividadSeleccionada.lugar || 'No especificada' }}</span>
-            </div>
-
-            <div class="DetailItem">
-              <label>Estudiantes:</label>
-              <span>{{ actividadSeleccionada.estudiantes || 'No especificados' }}</span>
-            </div>
-
-            <div class="DetailItem" *ngIf="actividadSeleccionada.archivo_adjunto">
-              <label>Archivos adjuntos:</label>
-              <span>
-                <a [href]="getArchivoUrl(actividadSeleccionada.archivo_adjunto)!" [download]="'archivos_adjuntos.zip'" target="_blank" rel="noopener noreferrer">
-                  <mat-icon style="vertical-align: middle; font-size: 18px; width: 18px; height: 18px;">download</mat-icon>
-                  Descargar ZIP con archivos
-                </a>
-              </span>
+          <div class="DialogTitles">
+            <h2>Información de la Actividad</h2>
+            <div class="DialogSubtitle">
+              {{ actividadSeleccionada.nombre_actividad }}
             </div>
           </div>
         </div>
 
-        <div class="DialogActions">
-          <button mat-stroked-button (click)="cerrarDetalles()">Cerrar</button>
-          <button mat-raised-button color="primary" (click)="editActivity(actividadSeleccionada!); cerrarDetalles()" *ngIf="!esJefatura">
-            <mat-icon>edit</mat-icon>
-            Editar actividad
-          </button>
+        <button mat-icon-button (click)="cerrarDetalles()" class="CloseBtn" aria-label="Cerrar detalles">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <div class="DialogBody">
+        <!-- Chips superiores -->
+        <div class="DetailsTop">
+          <span class="Chip Chip--primary">
+            <mat-icon>calendar_month</mat-icon>
+            <span class="ChipText">{{ formatearMes(actividadSeleccionada.mes) }}</span>
+          </span>
+
+          <span class="Chip">
+            <mat-icon>event</mat-icon>
+            <span class="ChipText">{{ formatDate(actividadSeleccionada.fecha) }}</span>
+          </span>
+
+          <span class="Chip">
+            <mat-icon>schedule</mat-icon>
+            <span class="ChipText">{{ formatHorario(actividadSeleccionada) }}</span>
+          </span>
+
+          @if (actividadSeleccionada.lugar) {
+            <span class="Chip">
+              <mat-icon>place</mat-icon>
+              <span class="ChipText">{{ actividadSeleccionada.lugar }}</span>
+            </span>
+          }
+        </div>
+
+        <!-- Sección: Datos -->
+        <div class="DetailsSection">
+          <div class="SectionHead">
+            <mat-icon>info</mat-icon>
+            <h3>Datos de la actividad</h3>
+          </div>
+
+          <div class="DetailsGrid DetailsGrid--2">
+            <div class="KV KV--full">
+              <div class="K">Nombre</div>
+              <div class="V">{{ actividadSeleccionada.nombre_actividad }}</div>
+            </div>
+
+            <div class="KV">
+              <div class="K">Mes</div>
+              <div class="V">{{ formatearMes(actividadSeleccionada.mes) }}</div>
+            </div>
+
+            <div class="KV">
+              <div class="K">Fecha</div>
+              <div class="V">{{ formatDate(actividadSeleccionada.fecha) }}</div>
+            </div>
+
+            <div class="KV">
+              <div class="K">Hora</div>
+              <div class="V">{{ formatHorario(actividadSeleccionada) }}</div>
+            </div>
+
+            <div class="KV">
+              <div class="K">Ubicación</div>
+              <div class="V">{{ actividadSeleccionada.lugar || 'No especificada' }}</div>
+            </div>
+
+            <div class="KV KV--full">
+              <div class="K">Estudiantes</div>
+              <div class="V">{{ actividadSeleccionada.estudiantes || 'No especificados' }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sección: Evidencias -->
+        <div class="DetailsSection">
+          <div class="SectionHead">
+            <mat-icon>attach_file</mat-icon>
+            <h3>Evidencias</h3>
+          </div>
+
+          @if (actividadSeleccionada.archivo_adjunto) {
+            <div class="EvidenceCard">
+              <div class="EvidenceLeft">
+                <mat-icon class="EvidenceIcon">folder_zip</mat-icon>
+                <div class="EvidenceTextBlock">
+                  <div class="EvidenceTitle">Archivos adjuntos</div>
+                  <div class="EvidenceMeta">ZIP con evidencias de la actividad</div>
+                </div>
+              </div>
+
+              <a
+                class="EvidenceBtn"
+                [href]="getArchivoUrl(actividadSeleccionada.archivo_adjunto)!"
+                [download]="'archivos_adjuntos.zip'"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Descargar ZIP con archivos">
+                <mat-icon>download</mat-icon>
+                Descargar
+              </a>
+            </div>
+          } @else {
+            <p class="Muted">No hay evidencias adjuntas para esta actividad.</p>
+          }
         </div>
       </div>
+
+      <div class="DialogActions DialogActions--details">
+        <button mat-stroked-button (click)="cerrarDetalles()">Cerrar</button>
+
+        <button
+          mat-raised-button
+          color="primary"
+          (click)="editActivity(actividadSeleccionada!); cerrarDetalles()"
+          *ngIf="!esJefatura">
+          <mat-icon>edit</mat-icon>
+          Editar actividad
+        </button>
+      </div>
     </div>
-  }
+  </div>
+}
+
 
   <!-- DIALOG CONFIRMAR ELIMINACIÓN -->
   <div class="confirm-dialog" *ngIf="pendingDelete">
