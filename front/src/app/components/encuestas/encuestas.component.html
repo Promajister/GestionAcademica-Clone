@@ -1913,32 +1913,45 @@
   </mat-card>
 
   <mat-card class="elev detail-card custom-modal" *ngIf="selectedEncuesta">
-    <mat-card-header>
+  <mat-card-header class="modal-head">
+    <div class="modal-head-text">
       <mat-card-title>Detalle Encuesta</mat-card-title>
       <mat-card-subtitle>
         {{ mapTipoLabel(selectedEncuesta.tipo) }} —
         {{ selectedEncuesta.fecha | date: 'dd/MM/yyyy' }}
       </mat-card-subtitle>
+    </div>
 
-      <button mat-icon-button class="close-btn" (click)="cerrarDetalles()">
-        <mat-icon>close</mat-icon>
-      </button>
-    </mat-card-header>
+    <button mat-icon-button class="close-btn" (click)="cerrarDetalles()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </mat-card-header>
 
-    <mat-card-content>
-      <p class="summary-info">
-        <strong>Respuestas:</strong> {{ selectedEncuesta.respuestas.length }}
-      </p>
+  <mat-card-content class="modal-body">
+    <!-- RESUMEN SUPERIOR -->
+    <div class="detail-summary">
+      <div class="summary-chip">
+        <mat-icon>quiz</mat-icon>
+        <span><strong>Respuestas:</strong> {{ selectedEncuesta.respuestas.length }}</span>
+      </div>
+
+      <div class="summary-chip" *ngIf="selectedEncuesta?.tipo">
+        <mat-icon>{{ selectedEncuesta.tipo === 'ESTUDIANTIL' ? 'perm_identity' : 'groups' }}</mat-icon>
+        <span>{{ mapTipoLabel(selectedEncuesta.tipo) }}</span>
+      </div>
+    </div>
+
+    <!-- METADATA -->
+    <section class="detail-section">
+      <h3 class="section-title">Datos generales</h3>
 
       <div class="table-wrapper">
-        <table class="detail-plain-table">
-          <thead>
-
-          </thead>
+        <table class="detail-plain-table meta-table">
           <tbody>
             <tr *ngFor="let key of getDetailColumns(selectedEncuesta!)">
-              <td><strong>{{ mapMetadataLabel(key) }}</strong></td>
-              <td>
+              <th class="meta-k">{{ mapMetadataLabel(key) }}</th>
+
+              <td class="meta-v">
                 <ng-container *ngIf="key === 'fecha'; else plain">
                   {{ selectedEncuesta!.metadata[key] | date: 'yyyy-MM-dd' }}
                 </ng-container>
@@ -1947,32 +1960,36 @@
                 </ng-template>
               </td>
             </tr>
-
           </tbody>
         </table>
       </div>
+    </section>
 
-      <h3 class="form-title">Respuestas de la encuesta</h3>
-      <p class="detail-scale-info">
-        <strong>Escala:</strong> Valores del 1 al 5, donde <strong>1</strong> es <em>muy insatisfecho</em>
-        y <strong>5</strong> es <em>muy satisfecho</em>.
-      </p>
+    <!-- RESPUESTAS -->
+    <section class="detail-section">
+      <div class="section-head">
+        <h3 class="section-title">Respuestas de la encuesta</h3>
+        <span class="scale-hint">
+          Escala 1–5 (1: muy insatisfecho, 5: muy satisfecho)
+        </span>
+      </div>
 
       <div class="table-wrapper" *ngIf="selectedEncuesta?.respuestas?.length; else noRespuestas">
-        <table class="detail-plain-table">
+        <table class="detail-plain-table answers-table">
           <thead>
             <tr>
-              <th>Pregunta</th>
-              <th>Respuesta</th>
+              <th class="col-q">Pregunta</th>
+              <th class="col-a">Respuesta</th>
             </tr>
           </thead>
+
           <tbody>
             <tr *ngFor="let r of selectedEncuesta.respuestas">
-              <td>
+              <td class="col-q">
                 {{ mapPreguntaDescripcion(r.pregunta?.descripcion || ('Pregunta ' + r.preguntaId)) }}
               </td>
 
-              <td class="respuesta-larga">
+              <td class="col-a respuesta-larga">
                 {{ mapRespuestaValor(r.alternativa?.descripcion ?? r.respuestaAbierta) }}
               </td>
             </tr>
@@ -1981,8 +1998,12 @@
       </div>
 
       <ng-template #noRespuestas>
-        <p>No hay respuestas registradas para esta encuesta.</p>
+        <div class="empty-state compact">
+          <mat-icon>info</mat-icon>
+          <p>No hay respuestas registradas para esta encuesta.</p>
+        </div>
       </ng-template>
-    </mat-card-content>
-  </mat-card>
+    </section>
+  </mat-card-content>
+</mat-card>
 

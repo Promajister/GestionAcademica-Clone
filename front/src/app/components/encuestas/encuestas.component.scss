@@ -860,3 +860,174 @@ mat-card-actions {
 }
 
 
+/* =========================
+   DETALLE ENCUESTA (MODAL)
+   ========================= */
+
+/* Head del modal: mejor alineación y separación */
+.custom-modal .modal-head {
+  padding: 1rem 1.25rem 0.75rem !important;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+
+.modal-head-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.custom-modal .mat-mdc-card-title,
+.custom-modal mat-card-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.custom-modal .mat-mdc-card-subtitle,
+.custom-modal mat-card-subtitle {
+  font-size: 0.86rem;
+  color: rgba(0,0,0,0.65);
+}
+
+.custom-modal .close-btn {
+  border-radius: 999px;
+}
+
+/* Body */
+.custom-modal .modal-body {
+  padding: 1rem 1.25rem 1.25rem !important;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+/* Resumen superior */
+.detail-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.summary-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(0,0,0,0.08);
+  background: #f8fafc;
+  font-size: 0.85rem;
+  color: #111827;
+}
+
+.summary-chip mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  opacity: 0.8;
+}
+
+/* Secciones */
+.detail-section {
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 14px;
+  padding: 0.85rem 0.9rem;
+  background: #fff;
+}
+
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+.section-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.scale-hint {
+  font-size: 0.8rem;
+  color: rgba(0,0,0,0.62);
+}
+
+/* Tablas: look “clean” */
+.detail-plain-table {
+  background: #fff;
+}
+
+.detail-plain-table thead th {
+  background: #f8fafc;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+}
+
+.detail-plain-table tbody tr:hover {
+  background: rgba(0,0,0,0.02);
+}
+
+/* Metadata en 2 columnas tipo "key/value" */
+.meta-table .meta-k {
+  width: 240px;
+  text-align: left;
+  font-weight: 700;
+  color: rgba(0,0,0,0.72);
+  padding: 0.55rem 0.6rem;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+
+.meta-table .meta-v {
+  padding: 0.55rem 0.6rem;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  color: #111827;
+}
+
+/* Respuestas: columna pregunta un poco más ancha */
+.answers-table .col-q {
+  width: 55%;
+}
+.answers-table .col-a {
+  width: 45%;
+}
+
+/* Respuesta larga más legible */
+.respuesta-larga {
+  max-width: none;              /* evita apretarlo */
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  line-height: 1.35rem;
+  color: rgba(0,0,0,0.82);
+}
+
+/* Empty-state compacto dentro de modales */
+.empty-state.compact {
+  padding: 0.5rem 0;
+}
+
+/* Mejor responsive del Detalle: key/value apilado */
+@media (max-width: 720px) {
+  .meta-table tr {
+    display: grid;
+    grid-template-columns: 1fr;
+    padding: 0.4rem 0;
+  }
+
+  .meta-table .meta-k {
+    width: auto;
+    border-bottom: 0;
+    padding-bottom: 0.15rem;
+  }
+
+  .meta-table .meta-v {
+    padding-top: 0.1rem;
+  }
+
+  .answers-table .col-q,
+  .answers-table .col-a {
+    width: auto;
+  }
+}
