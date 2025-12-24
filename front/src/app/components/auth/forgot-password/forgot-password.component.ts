@@ -9,6 +9,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AuthService } from '../../../services/auth.service';
+import { MatDividerModule } from '@angular/material/divider';
 
 @Component({
   standalone: true,
@@ -24,6 +25,7 @@ import { AuthService } from '../../../services/auth.service';
     MatButtonModule,
     MatIconModule,
     MatSnackBarModule,
+    MatDividerModule,
   ],
 })
 export class ForgotPasswordComponent {
