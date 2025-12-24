@@ -220,3 +220,316 @@
     max-width: calc(100vw - 32px) !important;
   }
 }
+
+/* =========================
+   MODAL DETALLES - ESTÉTICA
+   ========================= */
+
+.dialog-content--details {
+  max-width: 920px;   /* prueba 880–960 */
+  width: 95%;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+}
+
+/* Header con avatar + subtítulo */
+.dialog-header--details {
+  padding: 18px 18px 14px;
+  border-bottom: 1px solid #eef2f7;
+  margin-bottom: 0;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(37,99,235,.10), transparent 55%),
+    radial-gradient(circle at 100% 0%, rgba(124,58,237,.10), transparent 55%),
+    #ffffff;
+}
+
+.dialog-header-left {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+}
+
+.dialog-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+  flex: 0 0 auto;
+
+  mat-icon {
+    font-size: 22px;
+    height: 22px;
+    width: 22px;
+    line-height: 22px;
+  }
+}
+
+.dialog-titles {
+  min-width: 0;
+
+  h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: 0.2px;
+  }
+}
+
+.dialog-subtitle {
+  margin-top: 3px;
+  font-size: 13px;
+  color: #475569;
+}
+
+/* Cuerpo con secciones */
+.details-section {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed #e5e7eb;
+}
+
+.details-section:first-of-type {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+
+  mat-icon {
+    font-size: 20px;
+    height: 20px;
+    width: 20px;
+    line-height: 20px;
+    color: #1f2937;
+  }
+
+  h3 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: #111827;
+  }
+}
+
+/* Chips superiores */
+.details-top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 2px 0 14px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #111827;
+  font-size: 12.5px;
+  min-width: 0;
+
+  mat-icon {
+    font-size: 16px;
+    height: 16px;
+    width: 16px;
+    line-height: 16px;
+    color: #334155;
+  }
+}
+
+.chip--primary {
+  border-color: rgba(37,99,235,.25);
+  background: rgba(37,99,235,.06);
+
+  mat-icon { color: #2563eb; }
+}
+
+/* Grid clave/valor */
+.details-grid--2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.kv {
+  border: 1px solid #eef2f7;
+  background: #f8fafc;
+  border-radius: 14px;
+  padding: 10px 12px;
+  min-width: 0;
+
+  .k {
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+
+  .v {
+    font-size: 14px;
+    color: #0f172a;
+    font-weight: 600;
+    min-width: 0;
+    word-break: break-word;
+  }
+}
+
+.kv--full {
+  grid-column: 1 / -1;
+}
+
+/* Tarjetas de contacto */
+.contact-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.contact-card {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  border: 1px solid #eef2f7;
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 10px 12px;
+  min-width: 0;
+
+  mat-icon {
+    font-size: 20px;
+    height: 20px;
+    width: 20px;
+    line-height: 20px;
+    color: #2563eb;
+    margin-top: 2px;
+  }
+
+  .contact-meta { min-width: 0; }
+  .contact-label {
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 600;
+  }
+  .contact-value {
+    font-size: 14px;
+    color: #0f172a;
+    font-weight: 600;
+    margin-top: 1px;
+  }
+}
+
+.contact-card--empty mat-icon {
+  color: #64748b;
+}
+
+/* “Tabla” de trabajadores (responsive) */
+.workers-table {
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.workers-row {
+  display: grid;
+  grid-template-columns: 140px 1.2fr 140px 1.3fr 140px;
+  gap: 10px;
+  padding: 10px 12px;
+  align-items: center;
+  border-top: 1px solid #eef2f7;
+
+  .cell { min-width: 0; font-size: 13.5px; color: #0f172a; }
+}
+
+.workers-row--head {
+  border-top: none;
+  background: #f8fafc;
+
+  > div {
+    font-size: 12px;
+    font-weight: 700;
+    color: #475569;
+    text-transform: none;
+  }
+}
+
+.role-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  color: #111827;
+  max-width: 100%;
+}
+
+/* Acciones */
+.dialog-actions--details {
+  background: #fff;
+  border-top: 1px solid #eef2f7;
+  margin-top: 0;
+  padding: 14px 18px 16px;
+}
+
+/* Responsivo */
+@media (max-width: 720px) {
+  .details-grid--2 { grid-template-columns: 1fr; }
+  .contact-cards { grid-template-columns: 1fr; }
+
+  .workers-row,
+  .workers-row--head {
+    grid-template-columns: 120px 1fr;
+    grid-template-areas:
+      "rol nombre"
+      "rut rut"
+      "correo correo"
+      "tel tel";
+  }
+
+  .workers-row--head {
+    display: none; /* en móvil se entiende como tarjetas */
+  }
+
+  .workers-row {
+    border-top: 1px solid #eef2f7;
+    padding: 12px;
+
+    .cell-role { grid-area: rol; }
+    .cell:nth-child(2) { grid-area: nombre; }
+    .cell:nth-child(3) { grid-area: rut; }
+    .cell:nth-child(4) { grid-area: correo; }
+    .cell:nth-child(5) { grid-area: tel; }
+  }
+}
+
+/* === Trabajadores: mostrar texto completo (sin "...") === */
+.workers-table .workers-row .cell {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  word-break: break-word;
+}
+
+/* si algún span tiene .truncate dentro de trabajadores, lo anulamos */
+.workers-table .truncate {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}

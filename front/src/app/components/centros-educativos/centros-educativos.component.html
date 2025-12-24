@@ -257,60 +257,147 @@
   </mat-card>
 
   <!-- DIALOG DETALLES -->
+
   <div class="details-dialog" *ngIf="selectedCentroEducativo">
     <div class="dialog-overlay" (click)="closeDetails()"></div>
 
-    <div class="dialog-content">
-      <div class="dialog-header">
-        <h2>Información del Centro</h2>
+    <div class="dialog-content dialog-content--details">
+      <!-- Header mejorado -->
+      <div class="dialog-header dialog-header--details">
+        <div class="dialog-header-left">
+          <div class="dialog-avatar">
+            <mat-icon>school</mat-icon>
+          </div>
+          <div class="dialog-titles">
+            <h2>Información del Centro educativo</h2>
+            <div class="dialog-subtitle truncate">
+              {{ selectedCentroEducativo.nombre }}
+            </div>
+          </div>
+        </div>
+
         <button mat-icon-button (click)="closeDetails()" class="close-btn" aria-label="Cerrar detalles">
           <mat-icon>close</mat-icon>
         </button>
       </div>
 
       <div class="dialog-body" *ngIf="selectedCentroEducativo">
-        <div class="details-grid">
-          <div class="detail-item"><label>Nombre:</label><span>{{ selectedCentroEducativo.nombre }}</span></div>
-          <div class="detail-item"><label>Tipo:</label><span>{{ tipoLabel(selectedCentroEducativo.tipo) }}</span></div>
-          <div class="detail-item"><label>Región:</label><span>{{ selectedCentroEducativo.region }}</span></div>
-          <div class="detail-item"><label>Comuna:</label><span>{{ selectedCentroEducativo.comuna }}</span></div>
-          <div class="detail-item" *ngIf="selectedCentroEducativo.direccion">
-            <label>Dirección:</label><span>{{ selectedCentroEducativo.direccion }}</span>
-          </div>
-          <div class="detail-item" *ngIf="selectedCentroEducativo.telefono">
-            <label>Teléfono:</label><span>{{ selectedCentroEducativo.telefono }}</span>
-          </div>
-          <div class="detail-item" *ngIf="selectedCentroEducativo.correo">
-            <label>Correo:</label><span>{{ selectedCentroEducativo.correo }}</span>
-          </div>
-          <div class="detail-item" *ngIf="selectedCentroEducativo.url_rrss">
-            <label>URL / RRSS:</label><span>{{ selectedCentroEducativo.url_rrss }}</span>
-          </div>
-          <div class="detail-item" *ngIf="selectedCentroEducativo.convenio">
-            <label>Convenio:</label><span>{{ selectedCentroEducativo.convenio }}</span>
-          </div>
-          <div class="detail-item" *ngIf="selectedCentroEducativo.fecha_inicio_asociacion">
-            <label>Inicio de asociación:</label><span>{{ selectedCentroEducativo.fecha_inicio_asociacion }}</span>
+        <!-- Chips superiores (tipo + convenio + asociado desde) -->
+        <div class="details-top">
+          <span class="chip chip--primary">
+            <mat-icon>account_balance</mat-icon>
+            <span class="truncate">{{ tipoLabel(selectedCentroEducativo.tipo) }}</span>
+          </span>
+
+          <span class="chip" *ngIf="selectedCentroEducativo.convenio">
+            <mat-icon>handshake</mat-icon>
+            <span class="truncate">{{ selectedCentroEducativo.convenio }}</span>
+          </span>
+
+          <span class="chip" *ngIf="selectedCentroEducativo.fecha_inicio_asociacion">
+            <mat-icon>event</mat-icon>
+            <span class="truncate">Asociado desde: {{ selectedCentroEducativo.fecha_inicio_asociacion }}</span>
+          </span>
+        </div>
+
+        <!-- Sección: Ubicación -->
+        <div class="details-section">
+          <div class="section-head">
+            <mat-icon>place</mat-icon>
+            <h3>Ubicación</h3>
           </div>
 
-          <div class="detail-item" *ngIf="selectedCentroEducativo.trabajadores?.length">
-            <label>Trabajadores:</label>
+          <div class="details-grid details-grid--2">
+            <div class="kv">
+              <div class="k">Región</div>
+              <div class="v">{{ selectedCentroEducativo.region }}</div>
+            </div>
 
-            <ul class="workers-list">
-              <li *ngFor="let t of selectedCentroEducativo.trabajadores">
-                <b>{{ t.rol }}</b> – {{ t.nombre }}
-                <span *ngIf="t.rut"> · {{ t.rut }}</span>
-                <span *ngIf="t.correo"> · {{ t.correo }}</span>
-                <span *ngIf="t.telefono"> · {{ t.telefono }}</span>
-              </li>
-            </ul>
+            <div class="kv">
+              <div class="k">Comuna</div>
+              <div class="v">{{ selectedCentroEducativo.comuna }}</div>
+            </div>
+
+            <div class="kv kv--full" *ngIf="selectedCentroEducativo.direccion">
+              <div class="k">Dirección</div>
+              <div class="v">{{ selectedCentroEducativo.direccion }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sección: Contacto -->
+        <div class="details-section">
+          <div class="section-head">
+            <mat-icon>contact_phone</mat-icon>
+            <h3>Contacto</h3>
           </div>
 
+          <div class="contact-cards">
+            <div class="contact-card" *ngIf="selectedCentroEducativo.telefono">
+              <mat-icon>call</mat-icon>
+              <div class="contact-meta">
+                <div class="contact-label">Teléfono</div>
+                <div class="contact-value truncate">{{ selectedCentroEducativo.telefono }}</div>
+              </div>
+            </div>
 
+            <div class="contact-card" *ngIf="selectedCentroEducativo.correo">
+              <mat-icon>email</mat-icon>
+              <div class="contact-meta">
+                <div class="contact-label">Correo</div>
+                <div class="contact-value truncate">{{ selectedCentroEducativo.correo }}</div>
+              </div>
+            </div>
+
+            <div class="contact-card" *ngIf="selectedCentroEducativo.url_rrss">
+              <mat-icon>link</mat-icon>
+              <div class="contact-meta">
+                <div class="contact-label">URL / RRSS</div>
+                <div class="contact-value truncate">{{ selectedCentroEducativo.url_rrss }}</div>
+              </div>
+            </div>
+
+            <div class="contact-card contact-card--empty" *ngIf="!selectedCentroEducativo.telefono && !selectedCentroEducativo.correo && !selectedCentroEducativo.url_rrss">
+              <mat-icon>info</mat-icon>
+              <div class="contact-meta">
+                <div class="contact-label">Contacto</div>
+                <div class="contact-value">No hay datos de contacto registrados.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sección: Trabajadores -->
+        <div class="details-section" *ngIf="selectedCentroEducativo.trabajadores?.length">
+          <div class="section-head">
+            <mat-icon>groups</mat-icon>
+            <h3>Trabajadores</h3>
+          </div>
+
+          <div class="workers-table">
+            <div class="workers-row workers-row--head">
+              <div>Rol</div>
+              <div>Nombre</div>
+              <div>RUT</div>
+              <div>Correo</div>
+              <div>Teléfono</div>
+            </div>
+
+            <div class="workers-row" *ngFor="let t of selectedCentroEducativo.trabajadores">
+              <div class="cell cell-role">
+                <span class="role-pill">{{ t.rol }}</span>
+              </div>
+              <div class="cell truncate">{{ t.nombre }}</div>
+              <div class="cell truncate">{{ t.rut || '—' }}</div>
+              <div class="cell truncate">{{ t.correo || '—' }}</div>
+              <div class="cell truncate">{{ t.telefono || '—' }}</div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="dialog-actions">
+      <!-- Acciones -->
+      <div class="dialog-actions dialog-actions--details">
         <button mat-stroked-button (click)="closeDetails()">Cerrar</button>
         <button mat-raised-button color="primary" (click)="editFromDetails()" *ngIf="!esSoloLectura">
           <mat-icon>edit</mat-icon> Editar
@@ -319,94 +406,6 @@
     </div>
   </div>
 
-  <!-- DIALOG CONFIRMAR eliminación -->
-  <div class="confirm-dialog" *ngIf="!soloLecturaVinculacion && pendingDelete">
-    <div class="dialog-overlay" (click)="cancelDelete()" tabindex="0"></div>
-    <div class="dialog-content confirm-card" (keydown.escape)="cancelDelete()">
-      <div class="confirm-header">
-        <div class="warn-icon">
-          <mat-icon>warning_amber</mat-icon>
-        </div>
-        <h2>Confirmar eliminación</h2>
-      </div>
-      <div class="confirm-body">
-        <p>¿Estás seguro de que quieres eliminar a <b>{{ pendingDelete!.nombre }}</b>?</p>
-        <p class="muted">Esta acción no se puede deshacer.</p>
-      </div>
-      <div class="confirm-actions">
-        <button mat-stroked-button (click)="cancelDelete()">Cancelar</button>
-        <button mat-flat-button color="warn" (click)="confirmDelete()" class="btn-danger">
-          <mat-icon>delete</mat-icon> Eliminar
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- DIALOG Añadir/Editar contactos -->
-  <div class="details-dialog" *ngIf="!soloLecturaVinculacion && contactsForCentro">
-    <div class="dialog-overlay" (click)="closeContacts()"></div>
-
-    <div class="dialog-content">
-      <div class="dialog-header">
-        <h2>Añadir/Editar contactos</h2>
-        <button mat-icon-button (click)="closeContacts()" class="close-btn" aria-label="Cerrar contactos">
-          <mat-icon>close</mat-icon>
-        </button>
-      </div>
-
-      <div class="dialog-body">
-        <div class="details-grid" style="grid-template-columns: 1fr 1fr; gap: 16px;">
-          <div class="detail-item" style="grid-column: 1 / -1;">
-            <label style="font-size:16px">Director</label>
-          </div>
-          <mat-form-field appearance="outline">
-            <mat-label>Nombre</mat-label>
-            <input matInput [(ngModel)]="contactosForm.directorNombre" name="directorNombre" />
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>RUT</mat-label>
-            <input matInput [(ngModel)]="contactosForm.directorRut" name="directorRut" />
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Correo</mat-label>
-            <input matInput type="email" [(ngModel)]="contactosForm.directorCorreo" name="directorCorreo" />
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Teléfono</mat-label>
-            <input matInput [(ngModel)]="contactosForm.directorTelefono" name="directorTelefono" />
-          </mat-form-field>
-
-          <div class="detail-item" style="grid-column: 1 / -1; margin-top: 8px;">
-            <label style="font-size:16px">UTP</label>
-          </div>
-          <mat-form-field appearance="outline">
-            <mat-label>Nombre</mat-label>
-            <input matInput [(ngModel)]="contactosForm.utpNombre" name="utpNombre" />
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>RUT</mat-label>
-            <input matInput [(ngModel)]="contactosForm.utpRut" name="utpRut" />
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Correo</mat-label>
-            <input matInput type="email" [(ngModel)]="contactosForm.utpCorreo" name="utpCorreo" />
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Teléfono</mat-label>
-            <input matInput [(ngModel)]="contactosForm.utpTelefono" name="utpTelefono" />
-          </mat-form-field>
-        </div>
-      </div>
-
-      <div class="dialog-actions">
-        <button mat-stroked-button (click)="closeContacts()">Cancelar</button>
-        <button mat-raised-button color="primary" (click)="saveContactsForCentro()">
-          <mat-icon>save</mat-icon>
-          Guardar contactos
-        </button>
-      </div>
-    </div>
-  </div>
 </div>
 
 
