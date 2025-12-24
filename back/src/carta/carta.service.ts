@@ -79,7 +79,7 @@ export class CartaService {
     estudiantesIds: (string | number)[]; // acepta RUTs (string) o IDs numéricos
     supervisorId: number;
     periodoInicio: string; // yyyy-mm-dd
-    periodoFin: string;    // yyyy-mm-dd
+    periodoFin: string; // yyyy-mm-dd
   }) {
     if (!TIPOS_PRACTICA.includes(dto.tipoPractica as any)) {
       throw new Error('Tipo de práctica no válido');
@@ -87,18 +87,27 @@ export class CartaService {
 
     // folio sencillo
     const count = await this.prisma.cartaSolicitud.count();
-    const folio = `CARTA-${count + 1}`;
+    const folio = `${count + 1}`;
 
     // 1) Crear registro base de carta (para PDF/folio)
-    await this.prisma.cartaSolicitud.create({
+    const carta = await this.prisma.cartaSolicitud.create({
       data: {
         numero_folio: folio,
         fecha: new Date(),
         direccion_emisor: 'Departamento de Prácticas - UTA',
         url_archivo: null,
       },
+      select: {
+        id: true,
+        numero_folio: true,
+        fecha: true,
+      },
     });
 
-    
+    return {
+      id: carta.id,
+      folio: carta.numero_folio,
+      fecha: carta.fecha,
+    };
   }
 }
