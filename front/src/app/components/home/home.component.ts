@@ -33,7 +33,7 @@ export class HomeComponent {
       id: 'practicas',
       title: 'Coordinadora de Prácticas',
       name: 'Carolina Quintana',
-      description: 'Registra estudiantes, colegios y gestiona el proceso de prácticas.',
+      description: 'Registra estudiantes, centros educativos y gestiona el proceso de prácticas.',
       permissions: [
         'Gestionar centros educativos',
         'Gestionar estudiantes',
