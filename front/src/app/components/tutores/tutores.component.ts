@@ -19,6 +19,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 
 import { TutoresService, Tutor } from '../../services/tutores.service';
+import { MatProgressSpinner } from "@angular/material/progress-spinner";
 
 interface TutorForm {
   rut: string;
@@ -47,7 +48,8 @@ interface TutorForm {
     MatInputModule,
     MatSnackBarModule,
     MatPaginatorModule,
-  ],
+    MatProgressSpinner
+],
 })
 export class TutoresComponent implements OnInit {
   private snack = inject(MatSnackBar);

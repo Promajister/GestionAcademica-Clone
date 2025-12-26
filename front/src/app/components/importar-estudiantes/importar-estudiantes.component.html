@@ -1,14 +1,10 @@
-<div class="container section">
-  <div class="header">
+<div class="ga-page ga-page--wide importar-estudiantes">
+  <div class="ga-header">
     <div>
-      <p class="eyebrow">Jefatura · Estudiantes</p>
-      <h1>Importar estudiantes desde Excel</h1>
-      <p class="muted">
-        Sube un archivo .xlsx con la fila 1 como encabezado para crear o actualizar estudiantes en la base.
-      </p>
+      <h1 class="ga-title">Importar estudiantes desde Excel</h1>
+      <p class="ga-subtitle">Carga un archivo .xlsx para registrar o actualizar estudiantes de la carrera Pedagogía en Historia, Geografía y Ciencias Sociales.</p>
     </div>
-    <div class="spacer"></div>
-
+    <span class="ga-spacer"></span>
   </div>
 
   <div class="layout">
@@ -20,7 +16,7 @@
             <mat-icon>lightbulb</mat-icon>
             <div>
               <h3>Formato esperado</h3>
-              <p class="muted">Fila 1 con estos encabezados; RUT y nombre son obligatorios.</p>
+              <p class="muted">El documento debe contener los siguientes parámetros: </p>
             </div>
           </div>
           <div class="headers">
@@ -28,12 +24,13 @@
           </div>
         </div>
         <ul class="tips-list">
-          <li>RUT sin puntos ni guión, se normaliza automáticamente.</li>
-          <li>Correo puede llamarse "email", "E-mail" o "correo".</li>
-          <li>El orden sugerido es el que se muestra arriba (como en tu plantilla).</li>
-          <li>Años como número (ej: 2024) o fecha; se guarda solo el año.</li>
-          <li>Si el RUT ya existe, se actualizan los datos.</li>
-          <li>Límite: 5 MB por archivo.</li>
+          <li>El RUT y Nombre son obligatorios.</li>
+          <li>El RUT puede venir con o sin puntos y guión; el sistema lo normaliza automáticamente.</li>
+          <li>El correo electrónico puede llamarse "email", "E-mail" o "correo".</li>
+          <li>Se recomienda usar el mismo orden de columnas que la plantilla.</li>
+          <li>Los años pueden venir como número (ej: 2024) o como fecha; solo se guarda el año.</li>
+          <li>Si el RUT ya existe, los datos del estudiante se actualizarán. </li>
+          <li>Tamaño máximo del archivo: 5 MB.</li>
         </ul>
       </mat-card-content>
     </mat-card>
@@ -48,7 +45,7 @@
           <div class="upload-copy">
             <h3>{{ selectedFile ? 'Archivo listo para importar' : 'Arrastra o selecciona un XLSX' }}</h3>
             <p class="muted">
-              Solo se acepta .xlsx. Los ruts se normalizan automáticamente; si ya existen, se actualizan.
+              Solo archivos .xlsx
             </p>
             <div class="actions">
               <label class="btn-file" [class.btn-file--secondary]="!!selectedFile">

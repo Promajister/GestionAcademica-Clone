@@ -8,7 +8,6 @@
     <!-- SIDEBAR -->
     <mat-sidenav
       #sidenav
-      class="side"
       mode="side"
       [opened]="isSidenavOpened"
       (openedChange)="onSidenavChange($event)">
@@ -61,29 +60,23 @@
     <!-- CONTENIDO -->
     <mat-sidenav-content class="content">
       <!-- TOPBAR -->
-      <mat-toolbar class="topbar" color="primary">
-        <button mat-icon-button class="menu-btn" (click)="toggleSidenav(sidenav)">
-          <mat-icon>menu</mat-icon>
-        </button>
+      <mat-toolbar class="topbar">
+        
+          <button mat-icon-button (click)="toggleSidenav(sidenav)">
+            <mat-icon>menu</mat-icon>
+          </button>
 
-        <button
-          mat-icon-button
-          class="home-btn"
-          aria-label="Volver al dashboard"
-          (click)="goHome()">
-          <mat-icon>home</mat-icon>
-        </button>
+          <button mat-icon-button (click)="goHome()">
+            <mat-icon>home</mat-icon>
+          </button>
 
-        <span class="spacer"></span>
+          <span class="spacer"></span>
 
-        <button
-          mat-stroked-button
-          color="accent"
-          class="logout-btn"
-          (click)="logout()">
-          <mat-icon>logout</mat-icon>
-          Cerrar sesión
-        </button>
+          <button mat-stroked-button color="accent" (click)="logout()">
+            <mat-icon>logout</mat-icon>
+            Cerrar sesión
+          </button>
+        
       </mat-toolbar>
 
       <!-- CONTENIDO DE PÁGINA -->

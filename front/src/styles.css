@@ -1,40 +1,14 @@
-/* ===========================================
-   ESTILOS GLOBALES DE LA APLICACIÓN
-   =========================================== */
-
-/* 
-  html, body a 100% para que los contenedores que usen height: 100%
-  puedan ocupar toda la altura de la ventana.
-*/
 html,
 body {
   height: 100%;
 }
 
-/* 
-  Estilos base del body:
-  - Quitamos márgenes por defecto.
-  - Definimos la tipografía global (Roboto / Helvetica / sistema).
-  - Asignamos el color de fondo general de la app (#F0F4FA).
-*/
 body {
   margin: 0;
   font-family: Roboto, "Helvetica Neue", sans-serif;
   background: #F0F4FA; 
 }
 
-/* ===========================================
-   SNACKBARS PERSONALIZADOS (MAT-SNACK-BAR)
-   =========================================== */
-
-/* 
-  .success-snackbar
-  Snackbar para mensajes de ÉXITO.
-  - Degradado verde.
-  - Texto blanco, negrita.
-  - Bordes redondeados.
-  - Sombra suave en torno al snackbar.
-*/
 .success-snackbar {
   background: linear-gradient(135deg, #10b981, #059669) !important;
   color: white !important;
@@ -43,34 +17,11 @@ body {
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3) !important;
 }
 
-
-.page {
-  background: #F0F4FA; /* tono más claro, limpio */
-  padding: 24px;
-  border-radius: 12px;
-}
-
-
-
-
-/*
-  Estilo del botón de acción dentro del snackbar de éxito (ej: "Cerrar").
-  - Texto blanco.
-  - Un poco de énfasis en la fuente.
-*/
 .success-snackbar .mat-mdc-snack-bar-action {
   color: white !important;
   font-weight: 500 !important;
 }
 
-/* 
-  .error-snackbar
-  Snackbar para mensajes de ERROR.
-  - Degradado rojo.
-  - Texto blanco, negrita.
-  - Bordes redondeados.
-  - Sombra roja para dar sensación de alerta.
-*/
 .error-snackbar {
   background: linear-gradient(135deg, #ef4444, #dc2626) !important;
   color: white !important;
@@ -79,22 +30,11 @@ body {
   box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3) !important;
 }
 
-/*
-  Estilo del botón de acción dentro del snackbar de error.
-*/
 .error-snackbar .mat-mdc-snack-bar-action {
   color: white !important;
   font-weight: 500 !important;
 }
 
-/* 
-  .warning-snackbar
-  Snackbar para mensajes de ADVERTENCIA.
-  - Degradado naranjo.
-  - Texto blanco, negrita.
-  - Bordes redondeados.
-  - Sombra en tonos naranjos.
-*/
 .warning-snackbar {
   background: linear-gradient(135deg, #f59e0b, #d97706) !important;
   color: white !important;
@@ -103,10 +43,119 @@ body {
   box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3) !important;
 }
 
-/*
-  Estilo del botón de acción dentro del snackbar de advertencia.
-*/
 .warning-snackbar .mat-mdc-snack-bar-action {
   color: white !important;
   font-weight: 500 !important;
+}
+
+:root{
+  --ga-bg: #F0F4FA;
+  --ga-text: #0f172a;
+  --ga-muted: #64748b;
+  --ga-border: #e5e7eb;
+  --ga-card: #ffffff;
+  --ga-soft: #f8fafc;
+
+  --ga-radius: 14px;
+  --ga-radius-lg: 16px;
+
+  --ga-container: 1120px;
+}
+
+.ga-page{
+  max-width: var(--ga-container);
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.ga-page--wide{
+  max-width: 1570px;
+  padding: 0 8px;
+}
+
+.ga-header{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin: 12px 0 12px;
+}
+
+.ga-title{
+  margin: 0;
+  font-size: 22px;
+  color: var(--ga-text);
+}
+
+.ga-subtitle{
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: var(--ga-muted);
+}
+
+.ga-spacer{ flex: 1 1 auto; }
+
+.ga-card{
+  border: 1px solid var(--ga-border);
+  border-radius: var(--ga-radius);
+  background: var(--ga-card);
+}
+
+.ga-card--soft{
+  background: var(--ga-soft);
+  border-color: #e2e8f0;
+}
+
+.ga-list{
+  padding: 0 !important;
+}
+
+.ga-row{
+  border-bottom: 1px solid var(--ga-border);
+  transition: background-color .2s ease;
+  background: #fff;
+}
+
+.ga-row:hover{ background:#f8fafc; }
+.ga-row:last-child{ border-bottom:none; }
+
+.ga-paginator{
+  padding: 8px 16px 12px;
+  border-top: 1px solid var(--ga-border);
+  background: #fafafa;
+  border-radius: 0 0 var(--ga-radius) var(--ga-radius);
+}
+
+.ga-empty{
+  text-align:center;
+  padding: 48px 24px;
+  color: var(--ga-muted);
+}
+.ga-empty mat-icon{
+  font-size: 48px;
+  width: 48px;
+  height: 48px;
+  display:block;
+  margin: 0 auto 12px;
+  color:#9ca3af;
+}
+
+.ga-pill{
+  display:inline-flex;
+  align-items:center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  border: 1px solid #e5e7eb;
+  background:#fff;
+  color:#111827;
+}
+
+.ga-card > .ga-list > .ga-row:first-child {
+  border-top-left-radius: var(--ga-radius);
+  border-top-right-radius: var(--ga-radius);
+}
+
+.ga-card > .ga-list > .ga-row:last-child {
+  border-bottom-left-radius: var(--ga-radius);
+  border-bottom-right-radius: var(--ga-radius);
 }

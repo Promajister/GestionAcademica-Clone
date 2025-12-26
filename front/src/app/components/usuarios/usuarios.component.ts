@@ -93,7 +93,7 @@ export class UsuariosComponent implements OnInit {
       error: (error) => {
         console.error('Error al cargar usuarios:', error);
         const mensaje = error.error?.message || error.message || 'Error al cargar usuarios';
-        this.snackBar.open(mensaje, 'Cerrar', { duration: 4000 });
+        this.snackBar.open(mensaje, 'Cerrar', { duration: 4000, panelClass: ['error-snackbar']});
         this.loading = false;
       }
     });
@@ -107,7 +107,7 @@ export class UsuariosComponent implements OnInit {
       error: (error) => {
         console.error('Error al cargar roles:', error);
         const mensaje = error.error?.message || error.message || 'Error al cargar roles';
-        this.snackBar.open(mensaje, 'Cerrar', { duration: 3000 });
+        this.snackBar.open(mensaje, 'Cerrar', { duration: 3000, panelClass: ['error-snackbar']});
       }
     });
   }
@@ -126,7 +126,7 @@ export class UsuariosComponent implements OnInit {
       error: (error) => {
         console.error('Error al cargar permisos:', error);
         const mensaje = error.error?.message || error.message || 'Error al cargar permisos';
-        this.snackBar.open(mensaje, 'Cerrar', { duration: 3000 });
+        this.snackBar.open(mensaje, 'Cerrar', { duration: 3000, panelClass: ['error-snackbar'] });
       }
     });
   }
@@ -199,7 +199,7 @@ export class UsuariosComponent implements OnInit {
   guardarUsuario() {
     if (this.formularioUsuario.invalid) {
       this.formularioUsuario.markAllAsTouched();
-      this.snackBar.open('Por favor completa todos los campos requeridos', 'Cerrar', { duration: 3000 });
+      this.snackBar.open('Por favor completa todos los campos requeridos', 'Cerrar', { duration: 3000, panelClass: ['warning-snackbar']});
       return;
     }
 
@@ -242,7 +242,7 @@ export class UsuariosComponent implements OnInit {
         this.snackBar.open(
           this.usuarioEditando ? 'Usuario actualizado correctamente' : 'Usuario creado correctamente',
           'Cerrar',
-          { duration: 3000 }
+          { duration: 3000, panelClass: ['success-snackbar'] }
         );
         this.cerrarModalUsuario();
         this.cargarUsuarios();
@@ -252,7 +252,7 @@ export class UsuariosComponent implements OnInit {
       error: (error) => {
         console.error('Error al guardar usuario:', error);
         const mensaje = error.error?.message || 'Error al guardar usuario';
-        this.snackBar.open(mensaje, 'Cerrar', { duration: 3000 });
+        this.snackBar.open(mensaje, 'Cerrar', { duration: 3000, panelClass: ['error-snackbar'] });
         this.guardando = false;
         this.datosPendientes = null;
       }
@@ -281,7 +281,7 @@ export class UsuariosComponent implements OnInit {
 
   gestionarPermisos(usuario: Usuario) {
     if (!usuario.rol) {
-      this.snackBar.open('El usuario no tiene un rol asignado', 'Cerrar', { duration: 3000 });
+      this.snackBar.open('El usuario no tiene un rol asignado', 'Cerrar', { duration: 3000, panelClass: ['error-snackbar'] });
       return;
     }
 
@@ -321,7 +321,7 @@ export class UsuariosComponent implements OnInit {
 
     this.usuariosService.actualizarPermisosRol(this.rolEditando.id, permisosSeleccionados).subscribe({
       next: () => {
-        this.snackBar.open('Permisos actualizados correctamente', 'Cerrar', { duration: 3000 });
+        this.snackBar.open('Permisos actualizados correctamente', 'Cerrar', { duration: 3000, panelClass: ['success-snackbar'] });
         this.cerrarModalPermisos();
         this.cargarUsuarios();
         this.cargarRoles();
@@ -329,7 +329,7 @@ export class UsuariosComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error al actualizar permisos:', error);
-        this.snackBar.open('Error al actualizar permisos', 'Cerrar', { duration: 3000 });
+        this.snackBar.open('Error al actualizar permisos', 'Cerrar', { duration: 3000, panelClass: ['error-snackbar'] });
         this.guardando = false;
       }
     });

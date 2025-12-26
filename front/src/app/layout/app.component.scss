@@ -1,19 +1,19 @@
-/* Contenedor general */
 .shell {
   height: 100vh;
-  background: #f3f4f6;
+  background: #11182700;
+  border-radius: 0 !important;
+
 }
 
-/* SIDEBAR */
 .side {
-  width: 260px;
-  
+  width: 300px;   
   border-right: 1px solid #e5e7eb;
+  border-radius: 0;             
   display: flex;
   flex-direction: column;
   padding: 8px 0 12px;
-  box-shadow: 2px 0 8px rgba(15, 23, 42, 0.04);
 }
+
 
 .side__header {
   display: flex;
@@ -107,8 +107,24 @@
   position: sticky;
   top: 0;
   z-index: 10;
+  
+  color: #111827;       
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
 }
+
+mat-sidenav,
+.mat-sidenav {
+  background: #fff;  
+  border-radius: 0 !important;
+}
+
+
+mat-sidenav-container,
+.mat-sidenav-container {
+  border-radius: 0 !important;
+  overflow: hidden;
+}
+
 
 .menu-btn {
   margin-right: 8px;
@@ -143,6 +159,16 @@
   opacity: 0.8;
 }
 
+.topbar__inner {
+  width: 100%;
+  max-width: var(--ga-container);
+  margin: 0 auto;                 
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .spacer {
   flex: 1;
 }
@@ -154,9 +180,11 @@
 /* CONTENIDO PRINCIPAL */
 .page {
   flex: 1;
-  padding: 20px 24px 24px;
   overflow: auto;
+  background: var(--ga-bg);
+  padding: 50px;       /* padding real del layout */
 }
+
 
 /* Responsivo: sidebar tipo "over" en pantallas pequeñas si ya lo manejas desde TS */
 @media (max-width: 768px) {
