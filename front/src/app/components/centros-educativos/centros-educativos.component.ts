@@ -14,6 +14,7 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 
+
 // APIs
 import {
   CentrosApiService,
@@ -65,7 +66,7 @@ type CentroDetalle = CentroEducativo & {
     MatSnackBarModule,
     MatDatepickerModule,
     MatNativeDateModule,
-  MatPaginatorModule,
+    MatPaginatorModule,
   ],
 })
 export class CentrosEducativosComponent implements OnInit {
@@ -174,6 +175,8 @@ export class CentrosEducativosComponent implements OnInit {
   // modal contactos (nuevo)
   contactsForCentro: CentroEducativo | null = null;
 
+
+  
   constructor() {
     this.load(); 
   }
@@ -185,6 +188,25 @@ export class CentrosEducativosComponent implements OnInit {
       this.isEditing = false;
     }
   }
+
+  showField(label: string, value: string) {
+    console.log('CLICK', label, value);
+    const text = `${label}: ${value}`;
+
+  // Intenta copiar al portapapeles (si el navegador lo permite)
+  if (navigator?.clipboard?.writeText) {
+    navigator.clipboard.writeText(value).catch(() => {});
+  }
+
+  this.snack.open(text, 'Cerrar', {
+    duration: 10000,
+    horizontalPosition: 'center',
+    verticalPosition: 'bottom',
+    panelClass: ['info-snackbar'],
+  });
+}
+
+
 
   private esRolVinculacionSoloLectura(): boolean {
     if (!isPlatformBrowser(this.platformId)) return false;
