@@ -1,45 +1,9 @@
-/* Contenedor base */
-.container { max-width: 1120px; margin: 16px auto; padding: 0 16px; }
-.section { margin-top: 8px; }
-
-/* Header */
-.header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-.headline h1 { margin: 0; font-size: 22px; }
-.muted { color: #64748b; font-size: 13px; margin: 2px 0 0; }
-.spacer { flex: 1 1 auto; }
-.btn-add, .btn-sort { border-radius: 10px; }
-
 /* Card base */
 .elev { border: 1px solid #e5e7eb; border-radius: 14px; }
 
-/* Filtros */
-.filters-section {
-  margin-bottom: 0;
-  padding: 20px 24px 16px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-bottom: none;
-  border-radius: 12px 12px 0 0;
-}
-.filters {
-  display: grid;
-  grid-template-columns: 1fr 240px;
-  gap: 16px;
-  align-items: center;
-}
-.role-filter { min-width: 200px; }
-.flex1 { flex: 1 1 auto; }
 @media (max-width: 720px) {
   .filters { grid-template-columns: 1fr; gap: 12px; }
   .filters-section { padding: 16px 20px 12px; }
-}
-
-/* Encabezado de filtros */
-.filters-header {
-  display: flex; align-items: center; gap: 8px;
-  padding: 0 0 12px 4px; color: #1f2937;
-  mat-icon { font-size: 22px; color: #000; line-height: 1; }
-  h2 { margin: 0; font-size: 18px; font-weight: 600; line-height: 1; }
 }
 
 /* Formulario (igual) */
@@ -162,7 +126,6 @@
   .dialog-actions button { width: 100%; }
 }
 
-/* Confirm Dialog */
 .confirm-dialog { position: fixed; inset: 0; z-index: 1100; display: flex; align-items: center; justify-content: center; }
 .confirm-dialog .dialog-overlay { position: absolute; inset: 0; background: rgba(0,0,0,.45); }
 .confirm-card {
@@ -533,3 +496,4 @@
   overflow: visible !important;
   text-overflow: clip !important;
 }
+

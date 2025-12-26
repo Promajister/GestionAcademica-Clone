@@ -630,4 +630,13 @@ export class TutoresComponent implements OnInit {
       return control.errors?.['mensaje'] || 'Teléfono inválido';
     return '';
   }
+
+  aplicarFiltros() {
+    this.onFiltersChange();
+  }
+
+  limpiarFiltros() {
+    this.terminoBusqueda = '';
+    this.onFiltersChange();
+  }
 }

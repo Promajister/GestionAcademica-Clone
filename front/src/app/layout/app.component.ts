@@ -1,12 +1,4 @@
-import {
-  Component,
-  inject,
-  OnInit,
-  AfterViewInit,
-  PLATFORM_ID,
-  OnDestroy,
-  ViewChild,
-} from '@angular/core';
+import { Component, inject, OnInit, AfterViewInit, PLATFORM_ID, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Router, RouterModule, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';

@@ -1,29 +1,4 @@
-.tutores{
-  margin: 16px auto 24px;
-}
-
-/* Filtros (igual que Estudiantes en Práctica) */
-.filtros{
-  margin-bottom: 16px;
-  background: var(--ga-card);
-}
-
-.filtros__title{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  font-size:16px;
-  font-weight:700;
-  color: var(--ga-text);
-}
-
 .filtros__grid{
-  display:grid;
-  gap: 16px;
-  align-items: end;
-}
-
-.filtros__grid--1{
   grid-template-columns: 1fr;
 }
 
@@ -161,7 +136,6 @@
   border-radius: 10px;
 }
 
-/* Responsive */
 @media (max-width: 1100px){
   .row__content{ grid-template-columns: 1fr; }
   .cell--actions{ justify-content: flex-start; flex-wrap: wrap; }

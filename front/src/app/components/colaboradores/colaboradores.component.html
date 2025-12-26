@@ -1,63 +1,71 @@
-<div class="Container Section">
-  <!-- HEADER -->
-  <div class="Header">
-    
-    <div class="Headline">
-      <h1>Gestión de Colaboradores</h1>
-      <p class="Muted"></p>
+<div class="ga-page ga-page--wide colaboradores">
+  <div class="ga-header">
+    <div>
+      <h1 class="ga-title">Gestión de Colaboradores</h1>
+      <p class="ga-subtitle">Busca, revisa y administra colaboradores.</p>
     </div>
 
-    <div class="Spacer"></div>
+    <span class="ga-spacer"></span>
 
-    <!-- BOTÓN AGREGAR -->
-    <button mat-flat-button color="primary" (click)="alternarFormulario()" class="BtnAdd" *ngIf="!esSoloLectura">
+    <button
+      mat-flat-button
+      color="primary"
+      class="ga-btn"
+      (click)="alternarFormulario()"
+      *ngIf="!esSoloLectura">
       <mat-icon>{{ mostrarFormulario ? 'close' : 'person_add' }}</mat-icon>
       {{ mostrarFormulario ? 'Cerrar' : 'Agregar colaborador' }}
     </button>
   </div>
 
   <!-- FILTROS DE BÚSQUEDA -->
-  <mat-card class="FiltersCard Elev">
+  <mat-card class="ga-card filtros">
     <mat-card-header>
-      <mat-card-title>
+      <mat-card-title class="filtros__title">
         <mat-icon>search</mat-icon>
-        Filtros de Búsqueda
+        Filtros de búsqueda
       </mat-card-title>
     </mat-card-header>
+
     <mat-card-content>
-      <div class="FiltersGrid">
-        <mat-form-field appearance="outline" class="SearchField">
+      <div class="filtros__grid filtros__grid--1">
+        <mat-form-field appearance="outline">
           <mat-label>Buscar</mat-label>
-          <input matInput [(ngModel)]="terminoBusqueda" (ngModelChange)="onFiltersChange()" placeholder="Nombre, email, cargo, RUT..." />
+          <input
+            matInput
+            [(ngModel)]="terminoBusqueda"
+            (ngModelChange)="onFiltersChange()"
+            placeholder="Nombre, email, cargo, RUT…" />
           <mat-icon matSuffix>search</mat-icon>
         </mat-form-field>
-
-        <!-- Eliminado filtro por Rol -->
       </div>
     </mat-card-content>
   </mat-card>
 
   <!-- FORMULARIO (colapsable por botón) -->
-  <div class="FormContainer" [class.FormOpen]="mostrarFormulario" *ngIf="!esSoloLectura">
+  <div class="form-wrap" [class.form-wrap--open]="mostrarFormulario" *ngIf="!esSoloLectura">
     @if (mostrarFormulario) {
-      <mat-card class="Elev FormCard">
-        <mat-card-header class="FormHeader">
-          <div class="FormTitleSection">
-            <div class="FormIcon">
+      <mat-card class="ga-card ga-card--soft form-card">
+        <mat-card-header class="form-card__head">
+          <div class="form-card__left">
+            <div class="form-card__icon">
               <mat-icon>{{ estaEditando ? 'edit' : 'person_add' }}</mat-icon>
             </div>
-          <div class="FormTitles">
-            <h2>{{ estaEditando ? 'Editar colaborador' : 'Agregar colaborador' }}</h2>
-            <p>{{ estaEditando ? 'Modifica los datos del colaborador' : 'Completa los datos para registrar un nuevo colaborador' }}</p>
+            <div class="form-card__titles">
+              <h2>{{ estaEditando ? 'Editar colaborador' : 'Agregar colaborador' }}</h2>
+              <p class="ga-subtitle">
+                {{ estaEditando ? 'Modifica los datos del colaborador' : 'Completa los datos para registrar uno nuevo' }}
+              </p>
+            </div>
           </div>
-          </div>
-          <button mat-icon-button (click)="alternarFormulario()" class="CloseFormBtn">
+
+          <button mat-icon-button (click)="alternarFormulario()">
             <mat-icon>close</mat-icon>
           </button>
         </mat-card-header>
 
-        <mat-card-content class="FormContent">
-          <form [formGroup]="formularioColaborador" class="FormGrid">
+        <mat-card-content class="form-card__body">
+          <form [formGroup]="formularioColaborador" class="form-grid">
             <div class="FormRow">
               <mat-form-field appearance="outline" class="FormField">
                 <mat-label>Nombre completo *</mat-label>
@@ -120,64 +128,76 @@
             </div>
           </form>
 
-        <div class="FormActions">
-          <button mat-stroked-button (click)="alternarFormulario()" class="CancelBtn">
-            Cancelar
-          </button>
-          <button mat-raised-button color="primary" (click)="estaEditando ? actualizarColaborador() : agregarColaborador()" [disabled]="formularioColaborador.invalid" class="SubmitBtn">
-            <mat-icon>{{ estaEditando ? 'save' : 'person_add' }}</mat-icon> 
-            {{ estaEditando ? 'Guardar cambios' : 'Añadir' }}
-          </button>
-        </div>
+          <div class="form-actions">
+            <button mat-stroked-button type="button" (click)="alternarFormulario()">Cancelar</button>
+            <button
+              mat-flat-button
+              color="primary"
+              type="button"
+              (click)="estaEditando ? actualizarColaborador() : agregarColaborador()"
+              [disabled]="formularioColaborador.invalid">
+              <mat-icon>{{ estaEditando ? 'save' : 'person_add' }}</mat-icon>
+              {{ estaEditando ? 'Guardar cambios' : 'Añadir' }}
+            </button>
+          </div>
         </mat-card-content>
       </mat-card>
     }
   </div>
 
   <!-- LISTADO DE COLABORADORES -->
-  <mat-card class="Elev" *ngIf="totalItems > 0">
-    <mat-card-content class="ListContainer">
+  <mat-card class="ga-card ga-card--soft lista" *ngIf="totalItems > 0">
+    <mat-card-content class="ga-list">
       @if (cargando) {
-        <div style="text-align: center; padding: 2rem;">
-          <p class="Muted">Cargando colaboradores...</p>
+        <div class="loader">
+          <mat-spinner diameter="32"></mat-spinner>
+          <span>Cargando colaboradores...</span>
         </div>
-      } @else {
+      }
+
+      @if (!cargando) {
         @for (c of colaboradores; track c.id) {
-        <div class="ListItem">
-          <div class="ItemContent">
-            <!-- Avatar y nombre -->
-            <div class="ItemMain">
-              <div class="ItemInfo">
-                <h3>{{ c.nombre }}</h3>
-                  <p class="Muted">{{ c.correo || 'Sin email' }}</p>
+          <div class="ga-row list-item">
+            <div class="row__content">
+              <div class="cell cell--main">
+                <div class="title">
+                  <span class="truncate">{{ c.nombre }}</span>
                 </div>
-            </div>
 
-            <!-- Cargo(s) -->
-            <div class="ItemRole">
-              @if (c.cargo) { <span>{{ c.cargo }}</span> } @else { <span class="Muted">Sin cargo</span> }
-            </div>
+                <div class="meta">
+                  <mat-icon>mail</mat-icon>
+                  <span class="truncate">{{ c.correo || 'Sin email' }}</span>
+                </div>
 
-            <!-- Acciones -->
-            <div class="ItemActions">
-              <button mat-icon-button color="accent" (click)="verDetalles(c)" title="Ver más información">
-                <mat-icon>visibility</mat-icon>
-              </button>
-              <button mat-icon-button color="primary" (click)="editarColaborador(c)" title="Editar" *ngIf="!esSoloLectura">
-                <mat-icon>edit</mat-icon>
-              </button>
-              <button mat-icon-button color="warn" (click)="eliminar(c)" title="Eliminar" *ngIf="!esSoloLectura">
-                <mat-icon>delete</mat-icon>
-              </button>
+                <div class="meta">
+                  <mat-icon>badge</mat-icon>
+                  <span class="truncate">{{ c.rut || 'Sin RUT' }}</span>
+                </div>
+              </div>
+
+              <div class="cell cell--right">
+                <span class="ga-pill">{{ c.cargo || 'Sin cargo' }}</span>
+              </div>
+
+              <div class="cell cell--actions">
+                <button mat-icon-button color="accent" (click)="verDetalles(c)" title="Ver más">
+                  <mat-icon>visibility</mat-icon>
+                </button>
+                <button mat-icon-button color="primary" (click)="editarColaborador(c)" title="Editar" *ngIf="!esSoloLectura">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button mat-icon-button color="warn" (click)="eliminar(c)" title="Eliminar" *ngIf="!esSoloLectura">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
             </div>
           </div>
-        </div>
         }
       }
     </mat-card-content>
 
     <!-- PAGINADOR -->
-    <div class="list-paginator">
+    <div class="ga-paginator">
       <mat-paginator
         [length]="totalItems"
         [pageIndex]="pageIndex"
@@ -190,10 +210,11 @@
 
   <!-- EMPTY -->
   @if (!cargando && totalItems === 0) {
-    <mat-card class="Elev Empty">
-      <mat-card-content class="Muted EmptyContent">
-        <mat-icon>group_off</mat-icon>
-        <p>No se encontraron colaboradores con los filtros seleccionados.</p>
+    <mat-card class="ga-card ga-card--soft">
+      <mat-card-content class="ga-empty">
+        <mat-icon>sentiment_dissatisfied</mat-icon>
+        <h3>No se encontraron colaboradores</h3>
+        <p>No hay resultados con los filtros seleccionados.</p>
       </mat-card-content>
     </mat-card>
   }
@@ -205,7 +226,6 @@
     <div class="DialogOverlay" (click)="cerrarDetalles()"></div>
 
     <div class="DialogContent DialogContent--details">
-      <!-- Header pro -->
       <div class="DialogHeader DialogHeader--details">
         <div class="DialogHeaderLeft">
           <div class="DialogAvatar">

@@ -1,185 +1,198 @@
+:host{
+  display:block;
+}
+
 .estudiantes{
-  margin: 16px auto 24px;
-}
+  --topbar: 64px;
+  --page-pad: 40px;
+  --bottom-air: 16px;
 
-/* filtros */
-.filtros{
-  margin-bottom: 16px;
-}
-
-/* Filtros blanco */
-.filtros{
-  background: var(--ga-card) !important;
-}
-
-/* Detalle + Lista plomo (igual vibe que Tutores) */
-.detalle,
-.lista mat-card.ga-card{
-  background: var(--ga-soft) !important;
-
-  /* para que MDC (Angular Material) no lo reemplace */
-  --mdc-elevated-card-container-color: var(--ga-soft);
-  --mdc-outlined-card-container-color: var(--ga-soft);
-}
-
-
-.filtros mat-card-header {
-  padding: 12px 14px 10px;
-}
-
-.filtros mat-card-content {
-  padding: 0 14px 14px;
-}
-
-
-.filtros__title{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  font-size:18px;       
-  font-weight:700;
-  color:var(--ga-text);
-  margin:0;
-}
-
-.filtros__grid{
-  display:grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;              
-}
-
-.filtros__actions{
+  height: calc(100vh - var(--topbar) - (var(--page-pad) * 2) - var(--bottom-air));
+  padding-bottom: var(--bottom-air);  
   display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 10px;
-  margin-top: -5px;         
-  padding-top: -5px;
+  flex-direction: column;
+  min-height: 0;
 }
 
-.filtros__actions button[color="primary"]{
-  height: 36px;
-  padding: 0 14px;
-  font-weight: 500;
-}
-
-.filtros__actions button:not([color="primary"]){
-  height: 36px;
-  padding: 0 8px;
-  color: #475569;
-}
+.ga-card.filtros{ flex: 0 0 auto; }
 
 .layout{
-  display:grid;
-  grid-template-columns: 1.1fr 0.9fr;
-  gap: 15px;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 14px;
   align-items: stretch;
 }
+
 .detalle,
-.lista mat-card {
+.lista{
   height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.detalle mat-card-content,
+.lista mat-card-content{
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .detalle mat-card-content{
-  max-height: calc(100vh - 320px);
-  overflow-y: auto;
+  overflow: auto;
 }
 
 .lista mat-card-content{
-  max-height: calc(100vh - 320px);
-  overflow-y: auto;
+  overflow: hidden;
 }
 
-
-.detalle{
-  min-height: 420px;
+.ga-paginator{
+  flex: 0 0 auto;
 }
 
+/* ===== Detalle ===== */
 .detalle__head{
-  display:flex;
-  align-items:flex-start;
-  justify-content:space-between;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
   gap: 12px;
   margin-bottom: 12px;
 }
 
 .detalle__name{
   margin: 0 0 4px;
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--ga-text);
 }
 
 .detalle__actions{
-  display:flex;
+  display: flex;
   gap: 8px;
 }
 
 .detalle__section{
-  margin-top: 12px;
-  padding-top: 10px;
-  border-top: 1px solid var(--ga-border);
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed #e5e7eb;
 }
 
-.detalle__section h4{
-  margin: 0 0 8px;
-  font-size: 15px;
+.section-head{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-bottom: 10px;
+
+  mat-icon{
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    color: #1f2937;
+  }
+
+  h4{
+    margin: 0;
+    font-size: 14px;
+    font-weight: 900;
+    color: #111827;
+  }
 }
 
-/* grids internas */
+/* KV grid estilo “fichas” */
 .grid2{
   display:grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
+  gap: 12px;
+}
+
+.kv{
+  border: 1px solid #eef2f7;
+  background: #f8fafc;
+  border-radius: 14px;
+  padding: 10px 12px;
+  min-width: 0;
+}
+
+.kv--full{ grid-column: 1 / -1; }
+
+.k{
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 800;
+  margin-bottom: 2px;
+}
+
+.v{
+  font-size: 14px;
+  color: #0f172a;
+  font-weight: 800;
+  word-break: break-word;
 }
 
 .pill-row{
   border: 1px solid var(--ga-border);
-  border-radius: 8px;
-  padding: 8px 10px;
-  margin: 6px 0;
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin: 8px 0;
   background: #fff;
 }
 
-/* lista */
-.list-item{
-  cursor:pointer;
-}
-
-.item-content{
-  display:grid;
-  grid-template-columns: 1fr auto;
-  align-items:center;
-  gap: 16px;
-  padding: 14px 16px;
-}
-
-.item-info h3{
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--ga-text);
-}
-
-.item-status{
+.pill-row__top{
   display:flex;
   align-items:center;
-  justify-content:flex-end;
-  min-width: 120px;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.muted{
+  margin: 0;
+  color: var(--ga-muted);
+  font-size: 13px;
+}
+
+/* ===== Lista ===== */
+.list-item{
+  cursor: pointer;
+}
+
+.row__content{
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 14px;
+  padding: 14px 14px;
+  align-items: center;
+}
+
+.cell{ min-width: 0; }
+
+.title{
+  font-weight: 900;
+  color: var(--ga-text);
+  margin-bottom: 4px;
+}
+
+.meta{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  color: var(--ga-muted);
+  font-size: 13px;
+  min-width: 0;
+
+  mat-icon{
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    color: #94a3b8;
+  }
 }
 
 .list-item.active{
   background: #eff6ff;
-  border-left: 1px solid #3b82f6;
-  border-right: 1px solid #3b82f6;
-  border-radius: 0 !important;
-}
-
-.ultima{
-  margin-top: 6px;
-}
-.ultima__tipo{
-  margin: 0;
-  font-size: 12px;
-  font-weight: 600;
-  color: #374151;
+  border-left: 2px solid #3b82f6;
+  border-right: 2px solid #3b82f6;
 }
 
 /* loader / error */
@@ -190,6 +203,7 @@
   color: #475569;
   padding: 12px 0;
 }
+
 .error-box{
   display:flex;
   align-items:center;
@@ -198,15 +212,12 @@
   padding: 10px 0;
 }
 
-/* responsive */
 @media (max-width: 1100px){
-  .filtros__grid{ grid-template-columns: repeat(2, 1fr); }
-  .layout{ grid-template-columns: 1fr; align-items: stretch; }
-  .detalle__actions{ width: 100%; justify-content:flex-start; }
-}
-
-@media (max-width: 640px){
-  .filtros__grid{ grid-template-columns: 1fr; }
-  .detalle__head{ flex-direction: column; align-items:flex-start; }
+  .estudiantes{
+    height: auto;     
+    padding-bottom: 0;
+  }
+  .layout{ grid-template-columns: 1fr; }
   .grid2{ grid-template-columns: 1fr; }
+  .lista mat-card-content{ overflow: auto; } /* en móvil puede necesitar */
 }

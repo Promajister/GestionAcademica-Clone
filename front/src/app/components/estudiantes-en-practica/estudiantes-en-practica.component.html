@@ -2,7 +2,7 @@
   <!-- Header -->
   <div class="ga-header">
     <div>
-      <h1 class="ga-title">Estudiantes en Práctica</h1>
+      <h1 class="ga-title">Gestión de Estudiantes en Práctica</h1>
       <p class="ga-subtitle">Gestiona prácticas activas y actualiza estados rápidamente.</p>
     </div>
     <span class="ga-spacer"></span>
@@ -18,7 +18,7 @@
     </mat-card-header>
 
     <mat-card-content>
-      <div class="filtros__grid">
+      <div class="filtros__grid filtros__grid--3">
         <mat-form-field appearance="outline">
           <mat-label>Buscar</mat-label>
           <input
@@ -49,6 +49,18 @@
           </mat-select>
         </mat-form-field>
       </div>
+
+      <div class="filtros__actions">
+        <button mat-stroked-button color="primary" (click)="aplicarFiltros()">
+          <mat-icon>refresh</mat-icon>
+          Aplicar filtros
+        </button>
+
+        <button mat-button type="button" (click)="limpiarFiltros()">
+          <mat-icon>close</mat-icon>
+          Limpiar filtros
+        </button>
+      </div>      
     </mat-card-content>
   </mat-card>
 
@@ -61,16 +73,16 @@
       </mat-card-content>
     </mat-card>
   } @else if (totalItems === 0) {
-    <mat-card class="ga-card">
+    <mat-card class="ga-card ga-card--soft">
       <mat-card-content class="ga-empty">
-        <mat-icon>school</mat-icon>
+        <mat-icon>sentiment_dissatisfied</mat-icon>
         <h3>No se encontraron estudiantes</h3>
         <p>No hay prácticas que coincidan con los filtros seleccionados.</p>
       </mat-card-content>
     </mat-card>
   } @else {
     <!-- Lista -->
-    <mat-card class="ga-card">
+    <mat-card class="ga-card ga-card--soft">
       <mat-card-content class="ga-list">
         @for (practica of estudiantesPaginados; track practica.id) {
           <div class="ga-row" (click)="verDetalles(practica)" tabindex="0">

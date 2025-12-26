@@ -1,18 +1,15 @@
-<!-- LAYOUT COMPLETO (todas las rutas excepto login / recuperar-clave) -->
 <ng-container *ngIf="!isAuthRoute; else authOnly">
   <mat-sidenav-container
     class="shell"
     [class.shell--open]="isSidenavOpened"
     [style.--side-offset.px]="isSidenavOpened ? 260 : 0">
 
-    <!-- SIDEBAR -->
     <mat-sidenav
       #sidenav
       mode="side"
       [opened]="isSidenavOpened"
       (openedChange)="onSidenavChange($event)">
 
-      <!-- Header usuario -->
       <div class="side__header">
         <ng-container *ngIf="profilePhoto; else fallbackAvatar">
           <div class="side__avatar">
@@ -32,12 +29,8 @@
 
       <mat-divider></mat-divider>
 
-      <!-- Título navegación -->
-      <div class="side__section-title">
-        <!-- Opcional: título sección -->
-      </div>
+      <div class="side__section-title"></div>
 
-      <!-- Navegación -->
       <mat-nav-list class="side__nav">
         <a mat-list-item
            *ngFor="let item of nav"
@@ -50,14 +43,12 @@
         </a>
       </mat-nav-list>
 
-      <!-- Pie del sidebar -->
       <div class="side__footer">
         <span class="side__footer-text">Sistema de Prácticas</span>
         <span class="side__footer-version">v1.0</span>
       </div>
     </mat-sidenav>
 
-    <!-- CONTENIDO -->
     <mat-sidenav-content class="content">
       <!-- TOPBAR -->
       <mat-toolbar class="topbar">
@@ -79,7 +70,6 @@
         
       </mat-toolbar>
 
-      <!-- CONTENIDO DE PÁGINA -->
       <main class="page">
         <router-outlet></router-outlet>
       </main>
@@ -87,7 +77,6 @@
   </mat-sidenav-container>
 </ng-container>
 
-<!-- SOLO VISTAS DE AUTENTICACIÓN (login, recuperar clave, etc.) -->
 <ng-template #authOnly>
   <router-outlet></router-outlet>
 </ng-template>
