@@ -1,39 +1,61 @@
 <div class="Container Section">
-  <div class="Header">
-    <div class="Headline">
-      <h1>Gestión de Tutores</h1>
-      <p class="Muted"></p>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero__bg"></div>
+    <div class="hero__content">
+      <div class="hero__left">
+        <div class="hero__icon">
+          <mat-icon>school</mat-icon>
+        </div>
+
+        <div class="hero__titles">
+          <h1>Gestión de Tutores</h1>
+          <p>Registra, edita y administra tutores vinculados a prácticas profesionales.</p>
+
+          <div class="hero__chips">
+            <span class="chip">
+              <mat-icon>layers</mat-icon>
+              <span>Total: {{ totalItems || 0 }}</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero__actions" *ngIf="!esSoloLectura">
+        <button mat-flat-button color="primary" (click)="alternarFormulario()" class="btn-cta">
+          <mat-icon>{{ mostrarFormulario ? 'close' : 'person_add' }}</mat-icon>
+          {{ mostrarFormulario ? 'Cerrar' : 'Agregar tutor' }}
+        </button>
+      </div>
     </div>
-
-    <div class="Spacer"></div>
-
-    <button mat-flat-button color="primary" (click)="alternarFormulario()" class="BtnAdd" *ngIf="!esSoloLectura">
-      <mat-icon>{{ mostrarFormulario ? 'close' : 'person_add' }}</mat-icon>
-      {{ mostrarFormulario ? 'Cerrar' : 'Agregar tutor' }}
-    </button>
   </div>
 
-  <mat-card class="FiltersCard Elev">
-    <mat-card-header>
-      <mat-card-title>
-        <mat-icon>search</mat-icon>
-        Filtros de Búsqueda
-      </mat-card-title>
-    </mat-card-header>
-    <mat-card-content>
-      <div class="FiltersGrid">
-        <mat-form-field appearance="outline" class="SearchField">
-          <mat-label>Buscar</mat-label>
-          <input matInput [(ngModel)]="terminoBusqueda" (ngModelChange)="onFiltersChange()" placeholder="Nombre, email, cargo, RUT..." />
-          <mat-icon matSuffix>search</mat-icon>
-        </mat-form-field>
+  <!-- TOOLBAR (igual a Centros/Colaboradores) -->
+  <mat-card class="toolbar-card elev">
+    <mat-card-content class="toolbar">
+      <mat-icon class="toolbar__icon">search</mat-icon>
+
+      <mat-form-field appearance="outline" class="toolbar__search">
+        <mat-label>Buscar</mat-label>
+        <input
+          matInput
+          [(ngModel)]="terminoBusqueda"
+          (ngModelChange)="onFiltersChange()"
+          placeholder="Nombre, email, cargo, RUT..." />
+      </mat-form-field>
+
+      <div class="toolbar__right muted">
+        <span *ngIf="!cargando">{{ (tutores.length || 0) }} en pantalla</span>
       </div>
     </mat-card-content>
   </mat-card>
 
+  <!-- FORMULARIO -->
   <div class="FormContainer" [class.FormOpen]="mostrarFormulario" *ngIf="!esSoloLectura">
     @if (mostrarFormulario) {
-      <mat-card class="Elev FormCard">
+      <mat-card class="elev FormCard">
+        <div class="form-topline"></div>
         <mat-card-header class="FormHeader">
           <div class="FormTitleSection">
             <div class="FormIcon">
@@ -44,13 +66,15 @@
               <p>{{ estaEditando ? 'Modifica los datos del tutor' : 'Completa los datos para registrar un nuevo tutor' }}</p>
             </div>
           </div>
-          <button mat-icon-button (click)="alternarFormulario()" class="CloseFormBtn">
+
+          <button mat-icon-button (click)="alternarFormulario()" class="CloseFormBtn" aria-label="Cerrar">
             <mat-icon>close</mat-icon>
           </button>
         </mat-card-header>
 
         <mat-card-content class="FormContent">
           <form [formGroup]="formularioTutor" class="FormGrid">
+
             <div class="FormRow">
               <mat-form-field appearance="outline" class="FormField">
                 <mat-label>Nombre completo *</mat-label>
@@ -99,6 +123,7 @@
                 <mat-label>Cargo 1</mat-label>
                 <input matInput formControlName="cargo1" placeholder="Ej: Tutor académico" />
               </mat-form-field>
+
               <mat-form-field appearance="outline" class="FormField">
                 <mat-label>Cargo 2</mat-label>
                 <input matInput formControlName="cargo2" placeholder="Ej: Supervisor de práctica" />
@@ -114,63 +139,113 @@
           </form>
 
           <div class="FormActions">
-            <button mat-stroked-button (click)="alternarFormulario()" class="CancelBtn">
+            <button mat-stroked-button class="CancelBtn" (click)="alternarFormulario()">
               Cancelar
             </button>
+
+
             <button
-              mat-raised-button
+              mat-flat-button
               color="primary"
-              (click)="estaEditando ? actualizarTutor() : agregarTutor()"
-              [disabled]="formularioTutor.invalid"
-              class="SubmitBtn">
-              <mat-icon>{{ estaEditando ? 'save' : 'person_add' }}</mat-icon>
-              {{ estaEditando ? 'Guardar cambios' : 'Añadir' }}
+              class="SubmitBtn"
+              (click)="actualizarTutor()"
+              [disabled]="formularioTutor.invalid">
+              <mat-icon>save</mat-icon>
+              Guardar cambios
             </button>
+
           </div>
         </mat-card-content>
       </mat-card>
     }
   </div>
 
-  <mat-card class="Elev" *ngIf="totalItems > 0">
-    <mat-card-content class="ListContainer">
+  <!-- LISTADO -->
+  <mat-card class="list-shell elev" *ngIf="totalItems > 0">
+    <mat-card-header class="list-head">
+      <mat-card-title class="list-title">
+        <mat-icon>format_list_bulleted</mat-icon>
+        Tutores registrados
+      </mat-card-title>
+
+      <div class="list-meta muted">
+        {{ totalItems }} resultado(s)
+      </div>
+    </mat-card-header>
+
+    <mat-card-content class="list-body">
       @if (cargando) {
-        <div style="text-align: center; padding: 2rem;">
-          <p class="Muted">Cargando tutores...</p>
-        </div>
+        <div class="center muted" style="padding: 22px 0;">Cargando tutores...</div>
       } @else {
-        @for (t of tutores; track t.id) {
-          <div class="ListItem">
-            <div class="ItemContent">
-              <div class="ItemMain">
-                <div class="ItemInfo">
-                  <h3>{{ t.nombre }}</h3>
-                  <p class="Muted">{{ t.correo || 'Sin email' }}</p>
+        <div class="cards-stack">
+          @for (t of tutores; track t.id) {
+            <article class="center-card">
+              <div class="center-card__accent"></div>
+
+              <div class="center-card__top">
+                <div class="center-card__avatar">
+                  <mat-icon>school</mat-icon>
+                </div>
+
+                <div class="center-card__meta">
+                  <div class="center-card__name truncate">{{ t.nombre }}</div>
+
+                  <div class="center-card__place muted truncate">
+                    <mat-icon>mail</mat-icon>
+                    <span>{{ t.correo || 'Sin email' }}</span>
+                  </div>
+
+                  <div class="center-card__chips">
+                    @if (t.cargo) {
+                      <span class="tag">{{ t.cargo }}</span>
+                    } @else {
+                      <span class="tag tag--soft">Sin cargo</span>
+                    }
+
+                    @if (t.rut) {
+                      <span class="tag tag--soft">{{ t.rut }}</span>
+                    }
+                  </div>
+                </div>
+
+                <div class="actions-box">
+                  <button class="action-box" mat-icon-button (click)="verDetalles(t)" title="Ver más información">
+                    <mat-icon>visibility</mat-icon>
+                  </button>
+
+                  <button class="action-box" mat-icon-button (click)="editarTutor(t)" title="Editar" *ngIf="!esSoloLectura">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+
+                  <button class="action-box action-box--danger" mat-icon-button (click)="eliminar(t)" title="Eliminar" *ngIf="!esSoloLectura">
+                    <mat-icon>delete</mat-icon>
+                  </button>
                 </div>
               </div>
 
-              <div class="ItemRole">
-                @if (t.cargo) { <span>{{ t.cargo }}</span> } @else { <span class="Muted">Sin cargo</span> }
-              </div>
+              <!-- BOTONES ABAJO (SIN MARCO, PEGADOS A LA IZQUIERDA COMO CENTROS) -->
+              <div class="center-card__bottom">
+                <button mat-icon-button class="mini-plain" title="Teléfono"
+                        (click)="showField('Teléfono', (t.telefono ?? 'Sin teléfono').toString())">
+                  <mat-icon>call</mat-icon>
+                </button>
 
-              <div class="ItemActions">
-                <button mat-icon-button color="accent" (click)="verDetalles(t)" title="Ver más información">
-                  <mat-icon>visibility</mat-icon>
+                <button mat-icon-button class="mini-plain" title="Correo"
+                        (click)="showField('Correo', (t.correo ?? 'Sin correo').toString())">
+                  <mat-icon>email</mat-icon>
                 </button>
-                <button mat-icon-button color="primary" (click)="editarTutor(t)" title="Editar" *ngIf="!esSoloLectura">
-                  <mat-icon>edit</mat-icon>
-                </button>
-                <button mat-icon-button color="warn" (click)="eliminar(t)" title="Eliminar" *ngIf="!esSoloLectura">
-                  <mat-icon>delete</mat-icon>
+
+                <button mat-icon-button class="mini-plain" title="Dirección"
+                        (click)="showField('Dirección', (t.direccion ?? 'Sin dirección').toString())">
+                  <mat-icon>location_on</mat-icon>
                 </button>
               </div>
-            </div>
-          </div>
-        }
+            </article>
+          }
+        </div>
       }
     </mat-card-content>
 
-    <!-- PAGINADOR -->
     <div class="list-paginator">
       <mat-paginator
         [length]="totalItems"
@@ -191,12 +266,12 @@
     </mat-card>
   }
 
+  <!-- MODAL DETALLES (lo dejas tal cual lo tenías) -->
   @if (tutorSeleccionado) {
   <div class="DetailsDialog">
     <div class="DialogOverlay" (click)="cerrarDetalles()"></div>
 
-    <div class="DialogContent DialogContent--details">
-      <!-- Header pro -->
+    <div class="DialogContent DialogContent--details" role="dialog" aria-modal="true">
       <div class="DialogHeader DialogHeader--details">
         <div class="DialogHeaderLeft">
           <div class="DialogAvatar">
@@ -205,9 +280,7 @@
 
           <div class="DialogTitles">
             <h2>Información del Tutor</h2>
-            <div class="DialogSubtitle">
-              {{ tutorSeleccionado.nombre }}
-            </div>
+            <div class="DialogSubtitle">{{ tutorSeleccionado.nombre }}</div>
           </div>
         </div>
 
@@ -217,7 +290,6 @@
       </div>
 
       <div class="DialogBody">
-        <!-- Chips -->
         <div class="DetailsTop">
           <span class="Chip Chip--primary">
             <mat-icon>work</mat-icon>
@@ -235,7 +307,6 @@
           </span>
         </div>
 
-        <!-- Sección: Datos personales -->
         <div class="DetailsSection">
           <div class="SectionHead">
             <mat-icon>person</mat-icon>
@@ -260,7 +331,6 @@
           </div>
         </div>
 
-        <!-- Sección: Contacto -->
         <div class="DetailsSection">
           <div class="SectionHead">
             <mat-icon>contact_phone</mat-icon>
@@ -295,7 +365,6 @@
           </div>
         </div>
 
-        <!-- Sección: Información laboral -->
         <div class="DetailsSection">
           <div class="SectionHead">
             <mat-icon>workspace_premium</mat-icon>
@@ -318,6 +387,7 @@
 
       <div class="DialogActions DialogActions--details">
         <button mat-stroked-button (click)="cerrarDetalles()">Cerrar</button>
+
         <button mat-raised-button color="primary" (click)="editarTutor(tutorSeleccionado!)" *ngIf="!esSoloLectura">
           <mat-icon>edit</mat-icon>
           Editar tutor
@@ -328,28 +398,36 @@
 }
 
 
+  <!-- CONFIRM ELIMINACIÓN (lo dejas tal cual lo tenías) -->
   @if (mostrarConfirmarEliminar && tutorAEliminar) {
-    <div class="confirm-dialog">
-      <div class="dialog-overlay" (click)="cerrarConfirmarEliminar()" tabindex="0"></div>
+  <div class="confirm-dialog" role="dialog" aria-modal="true">
+    <div class="dialog-overlay" (click)="cerrarConfirmarEliminar()" tabindex="0"></div>
 
-      <div class="dialog-content confirm-card" (keydown.escape)="cerrarConfirmarEliminar()">
-        <div class="confirm-header">
-          <div class="warn-icon"><mat-icon>warning_amber</mat-icon></div>
-          <h2>Confirmar eliminación</h2>
-        </div>
+    <div class="confirm-card" (keydown.escape)="cerrarConfirmarEliminar()">
+      <div class="confirm-header">
+        <div class="warn-icon"><mat-icon>warning_amber</mat-icon></div>
+        <h2>Confirmar eliminación</h2>
 
-        <div class="confirm-body">
-          <p>¿Estás seguro de que quieres eliminar a <b>{{ tutorAEliminar.nombre }}</b>?</p>
-          <p class="Muted">Esta acción no se puede deshacer.</p>
-        </div>
+        <button mat-icon-button class="confirm-close" (click)="cerrarConfirmarEliminar()" aria-label="Cerrar">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
 
-        <div class="confirm-actions">
-          <button mat-stroked-button (click)="cerrarConfirmarEliminar()">Cancelar</button>
-          <button mat-flat-button color="warn" (click)="confirmarEliminar()" class="btn-danger">
-            <mat-icon>delete</mat-icon> Eliminar
-          </button>
-        </div>
+      <div class="confirm-body">
+        <p>¿Estás seguro de que quieres eliminar a <b>{{ tutorAEliminar.nombre }}</b>?</p>
+        <p class="Muted">Esta acción no se puede deshacer.</p>
+      </div>
+
+      <div class="confirm-actions">
+        <button mat-stroked-button (click)="cerrarConfirmarEliminar()">Cancelar</button>
+        <button mat-flat-button color="warn" (click)="confirmarEliminar()" class="btn-danger">
+          <mat-icon>delete</mat-icon>
+          Eliminar
+        </button>
       </div>
     </div>
-  }
+  </div>
+}
+
+
 </div>

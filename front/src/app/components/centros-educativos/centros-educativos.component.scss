@@ -706,3 +706,66 @@
 .kv, .w-100, mat-form-field{
   min-width: 0; 
 }
+
+
+.center-card__actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* CUADRADO BASE */
+.action-box {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+
+  display: grid;
+  place-items: center;
+
+  transition: all 0.15s ease;
+}
+
+/* icono */
+.action-box mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  line-height: 18px;
+  color: #334155;
+}
+
+/* hover general */
+.action-box:hover {
+  background: #f8fafc;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+  transform: translateY(-1px);
+}
+
+/* VARIANTES */
+.action-box--primary mat-icon {
+  color: #000000;
+}
+
+.action-box--accent mat-icon {
+  color: #000000;
+}
+
+.action-box--warn mat-icon {
+  color: #000000;
+}
+
+/* hover con color suave */
+.action-box--primary:hover {
+  background: rgba(37, 99, 235, 0.08);
+}
+
+.action-box--accent:hover {
+  background: rgba(124, 58, 237, 0.08);
+}
+
+.action-box--warn:hover {
+  background: rgba(220, 38, 38, 0.08);
+}

@@ -125,6 +125,22 @@ export class TutoresComponent implements OnInit {
     }
   }
 
+  showField(label: string, value: string) {
+  const text = `${label}: ${value}`;
+
+  // copiar al portapapeles si existe
+  if (navigator?.clipboard?.writeText) {
+    navigator.clipboard.writeText(value).catch(() => {});
+  }
+
+  this.snack.open(text, 'Cerrar', {
+    duration: 6000,
+    horizontalPosition: 'center',
+    verticalPosition: 'bottom',
+    panelClass: ['info-snackbar'],
+  });
+}
+
   // ===== validaciones =====
   validarRut(control: AbstractControl): ValidationErrors | null {
     const rut = control.value;

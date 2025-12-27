@@ -235,16 +235,22 @@
             </div>
 
             <div class="center-card__actions">
-              <button mat-icon-button (click)="viewCentro(c)" title="Ver detalles">
+              <button mat-icon-button class="action-box" (click)="viewCentro(c)" title="Ver">
                 <mat-icon>visibility</mat-icon>
               </button>
-              <button mat-icon-button color="primary" (click)="editCentro(c)" title="Editar" *ngIf="!esSoloLectura">
+
+              <button mat-icon-button class="action-box action-box--primary"
+                      (click)="editCentro(c)" title="Editar" *ngIf="!esSoloLectura">
                 <mat-icon>edit</mat-icon>
               </button>
-              <button mat-icon-button color="accent" (click)="openContacts(c)" title="Añadir contactos" *ngIf="!esSoloLectura">
+
+              <button mat-icon-button class="action-box action-box--accent"
+                      (click)="openContacts(c)" title="Contactos" *ngIf="!esSoloLectura">
                 <mat-icon>person_add</mat-icon>
               </button>
-              <button mat-icon-button color="warn" (click)="askDelete(c)" title="Eliminar" *ngIf="!esSoloLectura">
+
+              <button mat-icon-button class="action-box action-box--warn"
+                      (click)="askDelete(c)" title="Eliminar" *ngIf="!esSoloLectura">
                 <mat-icon>delete</mat-icon>
               </button>
             </div>
@@ -259,8 +265,6 @@
               (click)="showField('Teléfono', '' + c.telefono); $event.stopPropagation()">
               <mat-icon>call</mat-icon>
             </button>
-
-
 
             <button
               mat-icon-button
@@ -559,7 +563,7 @@
         <div class="dialog-titles">
           <h2>Eliminar centro</h2>
           <div class="dialog-subtitle truncate">
-            {{ pendingDelete?.nombre }}
+            {{ pendingDelete.nombre }}
           </div>
         </div>
       </div>

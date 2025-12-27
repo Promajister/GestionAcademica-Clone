@@ -13,6 +13,7 @@ import { MatInputModule }  from '@angular/material/input';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 
+
 // Servicios y tipos
 import { ColaboradoresService, Colaborador } from '../../services/colaboradores.service';
 
@@ -114,6 +115,24 @@ export class ColaboradoresComponent implements OnInit {
     } catch {
       return false;
     }
+  }
+
+
+
+  showField(label: string, value: string) {
+    const text = `${label}: ${value}`;
+
+    // Copiar al portapapeles si se puede
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(value).catch(() => {});
+    }
+
+    this.snack.open(text, 'Cerrar', {
+      duration: 4000,
+      horizontalPosition: 'center',
+      verticalPosition: 'bottom',
+      panelClass: ['info-snackbar'],
+    });
   }
 
   // Validador personalizado para RUT chileno (básico)
