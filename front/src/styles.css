@@ -245,14 +245,19 @@ body {
   padding: 18px;
 }
 
-.modal-content{
+.modal-content {
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+}
+
+.modal-overlay > .modal-content {
   width: clamp(520px, 75vw, 920px);
   background: #fff;
   border-radius: 16px;
   border: 1px solid #e5e7eb;
   box-shadow: 0 30px 80px rgba(2, 6, 23, .25);
   overflow: hidden;
-
   display: flex;
   flex-direction: column;
 }
@@ -540,4 +545,6 @@ body {
     white-space: normal;
   }
 }
+
+
 
