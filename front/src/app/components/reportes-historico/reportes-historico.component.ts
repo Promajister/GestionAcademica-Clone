@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 
-// Material
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -13,6 +12,10 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTableModule } from '@angular/material/table';
 import { MatDividerModule } from '@angular/material/divider';
+import { ViewChild } from '@angular/core';
+import { MatPaginator, MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { MatTableDataSource } from '@angular/material/table';
+
 
 // Charts
 import { BaseChartDirective } from 'ng2-charts';
@@ -71,8 +74,9 @@ type TipoPracticaValue = typeof TIPOS_PRACTICA[number]['value'];
     MatInputModule,
     MatProgressSpinnerModule,
     MatTableModule,
+    MatPaginatorModule, 
     MatDividerModule,
-    BaseChartDirective, 
+    BaseChartDirective,
   ],
 })
 
@@ -87,12 +91,20 @@ export class ReportesHistoricoComponent {
   error: string | null = null;
 
   data: ReportesHistoricoResponse | null = null;
-  rows: any[] = [];
-
+  allRows: any[] = [];                       // todo lo que llega del backend
+  dataSource = new MatTableDataSource<any>([]); // lo que se muestra en la tabla
+  totalItems = 0;
+  pageIndex = 0;
+  pageSize = 10;
+  pageSizeOptions = [5, 10, 25, 50];
   displayedColumns = ['periodo', 'totalEstudiantes', 'centrosPorTipo', 'supervisores', 'mentores'];
 
   tiposPractica = TIPOS_PRACTICA;
   tipo: TipoPracticaValue | null = null;
+
+  get rows(): any[] {
+    return this.allRows;
+  }
 
   get showCharts(): boolean {
     return !!this.data
@@ -100,7 +112,6 @@ export class ReportesHistoricoComponent {
       && (this.tipo === null)
       && (this.groupBy === 'semester');
   }
-
 
   // 1) Línea: estudiantes por periodo
   lineData: ChartData<'line'> = { labels: [], datasets: [] };
@@ -149,16 +160,40 @@ export class ReportesHistoricoComponent {
     }).subscribe({
       next: (res) => {
         this.data = res;
-        this.rows = res.series ?? [];
-        this.buildChartsFromSeries(this.rows);
+
+        // ✅ guardo todo
+        this.allRows = res.series ?? [];
+        this.totalItems = this.allRows.length;
+
+        // ✅ reinicio paginación
+        this.pageIndex = 0;
+        this.applyPagination();
+
+        // ✅ charts siempre con TODO (no con la página)
+        this.buildChartsFromSeries(this.allRows);
+
         this.loading = false;
       },
       error: () => {
         this.loading = false;
         this.error = 'No se pudo cargar el reporte histórico.';
-        this.rows = [];
+        this.allRows = [];
+        this.totalItems = 0;
+        this.dataSource.data = [];
       },
     });
+  }
+
+  onPageChange(e: PageEvent) {
+    this.pageIndex = e.pageIndex;
+    this.pageSize = e.pageSize;
+    this.applyPagination();
+  }
+
+  private applyPagination() {
+    const start = this.pageIndex * this.pageSize;
+    const end = start + this.pageSize;
+    this.dataSource.data = this.allRows.slice(start, end);
   }
 
   private buildChartsFromSeries(series: any[]) {

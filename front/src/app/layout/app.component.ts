@@ -1,12 +1,4 @@
-import {
-  Component,
-  inject,
-  OnInit,
-  AfterViewInit,
-  PLATFORM_ID,
-  OnDestroy,
-  ViewChild,
-} from '@angular/core';
+import { Component, inject, OnInit, AfterViewInit, PLATFORM_ID, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Router, RouterModule, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
@@ -175,10 +167,19 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
 
   onSidenavChange(opened: boolean) {
     this.isSidenavOpened = opened;
+
+    // espera a que Angular Material termine layout
+    setTimeout(() => {
+      const el = document.querySelector('mat-sidenav') as HTMLElement | null;
+      const width = opened ? (el?.getBoundingClientRect().width ?? 300) : 0;
+      document.documentElement.style.setProperty('--side-offset', `${width}px`);
+    });
   }
 
-  toggleSidenav(sidenav: MatSidenav) {
+  // app.component.ts
+  toggleSidenav(sidenav: any) {
     sidenav.toggle();
+    // el openedChange lo terminará ajustando igual
   }
 
   logout() {

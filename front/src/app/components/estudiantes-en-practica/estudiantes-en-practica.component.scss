@@ -1,503 +1,112 @@
-/* Contenedor base */
-.Container {
-  max-width: 1120px;
-  margin: 16px auto;
-  padding: 0 16px;
+.row__content{
+  display:grid;
+  grid-template-columns: 1.4fr 1.2fr 1.1fr auto;
+  gap: 14px;
+  padding: 14px;
+  align-items:center;
 }
 
-.Section {
-  margin-top: 8px;
+/* Celdas */
+.cell {
+  min-width: 0;
 }
 
-/* Header */
-.Header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
-}
-
-.Headline h1 {
-  margin: 0;
-  font-size: 28px;
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.Muted {
-  color: #64748b;
-  font-size: 14px;
-  margin: 4px 0 0;
-}
-
-.Spacer {
-  flex: 1 1 auto;
-}
-
-/* Card base */
-.Elev {
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-/* Filtros de búsqueda */
-.FiltersCard {
-  margin-bottom: 24px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-}
-
-.FiltersCard mat-card-header {
-  padding: 20px 20px 0;
-  border-bottom: 1px solid #e5e7eb;
-  margin-bottom: 20px;
-}
-
-.FiltersCard mat-card-title {
+.cell .title {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 18px;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0;
+  font-weight: 900;
+  color: var(--ga-text);
+  margin-bottom: 2px;
+  min-width: 0;
 }
 
-.FiltersCard mat-card-content {
-  padding: 0 20px 20px;
-}
-
-.FiltersGrid {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr;
-  gap: 16px;
-  align-items: end;
-}
-
-.SearchField {
-  min-width: 300px;
-}
-
-.FilterField {
-  min-width: 180px;
-}
-
-@media (max-width: 768px) {
-  .FiltersGrid {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
-  .SearchField,
-  .FilterField {
-    min-width: auto;
-  }
-}
-
-/* Lista de estudiantes */
-.StudentsList {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.StudentCard {
-  background: white;
-  transition: all 0.2s ease;
-  border: 1px solid #e5e7eb;
-}
-
-.StudentCard:hover {
-  box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1);
-  transform: translateY(-2px);
-}
-
-.StudentContent {
-  display: grid;
-  grid-template-columns: 2fr 2fr 1.5fr auto;
-  gap: 20px;
-  align-items: center;
-  padding: 20px;
-}
-
-/* Información del estudiante */
-.StudentInfo {
-  min-width: 250px;
-}
-
-.StudentHeader {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-}
-
-.StudentIcon {
-  color: #3b82f6;
-  font-size: 32px;
-  width: 32px;
-  height: 32px;
-  margin-top: 4px;
-}
-
-.StudentDetails h3 {
-  margin: 0 0 8px 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.StudentMeta {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-bottom: 8px;
-}
-
-.Rut {
-  font-size: 14px;
-  color: #6b7280;
-
-}
-
-.LevelBadge {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 500;
-  background: #e0e7ff;
-  color: #3730a3;
-  border: 1px solid #c7d2fe;
-}
-
-.Email {
+.cell .meta {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 14px;
-  color: #6b7280;
-  margin-top: 4px;
+  color: var(--ga-muted);
+  font-size: 13px;
+  min-width: 0;
 }
 
-.EmailIcon {
+.cell .meta mat-icon {
   font-size: 16px;
   width: 16px;
   height: 16px;
-  color: #9ca3af;
+  color: #94a3b8;
 }
 
-/* Información del centro educativo */
-.CenterInfo {
-  min-width: 250px;
-}
-
-.CenterHeader {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-}
-
-.CenterIcon {
-  color: #10b981;
-  font-size: 28px;
-  width: 28px;
-  height: 28px;
-  margin-top: 4px;
-}
-
-.CenterDetails h4 {
-  margin: 0 0 8px 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.CenterMeta {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.CenterType {
-  font-size: 13px;
-  color: #6b7280;
-  font-weight: 500;
-}
-
-.Location {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 13px;
-  color: #6b7280;
-}
-
-.LocationIcon {
-  font-size: 16px;
-  width: 16px;
-  height: 16px;
-  color: #9ca3af;
-}
-
-/* Información de la práctica */
-.PracticeInfo {
-  min-width: 200px;
-}
-
-.PracticeDetails {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.PracticeType {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  color: #374151;
-}
-
-.TypeIcon {
-  font-size: 18px;
-  color: #6b7280;
-}
-
-.DateInfo {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  color: #374151;
-}
-
-.DateIcon {
-  font-size: 18px;
-  color: #6b7280;
-}
-
-/* Estados */
-.StatusSection {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.StatusActions {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  align-items: center;
-}
-
-.StatusButton {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-radius: 20px;
-  border: 1px solid #d1d5db;
-  background: white;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-transform: none;
-  font-weight: 500;
-}
-
-.StatusButton:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transform: translateY(-1px);
-}
-
-.StatusButton.status-en_curso {
-  border-color: #facc15;
-}
-
-.StatusButton.status-aprobado {
-  border-color: #bbf7d0;
-}
-
-.StatusButton.status-reprobado {
-  border-color: #fecaca;
-}
-
-.StatusBadge {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 16px;
+/* Badge nivel */
+.badge {
+  flex: 0 0 auto;
   font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  font-weight: 900;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--ga-border);
+  background: var(--ga-soft);
+  color: #334155;
 }
 
-.StatusBadge.en_curso {
-  background: #fef08a;
+/* Acciones */
+.cell--actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.estado-btn {
+  border-radius: 999px;
+  padding: 6px 10px;
+}
+
+.ver-btn {
+  border-radius: 10px;
+}
+
+/* Pills estados */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .2px;
+  border: 1px solid #e5e7eb;
+}
+
+.pill--en_curso {
+  background: #fef9c3;
+  border-color: #fde68a;
   color: #854d0e;
 }
 
-.StatusBadge.aprobado {
+.pill--aprobado {
   background: #dcfce7;
+  border-color: #bbf7d0;
   color: #166534;
 }
 
-.StatusBadge.reprobado {
+.pill--reprobado {
   background: #fee2e2;
+  border-color: #fecaca;
   color: #b91c1c;
 }
 
-.EditIcon {
-  font-size: 16px;
-  width: 16px;
-  height: 16px;
-  color: #6b7280;
-}
-
-.DetailsBtn {
-  color: #6b7280;
-  border-color: #d1d5db;
-  border-radius: 8px;
-  padding: 8px 16px;
-  font-weight: 500;
-  font-size: 14px;
-  text-transform: none;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 140px;
-  justify-content: center;
-}
-
-.DetailsBtn:hover {
-  background-color: #f8fafc;
-  border-color: #9ca3af;
-  color: #374151;
-}
-
-.DetailsBtn mat-icon {
-  font-size: 18px;
-  width: 18px;
-  height: 18px;
-}
-
-/* Mensaje vacío */
-/* Paginador */
-.list-paginator {
-  padding: 8px 16px;
-  border-top: 1px solid #e5e7eb;
-  background: #fafafa;
-  border-radius: 0 0 14px 14px;
-  margin-top: 0;
-}
-
-.EmptyCard {
-  margin-top: 24px;
-  text-align: center;
-  background: #f8fafc;
-}
-
-.EmptyContent {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  padding: 40px 20px;
-}
-
-.EmptyContent mat-icon {
-  font-size: 48px;
-  color: #9ca3af;
-  width: 48px;
-  height: 48px;
-}
-
-.EmptyContent h3 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #374151;
-}
-
-.EmptyContent p {
-  margin: 0;
-  font-size: 14px;
-  color: #6b7280;
-}
-
 /* Loading */
-.LoadingContent {
+.loading-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  padding: 40px 20px;
+  gap: 10px;
+  padding: 28px 18px;
 }
 
-.LoadingContent mat-icon {
-  font-size: 48px;
-  color: #9ca3af;
-  width: 48px;
-  height: 48px;
-  animation: spin 2s linear infinite;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.LoadingContent p {
-  margin: 0;
-  font-size: 14px;
-  color: #6b7280;
-}
-
-/* Responsive */
-@media (max-width: 1024px) {
-  .StudentContent {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-
-  .StudentHeader {
-    flex-direction: column;
-  }
-
-  .CenterHeader {
-    flex-direction: column;
-  }
-}
-
-@media (max-width: 768px) {
-  .Container {
-    padding: 0 12px;
-  }
-
-  .Headline h1 {
-    font-size: 24px;
-  }
-
-  .StudentContent {
-    padding: 16px;
-  }
-
-  .StudentDetails h3 {
-    font-size: 16px;
-  }
-
-  .CenterDetails h4 {
-    font-size: 14px;
-  }
-}
-
-/* Diálogo de confirmación */
+/* ===== Confirm dialog (igual que tenías, pero ordenado) ===== */
 .confirm-dialog {
   position: fixed;
   inset: 0;
@@ -514,24 +123,14 @@
   backdrop-filter: blur(4px);
 }
 
-.dialog-content {
-  position: relative;
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  max-width: 560px;
-  width: 92%;
-  display: flex;
-  flex-direction: column;
-}
-
-.confirm-card {
+.dialog-content.confirm-card {
   position: relative;
   background: #fff;
   width: 560px;
   max-width: 92%;
   border-radius: 16px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
   display: flex;
   flex-direction: column;
 }
@@ -540,111 +139,63 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 20px 24px 8px;
+  padding: 18px 18px 10px;
   border-bottom: 1px solid #e5e7eb;
 }
 
 .confirm-header h2 {
   margin: 0;
-  font-size: 20px;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 800;
   color: #1f2937;
 }
 
 .warn-icon {
   width: 40px;
   height: 40px;
-  border-radius: 50%;
+  border-radius: 12px;
   background: #dbeafe;
   color: #1e40af;
   display: grid;
   place-items: center;
 }
 
-.warn-icon mat-icon {
-  font-size: 24px;
-  width: 24px;
-  height: 24px;
-}
-
 .confirm-body {
-  padding: 20px 24px 0;
-}
-
-.confirm-body p {
-  margin: 0 0 12px;
-  font-size: 15px;
-  color: #111827;
+  padding: 16px 18px 0;
 }
 
 .confirm-body .Muted {
-  margin-top: 4px;
   color: #6b7280;
   font-size: 14px;
 }
 
 .EstadoSelect {
   width: 100%;
-  margin-top: 16px;
+  margin-top: 14px;
 }
 
 .confirm-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
-  padding: 16px 16px 20px;
+  gap: 10px;
+  padding: 14px 18px 16px;
   border-top: 1px solid #e5e7eb;
-  margin-top: 20px;
-}
-
-.confirm-actions button {
-  text-transform: none;
-  font-weight: 500;
-  min-width: 120px;
-}
-
-.confirm-actions button mat-icon {
-  margin-right: 6px;
-  font-size: 18px;
-  width: 18px;
-  height: 18px;
+  margin-top: 16px;
 }
 
 @media (max-width: 640px) {
-  .confirm-card {
-    width: 95%;
-    margin: 16px;
-  }
-
-  .confirm-header {
-    padding: 16px 16px 8px;
-  }
-
-  .confirm-header h2 {
-    font-size: 18px;
-  }
-
-  .confirm-body {
-    padding: 16px 16px 0;
-  }
-
   .confirm-actions {
     flex-direction: column;
-    padding: 16px;
   }
-
   .confirm-actions button {
     width: 100%;
   }
 }
 
-/* Modal de detalles */
+/* ===== Modal detalles ===== */
 .DetailsDialog {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   z-index: 1000;
   display: flex;
   align-items: center;
@@ -653,10 +204,7 @@
 
 .DialogOverlay {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
 }
@@ -665,347 +213,27 @@
   position: relative;
   background: white;
   border-radius: 16px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  max-width: 800px;
-  width: 90%;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  max-width: 920px;
+  width: 95%;
   max-height: 90vh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-}
-
-.DialogHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 24px 24px 0;
-  border-bottom: 1px solid #e5e7eb;
-  margin-bottom: 24px;
-}
-
-.DialogHeader h2 {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.CloseBtn {
-  color: #6b7280;
-}
-
-.DialogBody {
-  padding: 0 24px;
-  overflow-y: auto;
-  flex: 1;
-}
-
-.DetailsSections {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.DetailSection {
-  background: #f8fafc;
-  border-radius: 12px;
-  padding: 20px;
-  border: 1px solid #e2e8f0;
-}
-
-.SectionTitle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0 0 16px 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.SectionTitle mat-icon {
-  color: #6b7280;
-}
-
-.DetailsGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 16px;
-}
-
-.DetailItem {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.DetailItem label {
-  font-size: 14px;
-  font-weight: 500;
-  color: #6b7280;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.DetailItem span {
-  font-size: 16px;
-  color: #1f2937;
-  font-weight: 500;
-}
-
-/* Colaboradores */
-.CollaboratorsList {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.CollaboratorRow {
-  background: white;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 12px 16px;
-}
-
-.CollaboratorInfo {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.CollaboratorName {
-  font-size: 16px;
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.CollaboratorCargo {
-  font-size: 14px;
-  color: #6b7280;
-}
-
-.CollaboratorEmail {
-  font-size: 14px;
-  color: #6b7280;
-}
-
-/* Tutores */
-.TutorsList {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.TutorRow {
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 12px 16px;
-}
-
-.TutorInfo {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.TutorName {
-  font-size: 16px;
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.TutorRole {
-  font-size: 14px;
-  color: #6b7280;
-}
-
-.TutorEmail {
-  font-size: 14px;
-  color: #6b7280;
-}
-
-.DialogActions {
-  padding: 24px;
-  border-top: 1px solid #e5e7eb;
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-}
-
-/* Actividades */
-.ActivitiesList {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.ActivityItem {
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 16px;
-}
-
-.ActivityHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-
-.ActivityHeader h4 {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.ActivityStatus {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 14px;
-  font-weight: 500;
-  padding: 4px 8px;
-  border-radius: 6px;
-}
-
-.ActivityStatus.completed {
-  background: #dcfce7;
-  color: #166534;
-}
-
-.ActivityStatus.pending {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.ActivityDescription {
-  margin: 8px 0;
-  font-size: 14px;
-  color: #6b7280;
-  line-height: 1.5;
-}
-
-.ActivityDate {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 14px;
-  color: #9ca3af;
-}
-
-.ActivityDate mat-icon {
-  font-size: 16px;
-  width: 16px;
-  height: 16px;
-}
-
-.NoActivities {
-  margin: 0;
-  font-size: 14px;
-  color: #6b7280;
-  font-style: italic;
-}
-
-@media (max-width: 1024px) {
-  .DialogContent {
-    width: 95%;
-    max-height: 95vh;
-  }
-
-  .DetailsGrid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 768px) {
-  .DialogHeader {
-    padding: 16px 16px 0;
-  }
-
-  .DialogBody {
-    padding: 0 16px;
-  }
-
-  .DetailSection {
-    padding: 16px;
-  }
-
-  .DialogActions {
-    padding: 16px;
-  }
-
-  .StatusActions {
-    width: 100%;
-  }
-
-  .StatusButton,
-  .DetailsBtn {
-    width: 100%;
-  }
-}
-
-/* Observaciones */
-.ObservationsList {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.ObservationItem {
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 16px;
-  transition: box-shadow 0.2s ease;
-}
-
-.ObservationItem:hover {
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.ObservationContent {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.ObservationText {
-  margin: 0;
-  font-size: 14px;
-  color: #1f2937;
-  line-height: 1.6;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-}
-
-.ObservationDate {
-  font-size: 12px;
-  color: #9ca3af;
-  font-style: italic;
-}
-
-
-/* ===== Modal detalles unificado (estudiantes en práctica) ===== */
-.DialogContent--details {
-  max-width: 920px;
-  width: 95%;
-  border: 1px solid #e5e7eb;
-  overflow: hidden;
 }
 
 .DialogHeader--details {
-  padding: 18px 18px 14px;
+  padding: 16px 16px 12px;
   border-bottom: 1px solid #eef2f7;
-  margin-bottom: 0;
   background:
     radial-gradient(circle at 0% 0%, rgba(37,99,235,.10), transparent 55%),
     radial-gradient(circle at 100% 0%, rgba(124,58,237,.10), transparent 55%),
     #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .DialogHeaderLeft {
@@ -1027,21 +255,15 @@
   flex: 0 0 auto;
 }
 
-.DialogAvatar mat-icon {
-  font-size: 22px;
-  height: 22px;
-  width: 22px;
-  line-height: 22px;
+.DialogTitles {
+  min-width: 0;
 }
-
-.DialogTitles { min-width: 0; }
 
 .DialogTitles h2 {
   margin: 0;
   font-size: 18px;
-  font-weight: 700;
+  font-weight: 900;
   color: #0f172a;
-  letter-spacing: 0.2px;
 }
 
 .DialogSubtitle {
@@ -1053,7 +275,17 @@
   white-space: nowrap;
 }
 
-/* chips */
+.CloseBtn {
+  color: #6b7280;
+}
+
+.DialogBody {
+  padding: 14px 16px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Chips */
 .DetailsTop {
   display: flex;
   flex-wrap: wrap;
@@ -1071,7 +303,6 @@
   background: #fff;
   color: #111827;
   font-size: 12.5px;
-  min-width: 0;
 }
 
 .Chip mat-icon {
@@ -1086,7 +317,10 @@
   border-color: rgba(37,99,235,.25);
   background: rgba(37,99,235,.06);
 }
-.Chip--primary mat-icon { color: #2563eb; }
+
+.Chip--primary mat-icon {
+  color: #2563eb;
+}
 
 .ChipText {
   overflow: hidden;
@@ -1094,12 +328,13 @@
   white-space: nowrap;
 }
 
-/* secciones */
+/* Secciones */
 .DetailsSection {
   margin-top: 14px;
   padding-top: 12px;
   border-top: 1px dashed #e5e7eb;
 }
+
 .DetailsSection:first-of-type {
   margin-top: 0;
   padding-top: 0;
@@ -1117,18 +352,17 @@
   font-size: 20px;
   height: 20px;
   width: 20px;
-  line-height: 20px;
   color: #1f2937;
 }
 
 .SectionHead h3 {
   margin: 0;
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 900;
   color: #111827;
 }
 
-/* grid KV */
+/* Grid KV */
 .DetailsGrid--2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1146,29 +380,50 @@
 .KV .K {
   font-size: 12px;
   color: #64748b;
-  font-weight: 600;
+  font-weight: 800;
   margin-bottom: 2px;
 }
 
 .KV .V {
   font-size: 14px;
   color: #0f172a;
-  font-weight: 600;
-  min-width: 0;
+  font-weight: 800;
   word-break: break-word;
 }
 
-.KV--full { grid-column: 1 / -1; }
-.Mono { font-family: 'Courier New', monospace; }
-
-.DialogActions--details {
-  background: #fff;
-  border-top: 1px solid #eef2f7;
-  margin-top: 0;
-  padding: 14px 18px 16px;
+.KV--full {
+  grid-column: 1 / -1;
 }
 
-/* listas tipo "personas" */
+/* Badges estado dentro del modal */
+.StatusBadge.en_curso {
+  background: #fef08a;
+  color: #854d0e;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 900;
+  display: inline-block;
+}
+
+.StatusBadge.aprobado {
+  background: #dcfce7;
+  color: #166534;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 900;
+  display: inline-block;
+}
+
+.StatusBadge.reprobado {
+  background: #fee2e2;
+  color: #b91c1c;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 900;
+  display: inline-block;
+}
+
+/* People list */
 .PeopleList {
   display: flex;
   flex-direction: column;
@@ -1207,8 +462,16 @@
   color: #334155;
 }
 
-.PersonText { min-width: 0; }
-.PersonName { font-weight: 700; color: #0f172a; font-size: 14px; }
+.PersonText {
+  min-width: 0;
+}
+
+.PersonName {
+  font-weight: 900;
+  color: #0f172a;
+  font-size: 14px;
+}
+
 .PersonMeta {
   margin-top: 2px;
   font-size: 12.5px;
@@ -1218,8 +481,147 @@
   flex-wrap: wrap;
 }
 
-/* responsive */
+.Muted {
+  color: #64748b;
+  margin: 0;
+}
+
+/* Actividades */
+.ActivitiesList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ActivityItem {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.ActivityHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.ActivityHeader h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 900;
+  color: #1f2937;
+}
+
+.ActivityStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.ActivityStatus.completed {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.ActivityStatus.pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.ActivityDescription {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: #475569;
+  line-height: 1.5;
+}
+
+.ActivityDate {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: #94a3b8;
+}
+
+.ActivityDate mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+/* Observaciones */
+.ObservationsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ObservationItem {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.ObservationText {
+  margin: 0;
+  font-size: 13px;
+  color: #0f172a;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.ObservationDate {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.NoActivities {
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
+  font-style: italic;
+}
+
+/* Footer del modal */
+.DialogActions--details {
+  background: #fff;
+  border-top: 1px solid #eef2f7;
+  padding: 12px 16px 14px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+@media (max-width: 1100px) {
+  .row__content {
+    grid-template-columns: 1fr;
+  }
+
+  .cell--actions {
+    justify-content: flex-start;
+  }
+
+  .estado-btn,
+  .ver-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
 @media (max-width: 720px) {
-  .DetailsGrid--2 { grid-template-columns: 1fr; }
-  .DialogContent--details { width: 95%; }
+  .DetailsGrid--2 {
+    grid-template-columns: 1fr;
+  }
 }

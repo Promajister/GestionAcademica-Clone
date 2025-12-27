@@ -1,200 +1,185 @@
-/* ====== RAÍZ ====== */
-.satisfaccion {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 4px 8px 18px;
-}
+:host { display: block; }
 
-/* Cards consistentes */
-.satisfaccion .card {
-  border-radius: 16px;
-}
-
-/* Un poco más de aire dentro de los mat-card */
-.satisfaccion ::ng-deep .mat-mdc-card-content {
-  padding: 18px !important;
-}
-
-/* ====== HEADER ====== */
-.satisfaccion .header {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 14px;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.satisfaccion .headline h1 {
-  margin: 0;
-  font-size: 26px;
-  letter-spacing: -0.2px;
-}
-
-.satisfaccion .headline p {
-  margin: 6px 0 0;
-}
-
-/* ====== FILTROS ====== */
-.satisfaccion .filters {
-  display: grid;
-  grid-template-columns: 160px 160px minmax(260px, 1fr) auto;
-  gap: 12px;
-  align-items: end;
-}
-
-.satisfaccion .filters button {
-  height: 56px; /* igual que mat-form-field outline */
-  border-radius: 12px;
-}
-
-@media (max-width: 900px) {
-  .satisfaccion .filters {
-    grid-template-columns: 1fr;
-  }
-  .satisfaccion .filters button {
-    width: 100%;
-  }
-}
-
-/* ====== ACCIONES ====== */
-.satisfaccion .actions {
+.rep-satisfaccion{
   display: flex;
-  gap: 10px;
-  margin-top: 12px;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Header (igual que estudiante/historico) */
+.rep-head{
+  display: flex;
+  align-items: center;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
-.satisfaccion .actions button {
-  border-radius: 999px;
+.rep-back{ border-radius: 10px; }
+.rep-titles{ min-width: 0; }
+
+.rep-actions{
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
-/* ====== GRID RESULTADOS ====== */
-.satisfaccion .grid {
+/* Filtros */
+.rep-filtrosGrid{
+  /* Año | Semestre | Tipo (larga) | Botón */
+  grid-template-columns: 160px 160px 2fr auto;
+}
+
+.rep-searchBtn{
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+}
+
+.rep-ff-lg{ min-width: 0; }
+
+/* States (igual que otros) */
+.rep-loading{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  color: var(--ga-muted);
+}
+
+.rep-error{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  color: #b91c1c;
+}
+
+/* Grid de resultados: TODAS las tarjetas misma altura por fila */
+.rep-grid{
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-  margin-top: 16px;
-  align-items: start;
+  gap: 12px;
+  align-items: stretch;
+  grid-auto-rows: 1fr;
 }
 
-@media (max-width: 900px) {
-  .satisfaccion .grid {
-    grid-template-columns: 1fr;
-  }
+/* cada mat-card ocupa todo el alto de su celda */
+.rep-grid > mat-card{
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
-/* ====== SECCIONES ====== */
-.satisfaccion .section-title {
+/* el contenido interno también se estira */
+.rep-grid > mat-card > .mat-mdc-card-content{
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+
+@media (max-width: 900px){
+  .rep-grid{ grid-template-columns: 1fr; }
+}
+
+/* Cards internas */
+.rep-card{ overflow: hidden; }
+
+/* Títulos y meta */
+.rep-sectionTitle{
   font-size: 15px;
-  font-weight: 800;
+  font-weight: 900;
+  color: var(--ga-text);
   margin-bottom: 6px;
 }
 
-.satisfaccion .meta {
-  font-size: 13px;
-  color: #6b7280;
-  margin-bottom: 14px;
+.rep-meta{
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
   align-items: center;
+  margin-bottom: 12px;
+  color: var(--ga-muted);
+  font-size: 13px;
 }
 
-.satisfaccion .pill {
-  padding: 3px 10px;
-  border-radius: 999px;
-  background: #eef2f7;
-  border: 1px solid #dde3ee;
-}
-
-/* ====== KPIs (más estéticos y compactos) ====== */
-.satisfaccion .kpis {
+/* KPIs */
+.rep-kpis{
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
 }
 
-.satisfaccion .kpis.two {
-  grid-template-columns: repeat(3, minmax(0, 1fr)); /* 3 en desktop */
+.rep-kpis--3{
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-@media (max-width: 900px) {
-  .satisfaccion .kpis,
-  .satisfaccion .kpis.two {
-    grid-template-columns: 1fr;
-  }
+@media (max-width: 900px){
+  .rep-kpis, .rep-kpis--3{ grid-template-columns: 1fr; }
 }
 
-.satisfaccion .kpi {
+.rep-kpi{
   padding: 14px;
   border-radius: 14px;
-  background: #f7f9fc;
-  border: 1px solid #e3e8f2;
+  background: var(--ga-soft);
+  border: 1px solid var(--ga-border);
   display: flex;
   flex-direction: column;
   gap: 6px;
   min-height: 86px;
 }
 
-.satisfaccion .kpi-label {
+.rep-kpiLabel{
   font-size: 12px;
-  color: #6b7280;
+  color: var(--ga-muted);
 }
 
-.satisfaccion .kpi-value {
+.rep-kpiValue{
   font-size: 26px;
   font-weight: 900;
   letter-spacing: -0.4px;
   line-height: 1.1;
+  color: var(--ga-text);
 }
 
-/* KPI destacado */
-.satisfaccion .kpi.accent {
+.rep-kpi--accent{
   background: #eef2ff;
   border-color: #c7d2fe;
 }
 
-/* ====== ESTADOS (filas más “pro”) ====== */
-.satisfaccion .rows {
+/* Rows estado */
+.rep-rows{
   display: flex;
   flex-direction: column;
   gap: 10px;
   margin-top: 10px;
 }
 
-.satisfaccion .row {
+.rep-row{
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 12px 14px;
   border-radius: 14px;
-  background: #f7f9fc;
-  border: 1px solid #e3e8f2;
+  background: var(--ga-soft);
+  border: 1px solid var(--ga-border);
 }
 
-.satisfaccion .row-left {
+.rep-rowLeft{
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.satisfaccion .row-left mat-icon {
-  opacity: 0.9;
-}
-
-.satisfaccion .row-right {
+.rep-rowRight{
   display: flex;
   gap: 8px;
   align-items: baseline;
 }
 
-/* ====== UTIL ====== */
-.satisfaccion .muted {
-  opacity: 0.8;
-}
-
-.satisfaccion .center {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+/* Responsive (mismo patrón que los otros reportes) */
+@media (max-width: 1100px){
+  .rep-filtrosGrid{ grid-template-columns: 1fr; }
+  .rep-searchBtn{ justify-content: flex-start; }
+  .rep-actions button{ width: 100%; justify-content: center; }
 }

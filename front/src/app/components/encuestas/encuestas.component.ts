@@ -1668,4 +1668,5 @@ private computeEstadisticasColaboradores(): void {
       panelClass: ['snackbar-error'],
     });
   }
+  
 }

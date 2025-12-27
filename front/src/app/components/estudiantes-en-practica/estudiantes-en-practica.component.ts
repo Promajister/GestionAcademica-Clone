@@ -1,8 +1,7 @@
 import { Component, inject, OnInit, PLATFORM_ID } from '@angular/core';
-import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
-// Angular Material
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
@@ -11,8 +10,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
-// Servicios
 import {
   PracticasService,
   Estudiante,
@@ -60,7 +59,8 @@ interface PracticaEstudiante {
     MatInputModule,
     MatSelectModule,
     MatSnackBarModule,
-    MatPaginatorModule
+    MatPaginatorModule,
+    MatProgressSpinnerModule,
   ]
 })
 export class EstudiantesEnPracticaComponent implements OnInit {
@@ -366,4 +366,14 @@ export class EstudiantesEnPracticaComponent implements OnInit {
       minute: '2-digit'
     });
   }
+
+  aplicarFiltros(){ this.cargarPracticas(); }
+
+  limpiarFiltros(){
+    this.terminoBusqueda = '';
+    this.estadoSeleccionado = 'all';
+    this.nivelSeleccionado = 'all';
+    this.cargarPracticas();
+  }
+
 }

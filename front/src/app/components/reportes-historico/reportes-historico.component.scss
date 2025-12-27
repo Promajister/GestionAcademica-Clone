@@ -1,150 +1,136 @@
-.historico {
-  max-width: 1200px;
-  margin: 0 auto;
-}
+:host { display: block; }
 
-.header {
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
-  margin-bottom: 12px;
-
-  .headline {
-    flex: 1;
-  }
-
-  h1 {
-    margin: 0;
-    font-size: 22px;
-    font-weight: 700;
-  }
-}
-
-.filters {
-  display: grid;
-  grid-template-columns: 140px 140px 1fr 160px auto;
-  gap: 12px;
-  align-items: end;
-}
-
-@media (max-width: 900px) {
-  .filters {
-    grid-template-columns: 1fr;
-  }
-}
-
-.actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 14px;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-}
-.center {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 80px;
-}
-
-.center-col {
+.rep-historico{
   display: flex;
   flex-direction: column;
+  gap: 12px;
+}
+
+/* Header (igual que estudiante) */
+.rep-head{
+  display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
-.muted {
-  font-size: 13px;
-  color: #6b7280;
-}
+.rep-back{ border-radius: 10px; }
 
-.card {
-  border-radius: 14px;
-}
+.rep-titles{ min-width: 0; }
 
-.elev {
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
-}
-
-.table-wrap {
-  overflow-x: auto;
-}
-
-table {
-  width: 100%;
-}
-
-th {
-  font-weight: 600;
-  font-size: 13px;
-  color: #374151;
-}
-
-td {
-  font-size: 13px;
-}
-
-.meta {
+.rep-actions{
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Filtros */
+.rep-filtrosGrid{
+  display: grid;
+  gap: 12px;
+  align-items: end;
+
+  /* 4 campos + botón */
+  grid-template-columns: 140px 140px 2fr 1fr auto;
+}
+
+.rep-searchBtn{
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+}
+
+.rep-ff-lg{
+  min-width: 0;
+}
+
+/* States (igual que estudiante) */
+.rep-loading{
+  display: flex;
   align-items: center;
-  font-size: 13px;
-  color: #6b7280;
-  margin-bottom: 12px;
-}
-
-.pill {
-  padding: 2px 10px;
-  border-radius: 999px;
-  background: #e5e7eb;
-}
-
-.empty {
-  text-align: center;
-
-  mat-icon {
-    font-size: 40px;
-    opacity: 0.6;
-  }
-
-  .empty-title {
-    font-weight: 600;
-    margin-top: 6px;
-  }
-}
-
-/* ====== CHARTS ====== */
-.charts-card {
+  gap: 10px;
   margin-top: 12px;
+  color: var(--ga-muted);
 }
 
-.charts-grid {
+.rep-error{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  color: #b91c1c;
+}
+
+/* Cards internas */
+.rep-card{ overflow: hidden; }
+
+/* Tabla unificada */
+.rep-tableWrap{
+  overflow: auto;
+  border: 1px solid var(--ga-border);
+  border-radius: 14px;
+  background: #fff;
+}
+
+.rep-table{
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.rep-table th{
+  background: var(--ga-soft);
+  color: var(--ga-muted);
+  font-weight: 900;
+  font-size: 12px;
+  letter-spacing: .4px;
+  border-bottom: 1px solid var(--ga-border);
+}
+
+.rep-table th, .rep-table td{
+  padding: 12px 14px;
+  vertical-align: top;
+}
+
+.rep-truncate2{
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Charts unificados */
+.rep-chartsGrid{
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 12px;
 }
 
-@media (max-width: 900px) {
-  .charts-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-.chart-box {
-  border: 1px solid #e2e6ef;
-  background: #f9fbff;
+.rep-chartBox{
+  border: 1px solid var(--ga-border);
+  background: var(--ga-soft);
   border-radius: 14px;
   padding: 14px;
 }
 
-.chart-title {
+.rep-chartTitle{
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 900;
+  color: var(--ga-text);
   margin-bottom: 10px;
-  color: #111827;
 }
 
-.chart-wrap {
-  height: 280px; /* clave para que Chart.js se vea bien */
+.rep-chartWrap{
+  height: 280px;
+}
+
+/* Responsive (mismo patrón que estudiante) */
+@media (max-width: 1100px){
+  .rep-filtrosGrid{ grid-template-columns: 1fr; }
+  .rep-searchBtn{ justify-content: flex-start; }
+  .rep-actions button{ width: 100%; justify-content: center; }
+}
+
+@media (max-width: 900px){
+  .rep-chartsGrid{ grid-template-columns: 1fr; }
 }

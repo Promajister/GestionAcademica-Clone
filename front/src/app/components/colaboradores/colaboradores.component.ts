@@ -1,10 +1,7 @@
 import { Component, inject, OnInit, PLATFORM_ID } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-
-
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 
-// Angular Material
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule }   from '@angular/material/icon';
 import { MatCardModule }   from '@angular/material/card';
@@ -13,10 +10,9 @@ import { MatInputModule }  from '@angular/material/input';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 
-// Servicios y tipos
 import { ColaboradoresService, Colaborador } from '../../services/colaboradores.service';
+import { MatProgressSpinner } from "@angular/material/progress-spinner";
 
-// Interfaz local para el formulario (compatible con la API)
 interface ColaboradorForm {
   rut: string;
   nombre: string;
@@ -37,8 +33,9 @@ interface ColaboradorForm {
     CommonModule, FormsModule, ReactiveFormsModule,
     MatButtonModule, MatIconModule, MatCardModule,
     MatFormFieldModule, MatInputModule,
-    MatSnackBarModule, MatPaginatorModule
-  ]
+    MatSnackBarModule, MatPaginatorModule,
+    MatProgressSpinner
+]
 })
 export class ColaboradoresComponent implements OnInit {
   private snack = inject(MatSnackBar);
@@ -166,16 +163,32 @@ export class ColaboradoresComponent implements OnInit {
   // Inicializar formulario reactivo con validaciones
   inicializarFormulario() {
     this.formularioColaborador = this.fb.group({
-      rut: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(20), this.validarRut]],
-      nombre: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(120)]],
+      rut: [
+        '',
+        [
+          Validators.required,
+          Validators.minLength(3),
+          Validators.maxLength(20),
+          this.validarRut.bind(this),
+        ],
+      ],
+      nombre: [
+        '',
+        [
+          Validators.required,
+          Validators.minLength(3),
+          Validators.maxLength(120),
+        ],
+      ],
       correo: ['', [Validators.email]],
-      telefono: ['', [this.validarTelefono]],
+      telefono: ['', [this.validarTelefono.bind(this)]],
       direccion: [''],
       cargo1: [''],
       cargo2: [''],
-      universidad_egreso: ['']
+      universidad_egreso: [''],
     });
   }
+
 
   // ===== carga lista desde backend (todos los items para filtrado local) =====
   load() {
@@ -586,6 +599,13 @@ export class ColaboradoresComponent implements OnInit {
     const control = this.formularioColaborador.get('telefono');
     if (control?.hasError('telefonoInvalido')) return control.errors?.['mensaje'] || 'Teléfono inválido';
     return '';
+  }
+
+  cerrarModalColaborador() {
+    this.mostrarFormulario = false;
+    this.estaEditando = false;
+    this.colaboradorEditando = null;
+    this.resetearFormulario();
   }
 }
 

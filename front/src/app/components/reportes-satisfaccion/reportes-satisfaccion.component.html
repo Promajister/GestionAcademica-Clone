@@ -1,32 +1,60 @@
-
-
-<div class="container section satisfaccion">
-
+<div class="ga-page ga-page--wide rep-satisfaccion">
   <!-- HEADER -->
-  <div class="header">
-    <button mat-stroked-button color="primary" routerLink="/reportes">
-      <mat-icon>arrow_back</mat-icon>
-      Volver a Reportes
-    </button>
+  <div class="ga-header">
+    <div class="rep-head">
+      <button mat-stroked-button color="primary" routerLink="/reportes" class="ga-btn rep-back">
+        <mat-icon>arrow_back</mat-icon>
+        Volver a Reportes
+      </button>
 
-    <div class="headline">
-      <h1>Reportes de Satisfacción</h1>
-      <p class="muted">
-        Filtra por año, semestre y tipo de práctica para obtener el resumen de satisfacción.
-      </p>
+      <div class="rep-titles">
+        <h1 class="ga-title">Reporte de satisfacción</h1>
+        <p class="ga-subtitle">
+          Filtra por año, semestre y tipo de práctica para obtener el resumen de satisfacción.
+        </p>
+      </div>
     </div>
 
-    <div class="spacer"></div>
+    <span class="ga-spacer"></span>
+
+    <div class="rep-actions">
+      <button
+        mat-stroked-button
+        color="primary"
+        class="ga-btn"
+        (click)="exportarPDF()"
+        [disabled]="loading || !data">
+        <mat-icon>picture_as_pdf</mat-icon>
+        Exportar PDF
+      </button>
+
+      <button
+        mat-stroked-button
+        color="accent"
+        class="ga-btn"
+        (click)="exportarExcel()"
+        [disabled]="loading || !data">
+        <mat-icon>grid_on</mat-icon>
+        Exportar Excel
+      </button>
+    </div>
   </div>
 
   <!-- FILTROS -->
-  <mat-card class="elev" style="margin-top: 12px;">
-    <mat-card-content>
+  <mat-card class="ga-card filtros">
+    <mat-card-header>
+      <mat-card-title class="filtros__title">
+        <mat-icon>tune</mat-icon>
+        Filtros
+      </mat-card-title>
+    </mat-card-header>
 
-      <div class="filters">
+    <mat-card-content>
+      <div class="filtros__grid filtros__grid--4 rep-filtrosGrid">
         <mat-form-field appearance="outline">
           <mat-label>Año</mat-label>
           <input matInput type="number" [(ngModel)]="anio" />
+          <mat-icon matSuffix>event</mat-icon>
         </mat-form-field>
 
         <mat-form-field appearance="outline">
@@ -35,9 +63,10 @@
             <mat-option [value]="1">1</mat-option>
             <mat-option [value]="2">2</mat-option>
           </mat-select>
+          <mat-icon matSuffix>view_agenda</mat-icon>
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="ff-lg">
+        <mat-form-field appearance="outline" class="rep-ff-lg">
           <mat-label>Tipo de práctica</mat-label>
           <mat-select [(ngModel)]="tipo">
             <mat-option [value]="null">Todas</mat-option>
@@ -45,156 +74,172 @@
               {{ t.label }}
             </mat-option>
           </mat-select>
+          <mat-icon matSuffix>school</mat-icon>
         </mat-form-field>
 
-        <button mat-raised-button color="primary" (click)="buscar()" [disabled]="loading">
-          <mat-icon>search</mat-icon>
-          Buscar
-        </button>
-      </div>
-
-      <!-- ACCIONES -->
-      <div class="actions" *ngIf="data">
-        <button mat-stroked-button color="primary" (click)="exportarPDF()" [disabled]="loading">
-          <mat-icon>picture_as_pdf</mat-icon>
-          Exportar PDF
-        </button>
-
-        <button mat-stroked-button color="accent" (click)="exportarExcel()" [disabled]="loading">
-          <mat-icon>grid_on</mat-icon>
-          Exportar Excel
-        </button>
+        <div class="rep-searchBtn">
+          <button
+            mat-flat-button
+            color="primary"
+            class="ga-btn ga-btn--primary"
+            (click)="buscar()"
+            [disabled]="loading">
+            <mat-icon>search</mat-icon>
+            Buscar
+          </button>
+        </div>
       </div>
 
       <!-- LOADING -->
-      <div class="center" *ngIf="loading" style="margin-top: 12px;">
-        <mat-spinner diameter="32"></mat-spinner>
-      </div>
+      @if (loading) {
+        <div class="rep-loading">
+          <mat-spinner diameter="32"></mat-spinner>
+          <span class="ga-subtitle">Cargando satisfacción…</span>
+        </div>
+      }
 
       <!-- ERROR -->
-      <p class="muted" *ngIf="!loading && error" style="margin-top: 12px;">
-        {{ error }}
-      </p>
-
+      @if (!loading && error) {
+        <div class="rep-error">
+          <mat-icon>error</mat-icon>
+          <span>{{ error }}</span>
+        </div>
+      }
     </mat-card-content>
   </mat-card>
 
-  <!-- DATA -->
-  <div *ngIf="data" class="grid" style="margin-top: 12px;">
+  <!-- RESULTADOS -->
+  @if (!loading && data) {
+    <div class="rep-grid">
+      <!-- Resumen -->
+      <mat-card class="ga-card rep-card">
+        <mat-card-content>
+          <div class="rep-sectionTitle">Resumen</div>
 
-    <mat-card class="elev">
-      <mat-card-content>
-        <div class="section-title">Resumen</div>
-        <div class="meta">
-          Año {{ data.anio }} · Semestre {{ data.semestre }} ·
-          <span class="pill">{{ data.tipo ?? 'Todas' }}</span>
-        </div>
-
-        <div class="kpis">
-          <div class="kpi">
-            <div class="kpi-label">Prácticas</div>
-            <div class="kpi-value">{{ data.practicas.totalPracticas }}</div>
+          <div class="rep-meta">
+            Año {{ data.anio }} · Semestre {{ data.semestre }} ·
+            <span class="ga-pill">{{ data.tipo ?? 'Todas' }}</span>
           </div>
 
-          <div class="kpi">
-            <div class="kpi-label">Estudiantes únicos</div>
-            <div class="kpi-value">{{ data.practicas.estudiantesUnicos }}</div>
-          </div>
+          <div class="rep-kpis">
+            <div class="rep-kpi">
+              <div class="rep-kpiLabel">Prácticas</div>
+              <div class="rep-kpiValue">{{ data.practicas.totalPracticas }}</div>
+            </div>
 
-          <div class="kpi accent">
-            <div class="kpi-label">% Aprobación (evaluadas)</div>
-            <div class="kpi-value">{{ data.practicas.porcentajeAprobacionEvaluadas }}%</div>
+            <div class="rep-kpi">
+              <div class="rep-kpiLabel">Estudiantes únicos</div>
+              <div class="rep-kpiValue">{{ data.practicas.estudiantesUnicos }}</div>
+            </div>
+
+            <div class="rep-kpi rep-kpi--accent">
+              <div class="rep-kpiLabel">% Aprobación (evaluadas)</div>
+              <div class="rep-kpiValue">{{ data.practicas.porcentajeAprobacionEvaluadas }}%</div>
+            </div>
           </div>
-        </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Estado de prácticas -->
+      <mat-card class="ga-card rep-card">
+        <mat-card-content>
+          <div class="rep-sectionTitle">Estado de prácticas</div>
+
+          <div class="rep-rows">
+            <div class="rep-row">
+              <div class="rep-rowLeft">
+                <mat-icon>check_circle</mat-icon>
+                <span>Aprobadas</span>
+              </div>
+              <div class="rep-rowRight">
+                <b>{{ data.practicas.aprobadas }}</b>
+                <span class="ga-subtitle">({{ data.practicas.porcentajes.aprobadas }}%)</span>
+              </div>
+            </div>
+
+            <div class="rep-row">
+              <div class="rep-rowLeft">
+                <mat-icon>cancel</mat-icon>
+                <span>Reprobadas</span>
+              </div>
+              <div class="rep-rowRight">
+                <b>{{ data.practicas.reprobadas }}</b>
+                <span class="ga-subtitle">({{ data.practicas.porcentajes.reprobadas }}%)</span>
+              </div>
+            </div>
+
+            <div class="rep-row">
+              <div class="rep-rowLeft">
+                <mat-icon>hourglass_top</mat-icon>
+                <span>En curso</span>
+              </div>
+              <div class="rep-rowRight">
+                <b>{{ data.practicas.enCurso }}</b>
+                <span class="ga-subtitle">({{ data.practicas.porcentajes.enCurso }}%)</span>
+              </div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Encuestas Estudiantes -->
+      <mat-card class="ga-card rep-card">
+        <mat-card-content>
+          <div class="rep-sectionTitle">Encuestas · Estudiantes</div>
+
+          <div class="rep-kpis rep-kpis--3">
+            <div class="rep-kpi">
+              <div class="rep-kpiLabel">Encuestas</div>
+              <div class="rep-kpiValue">{{ data.encuestasEstudiantes.totalEncuestas }}</div>
+            </div>
+
+            <div class="rep-kpi">
+              <div class="rep-kpiLabel">Alternativas respondidas</div>
+              <div class="rep-kpiValue">{{ data.encuestasEstudiantes.totalAlternativasRespondidas }}</div>
+            </div>
+
+            <div class="rep-kpi rep-kpi--accent">
+              <div class="rep-kpiLabel">% Satisfacción</div>
+              <div class="rep-kpiValue">{{ data.encuestasEstudiantes.porcentajeSatisfaccion }}%</div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Encuestas Colaboradores -->
+      <mat-card class="ga-card rep-card">
+        <mat-card-content>
+          <div class="rep-sectionTitle">Encuestas · Colaboradores</div>
+
+          <div class="rep-kpis rep-kpis--3">
+            <div class="rep-kpi">
+              <div class="rep-kpiLabel">Encuestas</div>
+              <div class="rep-kpiValue">{{ data.encuestasColaboradores.totalEncuestas }}</div>
+            </div>
+
+            <div class="rep-kpi">
+              <div class="rep-kpiLabel">Alternativas respondidas</div>
+              <div class="rep-kpiValue">{{ data.encuestasColaboradores.totalAlternativasRespondidas }}</div>
+            </div>
+
+            <div class="rep-kpi rep-kpi--accent">
+              <div class="rep-kpiLabel">% Satisfacción</div>
+              <div class="rep-kpiValue">{{ data.encuestasColaboradores.porcentajeSatisfaccion }}%</div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  }
+
+  <!-- EMPTY (opcional, si quieres cuando no hay data y no hay error) -->
+  @if (!loading && !error && !data) {
+    <mat-card class="ga-card">
+      <mat-card-content class="ga-empty">
+        <mat-icon>info</mat-icon>
+        <h3>Sin resultados</h3>
+        <p>Selecciona filtros y presiona “Buscar”.</p>
       </mat-card-content>
     </mat-card>
-
-    <mat-card class="elev">
-      <mat-card-content>
-        <div class="section-title">Estado de prácticas</div>
-
-        <div class="rows">
-          <div class="row">
-            <div class="row-left">
-              <mat-icon>check_circle</mat-icon>
-              <span>Aprobadas</span>
-            </div>
-            <div class="row-right">
-              <b>{{ data.practicas.aprobadas }}</b>
-              <span class="muted">({{ data.practicas.porcentajes.aprobadas }}%)</span>
-            </div>
-          </div>
-
-          <div class="row">
-            <div class="row-left">
-              <mat-icon>cancel</mat-icon>
-              <span>Reprobadas</span>
-            </div>
-            <div class="row-right">
-              <b>{{ data.practicas.reprobadas }}</b>
-              <span class="muted">({{ data.practicas.porcentajes.reprobadas }}%)</span>
-            </div>
-          </div>
-
-          <div class="row">
-            <div class="row-left">
-              <mat-icon>hourglass_top</mat-icon>
-              <span>En curso</span>
-            </div>
-            <div class="row-right">
-              <b>{{ data.practicas.enCurso }}</b>
-              <span class="muted">({{ data.practicas.porcentajes.enCurso }}%)</span>
-            </div>
-          </div>
-        </div>
-      </mat-card-content>
-    </mat-card>
-
-    <mat-card class="elev">
-      <mat-card-content>
-        <div class="section-title">Encuestas · Estudiantes</div>
-
-        <div class="kpis two">
-          <div class="kpi">
-            <div class="kpi-label">Encuestas</div>
-            <div class="kpi-value">{{ data.encuestasEstudiantes.totalEncuestas }}</div>
-          </div>
-
-          <div class="kpi">
-            <div class="kpi-label">Alternativas respondidas</div>
-            <div class="kpi-value">{{ data.encuestasEstudiantes.totalAlternativasRespondidas }}</div>
-          </div>
-
-          <div class="kpi accent">
-            <div class="kpi-label">% Satisfacción</div>
-            <div class="kpi-value">{{ data.encuestasEstudiantes.porcentajeSatisfaccion }}%</div>
-          </div>
-        </div>
-      </mat-card-content>
-    </mat-card>
-
-    <mat-card class="elev">
-      <mat-card-content>
-        <div class="section-title">Encuestas · Colaboradores</div>
-
-        <div class="kpis two">
-          <div class="kpi">
-            <div class="kpi-label">Encuestas</div>
-            <div class="kpi-value">{{ data.encuestasColaboradores.totalEncuestas }}</div>
-          </div>
-
-          <div class="kpi">
-            <div class="kpi-label">Alternativas respondidas</div>
-            <div class="kpi-value">{{ data.encuestasColaboradores.totalAlternativasRespondidas }}</div>
-          </div>
-
-          <div class="kpi accent">
-            <div class="kpi-label">% Satisfacción</div>
-            <div class="kpi-value">{{ data.encuestasColaboradores.porcentajeSatisfaccion }}%</div>
-          </div>
-        </div>
-      </mat-card-content>
-    </mat-card>
-
-  </div>
+  }
 </div>

@@ -1,335 +1,300 @@
-<div class="Container Section">
-  <div class="Header">
-    <div class="Headline">
-      <h1>Gestión de Tutores</h1>
-      <p class="Muted"></p>
+<div class="ga-page ga-page--wide tutores">
+  <div class="ga-header">
+    <div>
+      <h1 class="ga-title">Gestión de Tutores</h1>
+      <p class="ga-subtitle">Administra tutores, edita información y revisa detalles rápidamente.</p>
     </div>
 
-    <div class="Spacer"></div>
+    <span class="ga-spacer"></span>
 
-    <button mat-flat-button color="primary" (click)="alternarFormulario()" class="BtnAdd" *ngIf="!esSoloLectura">
-      <mat-icon>{{ mostrarFormulario ? 'close' : 'person_add' }}</mat-icon>
-      {{ mostrarFormulario ? 'Cerrar' : 'Agregar tutor' }}
+    <button
+      mat-flat-button
+      color="primary"
+      class="ga-btn ga-btn--primary"
+      (click)="mostrarFormulario = true"
+      *ngIf="!esSoloLectura">
+      <mat-icon>person_add</mat-icon>
+      Agregar tutor
     </button>
   </div>
 
-  <mat-card class="FiltersCard Elev">
+  <!-- FILTROS -->
+  <mat-card class="ga-card filtros">
     <mat-card-header>
-      <mat-card-title>
+      <mat-card-title class="filtros__title">
         <mat-icon>search</mat-icon>
-        Filtros de Búsqueda
+        Filtros de búsqueda
       </mat-card-title>
     </mat-card-header>
+
     <mat-card-content>
-      <div class="FiltersGrid">
-        <mat-form-field appearance="outline" class="SearchField">
+      <div class="filtros__grid filtros__grid--1">
+        <mat-form-field appearance="outline">
           <mat-label>Buscar</mat-label>
-          <input matInput [(ngModel)]="terminoBusqueda" (ngModelChange)="onFiltersChange()" placeholder="Nombre, email, cargo, RUT..." />
+          <input
+            matInput
+            [(ngModel)]="terminoBusqueda"
+            (ngModelChange)="onFiltersChange()"
+            placeholder="Nombre, email, cargo, RUT, dirección, universidad…" />
           <mat-icon matSuffix>search</mat-icon>
         </mat-form-field>
       </div>
     </mat-card-content>
   </mat-card>
 
-  <div class="FormContainer" [class.FormOpen]="mostrarFormulario" *ngIf="!esSoloLectura">
-    @if (mostrarFormulario) {
-      <mat-card class="Elev FormCard">
-        <mat-card-header class="FormHeader">
-          <div class="FormTitleSection">
-            <div class="FormIcon">
-              <mat-icon>{{ estaEditando ? 'edit' : 'person_add' }}</mat-icon>
-            </div>
-            <div class="FormTitles">
-              <h2>{{ estaEditando ? 'Editar tutor' : 'Agregar tutor' }}</h2>
-              <p>{{ estaEditando ? 'Modifica los datos del tutor' : 'Completa los datos para registrar un nuevo tutor' }}</p>
-            </div>
-          </div>
-          <button mat-icon-button (click)="alternarFormulario()" class="CloseFormBtn">
-            <mat-icon>close</mat-icon>
-          </button>
-        </mat-card-header>
-
-        <mat-card-content class="FormContent">
-          <form [formGroup]="formularioTutor" class="FormGrid">
-            <div class="FormRow">
-              <mat-form-field appearance="outline" class="FormField">
-                <mat-label>Nombre completo *</mat-label>
-                <input matInput formControlName="nombre" placeholder="Ej: Ana Gómez" />
-                @if (formularioTutor.get('nombre')?.invalid && formularioTutor.get('nombre')?.touched) {
-                  <mat-error>{{ getErrorNombre() }}</mat-error>
-                }
-              </mat-form-field>
-
-              <mat-form-field appearance="outline" class="FormField">
-                <mat-label>RUT *</mat-label>
-                <input matInput formControlName="rut" placeholder="12.345.678-9" />
-                @if (formularioTutor.get('rut')?.invalid && formularioTutor.get('rut')?.touched) {
-                  <mat-error>{{ getErrorRut() }}</mat-error>
-                }
-              </mat-form-field>
-            </div>
-
-            <div class="FormRow">
-              <mat-form-field appearance="outline" class="FormField">
-                <mat-label>Email</mat-label>
-                <input matInput formControlName="correo" type="email" placeholder="correo@ejemplo.com" />
-                @if (formularioTutor.get('correo')?.invalid && formularioTutor.get('correo')?.touched) {
-                  <mat-error>{{ getErrorCorreo() }}</mat-error>
-                }
-              </mat-form-field>
-
-              <mat-form-field appearance="outline" class="FormField">
-                <mat-label>Teléfono</mat-label>
-                <input matInput formControlName="telefono" placeholder="987654321" type="tel" />
-                @if (formularioTutor.get('telefono')?.invalid && formularioTutor.get('telefono')?.touched) {
-                  <mat-error>{{ getErrorTelefono() }}</mat-error>
-                }
-              </mat-form-field>
-            </div>
-
-            <div class="FormRow">
-              <mat-form-field appearance="outline" class="FormField FullWidth">
-                <mat-label>Dirección</mat-label>
-                <input matInput formControlName="direccion" placeholder="Calle 123, Comuna, Región" />
-              </mat-form-field>
-            </div>
-
-            <div class="FormRow">
-              <mat-form-field appearance="outline" class="FormField">
-                <mat-label>Cargo 1</mat-label>
-                <input matInput formControlName="cargo1" placeholder="Ej: Tutor académico" />
-              </mat-form-field>
-              <mat-form-field appearance="outline" class="FormField">
-                <mat-label>Cargo 2</mat-label>
-                <input matInput formControlName="cargo2" placeholder="Ej: Supervisor de práctica" />
-              </mat-form-field>
-            </div>
-
-            <div class="FormRow">
-              <mat-form-field appearance="outline" class="FormField FullWidth">
-                <mat-label>Universidad de egreso</mat-label>
-                <input matInput formControlName="universidad_egreso" placeholder="Universidad de Chile, PUC…" />
-              </mat-form-field>
-            </div>
-          </form>
-
-          <div class="FormActions">
-            <button mat-stroked-button (click)="alternarFormulario()" class="CancelBtn">
-              Cancelar
-            </button>
-            <button
-              mat-raised-button
-              color="primary"
-              (click)="estaEditando ? actualizarTutor() : agregarTutor()"
-              [disabled]="formularioTutor.invalid"
-              class="SubmitBtn">
-              <mat-icon>{{ estaEditando ? 'save' : 'person_add' }}</mat-icon>
-              {{ estaEditando ? 'Guardar cambios' : 'Añadir' }}
-            </button>
-          </div>
-        </mat-card-content>
-      </mat-card>
-    }
-  </div>
-
-  <mat-card class="Elev" *ngIf="totalItems > 0">
-    <mat-card-content class="ListContainer">
-      @if (cargando) {
-        <div style="text-align: center; padding: 2rem;">
-          <p class="Muted">Cargando tutores...</p>
-        </div>
-      } @else {
+  <!-- LISTADO -->
+  @if (cargando) {
+    <mat-card class="ga-card">
+      <mat-card-content class="loading-container">
+        <mat-spinner diameter="36"></mat-spinner>
+        <p class="ga-subtitle">Cargando tutores…</p>
+      </mat-card-content>
+    </mat-card>
+  } @else if (totalItems === 0) {
+    <mat-card class="ga-card">
+      <mat-card-content class="ga-empty">
+        <mat-icon>sentiment_dissatisfied</mat-icon>
+        <h3>No se encontraron tutores</h3>
+        <p>No hay tutores que coincidan con el filtro seleccionado.</p>
+      </mat-card-content>
+    </mat-card>
+  } @else {
+    <mat-card class="ga-card">
+      <mat-card-content class="ga-list">
         @for (t of tutores; track t.id) {
-          <div class="ListItem">
-            <div class="ItemContent">
-              <div class="ItemMain">
-                <div class="ItemInfo">
-                  <h3>{{ t.nombre }}</h3>
-                  <p class="Muted">{{ t.correo || 'Sin email' }}</p>
+          <div class="ga-row row" (click)="verDetalles(t)">
+            <div class="row__content">
+              <!-- Tutor -->
+              <div class="cell">
+                <div class="title">
+                  {{ t.nombre }}
+                </div>
+                <div class="meta ga-subtitle">
+                  <mat-icon>mail</mat-icon>
+                  <span>{{ t.correo || 'Sin email' }}</span>
+                </div>
+                <div class="meta ga-subtitle">
+                  <mat-icon>badge</mat-icon>
+                  <span>{{ t.rut || 'Sin RUT' }}</span>
                 </div>
               </div>
 
-              <div class="ItemRole">
-                @if (t.cargo) { <span>{{ t.cargo }}</span> } @else { <span class="Muted">Sin cargo</span> }
+              <!-- Cargo -->
+              <div class="cell">
+                <div class="title">Cargo</div>
+                <div class="meta ga-subtitle">
+                  <mat-icon>work</mat-icon>
+                  <span>{{ t.cargo || 'Sin cargo' }}</span>
+                </div>
               </div>
 
-              <div class="ItemActions">
-                <button mat-icon-button color="accent" (click)="verDetalles(t)" title="Ver más información">
-                  <mat-icon>visibility</mat-icon>
-                </button>
-                <button mat-icon-button color="primary" (click)="editarTutor(t)" title="Editar" *ngIf="!esSoloLectura">
-                  <mat-icon>edit</mat-icon>
-                </button>
-                <button mat-icon-button color="warn" (click)="eliminar(t)" title="Eliminar" *ngIf="!esSoloLectura">
-                  <mat-icon>delete</mat-icon>
-                </button>
+              <!-- Acciones -->
+              <div class="cell cell--actions">
+                <div class="ga-actions">
+                  <button
+                    mat-icon-button
+                    type="button"
+                    class="ga-action"
+                    (click)="$event.stopPropagation(); verDetalles(t)"
+                    title="Ver">
+                    <mat-icon>visibility</mat-icon>
+                  </button>
+
+                  <button
+                    mat-icon-button
+                    type="button"
+                    class="ga-action"
+                    *ngIf="!esSoloLectura"
+                    (click)="$event.stopPropagation(); editarTutor(t)"
+                    title="Editar">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+
+                  <button
+                    mat-icon-button
+                    type="button"
+                    class="ga-action ga-action--danger"
+                    *ngIf="!esSoloLectura"
+                    (click)="$event.stopPropagation(); eliminar(t)"
+                    title="Eliminar">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </div>
               </div>
+
             </div>
           </div>
         }
-      }
-    </mat-card-content>
-
-    <!-- PAGINADOR -->
-    <div class="list-paginator">
-      <mat-paginator
-        [length]="totalItems"
-        [pageIndex]="pageIndex"
-        [pageSize]="pageSize"
-        [pageSizeOptions]="pageSizeOptions"
-        (page)="onPageChange($event)">
-      </mat-paginator>
-    </div>
-  </mat-card>
-
-  @if (!cargando && totalItems === 0) {
-    <mat-card class="Elev Empty">
-      <mat-card-content class="Muted EmptyContent">
-        <mat-icon>group_off</mat-icon>
-        <p>No se encontraron tutores con los filtros seleccionados.</p>
       </mat-card-content>
+
+      <div class="ga-paginator" *ngIf="totalItems > 0">
+        <mat-paginator
+          [length]="totalItems"
+          [pageIndex]="pageIndex"
+          [pageSize]="pageSize"
+          [pageSizeOptions]="pageSizeOptions"
+          (page)="onPageChange($event)">
+        </mat-paginator>
+      </div>
     </mat-card>
   }
 
+  <!-- MODAL DETALLES -->
   @if (tutorSeleccionado) {
-  <div class="DetailsDialog">
-    <div class="DialogOverlay" (click)="cerrarDetalles()"></div>
+    <div class="modal-overlay" (click)="cerrarDetalles()">
+      <div class="modal-content modal-details" (click)="$event.stopPropagation()">
 
-    <div class="DialogContent DialogContent--details">
-      <!-- Header pro -->
-      <div class="DialogHeader DialogHeader--details">
-        <div class="DialogHeaderLeft">
-          <div class="DialogAvatar">
-            <mat-icon>school</mat-icon>
-          </div>
+        <!-- HEADER -->
+        <div class="modal-header">
+          <div class="form-header__left">
+            <div class="form-avatar">
+              <mat-icon>school</mat-icon>
+            </div>
 
-          <div class="DialogTitles">
-            <h2>Información del Tutor</h2>
-            <div class="DialogSubtitle">
-              {{ tutorSeleccionado.nombre }}
+            <div class="form-titles">
+              <h2>Información del Tutor</h2>
+              <p class="ga-subtitle">{{ tutorSeleccionado.nombre }}</p>
             </div>
           </div>
+
+          <button mat-icon-button class="close-btn" (click)="cerrarDetalles()">
+            <mat-icon>close</mat-icon>
+          </button>
         </div>
 
-        <button mat-icon-button (click)="cerrarDetalles()" class="CloseBtn" aria-label="Cerrar detalles">
-          <mat-icon>close</mat-icon>
-        </button>
-      </div>
+        <!-- BODY -->
+        <div class="modal-body details-body">
 
-      <div class="DialogBody">
-        <!-- Chips -->
-        <div class="DetailsTop">
-          <span class="Chip Chip--primary">
-            <mat-icon>work</mat-icon>
-            <span class="ChipText">{{ tutorSeleccionado.cargo || 'Sin cargo' }}</span>
-          </span>
+          <!-- Chips -->
+          <div class="details-chips">
+            <span class="chip chip--primary">
+              <mat-icon>work</mat-icon>
+              <span>{{ tutorSeleccionado.cargo || 'Sin cargo' }}</span>
+            </span>
 
-          <span class="Chip" *ngIf="tutorSeleccionado.rut">
-            <mat-icon>person</mat-icon>
-            <span class="ChipText">{{ tutorSeleccionado.rut }}</span>
-          </span>
+            @if (tutorSeleccionado.rut) {
+              <span class="chip">
+                <mat-icon>badge</mat-icon>
+                <span>{{ tutorSeleccionado.rut }}</span>
+              </span>
+            }
 
-          <span class="Chip" *ngIf="tutorSeleccionado.universidad_egreso">
-            <mat-icon>school</mat-icon>
-            <span class="ChipText">{{ tutorSeleccionado.universidad_egreso }}</span>
-          </span>
-        </div>
-
-        <!-- Sección: Datos personales -->
-        <div class="DetailsSection">
-          <div class="SectionHead">
-            <mat-icon>person</mat-icon>
-            <h3>Datos personales</h3>
+            @if (tutorSeleccionado.universidad_egreso) {
+              <span class="chip">
+                <mat-icon>school</mat-icon>
+                <span>{{ tutorSeleccionado.universidad_egreso }}</span>
+              </span>
+            }
           </div>
 
-          <div class="DetailsGrid DetailsGrid--2">
-            <div class="KV">
-              <div class="K">Nombre completo</div>
-              <div class="V">{{ tutorSeleccionado.nombre }}</div>
+          <!-- Sección: Datos personales -->
+          <div class="details-section">
+            <div class="details-section__head">
+              <mat-icon>person</mat-icon>
+              <h3>Datos personales</h3>
             </div>
 
-            <div class="KV">
-              <div class="K">RUT</div>
-              <div class="V">{{ tutorSeleccionado.rut || 'No especificado' }}</div>
-            </div>
-
-            <div class="KV KV--full">
-              <div class="K">Dirección</div>
-              <div class="V">{{ tutorSeleccionado.direccion || 'No especificada' }}</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Sección: Contacto -->
-        <div class="DetailsSection">
-          <div class="SectionHead">
-            <mat-icon>contact_phone</mat-icon>
-            <h3>Contacto</h3>
-          </div>
-
-          <div class="ContactCards">
-            <div class="ContactCard" *ngIf="tutorSeleccionado.telefono">
-              <mat-icon>call</mat-icon>
-              <div class="ContactMeta">
-                <div class="ContactLabel">Teléfono</div>
-                <div class="ContactValue">{{ tutorSeleccionado.telefono }}</div>
+            <div class="details-grid details-grid--2">
+              <div class="kv">
+                <div class="k">Nombre completo</div>
+                <div class="v">{{ tutorSeleccionado.nombre }}</div>
               </div>
-            </div>
 
-            <div class="ContactCard" *ngIf="tutorSeleccionado.correo">
-              <mat-icon>email</mat-icon>
-              <div class="ContactMeta">
-                <div class="ContactLabel">Correo</div>
-                <div class="ContactValue">{{ tutorSeleccionado.correo }}</div>
+              <div class="kv">
+                <div class="k">RUT</div>
+                <div class="v">{{ tutorSeleccionado.rut || 'No especificado' }}</div>
               </div>
-            </div>
 
-            <div class="ContactCard ContactCard--empty"
-                 *ngIf="!tutorSeleccionado.telefono && !tutorSeleccionado.correo">
-              <mat-icon>info</mat-icon>
-              <div class="ContactMeta">
-                <div class="ContactLabel">Contacto</div>
-                <div class="ContactValue">No hay datos de contacto registrados.</div>
+              <div class="kv kv--full">
+                <div class="k">Dirección</div>
+                <div class="v">{{ tutorSeleccionado.direccion || 'No especificada' }}</div>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- Sección: Información laboral -->
-        <div class="DetailsSection">
-          <div class="SectionHead">
-            <mat-icon>workspace_premium</mat-icon>
-            <h3>Información laboral</h3>
-          </div>
-
-          <div class="DetailsGrid DetailsGrid--2">
-            <div class="KV">
-              <div class="K">Cargo</div>
-              <div class="V">{{ tutorSeleccionado.cargo || 'No especificado' }}</div>
+          <!-- Sección: Contacto -->
+          <div class="details-section">
+            <div class="details-section__head">
+              <mat-icon>contact_phone</mat-icon>
+              <h3>Contacto</h3>
             </div>
 
-            <div class="KV">
-              <div class="K">Universidad de egreso</div>
-              <div class="V">{{ tutorSeleccionado.universidad_egreso || 'No especificada' }}</div>
+            <div class="contact-cards">
+              @if (tutorSeleccionado.telefono) {
+                <div class="contact-card">
+                  <mat-icon>call</mat-icon>
+                  <div>
+                    <div class="contact-label">Teléfono</div>
+                    <div class="contact-value">{{ tutorSeleccionado.telefono }}</div>
+                  </div>
+                </div>
+              }
+
+              @if (tutorSeleccionado.correo) {
+                <div class="contact-card">
+                  <mat-icon>email</mat-icon>
+                  <div>
+                    <div class="contact-label">Correo</div>
+                    <div class="contact-value">{{ tutorSeleccionado.correo }}</div>
+                  </div>
+                </div>
+              }
+
+              @if (!tutorSeleccionado.telefono && !tutorSeleccionado.correo) {
+                <div class="contact-card contact-card--empty">
+                  <mat-icon>info</mat-icon>
+                  <div>
+                    <div class="contact-label">Contacto</div>
+                    <div class="contact-value">No hay datos de contacto registrados.</div>
+                  </div>
+                </div>
+              }
             </div>
           </div>
-        </div>
-      </div>
 
-      <div class="DialogActions DialogActions--details">
-        <button mat-stroked-button (click)="cerrarDetalles()">Cerrar</button>
-        <button mat-raised-button color="primary" (click)="editarTutor(tutorSeleccionado!)" *ngIf="!esSoloLectura">
-          <mat-icon>edit</mat-icon>
-          Editar tutor
-        </button>
+          <!-- Sección: Información laboral -->
+          <div class="details-section">
+            <div class="details-section__head">
+              <mat-icon>workspace_premium</mat-icon>
+              <h3>Información laboral</h3>
+            </div>
+
+            <div class="details-grid details-grid--2">
+              <div class="kv">
+                <div class="k">Cargo</div>
+                <div class="v">{{ tutorSeleccionado.cargo || 'No especificado' }}</div>
+              </div>
+
+              <div class="kv">
+                <div class="k">Universidad de egreso</div>
+                <div class="v">{{ tutorSeleccionado.universidad_egreso || 'No especificada' }}</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ACTIONS -->
+        <div class="modal-actions">
+          <button mat-stroked-button (click)="cerrarDetalles()">Cerrar</button>
+
+          <button
+            mat-flat-button
+            color="primary"
+            (click)="editarTutor(tutorSeleccionado!)"
+            *ngIf="!esSoloLectura">
+            <mat-icon>edit</mat-icon>
+            Editar tutor
+          </button>
+        </div>
+
       </div>
     </div>
-  </div>
-}
+  }
 
-
+  <!-- CONFIRMAR ELIMINAR -->
   @if (mostrarConfirmarEliminar && tutorAEliminar) {
-    <div class="confirm-dialog">
+    <div class="modal-overlay confirm-dialog">
       <div class="dialog-overlay" (click)="cerrarConfirmarEliminar()" tabindex="0"></div>
 
       <div class="dialog-content confirm-card" (keydown.escape)="cerrarConfirmarEliminar()">
@@ -344,12 +309,123 @@
         </div>
 
         <div class="confirm-actions">
-          <button mat-stroked-button (click)="cerrarConfirmarEliminar()">Cancelar</button>
-          <button mat-flat-button color="warn" (click)="confirmarEliminar()" class="btn-danger">
+          <button mat-stroked-button class="ga-btn" (click)="cerrarConfirmarEliminar()">Cancelar</button>
+          <button mat-flat-button color="warn" (click)="confirmarEliminar()" class="ga-btn btn-danger">
             <mat-icon>delete</mat-icon> Eliminar
           </button>
         </div>
       </div>
     </div>
   }
+
+<!-- MODAL AGREGAR / EDITAR TUTOR -->
+  @if (mostrarFormulario) {
+    <div class="modal-overlay" (click)="cerrarModalTutor()">
+      <div class="modal-content modal-tutor" (click)="$event.stopPropagation()">
+
+        <!-- HEADER -->
+        <div class="modal-header">
+          <div class="form-header__left">
+            <div class="form-avatar">
+              <mat-icon>{{ estaEditando ? 'edit' : 'person_add' }}</mat-icon>
+            </div>
+
+            <div class="form-titles">
+              <h2>{{ estaEditando ? 'Editar tutor' : 'Agregar tutor' }}</h2>
+              <p class="ga-subtitle">
+                {{ estaEditando
+                  ? 'Modifica los datos del tutor'
+                  : 'Completa los datos para registrar un nuevo tutor'
+                }}
+              </p>
+            </div>
+          </div>
+
+          <button mat-icon-button class="close-btn" (click)="cerrarModalTutor()">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+
+        <!-- BODY -->
+        <div class="modal-body">
+          <form [formGroup]="formularioTutor" class="form-grid">
+
+            <div class="form-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Nombre completo *</mat-label>
+                <input matInput formControlName="nombre" />
+                @if (formularioTutor.get('nombre')?.invalid && formularioTutor.get('nombre')?.touched) {
+                  <mat-error>{{ getErrorNombre() }}</mat-error>
+                }
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>RUT *</mat-label>
+                <input matInput formControlName="rut" />
+                @if (formularioTutor.get('rut')?.invalid && formularioTutor.get('rut')?.touched) {
+                  <mat-error>{{ getErrorRut() }}</mat-error>
+                }
+              </mat-form-field>
+            </div>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Email</mat-label>
+                <input matInput formControlName="correo" />
+                @if (formularioTutor.get('correo')?.invalid && formularioTutor.get('correo')?.touched) {
+                  <mat-error>{{ getErrorCorreo() }}</mat-error>
+                }
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Teléfono</mat-label>
+                <input matInput formControlName="telefono" />
+                @if (formularioTutor.get('telefono')?.invalid && formularioTutor.get('telefono')?.touched) {
+                  <mat-error>{{ getErrorTelefono() }}</mat-error>
+                }
+              </mat-form-field>
+            </div>
+
+            <mat-form-field appearance="outline" class="full">
+              <mat-label>Dirección</mat-label>
+              <input matInput formControlName="direccion" />
+            </mat-form-field>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Cargo 1</mat-label>
+                <input matInput formControlName="cargo1" />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Cargo 2</mat-label>
+                <input matInput formControlName="cargo2" />
+              </mat-form-field>
+            </div>
+
+            <mat-form-field appearance="outline" class="full">
+              <mat-label>Universidad de egreso</mat-label>
+              <input matInput formControlName="universidad_egreso" />
+            </mat-form-field>
+          </form>
+        </div>
+
+        <!-- ACTIONS -->
+        <div class="modal-actions">
+          <button mat-stroked-button (click)="cerrarModalTutor()">Cancelar</button>
+
+          <button
+            mat-flat-button
+            color="primary"
+            (click)="estaEditando ? actualizarTutor() : agregarTutor()"
+            [disabled]="formularioTutor.invalid">
+            <mat-icon>{{ estaEditando ? 'save' : 'person_add' }}</mat-icon>
+            {{ estaEditando ? 'Guardar cambios' : 'Añadir' }}
+          </button>
+        </div>
+
+      </div>
+    </div>
+  }
+
 </div>

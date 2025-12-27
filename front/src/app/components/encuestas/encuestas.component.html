@@ -1,5 +1,5 @@
-<div class="container section">
-  <div class="header">
+<div class="ga-page ga-page--wide encuestas">
+  <div class="ga-header">
     <div class="headline">
       <h1>Registro de Encuestas</h1>
       <p class="muted"></p>
@@ -514,7 +514,7 @@
         </button>
       </mat-card-header>
 
-      <mat-card-content class="modal-content">
+      <mat-card-content class="modal-body">
         <!-- ======================= ESTUDIANTIL ======================= -->
         <div *ngIf="tipoRegistroActivo === 'ESTUDIANTIL'">
           <h2 class="form-title">Datos de Identificación</h2>
@@ -1874,15 +1874,15 @@
       </mat-card-content>
 
       <mat-card-actions align="end">
-        <button mat-stroked-button type="button" (click)="cerrarRegistro()">
-          <mat-icon>cancel</mat-icon>
-          Cancelar
-        </button>
+        <div class="modal-footer">
+          <button mat-stroked-button type="button" (click)="cerrarRegistro()">
+            Cancelar
+          </button>
 
-        <button mat-flat-button color="primary" type="submit" [disabled]="registroForm.invalid">
-          <mat-icon>save</mat-icon>
-          Guardar
-        </button>
+          <button mat-flat-button color="primary" type="submit">
+            Guardar
+          </button>
+        </div>  
       </mat-card-actions>
     </form>
   </mat-card>

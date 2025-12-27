@@ -30,6 +30,7 @@ export interface CentroEducativo {
 export interface Colaborador {
   id: number;
   nombre: string;
+  rut: string;         
   correo?: string;
   tipo?: string;
   cargo?: string;

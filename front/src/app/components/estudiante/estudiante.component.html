@@ -1,30 +1,30 @@
-<div class="container section">
-  <div class="header">
-    <div class="headline">
-      <h1>Gestión de Estudiantes</h1>
-      <p class="muted"></p>
+<div class="ga-page ga-page--wide estudiantes">
+  <div class="ga-header">
+    <div>
+      <h1 class="ga-title">Gestión de Estudiantes</h1>
+      <p class="ga-subtitle">Busca, filtra y revisa fichas académicas y prácticas.</p>
     </div>
-    <span class="pill-count">{{ estudiantes.length }} registrados</span>
-    <div class="spacer"></div>
+    <span class="ga-spacer"></span>
   </div>
 
-  <mat-card class="elev filters-card">
+  <mat-card class="ga-card filtros">
     <mat-card-header>
-      <mat-card-title>
+      <mat-card-title class="filtros__title">
         <mat-icon>search</mat-icon>
-        Filtros de Búsqueda
+        Filtros de búsqueda
       </mat-card-title>
     </mat-card-header>
+
     <mat-card-content>
-      <div class="filters-grid">
+      <div class="filtros__grid filtros__grid--4">
         <mat-form-field appearance="outline">
-          <mat-label>Buscar por nombre o RUT</mat-label>
+          <mat-label>Buscar</mat-label>
           <input
             matInput
             [(ngModel)]="searchTerm"
             (keyup.enter)="aplicarFiltros()"
-            placeholder="Ej: Ana, 12.345.678-9"
-          />
+            placeholder="Nombre o RUT" />
+          <mat-icon matSuffix>search</mat-icon>
         </mat-form-field>
 
         <mat-form-field appearance="outline">
@@ -49,10 +49,11 @@
 
         <mat-form-field appearance="outline">
           <mat-label>Año de ingreso</mat-label>
-          <input matInput type="number" [(ngModel)]="anioIngresoSeleccionado" placeholder="Ej: 2025" />
+          <input matInput type="number" [(ngModel)]="anioIngresoSeleccionado" placeholder="Ej: 2021" />
         </mat-form-field>
       </div>
-      <div class="filter-actions">
+
+      <div class="filtros__actions">
         <button mat-stroked-button color="primary" (click)="aplicarFiltros()">
           <mat-icon>refresh</mat-icon>
           Aplicar filtros
@@ -65,183 +66,196 @@
     </mat-card-content>
   </mat-card>
 
-  <div class="grid">
-    <div class="column detail-col">
-      <mat-card class="elev detail-card">
-        <mat-card-content>
-          @if (!seleccionado && !cargandoDetalle) {
-            <div class="empty detail-empty">
-              <mat-icon>info</mat-icon>
-              <p>Selecciona un estudiante para ver su ficha</p>
-            </div>
-          }
-
-          @if (cargandoDetalle) {
-            <div class="loader">
-              <mat-spinner diameter="32"></mat-spinner>
-              <span>Cargando detalle...</span>
-            </div>
-          }
-
-          @if (detalle && !cargandoDetalle) {
-            <div class="detail-head">
-              <div>
-                <h2>{{ detalle.nombre }}</h2>
-                <p>{{ formatearRut(detalle.rut) }} • {{ detalle.plan || 'Sin plan' }}</p>
-              </div>
-              <div class="detail-actions">
-                <button mat-raised-button color="primary" (click)="exportarPdf()">
-                  <mat-icon>picture_as_pdf</mat-icon>
-                  Exportar PDF
-                </button>
-              </div>
-            </div>
-
-            <div class="detail-section">
-              <h4>Datos personales</h4>
-              <div class="grid2">
-                <div><b>RUT:</b> {{ formatearRut(detalle.rut) }}</div>
-                <div><b>Género:</b> {{ detalle.genero || '-' }}</div>
-                <div><b>Año nacimiento:</b> {{ formatearFecha(detalle.anio_nacimiento) }}</div>
-                <div><b>Dirección:</b> {{ detalle.direccion || '-' }}</div>
-              </div>
-            </div>
-
-            <div class="detail-section">
-              <h4>Datos académicos</h4>
-              <div class="grid2">
-                <div><b>Plan:</b> {{ detalle.plan || '-' }}</div>
-                <div><b>Año de ingreso:</b> {{ detalle.anio_ingreso ?? '-' }}</div>
-                <div><b>Sistema de ingreso:</b> {{ detalle.sistema_ingreso || '-' }}</div>
-                <div><b>N° inscripciones:</b> {{ detalle.numero_inscripciones ?? '-' }}</div>
-                <div><b>Avance:</b> {{ formatearNumero(detalle.avance) }}</div>
-                <div><b>Puntaje ponderado:</b> {{ formatearNumero(detalle.puntaje_ponderado) }}</div>
-                <div><b>Puntaje PSU:</b> {{ formatearNumero(detalle.puntaje_psu) }}</div>
-                <div><b>Promedio:</b> {{ formatearNumero(detalle.promedio) }}</div>
-              </div>
-            </div>
-
-            <div class="detail-section">
-              <h4>Contacto</h4>
-              <div class="grid2">
-                <div><b>Correo:</b> {{ detalle.email || '-' }}</div>
-                <div><b>Teléfono:</b> {{ detalle.fono ?? '-' }}</div>
-              </div>
-            </div>
-
-            <div class="detail-section">
-              <h4>Historial de prácticas</h4>
-              @if (!detalle.practicas || detalle.practicas.length === 0) {
-                <div class="muted">Sin prácticas registradas.</div>
-              }
-              @for (p of detalle.practicas || []; track p.id) {
-                <div class="pill-row">
-                  <div>
-                    <strong>{{ estadoLabel(p.estado) }}</strong> •
-                    {{ formatearFecha(p.fecha_inicio) }} - {{ formatearFecha(p.fecha_termino) }}
-                  </div>
-                  <div class="muted">Centro: {{ p.centro?.nombre || '-' }}</div>
-                </div>
-              }
-            </div>
-
-            <div class="detail-section">
-              <h4>Actividades asociadas</h4>
-              @if (!detalle.actividades || detalle.actividades.length === 0) {
-                <div class="muted">Sin actividades asociadas.</div>
-              }
-              @for (a of detalle.actividades || []; track a.id) {
-                <div class="pill-row">
-                  <div>
-                    <strong>{{ a.nombre_actividad }}</strong> • {{ formatearFecha(a.fecha) }}
-                  </div>
-                  <div class="muted">{{ a.lugar || 'Sin lugar' }}</div>
-                </div>
-              }
-            </div>
-          }
-        </mat-card-content>
-      </mat-card>
-    </div>
-
-    <div class="column">
-      @if (estudiantes.length > 0) {
-        <mat-card class="elev list-card">
-          <mat-card-content class="list-container">
-            @if (cargandoLista) {
-              <div class="loader">
-                <mat-spinner diameter="32"></mat-spinner>
-                <span>Cargando estudiantes...</span>
-              </div>
-            }
-
-            @if (mensajeError && !cargandoLista) {
-              <div class="error-box">
-                <mat-icon>error</mat-icon>
-                <span>{{ mensajeError }}</span>
-              </div>
-            }
-
-            @if (!cargandoLista) {
-              @for (s of estudiantesPaginados; track s.rut) {
-                <div
-                  class="list-item"
-                  (click)="seleccionar(s)"
-                  [class.active]="seleccionado?.rut === s.rut"
-                >
-                  <div class="item-content">
-                    <div class="item-main">
-                      <div class="item-info">
-                        <h3>{{ s.nombre }}</h3>
-                        <p class="muted">{{ formatearRut(s.rut) }} • {{ s.plan || 'Sin plan' }}</p>
-                        @if (s.email) {
-                          <p class="muted">{{ s.email }}</p>
-                        }
-                        @if (s.ultimaPractica) {
-                          <div style="margin-top: 4px;">
-                            @if (s.ultimaPractica.tipo) {
-                              <p style="margin: 0; font-size: 12px; font-weight: 500; color: #374151;">
-                                {{ s.ultimaPractica.tipo }}
-                              </p>
-                            }
-                            <p class="muted" style="margin: 2px 0 0; font-size: 12px;">
-                              {{ formatearFecha(s.ultimaPractica.fecha_inicio) }} - {{ formatearFecha(s.ultimaPractica.fecha_termino) }}
-                            </p>
-                          </div>
-                        }
-                      </div>
-                    </div>
-
-                    <div class="item-status">
-                      <mat-chip color="primary" selected>{{ estadoLabel(s.estadoPractica) }}</mat-chip>
-                    </div>
-                  </div>
-                </div>
-              }
-            }
-          </mat-card-content>
-          <div class="list-paginator" *ngIf="totalItems > 0">
-            <mat-paginator
-              [length]="totalItems"
-              [pageIndex]="pageIndex"
-              [pageSize]="pageSize"
-              [pageSizeOptions]="pageSizeOptions"
-              (page)="onPageChange($event)">
-            </mat-paginator>
+  <div class="layout">
+    <mat-card class="ga-card ga-card--soft detalle">
+      <mat-card-content>
+        @if (!seleccionado && !cargandoDetalle) {
+          <div class="ga-empty">
+            <mat-icon>info</mat-icon>
+            <h3>Selecciona un estudiante</h3>
+            <p>Haz clic en un estudiante de la lista para ver su ficha.</p>
           </div>
-        </mat-card>
-      }
+        }
 
-      @if (!cargandoLista && estudiantes.length === 0) {
-        <div class="empty-card">
-          <mat-card class="elev empty">
-            <mat-card-content class="empty-content">
+        @if (cargandoDetalle) {
+          <div class="loader">
+            <mat-spinner diameter="32"></mat-spinner>
+            <span>Cargando ficha...</span>
+          </div>
+        }
+
+        @if (detalle && !cargandoDetalle) {
+          <div class="detalle__head">
+            <div class="detalle__titles">
+              <h2 class="detalle__name">{{ detalle.nombre }}</h2>
+              <p class="ga-subtitle">
+                {{ formatearRut(detalle.rut) }} • {{ detalle.plan || 'Sin plan' }}
+              </p>
+            </div>
+
+            <div class="detalle__actions">
+              <button mat-flat-button color="primary" (click)="exportarPdf()">
+                <mat-icon>picture_as_pdf</mat-icon>
+                Exportar PDF
+              </button>
+            </div>
+          </div>
+
+          <div class="detalle__section">
+            <div class="section-head">
+              <mat-icon>person</mat-icon>
+              <h4>Datos personales</h4>
+            </div>
+            <div class="grid2">
+              <div class="kv"><div class="k">RUT</div><div class="v">{{ formatearRut(detalle.rut) }}</div></div>
+              <div class="kv"><div class="k">Género</div><div class="v">{{ detalle.genero || '—' }}</div></div>
+              <div class="kv"><div class="k">Año nacimiento</div><div class="v">{{ formatearFecha(detalle.anio_nacimiento) }}</div></div>
+              <div class="kv kv--full"><div class="k">Dirección</div><div class="v">{{ detalle.direccion || '—' }}</div></div>
+            </div>
+          </div>
+
+          <div class="detalle__section">
+            <div class="section-head">
               <mat-icon>school</mat-icon>
-              <p>No hay estudiantes registrados</p>
-            </mat-card-content>
-          </mat-card>
-        </div>
-      }
-    </div>
+              <h4>Datos académicos</h4>
+            </div>
+            <div class="grid2">
+              <div class="kv"><div class="k">Plan</div><div class="v">{{ detalle.plan || '—' }}</div></div>
+              <div class="kv"><div class="k">Año ingreso</div><div class="v">{{ detalle.anio_ingreso ?? '—' }}</div></div>
+              <div class="kv"><div class="k">Sistema ingreso</div><div class="v">{{ detalle.sistema_ingreso || '—' }}</div></div>
+              <div class="kv"><div class="k">N° inscripciones</div><div class="v">{{ detalle.numero_inscripciones ?? '—' }}</div></div>
+              <div class="kv"><div class="k">Avance</div><div class="v">{{ formatearNumero(detalle.avance) }}</div></div>
+              <div class="kv"><div class="k">Puntaje ponderado</div><div class="v">{{ formatearNumero(detalle.puntaje_ponderado) }}</div></div>
+              <div class="kv"><div class="k">Puntaje PSU</div><div class="v">{{ formatearNumero(detalle.puntaje_psu) }}</div></div>
+              <div class="kv"><div class="k">Promedio</div><div class="v">{{ formatearNumero(detalle.promedio) }}</div></div>
+            </div>
+          </div>
+
+          <div class="detalle__section">
+            <div class="section-head">
+              <mat-icon>contact_mail</mat-icon>
+              <h4>Contacto</h4>
+            </div>
+            <div class="grid2">
+              <div class="kv kv--full"><div class="k">Correo</div><div class="v">{{ detalle.email || '—' }}</div></div>
+              <div class="kv"><div class="k">Teléfono</div><div class="v">{{ detalle.fono ?? '—' }}</div></div>
+            </div>
+          </div>
+
+          <div class="detalle__section">
+            <div class="section-head">
+              <mat-icon>work_history</mat-icon>
+              <h4>Historial de prácticas</h4>
+            </div>
+
+            @if (!detalle.practicas || detalle.practicas.length === 0) {
+              <p class="muted">Sin prácticas registradas.</p>
+            }
+
+            @for (p of detalle.practicas || []; track p.id) {
+              <div class="pill-row">
+                <div class="pill-row__top">
+                  <span class="ga-pill">{{ estadoLabel(p.estado) }}</span>
+                  <span class="ga-subtitle">
+                    {{ formatearFecha(p.fecha_inicio) }} - {{ formatearFecha(p.fecha_termino) }}
+                  </span>
+                </div>
+                <div class="ga-subtitle">Centro: {{ p.centro?.nombre || '—' }}</div>
+              </div>
+            }
+          </div>
+
+          <div class="detalle__section">
+            <div class="section-head">
+              <mat-icon>assignment</mat-icon>
+              <h4>Actividades asociadas</h4>
+            </div>
+
+            @if (!detalle.actividades || detalle.actividades.length === 0) {
+              <p class="muted">Sin actividades asociadas.</p>
+            }
+
+            @for (a of detalle.actividades || []; track a.id) {
+              <div class="pill-row">
+                <div class="pill-row__top">
+                  <strong>{{ a.nombre_actividad }}</strong>
+                  <span class="ga-subtitle">{{ formatearFecha(a.fecha) }}</span>
+                </div>
+                <div class="ga-subtitle">{{ a.lugar || 'Sin lugar' }}</div>
+              </div>
+            }
+          </div>
+        }
+      </mat-card-content>
+    </mat-card>
+
+    <!-- LISTA -->
+    <mat-card class="ga-card ga-card--soft lista">
+      <mat-card-content class="ga-list">
+        @if (cargandoLista) {
+          <div class="loader">
+            <mat-spinner diameter="32"></mat-spinner>
+            <span>Cargando estudiantes...</span>
+          </div>
+        }
+
+        @if (mensajeError && !cargandoLista) {
+          <div class="error-box">
+            <mat-icon>error</mat-icon>
+            <span>{{ mensajeError }}</span>
+          </div>
+        }
+
+        @if (!cargandoLista && estudiantesPaginados?.length) {
+          @for (s of estudiantesPaginados; track s.rut) {
+            <div
+              class="ga-row list-item"
+              (click)="seleccionar(s)"
+              [class.active]="seleccionado?.rut === s.rut">
+
+              <div class="row__content">
+                <div class="cell cell--main">
+                  <div class="title">
+                    <span class="truncate">{{ s.nombre }}</span>
+                  </div>
+
+                  <div class="meta">
+                    <mat-icon>badge</mat-icon>
+                    <span class="truncate">{{ formatearRut(s.rut) }}</span>
+                  </div>
+
+                  <div class="meta" *ngIf="s.email">
+                    <mat-icon>mail</mat-icon>
+                    <span class="truncate">{{ s.email }}</span>
+                  </div>
+                </div>
+
+                <div class="cell cell--right">
+                  <span class="ga-pill">{{ estadoLabel(s.estadoPractica) }}</span>
+                </div>
+              </div>
+            </div>
+          }
+        }
+
+        @if (!cargandoLista && (!estudiantesPaginados || estudiantesPaginados.length === 0)) {
+          <div class="ga-empty">
+           <mat-icon>sentiment_dissatisfied</mat-icon>
+            <h3>No se encontraron estudiantes</h3>
+            <p>No hay resultados con los filtros seleccionados.</p>
+          </div>
+        }
+      </mat-card-content>
+
+      <div class="ga-paginator" *ngIf="totalItems > 0">
+        <mat-paginator
+          [length]="totalItems"
+          [pageIndex]="pageIndex"
+          [pageSize]="pageSize"
+          [pageSizeOptions]="pageSizeOptions"
+          (page)="onPageChange($event)">
+        </mat-paginator>
+      </div>
+    </mat-card>
   </div>
 </div>

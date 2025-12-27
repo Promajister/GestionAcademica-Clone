@@ -2,7 +2,6 @@ import { Component, inject, PLATFORM_ID } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
-// Angular Material
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule }   from '@angular/material/icon';
 import { MatCardModule }   from '@angular/material/card';
@@ -14,7 +13,6 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 
-// APIs
 import {
   CentrosApiService,
   CentroEducativoDTO,
@@ -25,10 +23,10 @@ import {
 import { TrabajadoresApiService } from '../../services/trabajadores-api.service';
 import { OnInit } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { MatProgressSpinner } from "@angular/material/progress-spinner";
 
-// === tipos compatibles con tu enum Prisma ===
-type TipoCentro = 'PARTICULAR' | 'PARTICULAR_SUBVENCIONADO' | 'SLEP' | 'NO_CONVENCIONAL';
-type Convenio   = 'Marco SLEP' | 'Solicitud directa' | 'ADEP' | string;
+type TipoCentro = 'NINGUNO' | 'PARTICULAR' | 'PARTICULAR_SUBVENCIONADO' | 'SLEP' | 'NO_CONVENCIONAL';
+type Convenio   = 'NINGUNO' |'Marco SLEP' | 'Solicitud directa' | 'ADEP' | string;
 
 interface CentroEducativo {
   id: number;
@@ -65,18 +63,17 @@ type CentroDetalle = CentroEducativo & {
     MatSnackBarModule,
     MatDatepickerModule,
     MatNativeDateModule,
-  MatPaginatorModule,
-  ],
+    MatPaginatorModule,
+    MatProgressSpinner
+],
 })
 export class CentrosEducativosComponent implements OnInit {
   private snack = inject(MatSnackBar);
   private platformId = inject(PLATFORM_ID);
 
-  // APIs
   private centrosApi = inject(CentrosApiService);
   private trabajadoresApi = inject(TrabajadoresApiService);
 
-  // ===== UI =====
   showForm = false;
   isEditing = false;
   sortAZ = true;
@@ -136,10 +133,10 @@ export class CentrosEducativosComponent implements OnInit {
   editId: number | null = null;
   newCentroEducativo: Partial<CentroEducativo> = {
     nombre: '',
-    tipo: 'SLEP',
+    tipo: 'NINGUNO',
     region: '',
     comuna: '',
-    convenio: 'Marco SLEP',
+    convenio: 'NINGUNO',
     direccion: '',
     url_rrss: '',
     telefono: '',
@@ -278,7 +275,6 @@ export class CentrosEducativosComponent implements OnInit {
     this.newCentroEducativo.fecha_inicio_asociacion = this.toISODateOnly(d);
   }
 
-  // ===== helpers UI =====
   toggleForm() {
     if (this.esSoloLectura) return;
     this.showForm = !this.showForm;
@@ -299,10 +295,10 @@ export class CentrosEducativosComponent implements OnInit {
     this.editId = null;
     this.newCentroEducativo = {
       nombre: '',
-      tipo: 'SLEP',
+      tipo: 'NINGUNO',
       region: '',
       comuna: '',
-      convenio: 'Marco SLEP',
+      convenio: 'NINGUNO',
       direccion: '',
       url_rrss: '',
       telefono: '',
@@ -360,7 +356,6 @@ export class CentrosEducativosComponent implements OnInit {
   fecha_inicio_asociacion: c.fecha_inicio_asociacion ?? null,
 };
 
-
     const req$ =
       this.isEditing && this.editId != null
         ? this.centrosApi.update(this.editId, payloadCentro as UpdateCentroPayload)
@@ -404,17 +399,15 @@ export class CentrosEducativosComponent implements OnInit {
   if (this.esSoloLectura) return;
   if (!this.selectedCentroEducativo) return;
 
-  // Guardamos una copia antes de cerrar el modal
   const centro = { ...this.selectedCentroEducativo };
 
-  // Cerrar modal de detalle
   this.closeDetails();
 
-  // Abrir formulario en modo edición
   this.editCentro(centro);
 }
 
 readonly TIPO_LABEL: Record<TipoCentro, string> = {
+  NINGUNO: 'Sin tipo',
   PARTICULAR: 'Particular',
   PARTICULAR_SUBVENCIONADO: 'Particular subvencionado',
   SLEP: 'SLEP',
@@ -426,8 +419,6 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
   return (this.TIPO_LABEL as any)[tipo] ?? String(tipo);
 }
 
-
-  // ===== Confirmación de eliminación =====
   askDelete(c: CentroEducativo) {
     if (this.esSoloLectura) return;
     this.pendingDelete = c;
@@ -508,7 +499,6 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
       utpTelefono: '',
     };
 
-    // preload DIRECTOR
     this.trabajadoresApi
       .list({ centroId: c.id, rol: 'Director', page: 1, limit: 1 })
       .subscribe({
@@ -525,7 +515,6 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
         },
       });
 
-    // preload UTP
     this.trabajadoresApi
       .list({ centroId: c.id, rol: 'UTP', page: 1, limit: 1 })
       .subscribe({
@@ -635,4 +624,16 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
     this.load(this.pageIndex + 1);
   }
 
+  limpiarFiltros() {
+    this.searchTerm = '';
+    this.selectedTipo = 'all';
+
+    this.pageIndex = 0;
+
+    this.load(1);
+  }
+
+  aplicarFiltros() {
+    this.onFiltersChange();
+  }
 }
