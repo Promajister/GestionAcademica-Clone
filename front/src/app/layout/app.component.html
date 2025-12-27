@@ -1,15 +1,19 @@
+<!-- LAYOUT COMPLETO (todas las rutas excepto login / recuperar-clave) -->
 <ng-container *ngIf="!isAuthRoute; else authOnly">
   <mat-sidenav-container
     class="shell"
     [class.shell--open]="isSidenavOpened"
-    [style.--side-offset.px]="isSidenavOpened ? 300 : 0">
+    [style.--side-offset.px]="isSidenavOpened ? 260 : 0">
 
+    <!-- SIDEBAR -->
     <mat-sidenav
       #sidenav
+      class="side"
       mode="side"
       [opened]="isSidenavOpened"
       (openedChange)="onSidenavChange($event)">
 
+      <!-- Header usuario -->
       <div class="side__header">
         <ng-container *ngIf="profilePhoto; else fallbackAvatar">
           <div class="side__avatar">
@@ -29,8 +33,12 @@
 
       <mat-divider></mat-divider>
 
-      <div class="side__section-title"></div>
+      <!-- Título navegación -->
+      <div class="side__section-title">
+        <!-- Opcional: título sección -->
+      </div>
 
+      <!-- Navegación -->
       <mat-nav-list class="side__nav">
         <a mat-list-item
            *ngFor="let item of nav"
@@ -43,33 +51,42 @@
         </a>
       </mat-nav-list>
 
+      <!-- Pie del sidebar -->
       <div class="side__footer">
         <span class="side__footer-text">Sistema de Prácticas</span>
         <span class="side__footer-version">v1.0</span>
       </div>
     </mat-sidenav>
 
+    <!-- CONTENIDO -->
     <mat-sidenav-content class="content">
       <!-- TOPBAR -->
-      <mat-toolbar class="topbar">
-        
-          <button mat-icon-button (click)="toggleSidenav(sidenav)">
-            <mat-icon>menu</mat-icon>
-          </button>
+      <mat-toolbar class="topbar" color="primary">
+        <button mat-icon-button class="menu-btn" (click)="toggleSidenav(sidenav)">
+          <mat-icon>menu</mat-icon>
+        </button>
 
-          <button mat-icon-button (click)="goHome()">
-            <mat-icon>home</mat-icon>
-          </button>
+        <button
+          mat-icon-button
+          class="home-btn"
+          aria-label="Volver al dashboard"
+          (click)="goHome()">
+          <mat-icon>home</mat-icon>
+        </button>
 
-          <span class="spacer"></span>
+        <span class="spacer"></span>
 
-          <button mat-stroked-button color="accent" (click)="logout()">
-            <mat-icon>logout</mat-icon>
-            Cerrar sesión
-          </button>
-        
+        <button
+          mat-stroked-button
+          color="accent"
+          class="logout-btn"
+          (click)="logout()">
+          <mat-icon>logout</mat-icon>
+          Cerrar sesión
+        </button>
       </mat-toolbar>
 
+      <!-- CONTENIDO DE PÁGINA -->
       <main class="page">
         <router-outlet></router-outlet>
       </main>
@@ -77,6 +94,7 @@
   </mat-sidenav-container>
 </ng-container>
 
+<!-- SOLO VISTAS DE AUTENTICACIÓN (login, recuperar clave, etc.) -->
 <ng-template #authOnly>
   <router-outlet></router-outlet>
 </ng-template>

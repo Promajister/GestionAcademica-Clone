@@ -1,174 +1,157 @@
-<div class="ga-page ga-page--wide rep-estudiante">
+<div class="container section">
   <!-- HEADER -->
-  <div class="ga-header">
-    <div class="rep-head">
-      <button mat-stroked-button color="primary" routerLink="/reportes" class="ga-btn rep-back">
-        <mat-icon>arrow_back</mat-icon>
-        Volver a Reportes
-      </button>
+  <div class="header">
+    <button mat-stroked-button color="primary" routerLink="/reportes" class="btn-back">
+      <mat-icon>arrow_back</mat-icon>
+      Volver a Reportes
+    </button>
 
-      <div class="rep-titles">
-        <h1 class="ga-title">Reporte del estudiante</h1>
-        <p class="ga-subtitle">
-          Búsqueda por RUT o por nombre para visualizar prácticas, centros y supervisores
-        </p>
-      </div>
+    <div class="headline">
+      <h1>Reporte del estudiante</h1>
+      <p class="muted">Búsqueda por RUT o por nombre para visualizar prácticas, centros y supervisores</p>
     </div>
 
-    <span class="ga-spacer"></span>
-
-    <div class="rep-actions">
-      <button mat-stroked-button color="primary" class="ga-btn" (click)="exportarPDF()" [disabled]="!estudiante">
-        <mat-icon>picture_as_pdf</mat-icon>
-        Exportar PDF
-      </button>
-
-      <button mat-stroked-button color="accent" class="ga-btn" (click)="exportarExcel()" [disabled]="!estudiante">
-        <mat-icon>grid_on</mat-icon>
-        Exportar Excel
-      </button>
-    </div>
+    <div class="spacer"></div>
   </div>
 
-  <!-- FILTROS -->
-  <mat-card class="ga-card filtros">
-    <mat-card-header>
-      <mat-card-title class="filtros__title">
-        <mat-icon>search</mat-icon>
-        Filtros de Búsqueda
-      </mat-card-title>
-    </mat-card-header>
+  <div style="display:flex; gap:8px; margin-bottom:12px;">
+    <button mat-stroked-button color="primary" (click)="exportarPDF()">
+      <mat-icon>picture_as_pdf</mat-icon>
+      Exportar PDF
+    </button>
+    <button mat-stroked-button color="accent" (click)="exportarExcel()">
+      <mat-icon>grid_on</mat-icon>
+      Exportar Excel
+    </button>
+  </div>
 
+  <!-- TARJETA BUSCADOR -->
+  <mat-card class="elev">
     <mat-card-content>
-      <div class="filtros__grid filtros__grid--3">
-        <mat-form-field appearance="outline">
-          <mat-label>Nombre</mat-label>
+
+      <!-- BUSCAR POR NOMBRE -->
+      <div style="display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap;">
+        <mat-form-field appearance="outline" style="min-width:320px; flex:1;">
+          <mat-label>Buscar por nombre</mat-label>
           <input
             matInput
             [value]="nombreQuery"
             (input)="onNombreInput($any($event.target).value)"
-            placeholder="Ej: Ana" />
-          <mat-icon matSuffix>person_search</mat-icon>
+            placeholder="Ej: Ana"
+          />
         </mat-form-field>
 
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="outline" style="min-width:240px;">
           <mat-label>RUT del estudiante</mat-label>
           <input matInput [(ngModel)]="rut" placeholder="12.345.678-9" />
-          <mat-icon matSuffix>badge</mat-icon>
         </mat-form-field>
 
-        <div class="rep-searchBtn">
-          <button mat-flat-button color="primary" class="ga-btn ga-btn--primary" (click)="buscar()">
-            <mat-icon>search</mat-icon>
-            Buscar
-          </button>
-        </div>
+        <button mat-raised-button color="primary" (click)="buscar()">
+          Buscar
+        </button>
       </div>
 
       <!-- RESULTADOS POR NOMBRE -->
-      @if (resultados?.length) {
-        <mat-card class="ga-card ga-card--soft rep-results">
-          <mat-card-content class="ga-list">
-            <div class="ga-subtitle rep-results__hint">Resultados (click para seleccionar):</div>
+      <mat-card class="elev" *ngIf="resultados?.length" style="margin-top:10px;">
+        <mat-card-content>
+          <div class="muted" style="margin-bottom:8px;">
+            Resultados (click para seleccionar):
+          </div>
 
-            <mat-nav-list class="ga-list rep-nav">
-              <a mat-list-item class="ga-row rep-resultRow" *ngFor="let e of resultados"
-                 (click)="seleccionar(e.rut)">
-                <div class="rep-resultText">
-                  <div class="rep-resultName">{{ e.nombre }}</div>
-                  <div class="ga-subtitle truncate">{{ e.rut }} • {{ e.plan || 'Sin plan' }}</div>
-                </div>
-              </a>
-            </mat-nav-list>
-          </mat-card-content>
-        </mat-card>
-      }
+          <mat-nav-list>
+            <a mat-list-item *ngFor="let e of resultados" (click)="seleccionar(e.rut)">
+              <div style="display:flex; flex-direction:column;">
+                <strong>{{ e.nombre }}</strong>
+                <span class="muted">{{ e.rut }} • {{ e.plan || 'Sin plan' }}</span>
+              </div>
+            </a>
+          </mat-nav-list>
+        </mat-card-content>
+      </mat-card>
 
       <!-- LOADING -->
-      @if (loading) {
-        <div class="rep-loading">
-          <mat-spinner diameter="32"></mat-spinner>
-          <span class="ga-subtitle">Buscando estudiante…</span>
-        </div>
-      }
+      <div class="center" *ngIf="loading" style="margin-top:12px;">
+        <mat-spinner diameter="32"></mat-spinner>
+      </div>
 
       <!-- ERROR -->
-      @if (!loading && error) {
-        <div class="rep-error">
-          <mat-icon>error</mat-icon>
-          <span>{{ error }}</span>
-        </div>
-      }
+      <p class="muted" *ngIf="!loading && error" style="margin-top:12px;">
+        {{ error }}
+      </p>
+
     </mat-card-content>
   </mat-card>
 
-  <!-- RESULTADO -->
-  @if (!loading && estudiante) {
-    <mat-card class="ga-card rep-card">
-      <mat-card-content>
-        <div class="rep-summary">
-          <div class="rep-summary__name">{{ estudiante.nombre }}</div>
-          <div class="ga-subtitle">RUT: {{ estudiante.rut }}</div>
-          @if (estudiante.plan) {
-            <div class="ga-subtitle">Plan: {{ estudiante.plan }}</div>
-          }
+  <!-- RESULTADO DEL ESTUDIANTE -->
+  <mat-card class="elev" style="margin-top:12px;" *ngIf="!loading && estudiante">
+    <mat-card-content>
+
+      <div style="margin:12px 0;">
+        <div style="font-weight:700; font-size:18px;">
+          {{ estudiante.nombre }}
         </div>
+        <div class="muted">RUT: {{ estudiante.rut }}</div>
+        <div class="muted" *ngIf="estudiante.plan">Plan: {{ estudiante.plan }}</div>
+      </div>
 
-        <div class="rep-tableWrap" *ngIf="estudiante.practicas?.length; else sinPracticas">
-          <table mat-table [dataSource]="estudiante.practicas" class="rep-table">
+      <table mat-table [dataSource]="estudiante.practicas"
+            class="mat-elevation-z0"
+            style="width:100%;">
 
-            <ng-container matColumnDef="tipo">
-              <th mat-header-cell *matHeaderCellDef>Tipo</th>
-              <td mat-cell *matCellDef="let p">{{ p.tipo || '—' }}</td>
-            </ng-container>
+        <!-- tipo -->
+        <ng-container matColumnDef="tipo">
+          <th mat-header-cell *matHeaderCellDef>Tipo</th>
+          <td mat-cell *matCellDef="let p">{{ p.tipo || '—' }}</td>
+        </ng-container>
 
-            <ng-container matColumnDef="estado">
-              <th mat-header-cell *matHeaderCellDef>Estado</th>
-              <td mat-cell *matCellDef="let p">{{ p.estado }}</td>
-            </ng-container>
+        <!-- estado -->
+        <ng-container matColumnDef="estado">
+          <th mat-header-cell *matHeaderCellDef>Estado</th>
+          <td mat-cell *matCellDef="let p">{{ p.estado }}</td>
+        </ng-container>
 
-            <ng-container matColumnDef="semestre">
-              <th mat-header-cell *matHeaderCellDef>Semestre</th>
-              <td mat-cell *matCellDef="let p">{{ p.semestre }}° {{ p.anio }}</td>
-            </ng-container>
+        <!-- 🔹 AQUÍ VA SEMESTRE -->
+        <ng-container matColumnDef="semestre">
+          <th mat-header-cell *matHeaderCellDef>Semestre</th>
+          <td mat-cell *matCellDef="let p">
+            {{ p.semestre }}° {{ p.anio }}
+          </td>
+        </ng-container>
 
-            <ng-container matColumnDef="centro">
-              <th mat-header-cell *matHeaderCellDef>Centro</th>
-              <td mat-cell *matCellDef="let p">{{ p.centro || '—' }}</td>
-            </ng-container>
+        <!-- centro -->
+        <ng-container matColumnDef="centro">
+          <th mat-header-cell *matHeaderCellDef>Centro</th>
+          <td mat-cell *matCellDef="let p">{{ p.centro || '—' }}</td>
+        </ng-container>
 
-            <ng-container matColumnDef="tutores">
-              <th mat-header-cell *matHeaderCellDef>Supervisores</th>
-              <td mat-cell *matCellDef="let p">
-                <span class="rep-truncate2">
-                  {{ p.tutores?.length ? p.tutores.join(', ') : '—' }}
-                </span>
-              </td>
-            </ng-container>
+        <!-- tutores -->
+        <ng-container matColumnDef="tutores">
+          <th mat-header-cell *matHeaderCellDef>Supervisores</th>
+          <td mat-cell *matCellDef="let p">
+            {{ p.tutores?.length ? p.tutores.join(', ') : '—' }}
+          </td>
+        </ng-container>
 
-            <ng-container matColumnDef="inicio">
-              <th mat-header-cell *matHeaderCellDef>Inicio</th>
-              <td mat-cell *matCellDef="let p">{{ formatDate(p.fechaInicio) }}</td>
-            </ng-container>
+        <!-- inicio -->
+        <ng-container matColumnDef="inicio">
+          <th mat-header-cell *matHeaderCellDef>Inicio</th>
+          <td mat-cell *matCellDef="let p">{{ formatDate(p.fechaInicio) }}</td>
+        </ng-container>
 
-            <ng-container matColumnDef="termino">
-              <th mat-header-cell *matHeaderCellDef>Término</th>
-              <td mat-cell *matCellDef="let p">{{ formatDate(p.fechaTermino) }}</td>
-            </ng-container>
+        <!-- termino -->
+        <ng-container matColumnDef="termino">
+          <th mat-header-cell *matHeaderCellDef>Término</th>
+          <td mat-cell *matCellDef="let p">{{ formatDate(p.fechaTermino) }}</td>
+        </ng-container>
 
-            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
-          </table>
-        </div>
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+      </table>
 
-        <ng-template #sinPracticas>
-          <div class="ga-empty rep-empty">
-            <mat-icon>sentiment_dissatisfied</mat-icon>
-            <h3>Sin prácticas</h3>
-            <p>El estudiante no registra prácticas.</p>
-          </div>
-        </ng-template>
-      </mat-card-content>
-    </mat-card>
-  }
+      <p class="muted" *ngIf="!estudiante.practicas?.length" style="margin-top:12px;">
+        El estudiante no registra prácticas.
+      </p>
+
+    </mat-card-content>
+  </mat-card>
 </div>

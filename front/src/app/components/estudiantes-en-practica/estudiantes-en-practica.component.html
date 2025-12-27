@@ -1,160 +1,184 @@
-<div class="ga-page ga-page--wide practicas">
-  <!-- Header -->
-  <div class="ga-header">
-    <div>
-      <h1 class="ga-title">Gestión de Estudiantes en Práctica</h1>
-      <p class="ga-subtitle">Gestiona prácticas activas y actualiza estados rápidamente.</p>
+<div class="Container Section">
+  <!-- HEADER -->
+  <div class="Header">
+    <div class="Headline">
+      <h1>Estudiantes en Práctica</h1>
+      <p class="Muted"></p>
     </div>
-    <span class="ga-spacer"></span>
+    <div class="Spacer"></div>
   </div>
 
-  <!-- Filtros -->
-  <mat-card class="ga-card filtros">
+  <!-- FILTROS DE BÚSQUEDA -->
+  <mat-card class="FiltersCard Elev">
     <mat-card-header>
-      <mat-card-title class="filtros__title">
+      <mat-card-title>
         <mat-icon>search</mat-icon>
-        Filtros de búsqueda
+        Filtros de Búsqueda
       </mat-card-title>
     </mat-card-header>
-
     <mat-card-content>
-      <div class="filtros__grid filtros__grid--3">
-        <mat-form-field appearance="outline">
+      <div class="FiltersGrid">
+        <mat-form-field appearance="outline" class="SearchField">
           <mat-label>Buscar</mat-label>
-          <input
-            matInput
-            [(ngModel)]="terminoBusqueda"
-            (ngModelChange)="onFiltersChange()"
-            placeholder="Nombre, RUT o centro educativo…" />
+          <input matInput [(ngModel)]="terminoBusqueda" (ngModelChange)="onFiltersChange()" placeholder="Nombre, RUT o centro educativo..." />
           <mat-icon matSuffix>search</mat-icon>
         </mat-form-field>
-
-        <mat-form-field appearance="outline">
+        
+        <mat-form-field appearance="outline" class="FilterField">
           <mat-label>Estado</mat-label>
           <mat-select [(ngModel)]="estadoSeleccionado" (ngModelChange)="onFiltersChange()">
-            <mat-option value="all">Todos</mat-option>
+            <mat-option value="all">Todos los estados</mat-option>
             @for (estado of estadosPractica; track estado) {
-              <mat-option [value]="estado">{{ formatearEstado(estado) }}</mat-option>
+              <mat-option [value]="estado">
+                {{ formatearEstado(estado) }}
+              </mat-option>
             }
           </mat-select>
         </mat-form-field>
 
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="outline" class="FilterField">
           <mat-label>Nivel</mat-label>
           <mat-select [(ngModel)]="nivelSeleccionado" (ngModelChange)="onFiltersChange()">
-            <mat-option value="all">Todos</mat-option>
+            <mat-option value="all">Todos los niveles</mat-option>
             @for (n of niveles; track n) {
               <mat-option [value]="n">{{ n }}</mat-option>
             }
           </mat-select>
         </mat-form-field>
       </div>
-
-      <div class="filtros__actions">
-        <button mat-stroked-button color="primary" (click)="aplicarFiltros()">
-          <mat-icon>refresh</mat-icon>
-          Aplicar filtros
-        </button>
-
-        <button mat-button type="button" (click)="limpiarFiltros()">
-          <mat-icon>close</mat-icon>
-          Limpiar filtros
-        </button>
-      </div>      
     </mat-card-content>
   </mat-card>
 
-  <!-- Estados -->
+  <!-- LISTADO DE ESTUDIANTES -->
   @if (cargando) {
-    <mat-card class="ga-card">
-      <mat-card-content class="loading-container">
-        <mat-spinner diameter="36"></mat-spinner>
-        <p class="ga-subtitle">Cargando estudiantes en práctica…</p>
-      </mat-card-content>
-    </mat-card>
-  } @else if (totalItems === 0) {
-    <mat-card class="ga-card ga-card--soft">
-      <mat-card-content class="ga-empty">
-        <mat-icon>sentiment_dissatisfied</mat-icon>
-        <h3>No se encontraron estudiantes</h3>
-        <p>No hay prácticas que coincidan con los filtros seleccionados.</p>
+    <mat-card class="Elev">
+      <mat-card-content class="LoadingContent">
+        <mat-icon>hourglass_empty</mat-icon>
+        <p>Cargando estudiantes en práctica...</p>
       </mat-card-content>
     </mat-card>
   } @else {
-    <!-- Lista -->
-    <mat-card class="ga-card ga-card--soft">
-      <mat-card-content class="ga-list">
-        @for (practica of estudiantesPaginados; track practica.id) {
-          <div class="ga-row" (click)="verDetalles(practica)" tabindex="0">
-            <div class="row__content">
-              <!-- Estudiante -->
-              <div class="cell cell--student">
-                <div class="title">
-                  <span class="truncate">{{ practica.estudiante.nombre }}</span>
-                </div>
-                <div class="meta">
-                  <span class="truncate">
-                    {{ practica.estudiante.rut }} • {{ practica.estudiante.email || 'Sin email' }}
-                  </span>
-                </div>
-              </div>
-
-              <!-- Centro -->
-              <div class="cell cell--center">
-                <div class="title truncate">{{ practica.centro.nombre }}</div>
-              </div>
-
-              <!-- Fechas / Tipo -->
-              <div class="cell cell--dates">
-                <div class="meta">
-                  <mat-icon>flag</mat-icon>
-                  <span class="pill" [ngClass]="'pill--' + practica.estado.toLowerCase()">
-                    {{ formatearEstado(practica.estado) }}
-                  </span>
+    <div class="StudentsList" *ngIf="totalItems > 0">
+      @for (practica of estudiantesPaginados; track practica.id) {
+        <mat-card class="StudentCard Elev">
+          <mat-card-content>
+            <div class="StudentContent">
+              <!-- Información del estudiante -->
+              <div class="StudentInfo">
+                <div class="StudentHeader">
+                  <mat-icon class="StudentIcon">person</mat-icon>
+                  <div class="StudentDetails">
+                    <h3>{{ practica.estudiante.nombre }}</h3>
+                    <div class="StudentMeta">
+                      <span class="Rut">RUT: {{ practica.estudiante.rut }}</span>
+                      @if (practica.estudiante.nivel) {
+                        <span class="LevelBadge">{{ practica.estudiante.nivel }}</span>
+                      }
+                    </div>
+                    @if (practica.estudiante.email) {
+                      <div class="Email">
+                        <mat-icon class="EmailIcon">email</mat-icon>
+                        <span>{{ practica.estudiante.email }}</span>
+                      </div>
+                    }
+                  </div>
                 </div>
               </div>
 
-              <!-- Acciones -->
-              <div class="cell cell--actions">
-                  <button
-                    mat-icon-button
-                    type="button"
-                    class="action-btn"
-                    (click)="$event.stopPropagation(); abrirDialogoCambioEstado(practica)"
-                    aria-label="Editar">
-                    <mat-icon>edit</mat-icon>
+              <!-- Información del centro educativo -->
+              <div class="CenterInfo">
+                <div class="CenterHeader">
+                  <mat-icon class="CenterIcon">school</mat-icon>
+                  <div class="CenterDetails">
+                    <h4>{{ practica.centro.nombre }}</h4>
+                    <div class="CenterMeta">
+                      @if (practica.centro.tipo) {
+                        <span class="CenterType">{{ formatearTipoCentro(practica.centro.tipo) }}</span>
+                      }
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Información de la práctica -->
+              <div class="PracticeInfo">
+                <div class="PracticeDetails">
+                  @if (practica.tipo) {
+                    <div class="PracticeType">
+                      <mat-icon class="TypeIcon">work</mat-icon>
+                      <span>{{ practica.tipo }}</span>
+                    </div>
+                  }
+                  <div class="DateInfo">
+                    <mat-icon class="DateIcon">event</mat-icon>
+                    <span>{{ practica.fechaInicio }}
+                      @if (practica.fechaTermino) {
+                        - {{ practica.fechaTermino }}
+                      } @else {
+                        - En curso
+                      }
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Estado y Acciones -->
+              <div class="StatusSection">
+                <div class="StatusActions">
+                  <button 
+                    mat-stroked-button 
+                    class="StatusButton"
+                    [ngClass]="'status-' + practica.estado.toLowerCase()"
+                    (click)="abrirDialogoCambioEstado(practica)">
+                    <span class="StatusBadge" [ngClass]="practica.estado.toLowerCase()">
+                      {{ formatearEstado(practica.estado) }}
+                    </span>
+                    <mat-icon class="EditIcon">edit</mat-icon>
                   </button>
-
-                  <button
-                    mat-icon-button
-                    type="button"
-                    class="action-btn"
-                    (click)="$event.stopPropagation(); verDetalles(practica)"
-                    aria-label="Ver">
+                  <button 
+                    mat-stroked-button 
+                    class="DetailsBtn"
+                    (click)="verDetalles(practica)">
                     <mat-icon>visibility</mat-icon>
+                    Ver Detalles
                   </button>
+                </div>
               </div>
             </div>
-          </div>
-        }
-      </mat-card-content>
+          </mat-card-content>
+        </mat-card>
+      }
+    </div>
 
-      <div class="ga-paginator" *ngIf="totalItems > 0">
-        <mat-paginator
-          [length]="totalItems"
-          [pageIndex]="pageIndex"
-          [pageSize]="pageSize"
-          [pageSizeOptions]="pageSizeOptions"
-          (page)="onPageChange($event)">
-        </mat-paginator>
-      </div>
-    </mat-card>
+    <!-- PAGINADOR -->
+    <div class="list-paginator" *ngIf="totalItems > 0">
+      <mat-paginator
+        [length]="totalItems"
+        [pageIndex]="pageIndex"
+        [pageSize]="pageSize"
+        [pageSizeOptions]="pageSizeOptions"
+        (page)="onPageChange($event)">
+      </mat-paginator>
+    </div>
+
+    <!-- MENSAJE VACÍO -->
+    @if (totalItems === 0) {
+      <mat-card class="EmptyCard Elev">
+        <mat-card-content class="EmptyContent">
+          <mat-icon>school</mat-icon>
+          <h3>No se encontraron estudiantes</h3>
+          <p>No hay estudiantes en práctica que coincidan con los filtros seleccionados.</p>
+        </mat-card-content>
+      </mat-card>
+    }
   }
 
-  <!-- Dialog confirmación cambiar estado -->
+  <!-- DIALOGO DE CONFIRMACIÓN PARA CAMBIAR ESTADO -->
   @if (mostrarConfirmarCambioEstado && practicaACambiarEstado) {
-    <div class="modal-overlay" (click)="cerrarDialogoCambioEstado()">
-      <div class="modal-content confirm-card" (click)="$event.stopPropagation()">
+    <div class="confirm-dialog">
+      <div class="dialog-overlay" (click)="cerrarDialogoCambioEstado()" tabindex="0"></div>
+
+      <div class="dialog-content confirm-card" (keydown.escape)="cerrarDialogoCambioEstado()">
         <div class="confirm-header">
           <div class="warn-icon">
             <mat-icon>info</mat-icon>
@@ -163,26 +187,32 @@
         </div>
 
         <div class="confirm-body">
-          <p>Estudiante: <b>{{ practicaACambiarEstado.estudiante.nombre }}</b></p>
+          <p>
+            Estudiante: <b>{{ practicaACambiarEstado.estudiante.nombre }}</b>
+          </p>
           <p class="Muted">
             Estado actual: <b>{{ formatearEstado(practicaACambiarEstado.estado) }}</b>
           </p>
-
+          
           <mat-form-field appearance="outline" class="EstadoSelect">
             <mat-label>Nuevo estado</mat-label>
             <mat-select [(ngModel)]="nuevoEstadoSeleccionado">
               @for (estado of estadosPractica; track estado) {
-                <mat-option [value]="estado">{{ formatearEstado(estado) }}</mat-option>
+                <mat-option [value]="estado">
+                  {{ formatearEstado(estado) }}
+                </mat-option>
               }
             </mat-select>
           </mat-form-field>
         </div>
 
         <div class="confirm-actions">
-          <button mat-stroked-button (click)="cerrarDialogoCambioEstado()">Cancelar</button>
-          <button
-            mat-flat-button
-            color="primary"
+          <button mat-stroked-button (click)="cerrarDialogoCambioEstado()">
+            Cancelar
+          </button>
+          <button 
+            mat-flat-button 
+            color="primary" 
             (click)="confirmarCambioEstado()"
             [disabled]="!nuevoEstadoSeleccionado || nuevoEstadoSeleccionado === practicaACambiarEstado.estado">
             <mat-icon>check</mat-icon>
@@ -193,285 +223,288 @@
     </div>
   }
 
-  <!-- Modal detalles -->
+  <!-- MODAL DE DETALLES -->
   @if (mostrarModalDetalles && practicaSeleccionada) {
-    <div class="modal-overlay" (click)="cerrarDetalles()">
+  <div class="DetailsDialog">
+    <div class="DialogOverlay" (click)="cerrarDetalles()"></div>
 
-      <div class="DialogContent DialogContent--details" (click)="$event.stopPropagation()">
-
-        <!-- HEADER -->
-        <div class="DialogHeader DialogHeader--details">
-          <div class="DialogHeaderLeft">
-            <div class="DialogAvatar">
-              <mat-icon>school</mat-icon>
-            </div>
-
-            <div class="DialogTitles">
-              <h2>Detalles de la Práctica</h2>
-              <div class="DialogSubtitle">
-                {{ practicaSeleccionada.estudiante.nombre }} • {{ practicaSeleccionada.estudiante.rut }}
-              </div>
-            </div>
+    <div class="DialogContent DialogContent--details">
+      <!-- Header unificado -->
+      <div class="DialogHeader DialogHeader--details">
+        <div class="DialogHeaderLeft">
+          <div class="DialogAvatar">
+            <mat-icon>school</mat-icon>
           </div>
 
-          <button mat-icon-button (click)="cerrarDetalles()" class="CloseBtn" aria-label="Cerrar">
-            <mat-icon>close</mat-icon>
-          </button>
+          <div class="DialogTitles">
+            <h2>Detalles de la Práctica</h2>
+            <div class="DialogSubtitle">
+              {{ practicaSeleccionada.estudiante.nombre }} • {{ practicaSeleccionada.estudiante.rut }}
+            </div>
+          </div>
         </div>
 
-        <div class="DialogBody">
-          <div class="DetailsTop">
-            <span class="Chip Chip--primary">
-              <mat-icon>flag</mat-icon>
-              <span class="ChipText">{{ formatearEstado(practicaSeleccionada.estado) }}</span>
-            </span>
+        <button mat-icon-button (click)="cerrarDetalles()" class="CloseBtn" aria-label="Cerrar detalles">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
 
-            <span class="Chip">
-              <mat-icon>work</mat-icon>
-              <span class="ChipText">{{ practicaSeleccionada.tipo || 'Sin tipo' }}</span>
-            </span>
+      <div class="DialogBody">
+        <!-- Chips superiores -->
+        <div class="DetailsTop">
+          <span class="Chip Chip--primary">
+            <mat-icon>flag</mat-icon>
+            <span class="ChipText">{{ formatearEstado(practicaSeleccionada.estado) }}</span>
+          </span>
 
-            <span class="Chip">
-              <mat-icon>event</mat-icon>
-              <span class="ChipText">{{ practicaSeleccionada.fechaInicio }}</span>
-            </span>
+          <span class="Chip">
+            <mat-icon>work</mat-icon>
+            <span class="ChipText">{{ practicaSeleccionada.tipo || 'Sin tipo' }}</span>
+          </span>
 
+          <span class="Chip">
+            <mat-icon>event</mat-icon>
+            <span class="ChipText">{{ practicaSeleccionada.fechaInicio }}</span>
+          </span>
+
+          <span class="Chip">
+            <mat-icon>event_available</mat-icon>
+            <span class="ChipText">{{ practicaSeleccionada.fechaTermino || 'Sin fecha de término' }}</span>
+          </span>
+
+          @if (practicaSeleccionada.estudiante.nivel) {
             <span class="Chip">
-              <mat-icon>event_available</mat-icon>
-              <span class="ChipText">{{ practicaSeleccionada.fechaTermino || 'Sin fecha de término' }}</span>
+              <mat-icon>school</mat-icon>
+              <span class="ChipText">{{ practicaSeleccionada.estudiante.nivel }}</span>
             </span>
+          }
+        </div>
+
+        <!-- Sección: Información General -->
+        <div class="DetailsSection">
+          <div class="SectionHead">
+            <mat-icon>info</mat-icon>
+            <h3>Información General</h3>
+          </div>
+
+          <div class="DetailsGrid DetailsGrid--2">
+            <div class="KV">
+              <div class="K">Estado</div>
+              <div class="V">
+                <span class="StatusBadge" [ngClass]="practicaSeleccionada.estado.toLowerCase()">
+                  {{ formatearEstado(practicaSeleccionada.estado) }}
+                </span>
+              </div>
+            </div>
+
+            <div class="KV">
+              <div class="K">Tipo</div>
+              <div class="V">{{ practicaSeleccionada.tipo || 'Sin especificar' }}</div>
+            </div>
+
+            <div class="KV">
+              <div class="K">Fecha de inicio</div>
+              <div class="V">{{ practicaSeleccionada.fechaInicio }}</div>
+            </div>
+
+            <div class="KV">
+              <div class="K">Fecha de término</div>
+              <div class="V">{{ practicaSeleccionada.fechaTermino || 'Sin fecha de término' }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sección: Estudiante -->
+        <div class="DetailsSection">
+          <div class="SectionHead">
+            <mat-icon>person</mat-icon>
+            <h3>Estudiante</h3>
+          </div>
+
+          <div class="DetailsGrid DetailsGrid--2">
+            <div class="KV KV--full">
+              <div class="K">Nombre</div>
+              <div class="V">{{ practicaSeleccionada.estudiante.nombre }}</div>
+            </div>
+
+            <div class="KV">
+              <div class="K">RUT</div>
+              <div class="V">{{ practicaSeleccionada.estudiante.rut }}</div>
+            </div>
 
             @if (practicaSeleccionada.estudiante.nivel) {
-              <span class="Chip">
-                <mat-icon>school</mat-icon>
-                <span class="ChipText">{{ practicaSeleccionada.estudiante.nivel }}</span>
-              </span>
+              <div class="KV">
+                <div class="K">Nivel</div>
+                <div class="V">{{ practicaSeleccionada.estudiante.nivel }}</div>
+              </div>
+            }
+
+            @if (practicaSeleccionada.estudiante.email) {
+              <div class="KV KV--full">
+                <div class="K">Email</div>
+                <div class="V">{{ practicaSeleccionada.estudiante.email }}</div>
+              </div>
             }
           </div>
+        </div>
 
-          <!-- Info general -->
-          <div class="DetailsSection">
-            <div class="SectionHead">
-              <mat-icon>info</mat-icon>
-              <h3>Información General</h3>
+        <!-- Sección: Centro Educativo -->
+        <div class="DetailsSection">
+          <div class="SectionHead">
+            <mat-icon>school</mat-icon>
+            <h3>Centro Educativo</h3>
+          </div>
+
+          <div class="DetailsGrid DetailsGrid--2">
+            <div class="KV KV--full">
+              <div class="K">Nombre</div>
+              <div class="V">{{ practicaSeleccionada.centro.nombre }}</div>
             </div>
 
-            <div class="DetailsGrid DetailsGrid--2">
-              <div class="KV">
-                <div class="K">Estado</div>
-                <div class="V">
-                  <span class="StatusBadge" [ngClass]="practicaSeleccionada.estado.toLowerCase()">
-                    {{ formatearEstado(practicaSeleccionada.estado) }}
-                  </span>
-                </div>
-              </div>
-
+            @if (practicaSeleccionada.centro.tipo) {
               <div class="KV">
                 <div class="K">Tipo</div>
-                <div class="V">{{ practicaSeleccionada.tipo || 'Sin especificar' }}</div>
+                <div class="V">{{ formatearTipoCentro(practicaSeleccionada.centro.tipo) }}</div>
               </div>
-
-              <div class="KV">
-                <div class="K">Fecha de inicio</div>
-                <div class="V">{{ practicaSeleccionada.fechaInicio }}</div>
-              </div>
-
-              <div class="KV">
-                <div class="K">Fecha de término</div>
-                <div class="V">{{ practicaSeleccionada.fechaTermino || 'Sin fecha de término' }}</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Estudiante -->
-          <div class="DetailsSection">
-            <div class="SectionHead">
-              <mat-icon>person</mat-icon>
-              <h3>Estudiante</h3>
-            </div>
-
-            <div class="DetailsGrid DetailsGrid--2">
-              <div class="KV KV--full">
-                <div class="K">Nombre</div>
-                <div class="V">{{ practicaSeleccionada.estudiante.nombre }}</div>
-              </div>
-
-              <div class="KV">
-                <div class="K">RUT</div>
-                <div class="V">{{ practicaSeleccionada.estudiante.rut }}</div>
-              </div>
-
-              @if (practicaSeleccionada.estudiante.nivel) {
-                <div class="KV">
-                  <div class="K">Nivel</div>
-                  <div class="V">{{ practicaSeleccionada.estudiante.nivel }}</div>
-                </div>
-              }
-
-              @if (practicaSeleccionada.estudiante.email) {
-                <div class="KV KV--full">
-                  <div class="K">Email</div>
-                  <div class="V">{{ practicaSeleccionada.estudiante.email }}</div>
-                </div>
-              }
-            </div>
-          </div>
-
-          <!-- Centro -->
-          <div class="DetailsSection">
-            <div class="SectionHead">
-              <mat-icon>school</mat-icon>
-              <h3>Centro Educativo</h3>
-            </div>
-
-            <div class="DetailsGrid DetailsGrid--2">
-              <div class="KV KV--full">
-                <div class="K">Nombre</div>
-                <div class="V">{{ practicaSeleccionada.centro.nombre }}</div>
-              </div>
-
-              @if (practicaSeleccionada.centro.tipo) {
-                <div class="KV">
-                  <div class="K">Tipo</div>
-                  <div class="V">{{ formatearTipoCentro(practicaSeleccionada.centro.tipo) }}</div>
-                </div>
-              }
-
-              @if (practicaSeleccionada.centro.direccion) {
-                <div class="KV KV--full">
-                  <div class="K">Dirección</div>
-                  <div class="V">{{ practicaSeleccionada.centro.direccion }}</div>
-                </div>
-              }
-
-              @if (practicaSeleccionada.centro.comuna && practicaSeleccionada.centro.region) {
-                <div class="KV KV--full">
-                  <div class="K">Ubicación</div>
-                  <div class="V">{{ practicaSeleccionada.centro.comuna }}, {{ practicaSeleccionada.centro.region }}</div>
-                </div>
-              }
-            </div>
-          </div>
-
-          <!-- Colaboradores -->
-          <div class="DetailsSection">
-            <div class="SectionHead">
-              <mat-icon>groups</mat-icon>
-              <h3>Colaboradores</h3>
-            </div>
-
-            @if (practicaSeleccionada.colaboradores && practicaSeleccionada.colaboradores.length) {
-              <div class="PeopleList">
-                @for (colaborador of practicaSeleccionada.colaboradores; track colaborador.id) {
-                  <div class="PersonRow">
-                    <div class="PersonLeft">
-                      <div class="PersonDot"><mat-icon>person</mat-icon></div>
-                      <div class="PersonText">
-                        <div class="PersonName">{{ colaborador.nombre }}</div>
-                        <div class="PersonMeta">
-                          @if (colaborador.cargo) { <span>• {{ colaborador.cargo }}</span> }
-                          @if (colaborador.correo) { <span>• {{ colaborador.correo }}</span> }
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                }
-              </div>
-            } @else {
-              <p class="Muted">Sin colaboradores registrados para esta práctica.</p>
             }
-          </div>
 
-          <!-- Tutores -->
-          <div class="DetailsSection">
-            <div class="SectionHead">
-              <mat-icon>badge</mat-icon>
-              <h3>Tutores</h3>
-            </div>
-
-            @if (practicaSeleccionada.tutores && practicaSeleccionada.tutores.length) {
-              <div class="PeopleList">
-                @for (tutor of practicaSeleccionada.tutores; track tutor.tutor.id) {
-                  <div class="PersonRow">
-                    <div class="PersonLeft">
-                      <div class="PersonDot"><mat-icon>person</mat-icon></div>
-                      <div class="PersonText">
-                        <div class="PersonName">{{ tutor.tutor.nombre }}</div>
-                        <div class="PersonMeta">
-                          <span>• {{ tutor.rol }}</span>
-                          @if (tutor.tutor.correo) { <span>• {{ tutor.tutor.correo }}</span> }
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                }
+            @if (practicaSeleccionada.centro.direccion) {
+              <div class="KV KV--full">
+                <div class="K">Dirección</div>
+                <div class="V">{{ practicaSeleccionada.centro.direccion }}</div>
               </div>
-            } @else {
-              <p class="Muted">Sin tutores asignados para esta práctica.</p>
             }
-          </div>
 
-          <!-- Actividades -->
-          @if (practicaSeleccionada.actividades && practicaSeleccionada.actividades.length > 0) {
-            <div class="DetailsSection">
-              <div class="SectionHead">
-                <mat-icon>assignment</mat-icon>
-                <h3>Actividades ({{ practicaSeleccionada.actividades.length }})</h3>
+            @if (practicaSeleccionada.centro.comuna && practicaSeleccionada.centro.region) {
+              <div class="KV KV--full">
+                <div class="K">Ubicación</div>
+                <div class="V">{{ practicaSeleccionada.centro.comuna }}, {{ practicaSeleccionada.centro.region }}</div>
               </div>
-
-              <div class="ActivitiesList">
-                @for (actividad of practicaSeleccionada.actividades; track actividad.id) {
-                  <div class="ActivityItem">
-                    <div class="ActivityHeader">
-                      <h4>{{ actividad.titulo }}</h4>
-                      <span class="ActivityStatus" [ngClass]="actividad.completada ? 'completed' : 'pending'">
-                        <mat-icon>{{ actividad.completada ? 'check_circle' : 'schedule' }}</mat-icon>
-                        {{ actividad.completada ? 'Completada' : 'Pendiente' }}
-                      </span>
-                    </div>
-
-                    @if (actividad.descripcion) {
-                      <p class="ActivityDescription">{{ actividad.descripcion }}</p>
-                    }
-
-                    <div class="ActivityDate">
-                      <mat-icon>event</mat-icon>
-                      <span>{{ actividad.fecha }}</span>
-                    </div>
-                  </div>
-                }
-              </div>
-            </div>
-          }
-
-          <!-- Observaciones -->
-          <div class="DetailsSection">
-            <div class="SectionHead">
-              <mat-icon>note</mat-icon>
-              <h3>Observaciones</h3>
-            </div>
-
-            @if (observaciones && observaciones.length > 0) {
-              <div class="ObservationsList">
-                @for (obs of observaciones; track obs.id) {
-                  <div class="ObservationItem">
-                    <div class="ObservationContent">
-                      <p class="ObservationText">{{ obs.descripcion }}</p>
-                      <span class="ObservationDate">{{ formatearFecha(obs.fecha) }}</span>
-                    </div>
-                  </div>
-                }
-              </div>
-            } @else {
-              <p class="NoActivities">No hay observaciones registradas para esta práctica.</p>
             }
           </div>
         </div>
 
-        <div class="DialogActions DialogActions--details">
-          <button mat-stroked-button (click)="cerrarDetalles()">Cerrar</button>
+        <!-- Sección: Colaboradores -->
+        <div class="DetailsSection">
+          <div class="SectionHead">
+            <mat-icon>groups</mat-icon>
+            <h3>Colaboradores</h3>
+          </div>
+
+          @if (practicaSeleccionada.colaboradores && practicaSeleccionada.colaboradores.length) {
+            <div class="PeopleList">
+              @for (colaborador of practicaSeleccionada.colaboradores; track colaborador.id) {
+                <div class="PersonRow">
+                  <div class="PersonLeft">
+                    <div class="PersonDot"><mat-icon>person</mat-icon></div>
+                    <div class="PersonText">
+                      <div class="PersonName">{{ colaborador.nombre }}</div>
+                      <div class="PersonMeta">
+                        @if (colaborador.cargo) { <span>• {{ colaborador.cargo }}</span> }
+                        @if (colaborador.correo) { <span>• {{ colaborador.correo }}</span> }
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <p class="Muted">Sin colaboradores registrados para esta práctica.</p>
+          }
+        </div>
+
+        <!-- Sección: Tutores -->
+        <div class="DetailsSection">
+          <div class="SectionHead">
+            <mat-icon>badge</mat-icon>
+            <h3>Tutores</h3>
+          </div>
+
+          @if (practicaSeleccionada.tutores && practicaSeleccionada.tutores.length) {
+            <div class="PeopleList">
+              @for (tutor of practicaSeleccionada.tutores; track tutor.tutor.id) {
+                <div class="PersonRow">
+                  <div class="PersonLeft">
+                    <div class="PersonDot"><mat-icon>person</mat-icon></div>
+                    <div class="PersonText">
+                      <div class="PersonName">{{ tutor.tutor.nombre }}</div>
+                      <div class="PersonMeta">
+                        <span>• {{ tutor.rol }}</span>
+                        @if (tutor.tutor.correo) { <span>• {{ tutor.tutor.correo }}</span> }
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <p class="Muted">Sin tutores asignados para esta práctica.</p>
+          }
+        </div>
+
+        <!-- Sección: Actividades -->
+        @if (practicaSeleccionada.actividades && practicaSeleccionada.actividades.length > 0) {
+          <div class="DetailsSection">
+            <div class="SectionHead">
+              <mat-icon>assignment</mat-icon>
+              <h3>Actividades ({{ practicaSeleccionada.actividades.length }})</h3>
+            </div>
+
+            <div class="ActivitiesList">
+              @for (actividad of practicaSeleccionada.actividades; track actividad.id) {
+                <div class="ActivityItem">
+                  <div class="ActivityHeader">
+                    <h4>{{ actividad.titulo }}</h4>
+                    <span class="ActivityStatus" [ngClass]="actividad.completada ? 'completed' : 'pending'">
+                      <mat-icon>{{ actividad.completada ? 'check_circle' : 'schedule' }}</mat-icon>
+                      {{ actividad.completada ? 'Completada' : 'Pendiente' }}
+                    </span>
+                  </div>
+
+                  @if (actividad.descripcion) {
+                    <p class="ActivityDescription">{{ actividad.descripcion }}</p>
+                  }
+
+                  <div class="ActivityDate">
+                    <mat-icon>event</mat-icon>
+                    <span>{{ actividad.fecha }}</span>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Sección: Observaciones -->
+        <div class="DetailsSection">
+          <div class="SectionHead">
+            <mat-icon>note</mat-icon>
+            <h3>Observaciones</h3>
+          </div>
+
+          @if (observaciones && observaciones.length > 0) {
+            <div class="ObservationsList">
+              @for (obs of observaciones; track obs.id) {
+                <div class="ObservationItem">
+                  <div class="ObservationContent">
+                    <p class="ObservationText">{{ obs.descripcion }}</p>
+                    <span class="ObservationDate">{{ formatearFecha(obs.fecha) }}</span>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <p class="NoActivities">No hay observaciones registradas para esta práctica.</p>
+          }
         </div>
       </div>
+
+      <div class="DialogActions DialogActions--details">
+        <button mat-stroked-button (click)="cerrarDetalles()">Cerrar</button>
+      </div>
     </div>
-  }
+  </div>
+}
+
 </div>
+

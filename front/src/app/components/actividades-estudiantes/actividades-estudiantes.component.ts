@@ -3,6 +3,7 @@ import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 
+// Angular Material
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
@@ -19,6 +20,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActividadesEstudiantesService, Actividad } from '../../services/actividades-estudiantes.service';
 import JSZip from 'jszip';
 
+// DateAdapter personalizado para formato DD/MM/YYYY
 @Injectable()
 export class CustomDateAdapter extends NativeDateAdapter {
   override format(date: Date, displayFormat: Object): string {
@@ -320,28 +322,18 @@ export class ActividadesEstudiantesComponent implements OnInit {
   }
 
   alternarFormulario(): void {
+    // Si es jefatura, no permitir abrir el formulario
     if (this.esJefatura) return;
-
-    if (this.mostrarFormulario) {
-      // cerrar: limpiar todo
-      this.mostrarFormulario = false;
+    
+    this.mostrarFormulario = !this.mostrarFormulario;
+    if (!this.mostrarFormulario) {
       this.estaEditando = false;
       this.actividadEditando = null;
       this.formularioActividad.reset();
       this.archivosSeleccionados = [];
       this.archivoZip = null;
-      return;
     }
-
-    // abrir: preparar "Agregar"
-    this.estaEditando = false;
-    this.actividadEditando = null;
-    this.formularioActividad.reset();
-    this.archivosSeleccionados = [];
-    this.archivoZip = null;
-    this.mostrarFormulario = true;
   }
-
 
   addActivity(): void {
     if (this.mostrarFormulario) {
@@ -355,24 +347,6 @@ export class ActividadesEstudiantesComponent implements OnInit {
       this.mostrarFormulario = true;
     }
   }
-abrirModalFormulario(): void { 
-  if (this.esJefatura) return; 
-  //Si quieres que siempre abra en "Agregar" cuando apretas el botón: 
-  //this.estaEditando = false; 
-  // this.actividadEditando = null; 
-  // this.formularioActividad.reset(); 
-  // this.archivosSeleccionados = []; 
-  // this.archivoZip = null; 
-  this.mostrarFormulario = true; } 
-  
-cerrarModalFormulario(): void { 
-  this.mostrarFormulario = false;
-  this.estaEditando = false; 
-  this.actividadEditando = null; 
-  this.formularioActividad.reset(); 
-  this.archivosSeleccionados = []; 
-  this.archivoZip = null; 
-}
 
   async onFileSelected(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;

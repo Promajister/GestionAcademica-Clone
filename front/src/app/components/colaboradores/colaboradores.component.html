@@ -1,433 +1,367 @@
-<div class="ga-page ga-page--wide colaboradores">
+<div class="Container Section">
   <!-- HEADER -->
-  <div class="ga-header">
-    <div>
-      <h1 class="ga-title">Gestión de Colaboradores</h1>
-      <p class="ga-subtitle">Administra Colaboradores, edita información y revisa detalles rápidamente.</p>
+  <div class="Header">
+    
+    <div class="Headline">
+      <h1>Gestión de Colaboradores</h1>
+      <p class="Muted"></p>
     </div>
 
-    <span class="ga-spacer"></span>
+    <div class="Spacer"></div>
 
-    <button
-      mat-flat-button
-      color="primary"
-      class="ga-btn ga-btn--primary"
-      (click)="mostrarFormulario = true"
-      *ngIf="!esSoloLectura">
-      <mat-icon>person_add</mat-icon>
-      Agregar colaborador
+    <!-- BOTÓN AGREGAR -->
+    <button mat-flat-button color="primary" (click)="alternarFormulario()" class="BtnAdd" *ngIf="!esSoloLectura">
+      <mat-icon>{{ mostrarFormulario ? 'close' : 'person_add' }}</mat-icon>
+      {{ mostrarFormulario ? 'Cerrar' : 'Agregar colaborador' }}
     </button>
   </div>
 
-  <!-- FILTROS -->
-  <mat-card class="ga-card filtros">
+  <!-- FILTROS DE BÚSQUEDA -->
+  <mat-card class="FiltersCard Elev">
     <mat-card-header>
-      <mat-card-title class="filtros__title">
+      <mat-card-title>
         <mat-icon>search</mat-icon>
-        Filtros de búsqueda
+        Filtros de Búsqueda
       </mat-card-title>
     </mat-card-header>
-
     <mat-card-content>
-      <div class="filtros__grid filtros__grid--1">
-        <mat-form-field appearance="outline">
+      <div class="FiltersGrid">
+        <mat-form-field appearance="outline" class="SearchField">
           <mat-label>Buscar</mat-label>
-          <input
-            matInput
-            [(ngModel)]="terminoBusqueda"
-            (ngModelChange)="onFiltersChange()"
-            placeholder="Nombre, email, cargo, RUT, dirección, universidad…" />
+          <input matInput [(ngModel)]="terminoBusqueda" (ngModelChange)="onFiltersChange()" placeholder="Nombre, email, cargo, RUT..." />
           <mat-icon matSuffix>search</mat-icon>
         </mat-form-field>
+
+        <!-- Eliminado filtro por Rol -->
       </div>
     </mat-card-content>
   </mat-card>
 
-  <!-- LISTADO -->
-  @if (cargando) {
-    <mat-card class="ga-card">
-      <mat-card-content class="loading-container">
-        <mat-spinner diameter="36"></mat-spinner>
-        <p class="ga-subtitle">Cargando colaboradores...</p>
-      </mat-card-content>
-    </mat-card>
-  } @else if (totalItems === 0) {
-    <mat-card class="ga-card">
-      <mat-card-content class="ga-empty">
-        <mat-icon>sentiment_dissatisfied</mat-icon>
-        <h3>No se encontraron colaboradores</h3>
-        <p>No hay colaboradores que coincidan con el filtro seleccionado.</p>
-      </mat-card-content>
-    </mat-card>
-  } @else {
-    <mat-card class="ga-card">
-      <mat-card-content class="ga-list">
-        @for (t of colaboradores; track t.id) {
-          <div class="ga-row row" (click)="verDetalles(t)">
-            <div class="row__content">
-              <!-- colaborador -->
-              <div class="cell">
-                <div class="title">
-                  {{ t.nombre }}
-                </div>
-                <div class="meta ga-subtitle">
-                  <mat-icon>mail</mat-icon>
-                  <span>{{ t.correo || 'Sin email' }}</span>
-                </div>
-                <div class="meta ga-subtitle">
-                  <mat-icon>badge</mat-icon>
-                  <span>{{ t.rut || 'Sin RUT' }}</span>
-                </div>
-              </div>
-
-              <!-- Cargo -->
-              <div class="cell">
-                <div class="title">Cargo</div>
-                <div class="meta ga-subtitle">
-                  <mat-icon>work</mat-icon>
-                  <span>{{ t.cargo || 'Sin cargo' }}</span>
-                </div>
-              </div>
-
-              <!-- Acciones -->
-              <div class="cell cell--actions">
-                <div class="ga-actions">
-                  <button
-                    mat-icon-button
-                    type="button"
-                    class="ga-action"
-                    (click)="$event.stopPropagation(); verDetalles(t)"
-                    title="Ver">
-                    <mat-icon>visibility</mat-icon>
-                  </button>
-
-                  <button
-                    mat-icon-button
-                    type="button"
-                    class="ga-action"
-                    *ngIf="!esSoloLectura"
-                    (click)="$event.stopPropagation(); editarColaborador(t)"
-                    title="Editar">
-                    <mat-icon>edit</mat-icon>
-                  </button>
-
-                  <button
-                    mat-icon-button
-                    type="button"
-                    class="ga-action ga-action--danger"
-                    *ngIf="!esSoloLectura"
-                    (click)="$event.stopPropagation(); eliminar(t)"
-                    title="Eliminar">
-                    <mat-icon>delete</mat-icon>
-                  </button>
-                </div>
-              </div>
-
-            </div>
-          </div>
-        }
-      </mat-card-content>
-
-      <div class="ga-paginator" *ngIf="totalItems > 0">
-        <mat-paginator
-          [length]="totalItems"
-          [pageIndex]="pageIndex"
-          [pageSize]="pageSize"
-          [pageSizeOptions]="pageSizeOptions"
-          (page)="onPageChange($event)">
-        </mat-paginator>
-      </div>
-    </mat-card>
-  }
-
-  <!-- MODAL DETALLES -->
-  @if (colaboradorSeleccionado) {
-    <div class="modal-overlay" (click)="cerrarDetalles()">
-      <div class="modal-content modal-details" (click)="$event.stopPropagation()">
-
-        <!-- HEADER -->
-        <div class="modal-header">
-          <div class="form-header__left">
-            <div class="form-avatar">
-              <mat-icon>school</mat-icon>
-            </div>
-
-            <div class="form-titles">
-              <h2>Información del Colaborador</h2>
-              <p class="ga-subtitle">{{ colaboradorSeleccionado.nombre }}</p>
-            </div>
-          </div>
-
-          <button mat-icon-button class="close-btn" (click)="cerrarDetalles()">
-            <mat-icon>close</mat-icon>
-          </button>
-        </div>
-
-        <!-- BODY -->
-        <div class="modal-body details-body">
-
-          <!-- Chips -->
-          <div class="details-chips">
-            <span class="chip chip--primary">
-              <mat-icon>work</mat-icon>
-              <span>{{ colaboradorSeleccionado.cargo || 'Sin cargo' }}</span>
-            </span>
-
-            @if (colaboradorSeleccionado.rut) {
-              <span class="chip">
-                <mat-icon>badge</mat-icon>
-                <span>{{ colaboradorSeleccionado.rut }}</span>
-              </span>
-            }
-
-            @if (colaboradorSeleccionado.universidad_egreso) {
-              <span class="chip">
-                <mat-icon>school</mat-icon>
-                <span>{{ colaboradorSeleccionado.universidad_egreso }}</span>
-              </span>
-            }
-          </div>
-
-          <!-- Sección: Datos personales -->
-          <div class="details-section">
-            <div class="details-section__head">
-              <mat-icon>person</mat-icon>
-              <h3>Datos personales</h3>
-            </div>
-
-            <div class="details-grid details-grid--2">
-              <div class="kv">
-                <div class="k">Nombre completo</div>
-                <div class="v">{{ colaboradorSeleccionado.nombre }}</div>
-              </div>
-
-              <div class="kv">
-                <div class="k">RUT</div>
-                <div class="v">{{ colaboradorSeleccionado.rut || 'No especificado' }}</div>
-              </div>
-
-              <div class="kv kv--full">
-                <div class="k">Dirección</div>
-                <div class="v">{{ colaboradorSeleccionado.direccion || 'No especificada' }}</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Sección: Contacto -->
-          <div class="details-section">
-            <div class="details-section__head">
-              <mat-icon>contact_phone</mat-icon>
-              <h3>Contacto</h3>
-            </div>
-
-            <div class="contact-cards">
-              @if (colaboradorSeleccionado.telefono) {
-                <div class="contact-card">
-                  <mat-icon>call</mat-icon>
-                  <div>
-                    <div class="contact-label">Teléfono</div>
-                    <div class="contact-value">{{ colaboradorSeleccionado.telefono }}</div>
-                  </div>
-                </div>
-              }
-
-              @if (colaboradorSeleccionado.correo) {
-                <div class="contact-card">
-                  <mat-icon>email</mat-icon>
-                  <div>
-                    <div class="contact-label">Correo</div>
-                    <div class="contact-value">{{ colaboradorSeleccionado.correo }}</div>
-                  </div>
-                </div>
-              }
-
-              @if (!colaboradorSeleccionado.telefono && !colaboradorSeleccionado.correo) {
-                <div class="contact-card contact-card--empty">
-                  <mat-icon>info</mat-icon>
-                  <div>
-                    <div class="contact-label">Contacto</div>
-                    <div class="contact-value">No hay datos de contacto registrados.</div>
-                  </div>
-                </div>
-              }
-            </div>
-          </div>
-
-          <!-- Sección: Información laboral -->
-          <div class="details-section">
-            <div class="details-section__head">
-              <mat-icon>workspace_premium</mat-icon>
-              <h3>Información laboral</h3>
-            </div>
-
-            <div class="details-grid details-grid--2">
-              <div class="kv">
-                <div class="k">Cargo</div>
-                <div class="v">{{ colaboradorSeleccionado.cargo || 'No especificado' }}</div>
-              </div>
-
-              <div class="kv">
-                <div class="k">Universidad de egreso</div>
-                <div class="v">{{ colaboradorSeleccionado.universidad_egreso || 'No especificada' }}</div>
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-        <!-- ACTIONS -->
-        <div class="modal-actions">
-          <button mat-stroked-button (click)="cerrarDetalles()">Cerrar</button>
-
-          <button
-            mat-flat-button
-            color="primary"
-            (click)="editarColaborador(colaboradorSeleccionado!)"
-            *ngIf="!esSoloLectura">
-            <mat-icon>edit</mat-icon>
-            Editar colaborador
-          </button>
-        </div>
-
-      </div>
-    </div>
-  }
-
-
-  <!-- CONFIRMAR ELIMINAR -->
-  @if (mostrarConfirmarEliminar && colaboradorAEliminar) {
-    <div class="modal-overlay confirm-dialog">
-      <div class="dialog-overlay" (click)="cerrarConfirmarEliminar()" tabindex="0"></div>
-
-      <div class="dialog-content confirm-card" (keydown.escape)="cerrarConfirmarEliminar()">
-        <div class="confirm-header">
-          <div class="warn-icon"><mat-icon>warning_amber</mat-icon></div>
-          <h2>Confirmar eliminación</h2>
-        </div>
-
-        <div class="confirm-body">
-          <p>¿Estás seguro de que quieres eliminar a <b>{{ colaboradorAEliminar.nombre }}</b>?</p>
-          <p class="Muted">Esta acción no se puede deshacer.</p>
-        </div>
-
-        <div class="confirm-actions">
-          <button mat-stroked-button (click)="cerrarConfirmarEliminar()">Cancelar</button>
-          <button mat-flat-button color="warn" (click)="confirmarEliminar()" class="btn-danger">
-            <mat-icon>delete</mat-icon> Eliminar
-          </button>
-        </div>
-      </div>
-    </div>
-  }
-
-<!-- MODAL AGREGAR / EDITAR colaboradores -->
-  @if (mostrarFormulario) {
-    <div class="modal-overlay" (click)="cerrarModalColaborador()">
-      <div class="modal-content modal-colaborador" (click)="$event.stopPropagation()">
-
-        <!-- HEADER -->
-        <div class="modal-header">
-          <div class="form-header__left">
-            <div class="form-avatar">
+  <!-- FORMULARIO (colapsable por botón) -->
+  <div class="FormContainer" [class.FormOpen]="mostrarFormulario" *ngIf="!esSoloLectura">
+    @if (mostrarFormulario) {
+      <mat-card class="Elev FormCard">
+        <mat-card-header class="FormHeader">
+          <div class="FormTitleSection">
+            <div class="FormIcon">
               <mat-icon>{{ estaEditando ? 'edit' : 'person_add' }}</mat-icon>
             </div>
-
-            <div class="form-titles">
-              <h2>{{ estaEditando ? 'Editar colaborador' : 'Agregar colaborador' }}</h2>
-              <p class="ga-subtitle">
-                {{ estaEditando
-                  ? 'Modifica los datos del colaborador'
-                  : 'Completa los datos para registrar un nuevo colaborador'
-                }}
-              </p>
-            </div>
+          <div class="FormTitles">
+            <h2>{{ estaEditando ? 'Editar colaborador' : 'Agregar colaborador' }}</h2>
+            <p>{{ estaEditando ? 'Modifica los datos del colaborador' : 'Completa los datos para registrar un nuevo colaborador' }}</p>
           </div>
-
-          <button mat-icon-button class="close-btn" (click)="cerrarModalColaborador()">
+          </div>
+          <button mat-icon-button (click)="alternarFormulario()" class="CloseFormBtn">
             <mat-icon>close</mat-icon>
           </button>
-        </div>
+        </mat-card-header>
 
-        <!-- BODY -->
-        <div class="modal-body">
-          <form [formGroup]="formularioColaborador" class="form-grid">
-
-            <div class="form-row">
-              <mat-form-field appearance="outline">
+        <mat-card-content class="FormContent">
+          <form [formGroup]="formularioColaborador" class="FormGrid">
+            <div class="FormRow">
+              <mat-form-field appearance="outline" class="FormField">
                 <mat-label>Nombre completo *</mat-label>
-                <input matInput formControlName="nombre" />
+                <input matInput formControlName="nombre" placeholder="Ej: Juan Pérez" />
                 @if (formularioColaborador.get('nombre')?.invalid && formularioColaborador.get('nombre')?.touched) {
                   <mat-error>{{ getErrorNombre() }}</mat-error>
                 }
               </mat-form-field>
 
-              <mat-form-field appearance="outline">
+              <mat-form-field appearance="outline" class="FormField">
                 <mat-label>RUT *</mat-label>
-                <input matInput formControlName="rut" />
+                <input matInput formControlName="rut" placeholder="12.345.678-9" />
                 @if (formularioColaborador.get('rut')?.invalid && formularioColaborador.get('rut')?.touched) {
                   <mat-error>{{ getErrorRut() }}</mat-error>
                 }
               </mat-form-field>
             </div>
 
-            <div class="form-row">
-              <mat-form-field appearance="outline">
+            <div class="FormRow">
+              <mat-form-field appearance="outline" class="FormField">
                 <mat-label>Email</mat-label>
-                <input matInput formControlName="correo" />
+                <input matInput formControlName="correo" type="email" placeholder="correo@ejemplo.com" />
                 @if (formularioColaborador.get('correo')?.invalid && formularioColaborador.get('correo')?.touched) {
                   <mat-error>{{ getErrorCorreo() }}</mat-error>
                 }
               </mat-form-field>
 
-              <mat-form-field appearance="outline">
+              <mat-form-field appearance="outline" class="FormField">
                 <mat-label>Teléfono</mat-label>
-                <input matInput formControlName="telefono" />
+                <input matInput formControlName="telefono" placeholder="987654321" type="tel" />
                 @if (formularioColaborador.get('telefono')?.invalid && formularioColaborador.get('telefono')?.touched) {
                   <mat-error>{{ getErrorTelefono() }}</mat-error>
                 }
               </mat-form-field>
             </div>
 
-            <mat-form-field appearance="outline" class="full">
-              <mat-label>Dirección</mat-label>
-              <input matInput formControlName="direccion" />
-            </mat-form-field>
-
-            <div class="form-row">
-              <mat-form-field appearance="outline">
-                <mat-label>Cargo 1</mat-label>
-                <input matInput formControlName="cargo1" />
-              </mat-form-field>
-
-              <mat-form-field appearance="outline">
-                <mat-label>Cargo 2</mat-label>
-                <input matInput formControlName="cargo2" />
+            <div class="FormRow">
+              <mat-form-field appearance="outline" class="FormField FullWidth">
+                <mat-label>Dirección</mat-label>
+                <input matInput formControlName="direccion" placeholder="Calle 123, Comuna, Región" />
               </mat-form-field>
             </div>
 
-            <mat-form-field appearance="outline" class="full">
-              <mat-label>Universidad de egreso</mat-label>
-              <input matInput formControlName="universidad_egreso" />
-            </mat-form-field>
+            <div class="FormRow">
+              <mat-form-field appearance="outline" class="FormField">
+                <mat-label>Cargo 1</mat-label>
+                <input matInput formControlName="cargo1" placeholder="Ej: Profesor de Historia" />
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="FormField">
+                <mat-label>Cargo 2</mat-label>
+                <input matInput formControlName="cargo2" placeholder="Ej: Coordinador" />
+              </mat-form-field>
+            </div>
+
+            <div class="FormRow">
+              <mat-form-field appearance="outline" class="FormField FullWidth">
+                <mat-label>Universidad de egreso</mat-label>
+                <input matInput formControlName="universidad_egreso" placeholder="Universidad de Chile, PUC…" />
+              </mat-form-field>
+            </div>
           </form>
-        </div>
 
-        <!-- ACTIONS -->
-        <div class="modal-actions">
-          <button mat-stroked-button (click)="cerrarModalColaborador()">Cancelar</button>
-
-          <button
-            mat-flat-button
-            color="primary"
-            (click)="estaEditando ? actualizarColaborador() : agregarColaborador()"
-            [disabled]="formularioColaborador.invalid">
-            <mat-icon>{{ estaEditando ? 'save' : 'person_add' }}</mat-icon>
+        <div class="FormActions">
+          <button mat-stroked-button (click)="alternarFormulario()" class="CancelBtn">
+            Cancelar
+          </button>
+          <button mat-raised-button color="primary" (click)="estaEditando ? actualizarColaborador() : agregarColaborador()" [disabled]="formularioColaborador.invalid" class="SubmitBtn">
+            <mat-icon>{{ estaEditando ? 'save' : 'person_add' }}</mat-icon> 
             {{ estaEditando ? 'Guardar cambios' : 'Añadir' }}
           </button>
         </div>
+        </mat-card-content>
+      </mat-card>
+    }
+  </div>
 
-      </div>
+  <!-- LISTADO DE COLABORADORES -->
+  <mat-card class="Elev" *ngIf="totalItems > 0">
+    <mat-card-content class="ListContainer">
+      @if (cargando) {
+        <div style="text-align: center; padding: 2rem;">
+          <p class="Muted">Cargando colaboradores...</p>
+        </div>
+      } @else {
+        @for (c of colaboradores; track c.id) {
+        <div class="ListItem">
+          <div class="ItemContent">
+            <!-- Avatar y nombre -->
+            <div class="ItemMain">
+              <div class="ItemInfo">
+                <h3>{{ c.nombre }}</h3>
+                  <p class="Muted">{{ c.correo || 'Sin email' }}</p>
+                </div>
+            </div>
+
+            <!-- Cargo(s) -->
+            <div class="ItemRole">
+              @if (c.cargo) { <span>{{ c.cargo }}</span> } @else { <span class="Muted">Sin cargo</span> }
+            </div>
+
+            <!-- Acciones -->
+            <div class="ItemActions">
+              <button mat-icon-button color="accent" (click)="verDetalles(c)" title="Ver más información">
+                <mat-icon>visibility</mat-icon>
+              </button>
+              <button mat-icon-button color="primary" (click)="editarColaborador(c)" title="Editar" *ngIf="!esSoloLectura">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button mat-icon-button color="warn" (click)="eliminar(c)" title="Eliminar" *ngIf="!esSoloLectura">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+        }
+      }
+    </mat-card-content>
+
+    <!-- PAGINADOR -->
+    <div class="list-paginator">
+      <mat-paginator
+        [length]="totalItems"
+        [pageIndex]="pageIndex"
+        [pageSize]="pageSize"
+        [pageSizeOptions]="pageSizeOptions"
+        (page)="onPageChange($event)">
+      </mat-paginator>
     </div>
+  </mat-card>
+
+  <!-- EMPTY -->
+  @if (!cargando && totalItems === 0) {
+    <mat-card class="Elev Empty">
+      <mat-card-content class="Muted EmptyContent">
+        <mat-icon>group_off</mat-icon>
+        <p>No se encontraron colaboradores con los filtros seleccionados.</p>
+      </mat-card-content>
+    </mat-card>
   }
 
-</div>
+  <!-- DIALOGO DETALLES -->
+  <!-- DIALOGO DETALLES (nuevo diseño unificado) -->
+@if (colaboradorSeleccionado) {
+  <div class="DetailsDialog">
+    <div class="DialogOverlay" (click)="cerrarDetalles()"></div>
+
+    <div class="DialogContent DialogContent--details">
+      <!-- Header pro -->
+      <div class="DialogHeader DialogHeader--details">
+        <div class="DialogHeaderLeft">
+          <div class="DialogAvatar">
+            <mat-icon>badge</mat-icon>
+          </div>
+
+          <div class="DialogTitles">
+            <h2>Información del Colaborador</h2>
+            <div class="DialogSubtitle">
+              {{ colaboradorSeleccionado.nombre }}
+            </div>
+          </div>
+        </div>
+
+        <button mat-icon-button (click)="cerrarDetalles()" class="CloseBtn" aria-label="Cerrar detalles">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <div class="DialogBody">
+        <!-- Chips -->
+        <div class="DetailsTop">
+          <span class="Chip Chip--primary">
+            <mat-icon>work</mat-icon>
+            <span class="ChipText">{{ colaboradorSeleccionado.cargo || 'Sin cargo' }}</span>
+          </span>
+
+          <span class="Chip" *ngIf="colaboradorSeleccionado.rut">
+            <mat-icon>person</mat-icon>
+            <span class="ChipText">{{ colaboradorSeleccionado.rut }}</span>
+          </span>
+
+
+          <span class="Chip" *ngIf="colaboradorSeleccionado.universidad_egreso">
+            <mat-icon>school</mat-icon>
+            <span class="ChipText">{{ colaboradorSeleccionado.universidad_egreso }}</span>
+          </span>
+        </div>
+
+        <!-- Sección: Datos personales -->
+        <div class="DetailsSection">
+          <div class="SectionHead">
+            <mat-icon>person</mat-icon>
+            <h3>Datos personales</h3>
+          </div>
+
+          <div class="DetailsGrid DetailsGrid--2">
+            <div class="KV">
+              <div class="K">Nombre completo</div>
+              <div class="V">{{ colaboradorSeleccionado.nombre }}</div>
+            </div>
+
+            <div class="KV">
+              <div class="K">RUT</div>
+              <div class="V">{{ colaboradorSeleccionado.rut || 'No especificado' }}</div>
+            </div>
+
+            <div class="KV KV--full">
+              <div class="K">Dirección</div>
+              <div class="V">{{ colaboradorSeleccionado.direccion || 'No especificada' }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sección: Contacto -->
+        <div class="DetailsSection">
+          <div class="SectionHead">
+            <mat-icon>contact_phone</mat-icon>
+            <h3>Contacto</h3>
+          </div>
+
+          <div class="ContactCards">
+            <div class="ContactCard" *ngIf="colaboradorSeleccionado.telefono">
+              <mat-icon>call</mat-icon>
+              <div class="ContactMeta">
+                <div class="ContactLabel">Teléfono</div>
+                <div class="ContactValue">{{ colaboradorSeleccionado.telefono }}</div>
+              </div>
+            </div>
+
+            <div class="ContactCard" *ngIf="colaboradorSeleccionado.correo">
+              <mat-icon>email</mat-icon>
+              <div class="ContactMeta">
+                <div class="ContactLabel">Correo</div>
+                <div class="ContactValue">{{ colaboradorSeleccionado.correo }}</div>
+              </div>
+            </div>
+
+            <div class="ContactCard ContactCard--empty"
+                 *ngIf="!colaboradorSeleccionado.telefono && !colaboradorSeleccionado.correo">
+              <mat-icon>info</mat-icon>
+              <div class="ContactMeta">
+                <div class="ContactLabel">Contacto</div>
+                <div class="ContactValue">No hay datos de contacto registrados.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sección: Académico / Laboral -->
+        <div class="DetailsSection">
+          <div class="SectionHead">
+            <mat-icon>workspace_premium</mat-icon>
+            <h3>Información laboral</h3>
+          </div>
+
+          <div class="DetailsGrid DetailsGrid--2">
+            <div class="KV">
+              <div class="K">Cargo</div>
+              <div class="V">{{ colaboradorSeleccionado.cargo || 'No especificado' }}</div>
+            </div>
+
+            <div class="KV">
+              <div class="K">Universidad de egreso</div>
+              <div class="V">{{ colaboradorSeleccionado.universidad_egreso || 'No especificada' }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="DialogActions DialogActions--details">
+        <button mat-stroked-button (click)="cerrarDetalles()">Cerrar</button>
+        <button mat-raised-button color="primary"
+                (click)="editarColaborador(colaboradorSeleccionado!)"
+                *ngIf="!esSoloLectura">
+          <mat-icon>edit</mat-icon>
+          Editar colaborador
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- MODAL DE CONFIRMACIÓN (nuevo diseño igual al de Centros) -->
+@if (!esSoloLectura && mostrarConfirmarEliminar && colaboradorAEliminar) {
+  <div class="confirm-dialog">
+    <div class="dialog-overlay" (click)="cerrarConfirmarEliminar()" tabindex="0"></div>
+
+    <div class="dialog-content confirm-card" (keydown.escape)="cerrarConfirmarEliminar()">
+      <div class="confirm-header">
+        <div class="warn-icon"><mat-icon>warning_amber</mat-icon></div>
+        <h2>Confirmar eliminación</h2>
+      </div>
+
+      <div class="confirm-body">
+        <p>¿Estás seguro de que quieres eliminar a <b>{{ colaboradorAEliminar.nombre }}</b>?</p>
+        <p class="Muted">Esta acción no se puede deshacer.</p>
+      </div>
+
+      <div class="confirm-actions">
+        <button mat-stroked-button (click)="cerrarConfirmarEliminar()">Cancelar</button>
+        <button mat-flat-button color="warn" (click)="confirmarEliminar()" class="btn-danger">
+          <mat-icon>delete</mat-icon> Eliminar
+        </button>
+      </div>
+    </div>
+  </div>
+}
+

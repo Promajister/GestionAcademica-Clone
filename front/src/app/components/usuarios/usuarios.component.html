@@ -1,18 +1,15 @@
-<div class="ga-page ga-page--wide">
-  <!-- HEADER -->
-  <div class="ga-header">
-    <div>
-      <h1 class="ga-title">Gestión de Usuarios</h1>
-      <p class="ga-subtitle">Administra roles, permisos y accesos</p>
+<div class="container section">
+  <!-- ===== HEADER ===== -->
+  <div class="header">
+    <div class="headline">
+      <h1>Gestión de Usuarios</h1>
+      <p class="muted">Administra roles, permisos y accesos</p>
     </div>
 
-    <span class="ga-spacer"></span>
+    <div class="spacer"></div>
 
-    <button
-      mat-flat-button
-      color="primary"
-      class="ga-btn ga-btn--primary"
-      (click)="abrirNuevoUsuario()">
+    <!-- BOTÓN NUEVO USUARIO -->
+    <button mat-flat-button color="primary" class="btn-add" (click)="abrirNuevoUsuario()">
       <mat-icon>person_add</mat-icon>
       Nuevo Usuario
     </button>
@@ -22,86 +19,72 @@
   @if (loading) {
     <div class="loading-container">
       <mat-spinner diameter="50"></mat-spinner>
-      <p class="ga-subtitle">Cargando usuarios...</p>
+      <p>Cargando usuarios...</p>
     </div>
   } @else if (usuarios.length === 0) {
-    <mat-card class="ga-card">
-      <mat-card-content class="ga-empty">
+    <mat-card class="empty-card elev">
+      <mat-card-content class="empty-content">
         <mat-icon>people_outline</mat-icon>
         <h3>No se encontraron usuarios</h3>
         <p>No hay usuarios registrados en el sistema</p>
       </mat-card-content>
     </mat-card>
   } @else {
-    <mat-card class="ga-card users-card">
-      <!-- CABECERA -->
-      <div class="users-head">
-        <div>Usuario</div>
-        <div>Rol</div>
-        <div>Estado</div>
-        <div class="users-col--perms">Permisos</div>
-        <div class="users-col--actions">Acciones</div>
-      </div>
-
-      <mat-card-content class="ga-list">
+    <mat-card class="elev usuarios-card">
+      <mat-card-content class="list-container">
         @for (u of usuarios; track u.id) {
-          <div class="ga-row">
-            <div class="user-row">
-              <!-- Usuario -->
-              <div class="user-main">
-                <div class="user-avatar">
-                  {{ (u.nombre || '?').trim().slice(0,1).toUpperCase() }}
-                </div>
-
-                <div class="user-info">
-                  <div class="user-name truncate">{{ u.nombre }}</div>
-                  <div class="user-mail truncate ga-subtitle">{{ u.email }}</div>
+          <div class="list-item">
+            <div class="item-content">
+              <!-- Información principal -->
+              <div class="item-main">
+                <div class="item-info">
+                  <h3>{{ u.nombre }}</h3>
+                  <p class="muted">{{ u.email }}</p>
                 </div>
               </div>
 
               <!-- Rol -->
-              <div class="user-role">
-                <span class="ga-pill role-pill" [style.background]="roleColor(u.role)">
+              <div class="item-role">
+                <span class="role-badge" [style.background]="roleColor(u.role)">
                   {{ roleLabel(u.role) }}
                 </span>
               </div>
 
               <!-- Estado -->
-              <div class="user-status">
-                <span class="ga-pill" [ngClass]="u.activo ? 'pill-ok' : 'pill-bad'">
-                  <mat-icon class="pill-icn">{{ u.activo ? 'check_circle' : 'cancel' }}</mat-icon>
+              <div class="item-status">
+                <div class="pill" [ngClass]="getEstadoPillClass(u.activo)">
                   {{ u.activo ? 'Activo' : 'Inactivo' }}
-                </span>
+                </div>
               </div>
 
-              <!-- Permisos -->
-              <div class="user-perms users-col--perms">
+              <!-- Permisos (solo lectura, derivados del rol) -->
+              <div class="item-permissions">
+                @let permisos = (u.rol?.permisos ?? []);
+
                 <div class="chips">
-                  @if ((u.rol?.permisos?.length ?? 0) > 0) {
-                    @for (p of getPermisosVisibles((u.rol?.permisos ?? []), u.id); track p.id) {
+                  @if (permisos.length > 0) {
+                    @for (p of getPermisosVisibles(permisos, u.id); track p.id) {
                       <span class="chip chip-small">{{ label(p) }}</span>
                     }
 
-                    @if ((u.rol?.permisos?.length ?? 0) > 3) {
+                    @if (permisos.length > 3) {
                       <button
                         mat-button
                         class="chip-link"
-                        type="button"
-                        (click)="togglePermisos(u.id)">
-                        {{ isPermisosExpandidos(u.id)
-                          ? 'Ver menos'
-                          : 'Ver más (' + ((u.rol?.permisos?.length ?? 0) - 3) + ')' }}
+                        (click)="togglePermisos(u.id)"
+                        type="button">
+                        {{ isPermisosExpandidos(u.id) ? 'Ver menos' : 'Ver más (' + (permisos.length - 3) + ')' }}
                       </button>
                     }
                   } @else {
-                    <span class="chip chip-small ga-subtitle">Sin permisos</span>
+                    <span class="chip chip-small muted">Sin permisos</span>
                   }
                 </div>
               </div>
 
 
               <!-- Acciones -->
-              <div class="user-actions">
+              <div class="item-actions">
                 <button mat-icon-button color="primary" (click)="editarUsuario(u)" title="Editar">
                   <mat-icon>edit</mat-icon>
                 </button>
@@ -118,8 +101,7 @@
     </mat-card>
   }
 
-
-  <!-- MODAL CREAR/EDITAR USUARIO -->
+  <!-- MODAL CREAR/EDITAR USUARIO (se mantiene igual) -->
   @if (mostrarModalUsuario) {
     <div class="modal-overlay" (click)="cerrarModalUsuario()">
       <div class="modal-content" (click)="$event.stopPropagation()">
@@ -156,11 +138,8 @@
 
             <mat-form-field appearance="outline" class="form-field">
               <mat-label>Contraseña {{ usuarioEditando ? '(dejar vacío para no cambiar)' : '*' }}</mat-label>
-              <input
-                matInput
-                type="password"
-                formControlName="password"
-                [placeholder]="usuarioEditando ? 'Nueva contraseña (opcional)' : 'Mínimo 4 caracteres'" />
+              <input matInput type="password" formControlName="password"
+                     [placeholder]="usuarioEditando ? 'Nueva contraseña (opcional)' : 'Mínimo 4 caracteres'" />
               @if (formularioUsuario.get('password')?.hasError('required') && formularioUsuario.get('password')?.touched && !usuarioEditando) {
                 <mat-error>La contraseña es requerida</mat-error>
               }
@@ -213,20 +192,17 @@
             <mat-icon>{{ seCambioPassword() ? 'lock' : 'edit' }}</mat-icon>
           </div>
           <h2>
-            @if (seCambioPassword()) { Confirmar cambio de contraseña }
-            @else { Confirmar cambios }
+            @if (seCambioPassword()) { Confirmar cambio de contraseña } @else { Confirmar cambios }
           </h2>
         </div>
 
         <div class="confirm-body">
           @if (seCambioPassword()) {
             <p>¿Estás seguro de que quieres cambiar la contraseña del usuario <b>{{ datosPendientes?.nombre || usuarioEditando?.nombre }}</b>?</p>
-            <p class="ga-subtitle">El usuario deberá usar la nueva contraseña para iniciar sesión.</p>
+            <p class="Muted">El usuario deberá usar la nueva contraseña para iniciar sesión.</p>
           } @else {
             <p>¿Estás seguro de que quieres {{ usuarioEditando ? 'actualizar' : 'crear' }} el usuario <b>{{ datosPendientes?.nombre || usuarioEditando?.nombre }}</b>?</p>
-            @if (usuarioEditando) {
-              <p class="ga-subtitle">Los cambios se aplicarán inmediatamente.</p>
-            }
+            @if (usuarioEditando) { <p class="Muted">Los cambios se aplicarán inmediatamente.</p> }
           }
         </div>
 
@@ -299,5 +275,3 @@
     </div>
   }
 </div>
-
-

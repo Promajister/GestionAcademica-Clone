@@ -108,13 +108,13 @@ async function seedRolesYPermisos() {
     }),
     prisma.rol.upsert({
       where: { clave: 'vinculacion' },
-      update: { nombre: 'Coordinación de Vinculación' },
-      create: { clave: 'vinculacion', nombre: 'Coordinación de Vinculación' },
+      update: { nombre: 'Coordinacion de Vinculacion' },
+      create: { clave: 'vinculacion', nombre: 'Coordinacion de Vinculacion' },
     }),
     prisma.rol.upsert({
       where: { clave: 'practicas' },
-      update: { nombre: 'Coordinación de Prácticas' },
-      create: { clave: 'practicas', nombre: 'Coordinación de Prácticas' },
+      update: { nombre: 'Coordinacion de Practicas' },
+      create: { clave: 'practicas', nombre: 'Coordinacion de Practicas' },
     }),
   ]);
 
@@ -275,14 +275,14 @@ async function main() {
     ensureUsuario(
       'vinculacion@uta.cl',
       hashed,
-      'Coordinación de Vinculación',
+      'Coordinacion de Vinculacion',
       'vinculacion',
       rolVinculacion.id,
     ),
     ensureUsuario(
       'practicas@uta.cl',
       hashed,
-      'Coordinación de Prácticas',
+      'Coordinacion de Practicas',
       'practicas',
       rolPracticas.id,
     ),
