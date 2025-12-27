@@ -1,704 +1,763 @@
-<div class="Container Section">
+<div class="ga-page ga-page--wide practicas">
+
   <!-- HEADER -->
-  <div class="Header">
-    <div class="Headline">
-      <h1>Asignación de Prácticas</h1>
-      <p class="Muted"></p>
+  <div class="ga-header">
+    <div>
+      <h1 class="ga-title">Asignación de Prácticas</h1>
+      <p class="ga-subtitle">Gestiona asignaciones, revisa detalles y agrega observaciones.</p>
     </div>
 
-    <div class="Spacer"></div>
+    <span class="ga-spacer"></span>
 
-    <!-- BOTÓN NUEVA ASIGNACIÓN -->
-    <button mat-flat-button color="primary" (click)="abrirNuevaAsignacion()" class="BtnAdd">
+    <button mat-flat-button color="primary" class="ga-btn ga-btn--primary" (click)="abrirNuevaAsignacion()">
       <mat-icon>person_add</mat-icon>
-      Nueva Asignación
+      Nueva asignación
     </button>
   </div>
 
-  <!-- FILTROS DE BÚSQUEDA -->
-  <mat-card class="FiltersCard Elev">
+  <!-- FILTROS -->
+  <mat-card class="ga-card filtros">
     <mat-card-header>
-      <mat-card-title>
+      <mat-card-title class="filtros__title">
         <mat-icon>search</mat-icon>
-        Filtros de Búsqueda
+        Filtros de búsqueda
       </mat-card-title>
     </mat-card-header>
+
     <mat-card-content>
-      <div class="FiltersGrid">
-        <mat-form-field appearance="outline" class="SearchField">
+      <div class="filtros__grid filtros__grid--3">
+        <mat-form-field appearance="outline">
           <mat-label>Buscar</mat-label>
-          <input matInput [(ngModel)]="terminoBusqueda" (ngModelChange)="onFiltersChange()" placeholder="Nombre, RUT o centro..." />
+          <input
+            matInput
+            [(ngModel)]="terminoBusqueda"
+            (keyup.enter)="onFiltersChange()"
+            placeholder="Nombre, RUT, centro o colaborador..." />
           <mat-icon matSuffix>search</mat-icon>
         </mat-form-field>
-        
-        <!-- Nuevo filtro: Nivel (Plan) -->
-        <mat-form-field appearance="outline" class="FilterField">
+
+        <mat-form-field appearance="outline">
           <mat-label>Nivel</mat-label>
-          <mat-select [(ngModel)]="nivelSeleccionado" (ngModelChange)="onFiltersChange()">
+          <mat-select [(ngModel)]="nivelSeleccionado" (selectionChange)="onFiltersChange()">
             <mat-option value="all">Todos los niveles</mat-option>
-            @for (n of niveles; track n) {
-              <mat-option [value]="n">{{ n }}</mat-option>
-            }
+            <mat-option *ngFor="let n of niveles" [value]="n">{{ n }}</mat-option>
           </mat-select>
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="FilterField">
-          <mat-label>Tipo de Centro Educativo</mat-label>
-          <mat-select [(ngModel)]="colegioSeleccionado" (ngModelChange)="onFiltersChange()">
-            <mat-select-trigger>
-              {{ colegioSeleccionado === 'all' ? 'Todos los tipos' : (colegioSeleccionado | lowercase) }}
-            </mat-select-trigger>
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo de Centro</mat-label>
+          <mat-select [(ngModel)]="colegioSeleccionado" (selectionChange)="onFiltersChange()">
             <mat-option value="all">Todos los tipos</mat-option>
-            @for (t of tiposCentro; track t) {
-              <mat-option [value]="t">{{ t | lowercase }}</mat-option>
-            }
+            <mat-option *ngFor="let t of tiposCentro" [value]="t">{{ formatearTipoCentro(t) }}</mat-option>
           </mat-select>
         </mat-form-field>
+      </div>
+
+      <div class="filtros__actions">
+        <button mat-stroked-button color="primary" (click)="onFiltersChange()">
+          <mat-icon>refresh</mat-icon>
+          Aplicar filtros
+        </button>
+
+        <button mat-button type="button" (click)="limpiarFiltros()">
+          <mat-icon>close</mat-icon>
+          Limpiar filtros
+        </button>
       </div>
     </mat-card-content>
   </mat-card>
 
-  <!-- FORMULARIO (colapsable por botón) -->
-  <div class="FormContainer" [class.FormOpen]="mostrarFormulario">
-    @if (mostrarFormulario) {
-      <mat-card class="Elev FormCard">
-        <mat-card-header class="FormHeader">
-          <div class="FormTitleSection">
-            <div class="FormIcon">
-              <mat-icon>person_add</mat-icon>
+  <!-- ESTADOS -->
+  <mat-card class="ga-card" *ngIf="isLoading">
+    <mat-card-content class="loading-container">
+      <mat-spinner diameter="36"></mat-spinner>
+      <p class="ga-subtitle">Cargando prácticas…</p>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="ga-card ga-empty" *ngIf="!isLoading && totalItems === 0">
+    <mat-card-content class="ga-empty">
+      <mat-icon>assignment_turned_in</mat-icon>
+      <h3>No se encontraron asignaciones</h3>
+      <p>No hay prácticas que coincidan con los filtros seleccionados.</p>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- LISTADO -->
+  <mat-card class="ga-card" *ngIf="!isLoading && totalItems > 0">
+    <mat-card-content class="ga-list">
+      <div class="ga-row row"
+           *ngFor="let p of asignacionesPaginadas; trackBy: trackByPracticaId"
+           (click)="verDetalles(p)">
+        <div class="row__content">
+
+          <!-- Col 1: Estudiante -->
+          <div class="cell">
+            <div class="title truncate">{{ p.estudiante?.nombre || 'Sin nombre' }}</div>
+
+            <div class="meta ga-subtitle">
+              <mat-icon>badge</mat-icon>
+              <span class="truncate">RUT: {{ p.estudiante?.rut || '—' }}</span>
             </div>
-            <div class="FormTitles">
-              <h2>Asignar Nueva Práctica</h2>
-              <p>Completa los datos para asignar una práctica a un estudiante</p>
+
+            <div class="meta ga-subtitle" *ngIf="p.estudiante?.nivel">
+              <mat-icon>school</mat-icon>
+              <span class="truncate">{{ p.estudiante?.nivel }}</span>
+            </div>
+
+            <div class="meta ga-subtitle" *ngIf="p.tipo">
+              <mat-icon>work</mat-icon>
+              <span class="truncate">{{ p.tipo }}</span>
             </div>
           </div>
-          <button mat-icon-button (click)="cerrarFormulario()" class="CloseFormBtn">
+
+          <!-- Col 2: Centro -->
+          <div class="cell">
+            <div class="title truncate">{{ p.centro?.nombre || 'Sin centro' }}</div>
+
+            <div class="meta ga-subtitle">
+              <mat-icon>account_balance</mat-icon>
+              <span class="truncate">{{ formatearTipoCentro(p.centro?.tipo) }}</span>
+            </div>
+
+            <div class="meta ga-subtitle">
+              <mat-icon>place</mat-icon>
+              <span class="truncate">
+                {{ p.centro?.comuna || '—' }}<span *ngIf="p.centro?.comuna && p.centro?.region">, </span>{{ p.centro?.region || '' }}
+              </span>
+            </div>
+
+            <div class="meta ga-subtitle" *ngIf="p.centro?.direccion">
+              <mat-icon>map</mat-icon>
+              <span class="truncate">{{ p.centro?.direccion }}</span>
+            </div>
+          </div>
+
+          <!-- Col 3: Estado / Fechas / Acciones -->
+          <div class="cell cell--actions" (click)="$event.stopPropagation()">
+
+            <span class="ga-pill"
+                  [ngClass]="(p.estado || '').toLowerCase()">
+              {{ formatearEstado(p.estado) }}
+            </span>
+
+            <div class="dates">
+              <mat-icon>event</mat-icon>
+              <span class="truncate">
+                {{ p.fechaInicio }}{{ p.fechaTermino ? ' - ' + p.fechaTermino : ' - Sin término' }}
+              </span>
+            </div>
+
+            <button mat-stroked-button class="ver-btn" type="button" (click)="verDetalles(p)">
+              <mat-icon>visibility</mat-icon>
+              Ver
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </mat-card-content>
+
+    <div class="ga-paginator" *ngIf="totalItems > 0">
+      <mat-paginator
+        [length]="totalItems"
+        [pageIndex]="pageIndex"
+        [pageSize]="pageSize"
+        [pageSizeOptions]="pageSizeOptions"
+        (page)="onPageChange($event)">
+      </mat-paginator>
+    </div>
+  </mat-card>
+
+  <!-- =========================
+        MODAL: NUEVA ASIGNACIÓN
+  ========================== -->
+  <ng-container *ngIf="mostrarFormulario">
+    <div class="modal-overlay" (click)="cerrarFormulario()" tabindex="0">
+      <div class="modal-content modal-practica" (click)="$event.stopPropagation()"
+           role="dialog" aria-modal="true">
+
+        <div class="modal-header">
+          <div class="form-header__left">
+            <div class="form-avatar">
+              <mat-icon>assignment_ind</mat-icon>
+            </div>
+
+            <div class="form-titles">
+              <h2>Asignar práctica</h2>
+              <p class="ga-subtitle">Completa los datos obligatorios marcados con *</p>
+            </div>
+          </div>
+
+          <button mat-icon-button class="close-btn" (click)="cerrarFormulario()">
             <mat-icon>close</mat-icon>
           </button>
-        </mat-card-header>
+        </div>
 
-        <mat-card-content class="FormContent">
-          <form [formGroup]="formularioPractica" class="FormGrid">
-            
-            <!-- Información del Estudiante -->
-            <div class="FormRow">
-              <mat-form-field appearance="outline" class="FormField">
+        <div class="modal-body">
+          <form [formGroup]="formularioPractica" class="form-grid">
+
+            <!-- Estudiante / Centro -->
+            <div class="form-row">
+              <mat-form-field appearance="outline">
                 <mat-label>Estudiante *</mat-label>
-                <input matInput 
-                       placeholder="Escriba nombre o RUT del estudiante..."
-                       (input)="filtrarEstudiantes($event)"
-                       (focus)="mostrarTodosEstudiantes()
-                       "
-                       [matAutocomplete]="autoEstudiante"
-                       formControlName="estudianteRut">
-                <mat-autocomplete #autoEstudiante="matAutocomplete" 
-                                  [displayWith]="mostrarEstudiante.bind(this)"
-                                  (optionSelected)="onEstudianteSeleccionado($event)">
-                  @for (estudiante of estudianteFiltrado; track estudiante.rut) {
-                    <mat-option [value]="estudiante">
-                      {{ estudiante.nombre }} - {{ estudiante.rut }}
-                    </mat-option>
-                  }
+                <input
+                  type="text"
+                  matInput
+                  [matAutocomplete]="autoEst"
+                  formControlName="estudiante"
+                  placeholder="Busca por nombre o RUT" />
+                <mat-autocomplete #autoEst="matAutocomplete" [displayWith]="displayEstudiante">
+                  <mat-option *ngFor="let e of estudiantesFiltrados$ | async" [value]="e">
+                    {{ e.nombre }} — {{ e.rut }}
+                  </mat-option>
                 </mat-autocomplete>
-                @if (formularioPractica.get('estudianteRut')?.hasError('required')) {
-                  <mat-error>
-                    Debe seleccionar un estudiante
-                  </mat-error>
-                }
+
+                <mat-error *ngIf="formularioPractica.get('estudiante')?.hasError('required')">
+                  El estudiante es obligatorio
+                </mat-error>
+                <mat-error *ngIf="formularioPractica.get('estudiante')?.hasError('autocomplete')">
+                  Debes seleccionar un estudiante de la lista
+                </mat-error>
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="FormField">
-                <mat-label>Centro Educativo *</mat-label>
-                <input matInput 
-                       placeholder="Escriba nombre, comuna o región del centro..."
-                       (input)="filtrarCentros($event)"
-                       (focus)="mostrarTodosCentros()"
-                       [matAutocomplete]="autoCentro"
-                       formControlName="centroId">
-                <mat-autocomplete #autoCentro="matAutocomplete" 
-                                  [displayWith]="mostrarCentro.bind(this)"
-                                  (optionSelected)="onCentroSeleccionado($event)">
-                  @for (centro of centroFiltrado; track centro.id) {
-                    <mat-option [value]="centro">
-                      {{ centro.nombre }} - {{ centro.comuna }}, {{ centro.region }}
-                    </mat-option>
-                  }
+              <mat-form-field appearance="outline">
+                <mat-label>Centro educativo *</mat-label>
+                <input
+                  type="text"
+                  matInput
+                  [matAutocomplete]="autoCentro"
+                  formControlName="centro" 
+                  placeholder="Busca por nombre" />
+                <mat-autocomplete #autoCentro="matAutocomplete" [displayWith]="displayCentro">
+                  <mat-option *ngFor="let c of centrosFiltrados$ | async" [value]="c">
+                    {{ c.nombre }} — {{ c.comuna }}, {{ c.region }}
+                  </mat-option>
                 </mat-autocomplete>
-                @if (formularioPractica.get('centroId')?.hasError('required')) {
-                  <mat-error>
-                    Debe seleccionar un centro educativo
-                  </mat-error>
-                }
+
+                <mat-error *ngIf="formularioPractica.get('centro')?.hasError('required')">
+                  El centro es obligatorio
+                </mat-error>
+                <mat-error *ngIf="formularioPractica.get('centro')?.hasError('autocomplete')">
+                  Debes seleccionar un centro de la lista
+                </mat-error>
               </mat-form-field>
             </div>
 
             <!-- Colaboradores -->
-            <div class="FormRow">
-              <mat-form-field appearance="outline" class="FormField">
+            <div class="form-row">
+              <mat-form-field appearance="outline">
                 <mat-label>Colaborador 1 *</mat-label>
-                <mat-select formControlName="colaborador1Id">
-                  <mat-option [value]="null">Seleccionar colaborador...</mat-option>
-                  @for (colaborador of colaboradores; track colaborador.id) {
-                    <mat-option
-                      [value]="colaborador.id"
-                      [disabled]="isColaboradorSeleccionado(colaborador.id, 'colaborador1Id')">
-                      {{ colaborador.nombre }}
-                    </mat-option>
-                  }
-                </mat-select>
-                @if (formularioPractica.get('colaborador1Id')?.hasError('required')) {
-                  <mat-error>Debes seleccionar al menos un colaborador</mat-error>
-                }
+                <input
+                  type="text"
+                  matInput
+                  [matAutocomplete]="autoCol1"
+                  formControlName="colaborador1"
+                  placeholder="Busca por nombre o RUT" />
+                <mat-autocomplete #autoCol1="matAutocomplete" [displayWith]="displayColaborador">
+                  <mat-option
+                    *ngFor="let c of colaboradores1Filtrados$ | async"
+                    [value]="c"
+                    [disabled]="isColaboradorDisabled(c, 'colaborador1')">
+                    {{ c.nombre }} — {{ c.rut }}
+                  </mat-option>
+                </mat-autocomplete>
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="FormField">
-                <mat-label>Colaborador 2 (opcional)</mat-label>
-                <mat-select formControlName="colaborador2Id">
-                  <mat-option [value]="null">Sin asignar</mat-option>
-                  @for (colaborador of colaboradores; track colaborador.id) {
-                    <mat-option
-                      [value]="colaborador.id"
-                      [disabled]="isColaboradorSeleccionado(colaborador.id, 'colaborador2Id')">
-                      {{ colaborador.nombre }}{{ colaborador.cargo ? ' (' + colaborador.cargo + ')' : '' }}
-                    </mat-option>
-                  }
-                </mat-select>
-                <mat-hint align="start">Puedes registrar hasta 2 colaboradores.</mat-hint>
+              <mat-form-field appearance="outline">
+                <mat-label>Colaborador 2</mat-label>
+                <input
+                  type="text"
+                  matInput
+                  [matAutocomplete]="autoCol2"
+                  formControlName="colaborador2"
+                  placeholder="Opcional" />
+                <mat-autocomplete #autoCol2="matAutocomplete" [displayWith]="displayColaborador">
+                  <mat-option
+                    *ngFor="let c of colaboradores2Filtrados$ | async"
+                    [value]="c"
+                    [disabled]="isColaboradorDisabled(c, 'colaborador2')">
+                    {{ c.nombre }} — {{ c.rut }}
+                  </mat-option>
+                </mat-autocomplete>
               </mat-form-field>
             </div>
 
-            <!-- Tutores -->
-            <div class="FormRow">
-              <mat-form-field appearance="outline" class="FormField">
+            <!-- Tutores (Tutor + Rol al lado) -->
+            <div class="form-row form-row--tutores">
+
+              <!-- Tutor 1 (obligatorio) -->
+              <mat-form-field appearance="outline">
                 <mat-label>Tutor 1 *</mat-label>
-                <mat-select formControlName="tutor1Id">
-                  <mat-option [value]="null">Seleccionar tutor...</mat-option>
-                  @for (tutor of tutores; track tutor.id) {
-                    <mat-option
-                      [value]="tutor.id"
-                      [disabled]="isTutorSeleccionado(tutor.id, 'tutor1Id')">
-                      {{ tutor.nombre }}
-                    </mat-option>
-                  }
-                </mat-select>
-                @if (formularioPractica.get('tutor1Id')?.hasError('required')) {
-                  <mat-error>Debes seleccionar al menos un tutor</mat-error>
-                }
+                <input
+                  type="text"
+                  matInput
+                  [matAutocomplete]="autoTut1"
+                  formControlName="tutor1"
+                  placeholder="Busca por nombre o RUT" />
+                <mat-autocomplete #autoTut1="matAutocomplete" [displayWith]="displayTutor">
+                  <mat-option *ngFor="let t of tutores1Filtrados$ | async" [value]="t"
+                              [disabled]="isTutorDisabled(t, 'tutor1')">
+                    {{ t.nombre }} — {{ t.rut }}
+                  </mat-option>
+                </mat-autocomplete>
+
+                <mat-error *ngIf="formularioPractica.get('tutor1')?.hasError('required')">
+                  El Tutor 1 es obligatorio
+                </mat-error>
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="FormField">
+              <!-- Rol Tutor 1 (obligatorio) -->
+              <mat-form-field appearance="outline">
                 <mat-label>Rol Tutor 1 *</mat-label>
                 <mat-select formControlName="tutor1Rol">
-                  <mat-option [value]="''" disabled>Seleccionar rol</mat-option>
-                  @for (rol of rolesTutor; track rol) {
-                    <mat-option [value]="rol">{{ rol }}</mat-option>
-                  }
+                  <mat-option *ngFor="let r of rolesTutor" [value]="r">{{ r }}</mat-option>
                 </mat-select>
-                @if (formularioPractica.get('tutor1Rol')?.hasError('required')) {
-                  <mat-error>Debes indicar un rol para el tutor</mat-error>
-                }
-              </mat-form-field>
-            </div>
-
-            <div class="FormRow">
-              <mat-form-field appearance="outline" class="FormField">
-                <mat-label>Tutor 2 (opcional)</mat-label>
-                <mat-select formControlName="tutor2Id">
-                  <mat-option [value]="null">Sin asignar</mat-option>
-                  @for (tutor of tutores; track tutor.id) {
-                    <mat-option
-                      [value]="tutor.id"
-                      [disabled]="isTutorSeleccionado(tutor.id, 'tutor2Id')">
-                      {{ tutor.nombre }}
-                    </mat-option>
-                  }
-                </mat-select>
+                <mat-error *ngIf="formularioPractica.get('tutor1Rol')?.hasError('required')">
+                  El rol del Tutor 1 es obligatorio
+                </mat-error>
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="FormField">
+              <!-- Tutor 2 (opcional) -->
+              <mat-form-field appearance="outline">
+                <mat-label>Tutor 2</mat-label>
+                <input
+                  type="text"
+                  matInput
+                  [matAutocomplete]="autoTut2"
+                  formControlName="tutor2"
+                  placeholder="Opcional" />
+                <mat-autocomplete #autoTut2="matAutocomplete" [displayWith]="displayTutor">
+                  <mat-option *ngFor="let t of tutores2Filtrados$ | async" [value]="t"
+                              [disabled]="isTutorDisabled(t, 'tutor2')">
+                    {{ t.nombre }} — {{ t.rut }}
+                  </mat-option>
+                </mat-autocomplete>
+              </mat-form-field>
+
+              <!-- Rol Tutor 2 (NO obligatorio, y solo habilitado si hay Tutor 2) -->
+              <mat-form-field appearance="outline">
                 <mat-label>Rol Tutor 2</mat-label>
                 <mat-select formControlName="tutor2Rol">
-                  <mat-option [value]="''">Sin rol asignado</mat-option>
-                  @for (rol of rolesTutor; track rol) {
-                    <mat-option [value]="rol">{{ rol }}</mat-option>
-                  }
+                  <mat-option *ngFor="let r of rolesTutor" [value]="r">{{ r }}</mat-option>
                 </mat-select>
-                @if (formularioPractica.get('tutor2Rol')?.hasError('required')) {
-                  <mat-error>Indica el rol para el tutor seleccionado</mat-error>
-                }
+
+                <mat-hint *ngIf="!formularioPractica.get('tutor2')?.value">
+                  Selecciona Tutor 2 para habilitar el rol
+                </mat-hint>
+
+                <mat-error *ngIf="formularioPractica.get('tutor2Rol')?.hasError('required')">
+                  El rol del Tutor 2 es obligatorio si seleccionas Tutor 2
+                </mat-error>
+              </mat-form-field>
+
+            </div>
+            
+            <!-- Fechas / Tipo / Estado -->
+            <div class="form-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Fecha inicio *</mat-label>
+                <input matInput [matDatepicker]="dpInicio" formControlName="fecha_inicio" />
+                <mat-datepicker-toggle matSuffix [for]="dpInicio"></mat-datepicker-toggle>
+                <mat-datepicker #dpInicio></mat-datepicker>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Fecha término</mat-label>
+                <input matInput [matDatepicker]="dpTermino" formControlName="fecha_termino" />
+                <mat-datepicker-toggle matSuffix [for]="dpTermino"></mat-datepicker-toggle>
+                <mat-datepicker #dpTermino></mat-datepicker>
               </mat-form-field>
             </div>
 
-            <!-- Fechas y Estado -->
-            <div class="FormRow">
-              <mat-form-field appearance="outline" class="FormField">
-                <mat-label>Fecha de Inicio *</mat-label>
-                <input matInput [matDatepicker]="pickerInicio" formControlName="fecha_inicio">
-                <mat-datepicker-toggle matIconSuffix [for]="pickerInicio"></mat-datepicker-toggle>
-                <mat-datepicker #pickerInicio></mat-datepicker>
-                @if (formularioPractica.get('fecha_inicio')?.hasError('required')) {
-                  <mat-error>
-                    Debe seleccionar una fecha de inicio
-                  </mat-error>
-                }
-              </mat-form-field>
-
-              <mat-form-field appearance="outline" class="FormField">
-                <mat-label>Fecha de Término</mat-label>
-                <input matInput [matDatepicker]="pickerTermino" formControlName="fecha_termino" [min]="fechaMinimaTermino">
-                <mat-datepicker-toggle matIconSuffix [for]="pickerTermino"></mat-datepicker-toggle>
-                <mat-datepicker #pickerTermino></mat-datepicker>
-                @if (formularioPractica.get('fecha_termino')?.hasError('fechaAnterior')) {
-                  <mat-error>
-                    La fecha de término no puede ser anterior a la fecha de inicio
-                  </mat-error>
-                }
-              </mat-form-field>
-            </div>
-
-            <!-- Tipo y Estado -->
-            <div class="FormRow">
-              <mat-form-field appearance="outline" class="FormField">
-                <mat-label>Tipo de Práctica</mat-label>
+            <div class="form-row">
+              <mat-form-field appearance="outline">
+                <mat-label>Tipo de práctica</mat-label>
                 <mat-select formControlName="tipo">
-                  <mat-option [value]="null">Sin especificar</mat-option>
-                  @for (tipo of tiposPractica; track tipo) {
-                    <mat-option [value]="tipo">{{ tipo }}</mat-option>
-                  }
+                  <mat-option value="">Sin especificar</mat-option>
+                  <mat-option *ngFor="let t of tiposPractica" [value]="t">{{ t }}</mat-option>
                 </mat-select>
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="FormField">
+              <mat-form-field appearance="outline">
                 <mat-label>Estado</mat-label>
                 <mat-select formControlName="estado">
-                  @for (estado of estadosPractica; track estado) {
-                    <mat-option [value]="estado">
-                      {{ formatearEstado(estado) }}
-                    </mat-option>
-                  }
+                  <mat-option *ngFor="let e of estadosPractica" [value]="e">{{ formatearEstado(e) }}</mat-option>
                 </mat-select>
               </mat-form-field>
             </div>
 
           </form>
+        </div>
 
-          <div class="FormActions">
-            <button mat-stroked-button (click)="cerrarFormulario()" class="CancelBtn">
-              Cancelar
-            </button>
-            <button mat-raised-button color="primary" (click)="guardarPractica()" class="SubmitBtn">
-              <mat-icon>person_add</mat-icon>
-              Asignar Práctica
-            </button>
+        <div class="modal-actions">
+          <button mat-stroked-button (click)="cerrarFormulario()">Cancelar</button>
+          <button mat-flat-button color="primary" (click)="guardarPractica()">
+            <mat-icon>save</mat-icon>
+            Guardar
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- =========================
+        MODAL: DETALLES
+  ========================== -->
+  <ng-container *ngIf="mostrarModalDetalles && practicaSeleccionada">
+    <div class="modal-overlay" (click)="cerrarDetalles()" tabindex="0">
+      <div class="modal-content modal-details" (click)="$event.stopPropagation()"
+           role="dialog" aria-modal="true">
+
+        <div class="modal-header">
+          <div class="form-header__left">
+            <div class="form-avatar form-avatar--details">
+              <mat-icon>info</mat-icon>
+            </div>
+
+            <div class="form-titles">
+              <h2>Detalles de la práctica</h2>
+              <p class="ga-subtitle">
+                {{ practicaSeleccionada.estudiante?.nombre }} · {{ practicaSeleccionada.centro?.nombre }}
+              </p>
+            </div>
           </div>
-        </mat-card-content>
-      </mat-card>
-    }
-  </div>
 
-  <!-- LISTADO DE ASIGNACIONES -->
-  <div class="AssignmentsList" *ngIf="totalItems > 0">
-    @for (assignment of asignacionesPaginadas; track assignment.id) {
-      <mat-card class="AssignmentCard Elev">
-        <mat-card-content>
-          <div class="AssignmentContent">
-            <!-- Información del estudiante -->
-            <div class="StudentInfo">
-              <div class="StudentHeader">
-                <h3>{{ assignment.estudiante.nombre }}</h3>
-                <div class="StudentDetails">
-                  <span class="Rut">RUT: {{ assignment.estudiante.rut }}</span>
-                  @if (assignment.estudiante.nivel) {
-                    <span class="PlanBadge">{{ assignment.estudiante.nivel }}</span>
-                  }
-                </div>
-              </div>
+          <button mat-icon-button class="close-btn" (click)="cerrarDetalles()">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+
+        <div class="modal-body details-body">
+
+          <!-- Chips -->
+          <div class="details-chips">
+            <span class="chip chip--primary">
+              <mat-icon>flag</mat-icon>
+              <span>{{ formatearEstado(practicaSeleccionada.estado) }}</span>
+            </span>
+
+            <span class="chip">
+              <mat-icon>work</mat-icon>
+              <span>{{ practicaSeleccionada.tipo || 'Sin tipo' }}</span>
+            </span>
+
+            <span class="chip">
+              <mat-icon>event</mat-icon>
+              <span>
+                {{ practicaSeleccionada.fechaInicio }}{{ practicaSeleccionada.fechaTermino ? ' - ' + practicaSeleccionada.fechaTermino : ' - Sin término' }}
+              </span>
+            </span>
+          </div>
+
+          <!-- General -->
+          <div class="details-section">
+            <div class="details-section__head">
+              <mat-icon>info</mat-icon>
+              <h3>Información general</h3>
             </div>
 
-            <!-- Información del centro educativo -->
-            <div class="SchoolInfo">
-              <div class="SchoolHeader">
-                <mat-icon class="SchoolIcon">school</mat-icon>
-                <div class="SchoolDetails">
-                  <h4>{{ assignment.centro.nombre }}</h4>
-                  <div class="SupervisorInfo">
-                    <mat-icon class="LockIcon">supervisor_account</mat-icon>
-                    <span>
-                      Colaboradores: {{ formatColaboradores(assignment.colaboradores) }}
-                    </span>
-                  </div>
-                  <div class="SupervisorInfo">
-                    <mat-icon class="LockIcon">badge</mat-icon>
-                    <span>
-                      Tutores: {{ formatTutores(assignment.tutores) }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Información de la práctica -->
-            <div class="PracticeInfo">
-              <div class="PracticeDetails">
-                <div class="PracticeType">
-                  <mat-icon class="TypeIcon">work</mat-icon>
-                  <span>{{ assignment.tipo || 'Sin especificar' }}</span>
-                </div>
-                <div class="DateInfo">
-                  <mat-icon class="DateIcon">event</mat-icon>
-                  <span>{{ assignment.fechaInicio }} 
-                    @if (assignment.fechaTermino) {
-                      - {{ assignment.fechaTermino }}
-                    } @else {
-                      - Sin fecha de término
-                    }
+            <div class="details-grid details-grid--2">
+              <div class="kv">
+                <div class="k">Estado</div>
+                <div class="v">
+                  <span class="status-badge" [ngClass]="(practicaSeleccionada.estado || '').toLowerCase()">
+                    {{ formatearEstado(practicaSeleccionada.estado) }}
                   </span>
                 </div>
               </div>
-            </div>
 
-            <!-- Estado -->
-            <div class="StatusSection">
-              <span class="StatusBadge" [ngClass]="assignment.estado.toLowerCase()">
-                {{ formatearEstado(assignment.estado) }}
-              </span>
-            </div>
+              <div class="kv">
+                <div class="k">Tipo</div>
+                <div class="v">{{ practicaSeleccionada.tipo || '—' }}</div>
+              </div>
 
-            <!-- Acción -->
-            <div class="ActionSection">
-              <button mat-stroked-button (click)="verDetalles(assignment)" class="DetailsBtn">
-                Ver Detalles
-              </button>
-            </div>
-          </div>
-        </mat-card-content>
-      </mat-card>
-    }
-  </div>
+              <div class="kv">
+                <div class="k">Inicio</div>
+                <div class="v">{{ practicaSeleccionada.fechaInicio }}</div>
+              </div>
 
-  <!-- PAGINADOR -->
-  <div class="list-paginator" *ngIf="totalItems > 0">
-    <mat-paginator
-      [length]="totalItems"
-      [pageIndex]="pageIndex"
-      [pageSize]="pageSize"
-      [pageSizeOptions]="pageSizeOptions"
-      (page)="onPageChange($event)">
-    </mat-paginator>
-  </div>
-
-  <!-- MENSAJE VACÍO -->
-  @if (totalItems === 0) {
-    <mat-card class="EmptyCard Elev">
-      <mat-card-content class="EmptyContent">
-        <mat-icon>assignment_turned_in</mat-icon>
-        <h3>No se encontraron asignaciones</h3>
-        <p>No hay asignaciones que coincidan con los filtros seleccionados.</p>
-      </mat-card-content>
-    </mat-card>
-  }
-
-  <!-- MODAL DE DETALLES -->
-  @if (mostrarModalDetalles && practicaSeleccionada) {
-  <div class="DetailsDialog">
-    <div class="DialogOverlay" (click)="cerrarDetalles()"></div>
-
-    <div class="DialogContent DialogContent--details">
-      <!-- Header unificado -->
-      <div class="DialogHeader DialogHeader--details">
-        <div class="DialogHeaderLeft">
-          <div class="DialogAvatar">
-            <mat-icon>assignment</mat-icon>
-          </div>
-
-          <div class="DialogTitles">
-            <h2>Detalles de la Práctica</h2>
-            <div class="DialogSubtitle">
-              {{ practicaSeleccionada.estudiante.nombre }} · {{ practicaSeleccionada.centro.nombre }}
-            </div>
-          </div>
-        </div>
-
-        <button mat-icon-button (click)="cerrarDetalles()" class="CloseBtn" aria-label="Cerrar detalles">
-          <mat-icon>close</mat-icon>
-        </button>
-      </div>
-
-      <div class="DialogBody">
-        <!-- Chips superiores -->
-        <div class="DetailsTop">
-          <span class="Chip Chip--primary">
-            <mat-icon>flag</mat-icon>
-            <span class="ChipText">{{ formatearEstado(practicaSeleccionada.estado) }}</span>
-          </span>
-
-          <span class="Chip">
-            <mat-icon>work</mat-icon>
-            <span class="ChipText">{{ practicaSeleccionada.tipo || 'Sin especificar' }}</span>
-          </span>
-
-          <span class="Chip">
-            <mat-icon>event</mat-icon>
-            <span class="ChipText">
-              {{ practicaSeleccionada.fechaInicio }}{{ practicaSeleccionada.fechaTermino ? ' - ' + practicaSeleccionada.fechaTermino : ' - Sin término' }}
-            </span>
-          </span>
-        </div>
-
-        <!-- Sección: Información general -->
-        <div class="DetailsSection">
-          <div class="SectionHead">
-            <mat-icon>info</mat-icon>
-            <h3>Información general</h3>
-          </div>
-
-          <div class="DetailsGrid DetailsGrid--2">
-            <div class="KV">
-              <div class="K">Estado</div>
-              <div class="V">
-                <span class="StatusBadge" [ngClass]="practicaSeleccionada.estado.toLowerCase()">
-                  {{ formatearEstado(practicaSeleccionada.estado) }}
-                </span>
+              <div class="kv">
+                <div class="k">Término</div>
+                <div class="v">{{ practicaSeleccionada.fechaTermino || 'Sin término' }}</div>
               </div>
             </div>
-
-            <div class="KV">
-              <div class="K">Tipo</div>
-              <div class="V">{{ practicaSeleccionada.tipo || 'Sin especificar' }}</div>
-            </div>
-
-            <div class="KV">
-              <div class="K">Fecha de inicio</div>
-              <div class="V">{{ practicaSeleccionada.fechaInicio }}</div>
-            </div>
-
-            <div class="KV">
-              <div class="K">Fecha de término</div>
-              <div class="V">{{ practicaSeleccionada.fechaTermino || 'Sin fecha de término' }}</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Sección: Estudiante -->
-        <div class="DetailsSection">
-          <div class="SectionHead">
-            <mat-icon>person</mat-icon>
-            <h3>Estudiante</h3>
           </div>
 
-          <div class="DetailsGrid DetailsGrid--2">
-            <div class="KV">
-              <div class="K">Nombre</div>
-              <div class="V">{{ practicaSeleccionada.estudiante.nombre }}</div>
+          <!-- Estudiante -->
+          <div class="details-section">
+            <div class="details-section__head">
+              <mat-icon>person</mat-icon>
+              <h3>Estudiante</h3>
             </div>
 
-            <div class="KV">
-              <div class="K">RUT</div>
-              <div class="V">{{ practicaSeleccionada.estudiante.rut }}</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Sección: Centro educativo -->
-        <div class="DetailsSection">
-          <div class="SectionHead">
-            <mat-icon>school</mat-icon>
-            <h3>Centro educativo</h3>
-          </div>
-
-          <div class="DetailsGrid DetailsGrid--2">
-            <div class="KV">
-              <div class="K">Nombre</div>
-              <div class="V">{{ practicaSeleccionada.centro.nombre }}</div>
-            </div>
-
-            <div class="KV">
-              <div class="K">Tipo</div>
-              <div class="V">{{ formatearTipoCentro(practicaSeleccionada.centro.tipo) }}</div>
-            </div>
-
-            <div class="KV KV--full">
-              <div class="K">Dirección</div>
-              <div class="V">{{ practicaSeleccionada.centro.direccion || 'Sin especificar' }}</div>
+            <div class="details-grid details-grid--2">
+              <div class="kv">
+                <div class="k">Nombre</div>
+                <div class="v">{{ practicaSeleccionada.estudiante?.nombre || '—' }}</div>
+              </div>
+              <div class="kv">
+                <div class="k">RUT</div>
+                <div class="v">{{ practicaSeleccionada.estudiante?.rut || '—' }}</div>
+              </div>
+              <div class="kv kv--full" *ngIf="practicaSeleccionada.estudiante?.nivel">
+                <div class="k">Nivel</div>
+                <div class="v">{{ practicaSeleccionada.estudiante?.nivel }}</div>
+              </div>
             </div>
           </div>
-        </div>
 
-        <!-- Sección: Colaboradores -->
-        <div class="DetailsSection">
-          <div class="SectionHead">
-            <mat-icon>groups</mat-icon>
-            <h3>Colaboradores</h3>
+          <!-- Centro -->
+          <div class="details-section">
+            <div class="details-section__head">
+              <mat-icon>school</mat-icon>
+              <h3>Centro educativo</h3>
+            </div>
+
+            <div class="details-grid details-grid--2">
+              <div class="kv">
+                <div class="k">Nombre</div>
+                <div class="v">{{ practicaSeleccionada.centro?.nombre || '—' }}</div>
+              </div>
+              <div class="kv">
+                <div class="k">Tipo</div>
+                <div class="v">{{ formatearTipoCentro(practicaSeleccionada.centro?.tipo) }}</div>
+              </div>
+              <div class="kv kv--full" *ngIf="practicaSeleccionada.centro?.direccion">
+                <div class="k">Dirección</div>
+                <div class="v">{{ practicaSeleccionada.centro?.direccion }}</div>
+              </div>
+            </div>
           </div>
 
-          @if (practicaSeleccionada.colaboradores && practicaSeleccionada.colaboradores.length) {
-            <div class="PeopleList">
-              @for (colaborador of practicaSeleccionada.colaboradores; track colaborador.id) {
-                <div class="PeopleCard">
-                  <div class="PeopleTop">
-                    <mat-icon>person</mat-icon>
-                    <div class="PeopleText">
-                      <div class="PeopleName">{{ colaborador.nombre }}</div>
-                      <div class="PeopleMeta">
-                        <span *ngIf="colaborador.cargo">Cargo: {{ colaborador.cargo }}</span>
-                        <span *ngIf="colaborador.correo">• {{ colaborador.correo }}</span>
-                      </div>
-                    </div>
+          <!-- Personas -->
+          <div class="details-section">
+            <div class="details-section__head">
+              <mat-icon>groups</mat-icon>
+              <h3>Equipo</h3>
+            </div>
+
+            <div class="people-grid">
+              <div class="people-card">
+                <div class="people-head">
+                  <mat-icon>group</mat-icon>
+                  <div>
+                    <div class="people-title">Colaboradores</div>
+                    <div class="people-sub">{{ formatColaboradores(practicaSeleccionada.colaboradores) }}</div>
                   </div>
                 </div>
-              }
-            </div>
-          } @else {
-            <p class="Muted">Sin colaboradores registrados para esta práctica.</p>
-          }
-        </div>
+              </div>
 
-        <!-- Sección: Tutores -->
-        <div class="DetailsSection">
-          <div class="SectionHead">
-            <mat-icon>badge</mat-icon>
-            <h3>Tutores</h3>
-          </div>
-
-          @if (practicaSeleccionada.tutores && practicaSeleccionada.tutores.length) {
-            <div class="PeopleList">
-              @for (tutor of practicaSeleccionada.tutores; track tutor.tutor.id) {
-                <div class="PeopleCard">
-                  <div class="PeopleTop">
-                    <mat-icon>school</mat-icon>
-                    <div class="PeopleText">
-                      <div class="PeopleName">{{ tutor.tutor.nombre }}</div>
-                      <div class="PeopleMeta">
-                        <span>Rol: {{ tutor.rol }}</span>
-                        <span *ngIf="tutor.tutor.correo">• {{ tutor.tutor.correo }}</span>
-                      </div>
-                    </div>
+              <div class="people-card">
+                <div class="people-head">
+                  <mat-icon>badge</mat-icon>
+                  <div>
+                    <div class="people-title">Tutores</div>
+                    <div class="people-sub">{{ formatTutores(practicaSeleccionada.tutores) }}</div>
                   </div>
                 </div>
-              }
+              </div>
             </div>
-          } @else {
-            <p class="Muted">Sin tutores asignados para esta práctica.</p>
-          }
-        </div>
+          </div>
 
-        <!-- Sección: Actividades -->
-        @if (practicaSeleccionada.actividades && practicaSeleccionada.actividades.length > 0) {
-          <div class="DetailsSection">
-            <div class="SectionHead">
+          <!-- Actividades -->
+          <div class="details-section" *ngIf="practicaSeleccionada.actividades?.length">
+            <div class="details-section__head">
               <mat-icon>assignment</mat-icon>
-              <h3>Actividades ({{ practicaSeleccionada.actividades.length }})</h3>
+                <h3>Actividades ({{ practicaSeleccionada.actividades?.length ?? 0 }})</h3>
             </div>
 
-            <div class="ActivitiesList">
-              @for (actividad of practicaSeleccionada.actividades; track actividad.id) {
-                <div class="ActivityItem">
-                  <div class="ActivityHeader">
-                    <h4>{{ actividad.titulo }}</h4>
-                    <span class="ActivityStatus" [ngClass]="actividad.completada ? 'completed' : 'pending'">
-                      <mat-icon>{{ actividad.completada ? 'check_circle' : 'schedule' }}</mat-icon>
-                      {{ actividad.completada ? 'Completada' : 'Pendiente' }}
-                    </span>
-                  </div>
-                  @if (actividad.descripcion) {
-                    <p class="ActivityDescription">{{ actividad.descripcion }}</p>
-                  }
-                  <div class="ActivityDate">
-                    <mat-icon>event</mat-icon>
-                    <span>{{ actividad.fecha }}</span>
-                  </div>
+            <div class="activities">
+              <div class="activity" *ngFor="let a of practicaSeleccionada.actividades">
+                <div class="activity-top">
+                  <div class="activity-title">{{ a.titulo }}</div>
+                  <span class="activity-status" [ngClass]="a.completada ? 'completed' : 'pending'">
+                    <mat-icon>{{ a.completada ? 'check_circle' : 'schedule' }}</mat-icon>
+                    {{ a.completada ? 'Completada' : 'Pendiente' }}
+                  </span>
                 </div>
-              }
+
+                <div class="activity-desc" *ngIf="a.descripcion">{{ a.descripcion }}</div>
+
+                <div class="activity-date">
+                  <mat-icon>event</mat-icon>
+                  <span>{{ a.fecha }}</span>
+                </div>
+              </div>
             </div>
           </div>
-        }
 
-        <!-- Sección: Observaciones -->
-        <div class="DetailsSection">
-          <div class="SectionHead SectionHead--row">
-            <div class="SectionHeadLeft">
-              <mat-icon>note</mat-icon>
-              <h3>Observaciones</h3>
-            </div>
+          <!-- Observaciones -->
+          <div class="details-section">
+            <div class="details-section__head details-section__head--row">
+              <div class="head-left">
+                <mat-icon>note</mat-icon>
+                <h3>Observaciones</h3>
+              </div>
 
-            @if (esCoordinadoraPracticas) {
-              <button mat-icon-button (click)="abrirFormularioObservacion()" class="AddBtn" title="Agregar observación">
+              <button
+                mat-icon-button
+                class="add-mini"
+                *ngIf="esCoordinadoraPracticas"
+                type="button"
+                (click)="$event.stopPropagation(); abrirFormularioObservacion()"
+                title="Agregar observación">
                 <mat-icon>add</mat-icon>
               </button>
-            }
-          </div>
+            </div>
 
-          @if (observaciones && observaciones.length > 0) {
-            <div class="ObservationsList">
-              @for (obs of observaciones; track obs.id) {
-                <div class="ObservationItem">
-                  <div class="ObservationContent">
-                    <p class="ObservationText">{{ obs.descripcion }}</p>
-                    <span class="ObservationDate">{{ formatearFecha(obs.fecha) }}</span>
+            <!-- FORM: NUEVA OBS (anchor = -1) -->
+            <div
+              class="obs-form"
+              *ngIf="mostrarFormularioObservacion && esCoordinadoraPracticas && observacionFormAnchorId === -1">
+
+              <div class="obs-form__head">
+                <mat-icon>add</mat-icon>
+                <div>
+                  <div class="obs-form__title">Nueva observación</div>
+                  <div class="ga-subtitle">Texto breve y claro (mínimo 3 caracteres).</div>
+                </div>
+              </div>
+
+              <form [formGroup]="formularioObservacion" (ngSubmit)="guardarObservacion()">
+                <mat-form-field appearance="outline" class="full">
+                  <mat-label>Descripción</mat-label>
+                  <textarea
+                    matInput
+                    rows="3"
+                    formControlName="descripcion"
+                    placeholder="Ingrese la observación..."></textarea>
+
+                  <mat-error *ngIf="formularioObservacion.get('descripcion')?.hasError('required')">
+                    La descripción es requerida
+                  </mat-error>
+                  <mat-error *ngIf="formularioObservacion.get('descripcion')?.hasError('minlength')">
+                    Mínimo 3 caracteres
+                  </mat-error>
+                </mat-form-field>
+
+                <div class="mini-actions">
+                  <button mat-stroked-button type="button" (click)="$event.stopPropagation(); cerrarFormularioObservacion()">
+                    Cancelar
+                  </button>
+                  <button mat-flat-button color="primary" type="submit" [disabled]="formularioObservacion.invalid">
+                    Guardar
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- EMPTY -->
+            <div class="obs-empty" *ngIf="(!observaciones || observaciones.length === 0) && !mostrarFormularioObservacion">
+              <mat-icon>info</mat-icon>
+              <div>
+                <div class="obs-empty__title">Sin observaciones</div>
+                <div class="ga-subtitle">Aún no se han registrado observaciones para esta práctica.</div>
+              </div>
+            </div>
+
+            <!-- LISTA -->
+            <div class="obs-list" *ngIf="observaciones && observaciones.length > 0">
+              <div class="obs-item" *ngFor="let obs of observaciones; trackBy: trackByObsId">
+
+                <!-- Texto -->
+                <div class="obs-text">{{ obs.descripcion }}</div>
+
+                <!-- Meta: fecha/hora + acciones -->
+                <div class="obs-meta">
+                  <span class="ga-subtitle">
+                    <ng-container *ngIf="fueEditada(obs); else creadaTpl">
+                      Editada: {{ formatearFecha(obs.updatedAt) }}
+                    </ng-container>
+
+                    <ng-template #creadaTpl>
+                      {{ formatearFecha(obs.fecha || obs.createdAt) }}
+                    </ng-template>
+                  </span>
+                  
+                  <div class="obs-actions" *ngIf="esCoordinadoraPracticas">
+                    <button
+                      mat-icon-button
+                      type="button"
+                      (click)="$event.stopPropagation(); abrirFormularioObservacion(obs)"
+                      title="Editar">
+                      <mat-icon>edit</mat-icon>
+                    </button>
+
+                    <button
+                      mat-icon-button
+                      type="button"
+                      color="warn"
+                      (click)="$event.stopPropagation(); eliminarObservacion(obs)"
+                      title="Eliminar">
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- FORM: EDITAR (debajo del item seleccionado) -->
+                <div
+                  class="obs-form"
+                  *ngIf="mostrarFormularioObservacion
+                          && esCoordinadoraPracticas
+                          && observacionFormAnchorId === obs.id">
+
+                  <div class="obs-form__head">
+                    <mat-icon>edit</mat-icon>
+                    <div>
+                      <div class="obs-form__title">Editar observación</div>
+                      <div class="ga-subtitle">Texto breve y claro (mínimo 3 caracteres).</div>
+                    </div>
                   </div>
 
-                  @if (esCoordinadoraPracticas) {
-                    <div class="ObservationActions">
-                      <button mat-icon-button (click)="abrirFormularioObservacion(obs)" title="Editar observación">
-                        <mat-icon>edit</mat-icon>
+                  <form [formGroup]="formularioObservacion" (ngSubmit)="guardarObservacion()">
+                    <mat-form-field appearance="outline" class="full">
+                      <mat-label>Descripción</mat-label>
+                      <textarea
+                        matInput
+                        rows="3"
+                        formControlName="descripcion"
+                        placeholder="Ingrese la observación..."></textarea>
+
+                      <mat-error *ngIf="formularioObservacion.get('descripcion')?.hasError('required')">
+                        La descripción es requerida
+                      </mat-error>
+                      <mat-error *ngIf="formularioObservacion.get('descripcion')?.hasError('minlength')">
+                        Mínimo 3 caracteres
+                      </mat-error>
+                    </mat-form-field>
+
+                    <div class="mini-actions">
+                      <button mat-stroked-button type="button" (click)="$event.stopPropagation(); cerrarFormularioObservacion()">
+                        Cancelar
                       </button>
-                      <button mat-icon-button (click)="eliminarObservacion(obs)" title="Eliminar observación" color="warn">
-                        <mat-icon>delete</mat-icon>
+                      <button mat-flat-button color="primary" type="submit" [disabled]="formularioObservacion.invalid">
+                        Actualizar
                       </button>
                     </div>
-                  }
+                  </form>
                 </div>
-              }
+
+              </div>
             </div>
-          } @else {
-            <p class="NoActivities">No hay observaciones registradas para esta práctica.</p>
-          }
+          </div>
+
+
         </div>
 
-        <!-- Formulario de observación (se queda igual, solo más “integrado”) -->
-        @if (mostrarFormularioObservacion && esCoordinadoraPracticas) {
-          <div class="DetailsSection ObservationForm">
-            <div class="SectionHead">
-              <mat-icon>{{ observacionEditando ? 'edit' : 'add' }}</mat-icon>
-              <h3>{{ observacionEditando ? 'Editar Observación' : 'Nueva Observación' }}</h3>
-            </div>
+        <div class="modal-actions">
+          <button mat-stroked-button (click)="cerrarDetalles()">Cerrar</button>
+        </div>
 
-            <form [formGroup]="formularioObservacion" (ngSubmit)="guardarObservacion()">
-              <mat-form-field appearance="outline" class="FullWidth">
-                <mat-label>Descripción</mat-label>
-                <textarea matInput formControlName="descripcion" rows="4" placeholder="Ingrese la observación..."></textarea>
-
-                @if (formularioObservacion.get('descripcion')?.hasError('required') && formularioObservacion.get('descripcion')?.touched) {
-                  <mat-error>La descripción es requerida</mat-error>
-                }
-                @if (formularioObservacion.get('descripcion')?.hasError('minlength') && formularioObservacion.get('descripcion')?.touched) {
-                  <mat-error>La descripción debe tener al menos 3 caracteres</mat-error>
-                }
-              </mat-form-field>
-
-              <div class="FormActions">
-                <button mat-stroked-button type="button" (click)="cerrarFormularioObservacion()">Cancelar</button>
-                <button mat-raised-button color="primary" type="submit" [disabled]="formularioObservacion.invalid">
-                  {{ observacionEditando ? 'Actualizar' : 'Crear' }}
-                </button>
-              </div>
-            </form>
-          </div>
-        }
-      </div>
-
-      <div class="DialogActions DialogActions--details">
-        <button mat-stroked-button (click)="cerrarDetalles()">Cerrar</button>
       </div>
     </div>
-  </div>
-}
+  </ng-container>
 
-
-  <!-- MODAL DE CONFIRMACIÓN PARA ELIMINAR OBSERVACIÓN -->
-  @if (observacionAEliminar) {
+  <ng-container *ngIf="observacionAEliminar">
     <div class="confirm-dialog">
       <div class="dialog-overlay" (click)="cancelarEliminarObservacion()" tabindex="0"></div>
+
       <div class="dialog-content confirm-card" (keydown.escape)="cancelarEliminarObservacion()">
         <div class="confirm-header">
           <div class="warn-icon">
@@ -706,17 +765,21 @@
           </div>
           <h2>Confirmar eliminación</h2>
         </div>
+
         <div class="confirm-body">
-          <p>¿Estás seguro de que quieres eliminar esta observación?</p>
-          <p class="Muted">Esta acción no se puede deshacer.</p>
+          <p>¿Eliminar esta observación?</p>
+          <p class="ga-muted">Esta acción no se puede deshacer.</p>
         </div>
+
         <div class="confirm-actions">
           <button mat-stroked-button (click)="cancelarEliminarObservacion()">Cancelar</button>
           <button mat-flat-button color="warn" (click)="confirmarEliminarObservacion()" class="btn-danger">
-            <mat-icon>delete</mat-icon> Eliminar
+            <mat-icon>delete</mat-icon>
+            Eliminar
           </button>
         </div>
       </div>
     </div>
-  }
+  </ng-container>
+
 </div>

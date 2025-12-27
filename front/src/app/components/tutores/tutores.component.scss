@@ -146,60 +146,9 @@
   .form-row{ grid-template-columns: 1fr; }
 }
 
-.modal-tutor{
-  max-width: 720px;
-}
-
-/* ===== MODALES (reutilizable) ===== */
-.modal-overlay{
-  position: fixed;
-  inset: 0;
-  background: rgba(2, 6, 23, .45);
-  z-index: 1000;
-  display: grid;
-  place-items: center;
-  padding: 18px;
-}
-
-.modal-content{
-  width: clamp(520px, 75vw, 920px);  
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 30px 80px rgba(2, 6, 23, .25);
-  overflow: hidden;
-  border: 1px solid #e5e7eb;
-}
-
-.modal-header{
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 16px 18px 12px;
-  border-bottom: 1px solid #eef2f7;
-}
-
 .close-btn{
   margin-top: 2px;
 }
-
-.modal-body{
-  padding: 14px 18px 16px;
-  max-height: min(70vh, calc(100vh - 220px));
-  overflow: auto;
-}
-
-.modal-actions{
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  padding: 14px 18px 16px;
-  border-top: 1px dashed #e5e7eb;
-}
-
-/* Tamaño específico */
-.modal-details{ max-width: 880px; }
-.modal-tutor{ max-width: 720px; }
 
 /* ===== DETALLES ===== */
 .details-chips{
@@ -339,9 +288,12 @@
   background: #f8fafc;
 }
 
+.modal-tutor{ max-width: 720px; }
+.modal-details{ max-width: 880px; } /* si quieres */
+
+
 /* Responsive */
 @media (max-width: 900px){
   .details-grid--2{ grid-template-columns: 1fr; }
   .contact-cards{ grid-template-columns: 1fr; }
 }
-
