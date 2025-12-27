@@ -346,3 +346,9 @@ body {
 @media (max-width: 640px){
   .filtros__grid--4{ grid-template-columns: 1fr; }
 }
+
+.modal-overlay,
+.confirm-dialog {
+  left: calc(var(--side-offset, 0px) * -1);
+  width: calc(100vw + var(--side-offset, 0px));
+}

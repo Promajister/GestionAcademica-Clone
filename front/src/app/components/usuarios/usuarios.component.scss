@@ -1,118 +1,130 @@
-/* =========================
-   LISTADO (solo layout interno de la fila)
-   ========================= */
+:host { display: block; }
 
-.item-content{
-  display:grid;
-  grid-template-columns: 1.5fr 1fr 0.8fr 1.2fr auto;
-  align-items:center;
-  gap:16px;
-  padding:16px 24px;
+.users-card { overflow: hidden; }
+
+/* ===== Header tipo tabla ===== */
+.users-head{
+  display: grid;
+  grid-template-columns: 1.6fr 1fr .9fr 1.4fr auto;
+  gap: 16px;
+  padding: 12px 24px;
+  background: var(--ga-soft);
+  border-bottom: 1px solid var(--ga-border);
+  color: var(--ga-muted);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .35px;
+  text-transform: uppercase;
 }
 
-.item-main{ display:flex; align-items:center; min-width:0; }
-.item-info{ min-width:0; }
+.users-col--actions{ text-align: right; }
 
-.item-info h3{
-  margin:0;
-  font-size:16px;
-  font-weight:600;
-  color:var(--ga-text);
-  line-height:1.2;
+/* ===== Fila ===== */
+.user-row{
+  display: grid;
+  grid-template-columns: 1.6fr 1fr .9fr 1.4fr auto;
+  gap: 16px;
+  padding: 14px 24px;
+  align-items: center;
 }
 
-.item-info p{ margin:0; } /* el color/tamaño lo da .ga-subtitle */
-
-/* Rol */
-.item-role{ min-width:140px; }
-
-.role-badge{
-  display:inline-block;
-  padding:4px 10px;
-  border-radius:999px;
-  font-size:13px;
-  font-weight:700;
-  color:#111827;
-  border:1px solid rgba(0,0,0,.06);
+/* ===== Usuario ===== */
+.user-main{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
 }
 
-/* Estado */
-.item-status{ min-width:80px; }
-
-/* Permisos */
-.item-permissions{ min-width:200px; }
-
-.item-actions{
-  display:flex;
-  gap:4px;
-  min-width:100px;
-  justify-content:flex-end;
+.user-avatar{
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, .10);
+  color: #1d4ed8;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  border: 1px solid rgba(37, 99, 235, .18);
+  flex: 0 0 auto;
 }
 
-/* =========================
-   PILL estado (usa tu getEstadoPillClass)
-   ========================= */
+.user-info{ min-width: 0; }
+.user-name{
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ga-text);
+  line-height: 1.2;
+}
+.user-mail{ margin-top: 2px; }
 
-.pill{
-  display:inline-flex;
-  align-items:center;
-  padding:4px 10px;
-  border-radius:999px;
-  border:1px solid #cbd5e1;
-  font-size:12px;
-  font-weight:700;
+/* ===== Rol ===== */
+.role-pill{
+  color: #111827;
+  border: 1px solid rgba(0,0,0,.06);
+  font-weight: 800;
 }
 
-.pill--ok  { background:#e8f5e9; color:#2e7d32; border-color:#c8e6c9; }
-.pill--bad { background:#ffebee; color:#c62828; border-color:#ef9a9a; }
+/* ===== Estado ===== */
+.pill-ok{
+  background: #e8f5e9 !important;
+  border-color: #c8e6c9 !important;
+  color: #2e7d32 !important;
+  font-weight: 900;
+}
+.pill-bad{
+  background: #ffebee !important;
+  border-color: #ef9a9a !important;
+  color: #c62828 !important;
+  font-weight: 900;
+}
+.pill-icn{
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
+}
 
-/* =========================
-   CHIPS permisos
-   ========================= */
-
+/* ===== Permisos (chips) ===== */
 .chips{
-  display:flex;
-  flex-wrap:wrap;
-  gap:6px;
-  align-items:center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
 }
-
 .chip{
-  border:1px solid var(--ga-border);
-  border-radius:999px;
-  padding:2px 8px;
-  font-size:11px;
-  background:var(--ga-card);
-  color:var(--ga-text);
+  border: 1px solid var(--ga-border);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 11px;
+  background: #fff;
+  color: var(--ga-text);
 }
-
-.chip-small{
-  padding:2px 8px;
-  font-size:11px;
-  line-height:1.4;
-}
-
 .chip-link{
-  padding:2px 8px !important;
-  min-width:auto !important;
-  font-size:11px !important;
-  line-height:1.4 !important;
-  color:#2563eb !important;
-  text-decoration:underline;
-  border:none !important;
-  background:transparent !important;
-  height:auto !important;
-  margin:0 !important;
+  padding: 2px 8px !important;
+  min-width: auto !important;
+  font-size: 11px !important;
+  line-height: 1.4 !important;
+  color: #2563eb !important;
+  text-decoration: underline;
+  border: none !important;
+  background: transparent !important;
+  height: auto !important;
+  margin: 0 !important;
 }
 .chip-link:hover{
   color:#1d4ed8 !important;
   background:transparent !important;
 }
 
-/* =========================
-   LOADING (solo el contenedor)
-   ========================= */
+/* ===== Acciones ===== */
+.user-actions{
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+}
 
+/* ===== Loading ===== */
 .loading-container{
   display:flex;
   flex-direction:column;
@@ -122,10 +134,7 @@
   gap:16px;
 }
 
-/* =========================
-   MODALES (si no están globales)
-   ========================= */
-
+/* ===== Modales (los dejas tal cual los tienes) ===== */
 .modal-overlay{
   position:fixed;
   inset:0;
@@ -212,10 +221,7 @@
 .permiso-item:hover{ background:var(--ga-soft); }
 .permiso-item mat-checkbox{ width:100%; }
 
-/* =========================
-   CONFIRM DIALOG
-   ========================= */
-
+/* ===== Confirm ===== */
 .confirm-dialog{
   position:fixed;
   inset:0;
@@ -224,14 +230,12 @@
   align-items:center;
   justify-content:center;
 }
-
 .confirm-dialog .dialog-overlay{
   position:absolute;
   inset:0;
   background:rgba(0,0,0,.45);
   backdrop-filter:blur(4px);
 }
-
 .confirm-card{
   position:relative;
   background:var(--ga-card);
@@ -242,7 +246,6 @@
   box-shadow:0 20px 25px -5px rgba(0,0,0,.1), 0 10px 10px -5px rgba(0,0,0,.04);
   z-index:2001;
 }
-
 .confirm-header{
   display:flex;
   align-items:center;
@@ -250,14 +253,12 @@
   padding:20px 24px 8px;
   border-bottom:1px solid var(--ga-border);
 }
-
 .confirm-header h2{
   margin:0;
   font-size:18px;
   font-weight:700;
   color:var(--ga-text);
 }
-
 .warn-icon{
   width:40px;
   height:40px;
@@ -271,10 +272,8 @@
   background:rgba(245, 158, 11, .22);
   color:#b45309;
 }
-
 .confirm-body{ padding:12px 24px 0; }
 .confirm-body p{ margin:0 0 6px; font-size:15px; color:var(--ga-text); }
-
 .confirm-actions{
   display:flex;
   justify-content:flex-end;
@@ -284,18 +283,24 @@
   margin-top:12px;
 }
 
-/* =========================
-   Responsive
-   ========================= */
-
+/* ===== Responsive ===== */
 @media (max-width:1200px){
-  .item-content{ grid-template-columns: 1.5fr 1fr 0.8fr auto; }
-  .item-permissions{ display:none; }
+  .users-head, .user-row{
+    grid-template-columns: 1.6fr 1fr .9fr auto;
+  }
+  .users-col--perms, .item-permissions{ display: none; }
 }
 
 @media (max-width:768px){
-  .item-content{ grid-template-columns: 1fr auto; gap:12px; }
-  .item-role, .item-status, .item-permissions{ display:none; }
+  .users-head{ display: none; }
+
+  .user-row{
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    padding: 14px 16px;
+  }
+
+  .user-role, .user-status, .item-permissions{ display: none; }
 
   .modal-content{ width:95%; max-height:95vh; }
   .modal-header{ padding:16px 16px 0; }
@@ -309,9 +314,4 @@
   .confirm-card{ width:95%; margin:16px; }
   .confirm-actions{ flex-direction:column; }
   .confirm-actions button{ width:100%; }
-}
-
-.btn-add{
-  border-radius:10px;
-  white-space:nowrap;
 }
