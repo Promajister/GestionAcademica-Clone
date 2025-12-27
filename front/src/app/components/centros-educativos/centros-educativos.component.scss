@@ -328,12 +328,10 @@
   z-index: 1;
 }
 
-/* Si tu modal tiene estos modificadores, los respetamos */
 .dialog-content--details{
   overflow: hidden;
 }
 
-/* responsive modal */
 @media (max-width: 640px){
   .dialog-content{
     width: 95vw;
@@ -343,15 +341,15 @@
 }
 
 /* =========================================================
-   MODAL DETALLES - ESTÉTICA (recupera diseño pro)
+   MODAL DETALLES 
    ========================================================= */
 
-/* Contenedor del modal (ya está fixed en tu overlay) */
+/* Contenedor del modal  */
 .dialog-content--details{
   max-width: 920px;
   width: min(920px, 94vw);
   border: 1px solid #e5e7eb;
-  overflow: hidden; /* importante para el header con fondo */
+  overflow: hidden; 
   border-radius: 16px;
 }
 
@@ -485,7 +483,6 @@
   color: #111827;
 }
 
-/* Grid clave/valor (ubicación) */
 .details-grid--2{
   display:grid;
   grid-template-columns: 1fr 1fr;
@@ -644,12 +641,12 @@
   z-index: 1200;
 }
 
-/* ===== FIX MODALES: scroll en el body ===== */
+/* ===== FIX MODALES ===== */
 .dialog-content--details{
   display: flex;
   flex-direction: column;
-  max-height: 82vh;     /* mismo alto que querías */
-  overflow: hidden;     /* header y footer quedan “pegados” */
+  max-height: 82vh;  
+  overflow: hidden;  
 }
 
 .dialog-header--details{
@@ -667,18 +664,18 @@
 }
 
 
-/* ===== Overlay por encima de todo (incluye sidebar) ===== */
+/* ===== Overlay  ===== */
 .details-dialog{
   position: fixed;
   inset: 0;
-  z-index: 100000; /* subimos mucho para ganarle al sidenav */
+  z-index: 100000;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .dialog-overlay{
-  position: fixed; /* importante: que sea FIXED real a toda la pantalla */
+  position: fixed;
   inset: 0;
   background: rgba(2,6,23,.55);
   backdrop-filter: blur(2px);
@@ -689,7 +686,7 @@
   flex-direction: column;
   width: min(920px, 94vw);
   max-height: 82vh;
-  overflow: hidden; /* header/footer fijos */
+  overflow: hidden; 
 }
 
 .dialog-body{

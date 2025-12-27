@@ -462,7 +462,6 @@
 .Empty { margin-top: 12px; }
 .EmptyContent { display: grid; place-items: center; gap: 8px; }
 
-/* Alerta de éxito personalizada - Estilo oscuro */
 ::ng-deep .success-snackbar {
   .mdc-snackbar__surface {
     background: #374151 !important;
@@ -609,7 +608,7 @@
     width: 100%;
   }
 }
-/* === Confirm Dialog unificado (mismo diseño que Centros) === */
+/* === Confirm Dialog unificado  === */
 .confirm-dialog { 
   position: fixed; inset: 0; z-index: 1100; 
   display: flex; align-items: center; justify-content: center;
@@ -649,7 +648,7 @@
 
 
 /* =========================
-   MODAL DETALLES (Colaborador) - unificado estilo Centros
+   MODAL DETALLES (Colaborador)
    ========================= */
 
 .DialogContent--details {
@@ -886,7 +885,7 @@
 }
 
 
-/* ===== UI KIT (igual Centros) ===== */
+/* ===== UI KIT  ===== */
 .container, .Container { max-width: 1120px; margin: 18px auto; padding: 0 16px; }
 .section, .Section { margin-top: 8px; }
 .muted, .Muted { color: #64748b; font-size: 13px; }
@@ -899,7 +898,7 @@
   box-shadow: 0 2px 14px rgba(15, 23, 42, 0.06);
 }
 
-/* ===== HERO (copiado de Centros) ===== */
+/* ===== HERO  ===== */
 .hero{
   position: relative;
   border-radius: 22px;
@@ -956,7 +955,7 @@
   .btn-cta{ width: 100%; justify-content: center; }
 }
 
-/* ===== TOOLBAR (Centros) ===== */
+/* ===== TOOLBAR ===== */
 
 .toolbar-card {
   border-radius: 18px !important;
@@ -992,7 +991,7 @@
   flex: 1;
 }
 
-/* === INPUT redondeado igual a Centros === */
+/* === INPUT  === */
 .toolbar__search .mat-mdc-text-field-wrapper {
   border-radius: 14px !important;
 }
@@ -1097,7 +1096,7 @@
   color: #1e40af;
 }
 
-/* ===== ACTION BOX (botones cuadrados) ===== */
+/* ===== ACTION BOX  ===== */
 .actions-box{
   display:flex;
   gap: 8px;
@@ -1125,20 +1124,15 @@
 
 .action-box--danger mat-icon{ color: #000000; }
 
-
-/* ===== CARD de filtros (el contenedor) ===== */
 .FiltersCard {
   border-radius: 18px !important;
-  overflow: hidden; /* CLAVE: corta bordes internos */
+  overflow: hidden; 
 }
 
-/* Si el mat-card trae su propio borde/sombra, lo dejamos parejo */
 .FiltersCard.Elev {
   border-radius: 18px !important;
 }
 
-/* ===== Redondeo REAL del input (MDC) ===== */
-/* IMPORTANTE: usamos ::ng-deep para entrar a Material */
 :host ::ng-deep .FiltersCard .SearchField .mat-mdc-text-field-wrapper {
   border-radius: 16px !important;
 }
@@ -1147,14 +1141,12 @@
   border-radius: 16px !important;
 }
 
-/* Los 3 pedazos del outline (a veces uno “canta” cuadrado) */
 :host ::ng-deep .FiltersCard .SearchField .mdc-notched-outline__leading,
 :host ::ng-deep .FiltersCard .SearchField .mdc-notched-outline__notch,
 :host ::ng-deep .FiltersCard .SearchField .mdc-notched-outline__trailing {
   border-radius: 16px !important;
 }
 
-/* Padding/alto para que se vea igual “gordito” que Centros */
 :host ::ng-deep .FiltersCard .SearchField .mat-mdc-form-field-infix {
   padding: 14px 14px !important;
   min-height: 52px; /* ajusta altura visual */
@@ -1162,7 +1154,6 @@
   align-items: center;
 }
 
-/* Por si el input queda con altura rara */
 :host ::ng-deep .FiltersCard .SearchField input.mat-mdc-input-element {
   font-size: 14px;
 }
@@ -1203,7 +1194,7 @@
   border-top: 1px dashed #eef2f7;
 }
 
-/* ESTILO PLANO (como en Centros) */
+/* ESTILO PLANO  */
 .mini-ico{
   border-radius: 12px !important;
   background: transparent !important;
@@ -1211,7 +1202,6 @@
   box-shadow: none !important;
 }
 
-/* opcional: que al pasar el mouse se vea suave */
 .mini-ico:hover{
   background: rgba(2,6,23,.04) !important;
 }

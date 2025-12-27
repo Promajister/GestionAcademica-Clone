@@ -1,6 +1,6 @@
 <div class="Container Section">
 
-  <!-- HERO HEAD (igual a Centros) -->
+  <!-- HERO HEAD  -->
   <div class="hero">
     <div class="hero__bg"></div>
 
@@ -37,7 +37,7 @@
     </div>
   </div>
 
-  <!-- TOOLBAR / FILTROS (igual a Centros) -->
+  <!-- TOOLBAR / FILTROS -->
   <mat-card class="elev toolbar-card">
     <mat-card-content class="toolbar">
       <div class="toolbar__left">
@@ -60,7 +60,7 @@
     </mat-card-content>
   </mat-card>
 
-  <!-- FORMULARIO (colapsable por botón) -->
+  <!-- FORMULARIO -->
   <div class="FormContainer" [class.FormOpen]="mostrarFormulario" *ngIf="!esSoloLectura">
     @if (mostrarFormulario) {
       <mat-card class="Elev FormCard">
@@ -170,7 +170,7 @@
     }
   </div>
 
-  <!-- LISTADO (cards hacia abajo + acciones cuadradas + mini-contacto abajo) -->
+  <!-- LISTADO -->
   <mat-card class="elev list-shell" *ngIf="totalItems > 0">
     <mat-card-header class="list-head">
       <mat-card-title class="list-title">
@@ -230,7 +230,7 @@
                 </div>
               </div>
 
-              <!-- MINI CONTACTO (abajo, como Centros) -->
+              <!-- MINI CONTACTO (abajo) -->
              <div class="center-card__contact">
               <button
                 mat-icon-button
