@@ -2,21 +2,24 @@ import { IsDateString, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class
 
 export class CreateActividadPracticaDto {
   @IsString()
-  @IsNotEmpty({ message: 'El título es obligatorio' })
+  @IsNotEmpty({ message: 'El nombre de la actividad es obligatorio' })
   @MaxLength(200)
   titulo: string;
 
   @IsString()
-  @IsNotEmpty({ message: 'La descripción es obligatoria' })
-  descripcion: string;
+  @IsOptional()
+  @IsNotEmpty({ message: 'La descripción es obligatoria.' })
+  descripcion?: string;
 
   @IsString()
+  @IsOptional()
   @IsNotEmpty({ message: 'Debe indicar el tallerista asociado' })
-  tallerista: string;
+  tallerista?: string;
 
   @IsString()
-  @IsNotEmpty({ message: 'Debe indicar el estudiante asociado' })
-  estudiante: string;
+  @IsOptional()
+  @IsNotEmpty({ message: 'Debe indicar al menos un(a) estudiante asociado(a).' })
+  estudiante?: string;
 
   @IsOptional()
   @IsDateString({}, { message: 'La fecha debe tener un formato válido (YYYY-MM-DD)' })

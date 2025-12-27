@@ -135,24 +135,22 @@
 
           <!-- Col 3: Estado / Fechas / Acciones -->
           <div class="cell cell--actions" (click)="$event.stopPropagation()">
-
-            <span class="ga-pill"
-                  [ngClass]="(p.estado || '').toLowerCase()">
+            <span class="ga-pill" [ngClass]="(p.estado || '').toLowerCase()">
               {{ formatearEstado(p.estado) }}
             </span>
 
             <div class="dates">
               <mat-icon>event</mat-icon>
-              <span class="truncate">
-                {{ p.fechaInicio }}{{ p.fechaTermino ? ' - ' + p.fechaTermino : ' - Sin término' }}
-              </span>
+              <span class="truncate">{{ p.fechaInicio }}{{ p.fechaTermino ? ' - ' + p.fechaTermino : ' - Sin término' }}</span>
             </div>
 
-            <button mat-stroked-button class="ver-btn" type="button" (click)="verDetalles(p)">
-              <mat-icon>visibility</mat-icon>
-              Ver
-            </button>
+            <div class="ga-actions">
+              <button mat-icon-button class="ga-action" type="button" (click)="verDetalles(p)" title="Ver">
+                <mat-icon>visibility</mat-icon>
+              </button>
+            </div>
           </div>
+
 
         </div>
       </div>

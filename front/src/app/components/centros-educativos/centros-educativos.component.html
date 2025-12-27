@@ -246,46 +246,48 @@
 
               <!-- Col 3: Acciones -->
               <div class="cell cell--actions">
-                <button
-                  mat-stroked-button
-                  type="button"
-                  class="ver-btn"
-                  (click)="$event.stopPropagation(); viewCentro(c)">
-                  <mat-icon>visibility</mat-icon>
-                  Ver
-                </button>
+                <div class="ga-actions">
+                  <button
+                    mat-icon-button
+                    type="button"
+                    class="ga-action"
+                    (click)="$event.stopPropagation(); viewCentro(c)"
+                    title="Ver">
+                    <mat-icon>visibility</mat-icon>
+                  </button>
 
-                <button
-                  mat-stroked-button
-                  type="button"
-                  class="estado-btn"
-                  *ngIf="!esSoloLectura"
-                  (click)="$event.stopPropagation(); editCentro(c)">
-                  <mat-icon>edit</mat-icon>
-                  Editar
-                </button>
+                  <button
+                    mat-icon-button
+                    type="button"
+                    class="ga-action"
+                    *ngIf="!esSoloLectura"
+                    (click)="$event.stopPropagation(); editCentro(c)"
+                    title="Editar">
+                    <mat-icon>edit</mat-icon>
+                  </button>
 
-                <button
-                  mat-stroked-button
-                  type="button"
-                  class="estado-btn"
-                  *ngIf="!esSoloLectura"
-                  (click)="$event.stopPropagation(); openContacts(c)">
-                  <mat-icon>person_add</mat-icon>
-                  Contactos
-                </button>
+                  <button
+                    mat-icon-button
+                    type="button"
+                    class="ga-action"
+                    *ngIf="!esSoloLectura"
+                    (click)="$event.stopPropagation(); openContacts(c)"
+                    title="Contactos">
+                    <mat-icon>contacts</mat-icon>
+                  </button>
 
-                <button
-                  mat-flat-button
-                  color="warn"
-                  type="button"
-                  class="danger-btn"
-                  *ngIf="!esSoloLectura"
-                  (click)="$event.stopPropagation(); askDelete(c)">
-                  <mat-icon>delete</mat-icon>
-                  Eliminar
-                </button>
+                  <button
+                    mat-icon-button
+                    type="button"
+                    class="ga-action ga-action--danger"
+                    *ngIf="!esSoloLectura"
+                    (click)="$event.stopPropagation(); askDelete(c)"
+                    title="Eliminar">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </div>
               </div>
+
 
             </div>
           </div>

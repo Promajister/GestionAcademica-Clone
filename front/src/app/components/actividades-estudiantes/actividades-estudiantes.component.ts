@@ -355,6 +355,24 @@ export class ActividadesEstudiantesComponent implements OnInit {
       this.mostrarFormulario = true;
     }
   }
+abrirModalFormulario(): void { 
+  if (this.esJefatura) return; 
+  //Si quieres que siempre abra en "Agregar" cuando apretas el botón: 
+  //this.estaEditando = false; 
+  // this.actividadEditando = null; 
+  // this.formularioActividad.reset(); 
+  // this.archivosSeleccionados = []; 
+  // this.archivoZip = null; 
+  this.mostrarFormulario = true; } 
+  
+cerrarModalFormulario(): void { 
+  this.mostrarFormulario = false;
+  this.estaEditando = false; 
+  this.actividadEditando = null; 
+  this.formularioActividad.reset(); 
+  this.archivosSeleccionados = []; 
+  this.archivoZip = null; 
+}
 
   async onFileSelected(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;

@@ -92,39 +92,34 @@ export class ActividadesEstudiantesService {
    * @param actividad Datos de la actividad en formato del frontend
    * @param archivo Archivo opcional a subir
    */
-  crear(actividad: Partial<Actividad>, archivo?: File): Observable<Actividad> {
+  private appendIfNotEmpty(fd: FormData, key: string, value?: string) {
+    const v = (value ?? '').trim();
+    if (v) fd.append(key, v);
+  }
+
+  crear(actividad: Partial<Actividad> & { descripcion?: string }, archivo?: File): Observable<Actividad> {
     const formData = new FormData();
-    
-    // Mapear del formato del frontend al DTO del backend
-    const fecha = actividad.fecha 
-      ? (typeof actividad.fecha === 'string' 
-          ? new Date(actividad.fecha) 
-          : actividad.fecha)
+
+    const fecha = actividad.fecha
+      ? (typeof actividad.fecha === 'string' ? new Date(actividad.fecha) : actividad.fecha)
       : new Date();
-    
-    // Usar formato local para evitar problemas de zona horaria
-    const fechaRegistro = this.formatearFechaLocal(fecha); // YYYY-MM-DD
-    
-    // El backend mapea: titulo → nombre_actividad, descripcion → lugar, tallerista → horario, estudiante → estudiantes
-    formData.append('titulo', actividad.nombre_actividad || '');
-    formData.append('descripcion', actividad.lugar || '');
-    formData.append('tallerista', actividad.horario || '');
-    formData.append('estudiante', actividad.estudiantes || '');
+
+    const fechaRegistro = this.formatearFechaLocal(fecha);
+
+    // requerido
+    formData.append('titulo', (actividad.nombre_actividad ?? '').trim());
     formData.append('fechaRegistro', fechaRegistro);
-    
-    // Si hay una URL de evidencia (base64 convertido a URL o URL directa)
-    if (actividad.archivo_adjunto && !archivo) {
-      // Si es base64, el backend espera que se suba como archivo
-      // Si es URL, se puede enviar directamente
-      if (!actividad.archivo_adjunto.startsWith('data:')) {
-        formData.append('evidenciaUrl', actividad.archivo_adjunto);
-      }
+
+    // opcionales (SOLO si vienen)
+    this.appendIfNotEmpty(formData, 'descripcion', (actividad as any).descripcion ?? (actividad as any).lugar);
+    this.appendIfNotEmpty(formData, 'tallerista', actividad.horario);
+    this.appendIfNotEmpty(formData, 'estudiante', actividad.estudiantes);
+
+    if (actividad.archivo_adjunto && !archivo && !actividad.archivo_adjunto.startsWith('data:')) {
+      formData.append('evidenciaUrl', actividad.archivo_adjunto);
     }
-    
-    // Si hay un archivo, agregarlo al FormData
-    if (archivo) {
-      formData.append('archivo', archivo);
-    }
+
+    if (archivo) formData.append('archivo', archivo);
 
     return this.http.post<Actividad>(API_URL, formData);
   }
@@ -135,42 +130,37 @@ export class ActividadesEstudiantesService {
    * @param actividad Datos actualizados en formato del frontend
    * @param archivo Archivo opcional a subir
    */
-  actualizar(id: number, actividad: Partial<Actividad>, archivo?: File): Observable<Actividad> {
+  
+  actualizar(id: number, actividad: Partial<Actividad> & { descripcion?: string }, archivo?: File): Observable<Actividad> {
     const formData = new FormData();
-    
-    // Mapear del formato del frontend al DTO del backend
+
     if (actividad.nombre_actividad !== undefined) {
-      formData.append('titulo', actividad.nombre_actividad);
+      formData.append('titulo', (actividad.nombre_actividad ?? '').trim());
     }
-    if (actividad.lugar !== undefined) {
-      formData.append('descripcion', actividad.lugar);
+
+    // opcionales: si viene undefined -> no tocar; si viene '' -> no enviar
+    if ((actividad as any).descripcion !== undefined || (actividad as any).lugar !== undefined) {
+      this.appendIfNotEmpty(formData, 'descripcion', (actividad as any).descripcion ?? (actividad as any).lugar);
     }
+
     if (actividad.horario !== undefined) {
-      formData.append('tallerista', actividad.horario);
+      this.appendIfNotEmpty(formData, 'tallerista', actividad.horario);
     }
+
     if (actividad.estudiantes !== undefined) {
-      formData.append('estudiante', actividad.estudiantes);
+      this.appendIfNotEmpty(formData, 'estudiante', actividad.estudiantes);
     }
-    
+
     if (actividad.fecha) {
-      const fecha = typeof actividad.fecha === 'string' 
-        ? new Date(actividad.fecha) 
-        : actividad.fecha;
-      const fechaRegistro = this.formatearFechaLocal(fecha);
-      formData.append('fechaRegistro', fechaRegistro);
+      const fecha = typeof actividad.fecha === 'string' ? new Date(actividad.fecha) : actividad.fecha;
+      formData.append('fechaRegistro', this.formatearFechaLocal(fecha));
     }
-    
-    // Si hay una URL de evidencia y no hay archivo nuevo
-    if (actividad.archivo_adjunto && !archivo) {
-      if (!actividad.archivo_adjunto.startsWith('data:')) {
-        formData.append('evidenciaUrl', actividad.archivo_adjunto);
-      }
+
+    if (actividad.archivo_adjunto && !archivo && !actividad.archivo_adjunto.startsWith('data:')) {
+      formData.append('evidenciaUrl', actividad.archivo_adjunto);
     }
-    
-    // Si hay un archivo nuevo, agregarlo al FormData
-    if (archivo) {
-      formData.append('archivo', archivo);
-    }
+
+    if (archivo) formData.append('archivo', archivo);
 
     return this.http.patch<Actividad>(`${API_URL}/${id}`, formData);
   }

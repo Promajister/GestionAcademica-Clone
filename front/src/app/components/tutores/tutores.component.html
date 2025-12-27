@@ -91,36 +91,38 @@
 
               <!-- Acciones -->
               <div class="cell cell--actions">
-                <button
-                  mat-stroked-button
-                  type="button"
-                  class="ver-btn"
-                  (click)="$event.stopPropagation(); verDetalles(t)">
-                  <mat-icon>visibility</mat-icon>
-                  Ver
-                </button>
+                <div class="ga-actions">
+                  <button
+                    mat-icon-button
+                    type="button"
+                    class="ga-action"
+                    (click)="$event.stopPropagation(); verDetalles(t)"
+                    title="Ver">
+                    <mat-icon>visibility</mat-icon>
+                  </button>
 
-                <button
-                  mat-stroked-button
-                  type="button"
-                  class="estado-btn"
-                  *ngIf="!esSoloLectura"
-                  (click)="$event.stopPropagation(); editarTutor(t)">
-                  <mat-icon>edit</mat-icon>
-                  Editar
-                </button>
+                  <button
+                    mat-icon-button
+                    type="button"
+                    class="ga-action"
+                    *ngIf="!esSoloLectura"
+                    (click)="$event.stopPropagation(); editarTutor(t)"
+                    title="Editar">
+                    <mat-icon>edit</mat-icon>
+                  </button>
 
-                <button
-                  mat-flat-button
-                  color="warn"
-                  type="button"
-                  class="danger-btn"
-                  *ngIf="!esSoloLectura"
-                  (click)="$event.stopPropagation(); eliminar(t)">
-                  <mat-icon>delete</mat-icon>
-                  Eliminar
-                </button>
+                  <button
+                    mat-icon-button
+                    type="button"
+                    class="ga-action ga-action--danger"
+                    *ngIf="!esSoloLectura"
+                    (click)="$event.stopPropagation(); eliminar(t)"
+                    title="Eliminar">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </div>
               </div>
+
             </div>
           </div>
         }
