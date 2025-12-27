@@ -193,4 +193,25 @@ mat-sidenav-container,
   .page {
     padding: 16px;
   }
+
+  /* --- FIX: evitar que mat-sidenav-content use transform (rompe position:fixed de tus modales) --- */
+
+  /* Asegura que el drawer no cambie el layout con transform */
+  .mat-drawer-content,
+  .mat-sidenav-content {
+    transform: none !important;
+  }
+
+  /* Cuando el sidenav está abierto, empuja con margin en vez de transform */
+  .shell.shell--open .mat-drawer-content,
+  .shell.shell--open .mat-sidenav-content {
+    margin-left: 300px; /* mismo ancho que tu sidenav */
+  }
+
+  /* Cuando está cerrado, vuelve a 0 */
+  .shell:not(.shell--open) .mat-drawer-content,
+  .shell:not(.shell--open) .mat-sidenav-content {
+    margin-left: 0;
+  }
+
 }

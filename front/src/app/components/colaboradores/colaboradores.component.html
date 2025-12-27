@@ -296,7 +296,7 @@
 
   <!-- CONFIRMAR ELIMINAR -->
   @if (mostrarConfirmarEliminar && colaboradorAEliminar) {
-    <div class="confirm-dialog">
+    <div class="modal-overlay confirm-dialog">
       <div class="dialog-overlay" (click)="cerrarConfirmarEliminar()" tabindex="0"></div>
 
       <div class="dialog-content confirm-card" (keydown.escape)="cerrarConfirmarEliminar()">

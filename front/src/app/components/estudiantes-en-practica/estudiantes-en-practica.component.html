@@ -91,9 +91,6 @@
               <div class="cell cell--student">
                 <div class="title">
                   <span class="truncate">{{ practica.estudiante.nombre }}</span>
-                  @if (practica.estudiante.nivel) {
-                    <span class="badge">{{ practica.estudiante.nivel }}</span>
-                  }
                 </div>
                 <div class="meta">
                   <span class="truncate">
@@ -105,49 +102,37 @@
               <!-- Centro -->
               <div class="cell cell--center">
                 <div class="title truncate">{{ practica.centro.nombre }}</div>
-                <div class="meta">
-                  {{ practica.centro.tipo ? formatearTipoCentro(practica.centro.tipo) : 'Sin tipo' }}
-                </div>
               </div>
 
               <!-- Fechas / Tipo -->
               <div class="cell cell--dates">
                 <div class="meta">
-                  <mat-icon>event</mat-icon>
-                  <span class="truncate">
-                    {{ practica.fechaInicio }} - {{ practica.fechaTermino || 'En curso' }}
+                  <mat-icon>flag</mat-icon>
+                  <span class="pill" [ngClass]="'pill--' + practica.estado.toLowerCase()">
+                    {{ formatearEstado(practica.estado) }}
                   </span>
                 </div>
-
-                @if (practica.tipo) {
-                  <div class="meta">
-                    <mat-icon>work</mat-icon>
-                    <span class="truncate">{{ practica.tipo }}</span>
-                  </div>
-                }
               </div>
 
               <!-- Acciones -->
               <div class="cell cell--actions">
-                <button
-                  mat-stroked-button
-                  type="button"
-                  class="estado-btn"
-                  (click)="$event.stopPropagation(); abrirDialogoCambioEstado(practica)">
-                  <span class="pill" [ngClass]="'pill--' + practica.estado.toLowerCase()">
-                    {{ formatearEstado(practica.estado) }}
-                  </span>
-                  <mat-icon>edit</mat-icon>
-                </button>
+                  <button
+                    mat-icon-button
+                    type="button"
+                    class="action-btn"
+                    (click)="$event.stopPropagation(); abrirDialogoCambioEstado(practica)"
+                    aria-label="Editar">
+                    <mat-icon>edit</mat-icon>
+                  </button>
 
-                <button
-                  mat-button
-                  type="button"
-                  class="ver-btn"
-                  (click)="$event.stopPropagation(); verDetalles(practica)">
-                  <mat-icon>visibility</mat-icon>
-                  Ver
-                </button>
+                  <button
+                    mat-icon-button
+                    type="button"
+                    class="action-btn"
+                    (click)="$event.stopPropagation(); verDetalles(practica)"
+                    aria-label="Ver">
+                    <mat-icon>visibility</mat-icon>
+                  </button>
               </div>
             </div>
           </div>
@@ -168,10 +153,8 @@
 
   <!-- Dialog confirmación cambiar estado -->
   @if (mostrarConfirmarCambioEstado && practicaACambiarEstado) {
-    <div class="confirm-dialog">
-      <div class="dialog-overlay" (click)="cerrarDialogoCambioEstado()" tabindex="0"></div>
-
-      <div class="dialog-content confirm-card" (keydown.escape)="cerrarDialogoCambioEstado()">
+    <div class="modal-overlay" (click)="cerrarDialogoCambioEstado()">
+      <div class="modal-content confirm-card" (click)="$event.stopPropagation()">
         <div class="confirm-header">
           <div class="warn-icon">
             <mat-icon>info</mat-icon>
@@ -212,10 +195,11 @@
 
   <!-- Modal detalles -->
   @if (mostrarModalDetalles && practicaSeleccionada) {
-    <div class="DetailsDialog">
-      <div class="DialogOverlay" (click)="cerrarDetalles()"></div>
+    <div class="modal-overlay" (click)="cerrarDetalles()">
 
-      <div class="DialogContent DialogContent--details">
+      <div class="DialogContent DialogContent--details" (click)="$event.stopPropagation()">
+
+        <!-- HEADER -->
         <div class="DialogHeader DialogHeader--details">
           <div class="DialogHeaderLeft">
             <div class="DialogAvatar">
@@ -230,7 +214,7 @@
             </div>
           </div>
 
-          <button mat-icon-button (click)="cerrarDetalles()" class="CloseBtn" aria-label="Cerrar detalles">
+          <button mat-icon-button (click)="cerrarDetalles()" class="CloseBtn" aria-label="Cerrar">
             <mat-icon>close</mat-icon>
           </button>
         </div>

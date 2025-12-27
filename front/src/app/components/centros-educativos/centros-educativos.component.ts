@@ -25,8 +25,8 @@ import { OnInit } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
 
-type TipoCentro = 'PARTICULAR' | 'PARTICULAR_SUBVENCIONADO' | 'SLEP' | 'NO_CONVENCIONAL';
-type Convenio   = 'Marco SLEP' | 'Solicitud directa' | 'ADEP' | string;
+type TipoCentro = 'NINGUNO' | 'PARTICULAR' | 'PARTICULAR_SUBVENCIONADO' | 'SLEP' | 'NO_CONVENCIONAL';
+type Convenio   = 'NINGUNO' |'Marco SLEP' | 'Solicitud directa' | 'ADEP' | string;
 
 interface CentroEducativo {
   id: number;
@@ -133,10 +133,10 @@ export class CentrosEducativosComponent implements OnInit {
   editId: number | null = null;
   newCentroEducativo: Partial<CentroEducativo> = {
     nombre: '',
-    tipo: 'SLEP',
+    tipo: 'NINGUNO',
     region: '',
     comuna: '',
-    convenio: 'Marco SLEP',
+    convenio: 'NINGUNO',
     direccion: '',
     url_rrss: '',
     telefono: '',
@@ -295,10 +295,10 @@ export class CentrosEducativosComponent implements OnInit {
     this.editId = null;
     this.newCentroEducativo = {
       nombre: '',
-      tipo: 'SLEP',
+      tipo: 'NINGUNO',
       region: '',
       comuna: '',
-      convenio: 'Marco SLEP',
+      convenio: 'NINGUNO',
       direccion: '',
       url_rrss: '',
       telefono: '',
@@ -407,6 +407,7 @@ export class CentrosEducativosComponent implements OnInit {
 }
 
 readonly TIPO_LABEL: Record<TipoCentro, string> = {
+  NINGUNO: 'Sin tipo',
   PARTICULAR: 'Particular',
   PARTICULAR_SUBVENCIONADO: 'Particular subvencionado',
   SLEP: 'SLEP',

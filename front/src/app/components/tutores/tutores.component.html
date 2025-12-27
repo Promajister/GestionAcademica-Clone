@@ -1,5 +1,4 @@
 <div class="ga-page ga-page--wide tutores">
-  <!-- HEADER -->
   <div class="ga-header">
     <div>
       <h1 class="ga-title">Gestión de Tutores</h1>
@@ -293,10 +292,9 @@
     </div>
   }
 
-
   <!-- CONFIRMAR ELIMINAR -->
   @if (mostrarConfirmarEliminar && tutorAEliminar) {
-    <div class="confirm-dialog">
+    <div class="modal-overlay confirm-dialog">
       <div class="dialog-overlay" (click)="cerrarConfirmarEliminar()" tabindex="0"></div>
 
       <div class="dialog-content confirm-card" (keydown.escape)="cerrarConfirmarEliminar()">
@@ -311,8 +309,8 @@
         </div>
 
         <div class="confirm-actions">
-          <button mat-stroked-button (click)="cerrarConfirmarEliminar()">Cancelar</button>
-          <button mat-flat-button color="warn" (click)="confirmarEliminar()" class="btn-danger">
+          <button mat-stroked-button class="ga-btn" (click)="cerrarConfirmarEliminar()">Cancelar</button>
+          <button mat-flat-button color="warn" (click)="confirmarEliminar()" class="ga-btn btn-danger">
             <mat-icon>delete</mat-icon> Eliminar
           </button>
         </div>

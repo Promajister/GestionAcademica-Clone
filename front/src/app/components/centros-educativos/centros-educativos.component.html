@@ -577,7 +577,7 @@
 
   <!-- MODAL AGREGAR / EDITAR CENTRO -->
   @if (pendingDelete) {
-    <div class="confirm-dialog">
+    <div class="modal-overlay confirm-dialog">
       <div class="dialog-overlay" (click)="cancelDelete()" tabindex="0"></div>
 
       <div class="dialog-content confirm-card" (keydown.escape)="cancelDelete()">

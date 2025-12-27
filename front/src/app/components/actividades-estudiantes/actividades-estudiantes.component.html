@@ -451,7 +451,7 @@
   }
 
   <!-- CONFIRM DELETE (se mantiene igual, ya está globalizado) -->
-  <div class="confirm-dialog" *ngIf="pendingDelete">
+  <div class="modal-overlay confirm-dialog" *ngIf="pendingDelete">
     <div class="dialog-overlay" (click)="cancelDelete()" tabindex="0"></div>
     <div class="dialog-content confirm-card" (keydown.escape)="cancelDelete()">
       <div class="confirm-header">
