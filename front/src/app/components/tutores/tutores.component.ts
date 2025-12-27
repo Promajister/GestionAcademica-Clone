@@ -240,7 +240,6 @@ export class TutoresComponent implements OnInit {
     });
   }
 
-  // Actualizar paginación cuando cambian los filtros o datos
   actualizarPaginacion() {
     this.totalItems = this.filtrados.length;
     const maxPage = Math.max(0, Math.ceil(this.totalItems / this.pageSize) - 1);
@@ -249,7 +248,6 @@ export class TutoresComponent implements OnInit {
     }
   }
 
-  // Cargar tutores (para cuando se agrega/edita/elimina)
   cargarTutores() {
     this.load();
   }
@@ -377,7 +375,6 @@ export class TutoresComponent implements OnInit {
           );
           this.cerrarConfirmarEliminar();
           this.load();
-          // Ajustar página si es necesario después de eliminar
           setTimeout(() => {
             if (this.tutores.length === 0 && this.pageIndex > 0) {
               this.pageIndex--;
@@ -400,11 +397,9 @@ export class TutoresComponent implements OnInit {
     this.tutorAEliminar = null;
   }
 
-  // ===== filtros - aplicados localmente en el frontend =====
   get filtrados(): Tutor[] {
     let resultado = [...this.todosLosTutores];
 
-    // Filtrar por término de búsqueda (búsqueda inteligente)
     if (this.terminoBusqueda.trim()) {
       const termino = this.terminoBusqueda.trim().toLowerCase();
       resultado = resultado.filter((tutor) => {
@@ -446,7 +441,6 @@ export class TutoresComponent implements OnInit {
   onPageChange(event: PageEvent) {
     this.pageIndex = event.pageIndex;
     this.pageSize = event.pageSize;
-    // No necesitamos recargar, solo actualizar la paginación
     this.actualizarPaginacion();
   }
 
@@ -507,7 +501,6 @@ export class TutoresComponent implements OnInit {
 
     const valores = this.formularioTutor.value as TutorForm;
 
-    // En actualización, enviamos todos los campos (incluyendo null para vaciar)
     const datosParaEnviar: any = {
       rut: valores.rut?.trim(),
       nombre: valores.nombre?.trim(),
@@ -638,5 +631,12 @@ export class TutoresComponent implements OnInit {
   limpiarFiltros() {
     this.terminoBusqueda = '';
     this.onFiltersChange();
+  }
+
+  cerrarModalTutor() {
+    this.mostrarFormulario = false;
+    this.estaEditando = false;
+    this.tutorEditando = null;
+    this.resetearFormulario();
   }
 }
