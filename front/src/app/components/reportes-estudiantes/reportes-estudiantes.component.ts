@@ -7,7 +7,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
-// Angular Material
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
@@ -42,6 +41,7 @@ import { saveAs } from 'file-saver';
     MatListModule,
   ],
   templateUrl: './reportes-estudiantes.component.html',
+  styleUrls: ['./reportes-estudiantes.component.scss'],
   
 })
 export class ReportesEstudianteComponent {
@@ -88,7 +88,7 @@ export class ReportesEstudianteComponent {
   seleccionar(rut: string) {
     this.rut = rut;
     this.resultados = [];
-    this.buscar(); // reutiliza tu buscar() por rut
+    this.buscar(); 
   }
 
 
@@ -96,7 +96,6 @@ export class ReportesEstudianteComponent {
     this.error = null;
     this.estudiante = null;
 
-    // 1️⃣ Si hay RUT → buscar por RUT
     if (this.rut?.trim()) {
       this.loading = true;
 
@@ -118,13 +117,11 @@ export class ReportesEstudianteComponent {
       return;
     }
 
-    // 2️⃣ Si NO hay RUT pero hay nombre → buscar por nombre
     if (this.nombreQuery?.trim()) {
       this.onNombreInput(this.nombreQuery);
       return;
     }
 
-    // 3️⃣ Nada escrito
     this.error = 'Ingrese un RUT o un nombre.';
   }
 
@@ -151,7 +148,8 @@ export class ReportesEstudianteComponent {
 
     const rows = this.estudiante.practicas.map((p: any) => [
       p.tipo || '—',
-      p.estado,
+      p.estado || '—',
+      `${p.semestre ?? '—'}° ${p.anio ?? ''}`.trim(),
       p.centro || '—',
       p.tutores?.join(', ') || '—',
       this.formatDate(p.fechaInicio),
@@ -180,7 +178,8 @@ export class ReportesEstudianteComponent {
 
     const data = this.estudiante.practicas.map((p: any) => ({
       Tipo: p.tipo || '—',
-      Estado: p.estado,
+      Estado: p.estado || '—',
+      Semestre: `${p.semestre ?? '—'}° ${p.anio ?? ''}`.trim(),
       Centro: p.centro || '—',
       Supervisores: p.tutores?.join(', ') || '—',
       Inicio: this.formatDate(p.fechaInicio),
@@ -203,6 +202,4 @@ export class ReportesEstudianteComponent {
 
     saveAs(blob, `reporte_estudiante_${this.estudiante.rut}.xlsx`);
   }
-
-
 }

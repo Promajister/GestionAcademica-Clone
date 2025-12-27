@@ -3,9 +3,7 @@
   <div class="ga-header">
     <div>
       <h1 class="ga-title">Gestión de actividades de las prácticas</h1>
-      <p class="ga-subtitle">
-        Registra, revisa y administra actividades asociadas a las prácticas.
-      </p>
+      <p class="ga-subtitle">Registra, revisa y administra actividades asociadas a las prácticas.</p>
     </div>
 
     <span class="ga-spacer"></span>
@@ -13,7 +11,7 @@
     <button
       mat-flat-button
       color="primary"
-      class="ga-btn"
+      class="ga-btn ga-btn--primary"  
       (click)="alternarFormulario()"
       *ngIf="!esJefatura">
       <mat-icon>{{ mostrarFormulario ? 'close' : 'add' }}</mat-icon>
@@ -21,14 +19,7 @@
     </button>
   </div>
 
-  <mat-card class="ga-card filtros">
-    <mat-card-header>
-      <mat-card-title class="filtros__title">
-        <mat-icon>search</mat-icon>
-        Filtros de búsqueda
-      </mat-card-title>
-    </mat-card-header>
-
+  <!-- FILTROS DE BÚSQUEDA -->
   <mat-card class="ga-card filtros">
     <mat-card-header>
       <mat-card-title class="filtros__title">
@@ -45,7 +36,7 @@
             matInput
             [(ngModel)]="searchTerm"
             (ngModelChange)="filterActivities()"
-            placeholder="Nombre de actividad…" />
+            placeholder="Buscar por nombre de actividad..." />
           <mat-icon matSuffix>search</mat-icon>
         </mat-form-field>
 
@@ -58,128 +49,16 @@
           </mat-select>
         </mat-form-field>
       </div>
-
-      <div class="filtros__actions">
-        <button mat-stroked-button color="primary" (click)="filterActivities()">
-          <mat-icon>refresh</mat-icon>
-          Aplicar filtros
-        </button>
-
-        <button mat-button type="button" (click)="limpiarFiltros()">
-          <mat-icon>close</mat-icon>
-          Limpiar filtros
-        </button>
-      </div>
     </mat-card-content>
   </mat-card>
 
-  <!-- LISTADO / ESTADOS -->
-  @if (isLoading) {
-    <mat-card class="ga-card">
-      <mat-card-content class="loading-container">
-        <mat-spinner diameter="36"></mat-spinner>
-        <p class="ga-subtitle">Cargando actividades…</p>
-      </mat-card-content>
-    </mat-card>
-
-  } @else if (filteredActivities.length === 0) {
-    <mat-card class="ga-card ga-card--soft">
-      <mat-card-content class="ga-empty">
-        <mat-icon>event_busy</mat-icon>
-        <h3>No hay actividades</h3>
-        <p>No se encontraron actividades con los filtros actuales.</p>
-      </mat-card-content>
-    </mat-card>
-
-  } @else {
-    <mat-card class="TableCard Elev">
-      <mat-card-content class="TableContent">
-        <div class="TableWrapper">
-          <div class="TableHeader">
-            <div class="HeaderCell HeaderCell--name">NOMBRE ACTIVIDAD</div>
-            <div class="HeaderCell HeaderCell--date">FECHA</div>
-            <div class="HeaderCell HeaderCell--time">HORA</div>
-            <div class="HeaderCell HeaderCell--location">UBICACIÓN</div>
-            <div class="HeaderCell HeaderCell--students">ESTUDIANTES</div>
-            <div class="HeaderCell HeaderCell--evidence">EVIDENCIAS</div>
-            <div class="HeaderCell HeaderCell--actions">ACCIONES</div>
-          </div>
-
-          <div class="TableRow" *ngFor="let actividad of filteredActivities">
-            <div class="TableCell TableCell--name">
-              <div class="ActivityName">{{ actividad.nombre_actividad }}</div>
-            </div>
-
-            <div class="TableCell TableCell--date">
-              <div class="DateText">{{ formatDate(actividad.fecha) }}</div>
-            </div>
-
-            <div class="TableCell TableCell--time">
-              <div class="TimeText">{{ formatHorario(actividad) }}</div>
-            </div>
-
-            <div class="TableCell TableCell--location">
-              <div class="LocationText">{{ actividad.lugar || '—' }}</div>
-            </div>
-
-            <div class="TableCell TableCell--students">
-              <div class="StudentsText">{{ actividad.estudiantes || '—' }}</div>
-            </div>
-
-            <div class="TableCell TableCell--evidence">
-              <div class="EvidenceText">
-                <a
-                  *ngIf="actividad.archivo_adjunto"
-                  [href]="getArchivoUrl(actividad.archivo_adjunto)!"
-                  [download]="'archivos_adjuntos.zip'"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="EvidenceLink"
-                  title="Descargar archivos adjuntos">
-                  <mat-icon>attach_file</mat-icon>
-                </a>
-                <span *ngIf="!actividad.archivo_adjunto">—</span>
-              </div>
-            </div>
-
-            <div class="TableCell TableCell--actions">
-              <div class="ActionButtons">
-                <button mat-icon-button (click)="viewActivity(actividad)" title="Ver detalles">
-                  <mat-icon>visibility</mat-icon>
-                </button>
-
-                <button mat-icon-button color="primary" (click)="editActivity(actividad)" title="Editar" *ngIf="!esJefatura">
-                  <mat-icon>edit</mat-icon>
-                </button>
-
-                <button mat-icon-button color="warn" (click)="askDelete(actividad)" title="Eliminar" *ngIf="!esJefatura">
-                  <mat-icon>delete</mat-icon>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </mat-card-content>
-
-      <div class="list-paginator">
-        <mat-paginator
-          [length]="totalItems"
-          [pageIndex]="pageIndex"
-          [pageSize]="pageSize"
-          [pageSizeOptions]="pageSizeOptions"
-          (page)="onPageChange($event)">
-        </mat-paginator>
-      </div>
-    </mat-card>
-  }
-
-
-  <div class="form-container" [class.form-open]="mostrarFormulario" *ngIf="!esJefatura">
+  <!-- FORMULARIO -->
+  <div class="form-wrap" [class.form-wrap--open]="mostrarFormulario" *ngIf="!esJefatura">
     @if (mostrarFormulario) {
       <mat-card class="ga-card form-card">
         <mat-card-header class="form-header">
-          <div class="form-title-section">
-            <div class="form-icon">
+          <div class="form-header__left">
+            <div class="form-avatar">
               <mat-icon>{{ estaEditando ? 'edit' : 'add' }}</mat-icon>
             </div>
             <div class="form-titles">
@@ -187,16 +66,15 @@
               <p>{{ estaEditando ? 'Modifica los datos de la actividad' : 'Completa los datos para registrar una nueva actividad' }}</p>
             </div>
           </div>
-
-          <button mat-icon-button (click)="alternarFormulario()" class="close-form-btn" aria-label="Cerrar formulario">
+          <button mat-icon-button (click)="alternarFormulario()" class="CloseBtn">
             <mat-icon>close</mat-icon>
           </button>
         </mat-card-header>
 
-        <mat-card-content class="form-content">
+        <mat-card-content class="form-body">
           <form [formGroup]="formularioActividad" class="form-grid">
             <div class="form-row">
-              <mat-form-field appearance="outline" class="form-field full-width">
+              <mat-form-field appearance="outline" class="full">
                 <mat-label>Nombre de la actividad *</mat-label>
                 <input matInput formControlName="nombre_actividad" placeholder="Ej: Taller 2: Gestión emocional" />
                 @if (formularioActividad.get('nombre_actividad')?.invalid && formularioActividad.get('nombre_actividad')?.touched) {
@@ -206,7 +84,7 @@
             </div>
 
             <div class="form-row">
-              <mat-form-field appearance="outline" class="form-field">
+              <mat-form-field appearance="outline" class="FormField">
                 <mat-label>Fecha *</mat-label>
                 <input matInput [matDatepicker]="pickerFecha" formControlName="fecha" />
                 <mat-datepicker-toggle matIconSuffix [for]="pickerFecha"></mat-datepicker-toggle>
@@ -216,192 +94,206 @@
                 }
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="form-field">
+              <mat-form-field appearance="outline" class="FormField">
                 <mat-label>Horario</mat-label>
-                <input matInput formControlName="horario" type="time" />
+                <input matInput formControlName="horario" type="time" placeholder="HH:MM" />
                 <mat-hint>Formato: HH:MM (24 horas)</mat-hint>
               </mat-form-field>
             </div>
 
             <div class="form-row">
-              <mat-form-field appearance="outline" class="form-field">
+              <mat-form-field appearance="outline" class="FormField">
                 <mat-label>Ubicación</mat-label>
                 <input matInput formControlName="lugar" placeholder="Ej: Sala A, Auditorio, Online" />
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="form-field">
+              <mat-form-field appearance="outline" class="FormField">
                 <mat-label>Estudiantes</mat-label>
-                <input matInput formControlName="estudiantes" placeholder="Ej: Ana Torres, Carlos Sánchez…" />
+                <input matInput formControlName="estudiantes" placeholder="Ej: Ana Torres, Carlos Sanchez, ..." />
               </mat-form-field>
             </div>
 
             @if (!estaEditando) {
               <div class="form-row">
-                <div class="form-field full-width">
-                  <label class="form-label">Archivos adjuntos</label>
-
-                  <div class="file-upload">
-                    <input
-                      type="file"
+                <div class="full">
+                  <label class="ga-label">Archivos adjuntos</label>
+                  <div class="FileUploadContainer" style="margin-top: 8px;">
+                    <input 
+                      type="file" 
                       #fileInput
                       (change)="onFileSelected($event)"
                       accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
                       multiple
-                      style="display:none"
-                    />
-
-                    <button
+                      style="display: none;"
+                      id="fileInput" />
+                    <button 
                       type="button"
-                      mat-stroked-button
+                      mat-stroked-button 
                       (click)="fileInput.click()"
-                      class="file-upload-btn"
+                      class="FileUploadBtn"
                       [disabled]="estaComprimiendo">
                       <mat-icon>attach_file</mat-icon>
-                      {{ archivosSeleccionados.length > 0
-                        ? 'Seleccionar más archivos (' + archivosSeleccionados.length + ')'
-                        : 'Seleccionar archivos (PDF, JPG, PNG)' }}
+                      {{ archivosSeleccionados.length > 0 ? `Seleccionar más archivos (${archivosSeleccionados.length} archivo${archivosSeleccionados.length > 1 ? 's' : ''})` : 'Seleccionar archivos (PDF, JPG, PNG)' }}
                     </button>
-
+                    
                     @if (estaComprimiendo) {
-                      <div class="file-progress">
+                      <div class="CompressingIndicator">
                         <mat-spinner diameter="20"></mat-spinner>
-                        <span>Comprimiendo archivos…</span>
+                        <span>Comprimiendo archivos...</span>
                       </div>
                     }
-
+                    
                     @if (archivosSeleccionados.length > 0 && !estaComprimiendo) {
-                      <div class="files-list">
+                      <div class="FilesList">
                         @for (file of archivosSeleccionados; track $index) {
-                          <div class="file-item">
-                            <mat-icon>description</mat-icon>
-                            <span class="truncate" [title]="file.name">{{ file.name }}</span>
-                            <span class="muted">({{ formatFileSize(file.size) }})</span>
-                            <button mat-icon-button type="button" (click)="eliminarArchivo($index)">
+                          <div class="FileInfo">
+                            <mat-icon class="FileIcon">description</mat-icon>
+                            <span class="FileName" [title]="file.name">{{ file.name }}</span>
+                            <span class="FileSize">({{ formatFileSize(file.size) }})</span>
+                            <button 
+                              type="button"
+                              mat-icon-button 
+                              (click)="eliminarArchivo($index)"
+                              class="RemoveFileBtn">
                               <mat-icon>close</mat-icon>
                             </button>
                           </div>
                         }
-
                         @if (archivoZip) {
-                          <div class="file-item file-item--ok">
-                            <mat-icon>folder_zip</mat-icon>
-                            <span class="truncate" [title]="archivoZip.name">{{ archivoZip.name }}</span>
-                            <span class="muted">({{ formatFileSize(archivoZip.size) }})</span>
-                            <span class="ok-text">✓ Comprimido</span>
+                          <div class="FileInfo" style="background: #f0fdf4; border-color: #86efac;">
+                            <mat-icon class="FileIcon" style="color: #16a34a;">folder_zip</mat-icon>
+                            <span class="FileName" [title]="archivoZip.name">{{ archivoZip.name }}</span>
+                            <span class="FileSize">({{ formatFileSize(archivoZip.size) }})</span>
+                            <span style="font-size: 12px; color: #16a34a; font-weight: 500;">✓ Comprimido</span>
                           </div>
                         }
                       </div>
                     }
-
-                    <mat-hint>Se generará un ZIP automáticamente con los adjuntos.</mat-hint>
+                    <mat-hint>Puedes seleccionar uno o múltiples archivos a la vez. Se agregarán a la lista y se comprimirán automáticamente en un ZIP. Formatos permitidos: PDF, JPG, PNG</mat-hint>
                   </div>
                 </div>
               </div>
             } @else {
               <div class="form-row">
-                <div class="form-field full-width">
-                  <div class="ga-info">
-                    <mat-icon>info</mat-icon>
-                    <div>
-                      <div class="ga-info__title">Adjuntos bloqueados</div>
-                      <div class="ga-info__text">Por trazabilidad, los adjuntos no pueden modificarse al editar una actividad.</div>
-                    </div>
+                <div class="full">
+                  <div class="EditFileMessage">
+                    <mat-icon class="InfoIcon">info</mat-icon>
+                    <p class="EditFileMessageText">
+                      Por transparencia y trazabilidad, los archivos adjuntos no pueden ser modificados al editar una actividad.
+                    </p>
                   </div>
                 </div>
               </div>
             }
           </form>
-        </mat-card-content>
 
-        <div class="form-footer">
-          <button mat-stroked-button color="warn" (click)="alternarFormulario()">Cancelar</button>
-          <button mat-flat-button color="primary" (click)="guardarActividad()" [disabled]="formularioActividad.invalid">
-            <mat-icon>{{ estaEditando ? 'save' : 'add' }}</mat-icon>
-            {{ estaEditando ? 'Guardar cambios' : 'Añadir' }}
-          </button>
-        </div>
+          <div class="form-actions">
+            <button mat-stroked-button (click)="alternarFormulario()" class="CancelBtn">
+              Cancelar
+            </button>
+            <button
+              mat-raised-button
+              color="primary"
+              (click)="guardarActividad()"
+              [disabled]="formularioActividad.invalid"
+              class="SubmitBtn">
+              <mat-icon>{{ estaEditando ? 'save' : 'add' }}</mat-icon>
+              {{ estaEditando ? 'Guardar cambios' : 'Añadir' }}
+            </button>
+          </div>
+        </mat-card-content>
       </mat-card>
     }
   </div>
 
-  <mat-card class="TableCard Elev" *ngIf="totalItems > 0">
-    <mat-card-content class="TableContent">
-      <div class="TableWrapper">
-        <div class="TableHeader">
-          <div class="HeaderCell HeaderCell--name">NOMBRE ACTIVIDAD</div>
-          <div class="HeaderCell HeaderCell--date">FECHA</div>
-          <div class="HeaderCell HeaderCell--time">HORA</div>
-          <div class="HeaderCell HeaderCell--location">UBICACIÓN</div>
-          <div class="HeaderCell HeaderCell--students">ESTUDIANTES</div>
-          <div class="HeaderCell HeaderCell--evidence">EVIDENCIAS</div>
-          <div class="HeaderCell HeaderCell--actions">ACCIONES</div>
-  </div>
+  @if (filteredActivities?.length) {
+    <mat-card class="ga-card">
+      <mat-card-content class="ga-list">
+        <div class="table">
+          <div class="table__head">
+            <div class="th th--name">NOMBRE</div>
+            <div class="th th--date">FECHA</div>
+            <div class="th th--time">HORA</div>
+            <div class="th th--location">UBICACIÓN</div>
+            <div class="th th--students">ESTUDIANTES</div>
+            <div class="th th--evidence">EVIDENCIAS</div>
+            <div class="th th--actions">ACCIONES</div>
+          </div>
 
-        <div class="TableRow" *ngFor="let actividad of filteredActivities">
-          <div class="TableCell TableCell--name">
-            <div class="ActivityName">{{ actividad.nombre_actividad }}</div>
-          </div>
-          <div class="TableCell TableCell--date">
-            <div class="DateText">{{ formatDate(actividad.fecha) }}</div>
-          </div>
-          <div class="TableCell TableCell--time">
-            <div class="TimeText">{{ formatHorario(actividad) }}</div>
-          </div>
-          <div class="TableCell TableCell--location">
-            <div class="LocationText">{{ actividad.lugar || '—' }}</div>
-          </div>
-          <div class="TableCell TableCell--students">
-            <div class="StudentsText">{{ actividad.estudiantes || '—' }}</div>
-          </div>
-          <div class="TableCell TableCell--evidence">
-            <div class="EvidenceText">
-              <a 
-                *ngIf="actividad.archivo_adjunto" 
-                [href]="getArchivoUrl(actividad.archivo_adjunto)!" 
-                [download]="'archivos_adjuntos.zip'" 
-                target="_blank" 
-                rel="noopener noreferrer"
+          <div class="table__row" *ngFor="let actividad of filteredActivities">
+            <div class="table__cell table__cell--name">
+              <div class="ActivityName">{{ actividad.nombre_actividad }}</div>
+            </div>
+
+            <div class="table__cell table__cell--date">
+              {{ formatDate(actividad.fecha) }}
+            </div>
+
+            <div class="table__cell table__cell--time">
+              {{ formatHorario(actividad) }}
+            </div>
+
+            <div class="table__cell table__cell--location">
+              {{ actividad.lugar || '—' }}
+            </div>
+
+            <div class="table__cell table__cell--students">
+              <span class="StudentsText" [title]="actividad.estudiantes || ''">
+                {{ actividad.estudiantes || '—' }}
+              </span>
+            </div>
+
+            <div class="table__cell table__cell--evidence">
+              <a
+                *ngIf="actividad.archivo_adjunto"
                 class="EvidenceLink"
+                [href]="getArchivoUrl(actividad.archivo_adjunto)!"
+                [download]="'archivos_adjuntos.zip'"
+                target="_blank"
+                rel="noopener noreferrer"
                 title="Descargar archivos adjuntos">
                 <mat-icon>attach_file</mat-icon>
               </a>
               <span *ngIf="!actividad.archivo_adjunto">—</span>
             </div>
-          </div>
-          <div class="TableCell TableCell--actions">
-            <div class="ActionButtons">
-              <button mat-icon-button (click)="viewActivity(actividad)" title="Ver detalles">
-                <mat-icon>visibility</mat-icon>
-              </button>
-              <button mat-icon-button color="primary" (click)="editActivity(actividad)" title="Editar" *ngIf="!esJefatura">
-                <mat-icon>edit</mat-icon>
-              </button>
-              <button mat-icon-button color="warn" (click)="askDelete(actividad)" title="Eliminar" *ngIf="!esJefatura">
-                <mat-icon>delete</mat-icon>
-              </button>
+
+            <div class="table__cell table__cell--actions">
+              <div class="ActionButtons">
+                <button mat-icon-button (click)="viewActivity(actividad)" title="Ver detalles">
+                  <mat-icon>visibility</mat-icon>
+                </button>
+                <button mat-icon-button color="primary" (click)="editActivity(actividad)" title="Editar" *ngIf="!esJefatura">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button mat-icon-button color="warn" (click)="askDelete(actividad)" title="Eliminar" *ngIf="!esJefatura">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
             </div>
           </div>
         </div>
+      </mat-card-content>
+
+      <div class="ga-paginator" *ngIf="totalItems > 0">
+        <mat-paginator
+          [length]="totalItems"
+          [pageIndex]="pageIndex"
+          [pageSize]="pageSize"
+          [pageSizeOptions]="pageSizeOptions"
+          (page)="onPageChange($event)">
+        </mat-paginator>
       </div>
-    </mat-card-content>
-
-    <div class="list-paginator">
-      <mat-paginator
-        [length]="totalItems"
-        [pageIndex]="pageIndex"
-        [pageSize]="pageSize"
-        [pageSizeOptions]="pageSizeOptions"
-        (page)="onPageChange($event)">
-      </mat-paginator>
-    </div>
-  </mat-card>
-
-  <mat-card class="EmptyCard Elev" *ngIf="filteredActivities.length === 0">
-    <mat-card-content class="EmptyContent">
-      <mat-icon>event_busy</mat-icon>
-      <p>No hay actividades</p>
-    </mat-card-content>
-  </mat-card>
+    </mat-card>
+    
+  } @else {
+    <mat-card class="ga-card">
+      <mat-card-content class="ga-empty">
+        <mat-icon>sentiment_dissatisfied</mat-icon>
+        <h3>No hay actividades</h3>
+        <p>No hay resultados con los filtros seleccionados.</p>
+      </mat-card-content>
+    </mat-card>
+  }
 
   <!-- DIALOG DETALLES -->
   @if (actividadSeleccionada) {
@@ -524,7 +416,7 @@
               </a>
             </div>
           } @else {
-            <p class="Muted">No hay evidencias adjuntas para esta actividad.</p>
+            <p class="ga-subtitle">No hay evidencias adjuntas para esta actividad.</p>
           }
         </div>
       </div>
@@ -544,7 +436,6 @@
     </div>
   </div>
 }
-
   <!-- DIALOG CONFIRMAR ELIMINACIÓN -->
   <div class="confirm-dialog" *ngIf="pendingDelete">
     <div class="dialog-overlay" (click)="cancelDelete()" tabindex="0"></div>
@@ -557,7 +448,7 @@
       </div>
       <div class="confirm-body">
         <p>¿Estás seguro de que quieres eliminar la actividad <b>{{ pendingDelete!.nombre_actividad }}</b>?</p>
-        <p class="Muted">Esta acción no se puede deshacer.</p>
+        <p class="ga-subtitle">Esta acción no se puede deshacer.</p>
       </div>
       <div class="confirm-actions">
         <button mat-stroked-button (click)="cancelDelete()">Cancelar</button>

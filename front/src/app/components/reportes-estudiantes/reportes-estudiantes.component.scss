@@ -1,0 +1,126 @@
+:host { display: block; }
+
+.rep-estudiante{
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* header */
+.rep-head{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.rep-back{ border-radius: 10px; }
+
+.rep-titles{ min-width: 0; }
+
+.rep-actions{
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* filtros */
+.rep-searchBtn{
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+}
+
+.rep-results{
+  margin-top: 10px;
+  overflow: hidden;
+}
+
+.rep-results__hint{ margin: 0 0 8px; }
+
+.rep-resultRow{ cursor: pointer; }
+
+.rep-resultText{
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.rep-resultName{
+  font-weight: 900;
+  color: var(--ga-text);
+}
+
+/* states */
+.rep-loading{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  color: var(--ga-muted);
+}
+
+.rep-error{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  color: #b91c1c;
+}
+
+/* resultado */
+.rep-card{ overflow: hidden; }
+
+.rep-summary{ margin: 6px 0 14px; }
+
+.rep-summary__name{
+  font-weight: 900;
+  font-size: 18px;
+  color: var(--ga-text);
+  margin-bottom: 4px;
+}
+
+.rep-tableWrap{
+  overflow: auto;
+  border: 1px solid var(--ga-border);
+  border-radius: 14px;
+  background: #fff;
+}
+
+.rep-table{
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+/* mat-table look */
+.rep-table th{
+  background: var(--ga-soft);
+  color: var(--ga-muted);
+  font-weight: 900;
+  font-size: 12px;
+  letter-spacing: .4px;
+  border-bottom: 1px solid var(--ga-border);
+}
+
+.rep-table th,
+.rep-table td{
+  padding: 12px 14px;
+  vertical-align: top;
+}
+
+.rep-truncate2{
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.rep-empty{ padding: 40px 24px; }
+
+/* responsive */
+@media (max-width: 1100px){
+  .filtros__grid--3{ grid-template-columns: 1fr; }
+  .rep-searchBtn{ justify-content: flex-start; }
+  .rep-actions button{ width: 100%; justify-content: center; }
+}
