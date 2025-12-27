@@ -1,7 +1,7 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormControl } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 // Angular Material
 import { MatButtonModule } from '@angular/material/button';
@@ -35,7 +35,7 @@ import { UsuariosService, Usuario, Rol, Permiso } from '../../services/usuarios.
     MatSelectModule,
     MatSnackBarModule,
     MatProgressSpinnerModule,
-    MatCheckboxModule
+    MatCheckboxModule,
   ]
 })
 export class UsuariosComponent implements OnInit {
@@ -51,36 +51,45 @@ export class UsuariosComponent implements OnInit {
 
   // Estados para modales
   mostrarModalUsuario = false;
-  mostrarModalPermisos = false;
   mostrarConfirmarGuardar = false;
+
   usuarioEditando: Usuario | null = null;
-  rolEditando: Rol | null = null;
   formularioUsuario: FormGroup;
-  formularioPermisos: FormGroup;
   guardando = false;
   datosPendientes: any = null;
-  
-  // Estado para expandir/colapsar permisos por usuario
+
+  // Modal rápido cambiar rol
+  mostrarModalCambiarRol = false;
+  usuarioRolEditando: Usuario | null = null;
+  formularioRol: FormGroup;
+  permisosRolSeleccionado: Permiso[] = [];
+
+  // Expandir/colapsar permisos por usuario
   permisosExpandidos: { [key: number]: boolean } = {};
 
   constructor() {
-    // Inicializar formulario de usuario
     this.formularioUsuario = this.fb.group({
       nombre: ['', [Validators.required, Validators.minLength(3)]],
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(4)]],
       role: ['', Validators.required],
-      activo: [true]
+      activo: [true],
     });
 
-    // Inicializar formulario de permisos
-    this.formularioPermisos = this.fb.group({});
+    this.formularioRol = this.fb.group({
+      role: ['', Validators.required],
+    });
   }
 
   ngOnInit() {
     this.cargarUsuarios();
     this.cargarRoles();
     this.cargarPermisos();
+
+    // actualizar preview de permisos cuando cambia el rol en el modal rápido
+    this.formularioRol.get('role')?.valueChanges.subscribe((roleClave: string) => {
+      this.actualizarPreviewPermisos(roleClave);
+    });
   }
 
   cargarUsuarios() {
@@ -112,16 +121,11 @@ export class UsuariosComponent implements OnInit {
     });
   }
 
+  // Solo para "label()" bonito en chips
   cargarPermisos() {
     this.usuariosService.obtenerPermisos().subscribe({
       next: (permisos) => {
         this.permisosDisponibles = permisos;
-        // Inicializar controles del formulario de permisos
-        const permisosControls: any = {};
-        permisos.forEach((perm) => {
-          permisosControls['perm_' + perm.id] = [false];
-        });
-        this.formularioPermisos = this.fb.group(permisosControls);
       },
       error: (error) => {
         console.error('Error al cargar permisos:', error);
@@ -133,26 +137,22 @@ export class UsuariosComponent implements OnInit {
 
   roleColor(role: string) {
     switch (role) {
-      case 'vinculacion':
-        return '#e0f2f1';
-      case 'practicas':
-        return '#e3f2fd';
-      case 'jefatura':
-        return '#fff3e0';
-      default:
-        return '#f5f5f5';
+      case 'vinculacion': return '#e0f2f1';
+      case 'practicas':   return '#e3f2fd';
+      case 'jefatura':    return '#fff3e0';
+      default:            return '#f5f5f5';
     }
   }
 
   roleLabel(role: string): string {
     const rol = this.roles.find(r => r.clave === role);
-    return rol ? rol.nombre || rol.clave : role;
+    return rol ? (rol.nombre || rol.clave) : role;
   }
 
   label(permission: Permiso | string): string {
     if (typeof permission === 'string') {
       const perm = this.permisosDisponibles.find(p => p.clave === permission);
-      return perm ? perm.descripcion || perm.clave : permission;
+      return perm ? (perm.descripcion || perm.clave) : permission;
     }
     return permission.descripcion || permission.clave;
   }
@@ -170,8 +170,10 @@ export class UsuariosComponent implements OnInit {
       role: '',
       activo: true
     });
+
     this.formularioUsuario.get('password')?.setValidators([Validators.required, Validators.minLength(4)]);
     this.formularioUsuario.get('password')?.updateValueAndValidity();
+
     this.mostrarModalUsuario = true;
   }
 
@@ -184,9 +186,11 @@ export class UsuariosComponent implements OnInit {
       role: usuario.role,
       activo: usuario.activo
     });
+
     this.formularioUsuario.get('password')?.clearValidators();
     this.formularioUsuario.get('password')?.setValidators([Validators.minLength(4)]);
     this.formularioUsuario.get('password')?.updateValueAndValidity();
+
     this.mostrarModalUsuario = true;
   }
 
@@ -203,21 +207,15 @@ export class UsuariosComponent implements OnInit {
       return;
     }
 
-    // Preparar datos
     const datos = { ...this.formularioUsuario.value };
-    
-    // Buscar rolId basado en el role seleccionado
+
+    // rolId según rol.clave
     const rolSeleccionado = this.roles.find(r => r.clave === datos.role);
-    if (rolSeleccionado) {
-      datos.rolId = rolSeleccionado.id;
-    }
+    if (rolSeleccionado) datos.rolId = rolSeleccionado.id;
 
-    // Si no hay password en edición, no enviarlo
-    if (this.usuarioEditando && !datos.password) {
-      delete datos.password;
-    }
+    // si edita y no cambió password, no enviarlo
+    if (this.usuarioEditando && !datos.password) delete datos.password;
 
-    // Guardar datos pendientes y mostrar confirmación
     this.datosPendientes = datos;
     this.mostrarConfirmarGuardar = true;
   }
@@ -264,81 +262,65 @@ export class UsuariosComponent implements OnInit {
     return !!this.datosPendientes.password && this.datosPendientes.password.trim() !== '';
   }
 
-  seCambiaronOtrosCampos(): boolean {
-    if (!this.usuarioEditando || !this.datosPendientes) return true; // Si es nuevo usuario, siempre hay cambios
-    
-    const datos = this.datosPendientes;
-    const original = this.usuarioEditando;
-    
-    // Verificar si cambió nombre, email, role o activo (excluyendo password)
-    return (
-      datos.nombre !== original.nombre ||
-      datos.email !== original.email ||
-      datos.role !== original.role ||
-      datos.activo !== original.activo
-    );
+  // abrir modal rápido de rol
+  abrirCambiarRol(usuario: Usuario) {
+    this.usuarioRolEditando = usuario;
+    this.mostrarModalCambiarRol = true;
+
+    this.formularioRol.reset({ role: usuario.role });
+    this.actualizarPreviewPermisos(usuario.role);
   }
 
-  gestionarPermisos(usuario: Usuario) {
-    if (!usuario.rol) {
-      this.snackBar.open('El usuario no tiene un rol asignado', 'Cerrar', { duration: 3000 });
+  cerrarModalCambiarRol() {
+    this.mostrarModalCambiarRol = false;
+    this.usuarioRolEditando = null;
+    this.formularioRol.reset();
+    this.permisosRolSeleccionado = [];
+  }
+
+  private actualizarPreviewPermisos(roleClave: string) {
+    const rol = this.roles.find(r => r.clave === roleClave);
+    this.permisosRolSeleccionado = rol?.permisos ? [...rol.permisos] : [];
+  }
+
+  // guardar cambio de rol (sin permisos manuales)
+  guardarCambioRol() {
+    if (!this.usuarioRolEditando) return;
+    if (this.formularioRol.invalid) {
+      this.formularioRol.markAllAsTouched();
       return;
     }
 
-    this.rolEditando = usuario.rol;
-    
-    // Resetear formulario de permisos con los permisos actuales del rol
-    this.permisosDisponibles.forEach((perm) => {
-      const controlName = 'perm_' + perm.id;
-      const tienePermiso = usuario.rol!.permisos?.some(p => p.id === perm.id) || false;
-      const control = this.formularioPermisos.get(controlName);
-      if (control) {
-        control.setValue(tienePermiso);
-      }
-    });
-    
-    this.mostrarModalPermisos = true;
-  }
+    const role = this.formularioRol.value.role as string;
+    const rolSeleccionado = this.roles.find(r => r.clave === role);
 
-  cerrarModalPermisos() {
-    this.mostrarModalPermisos = false;
-    this.rolEditando = null;
-  }
-
-  guardarPermisos() {
-    if (!this.rolEditando) return;
+    if (!rolSeleccionado) {
+      this.snackBar.open('Rol inválido', 'Cerrar', { duration: 2500 });
+      return;
+    }
 
     this.guardando = true;
-    
-    // Recopilar permisos seleccionados
-    const permisosSeleccionados: number[] = [];
-    this.permisosDisponibles.forEach((perm) => {
-      const controlName = 'perm_' + perm.id;
-      if (this.formularioPermisos.get(controlName)?.value) {
-        permisosSeleccionados.push(perm.id);
-      }
-    });
 
-    this.usuariosService.actualizarPermisosRol(this.rolEditando.id, permisosSeleccionados).subscribe({
+    this.usuariosService.actualizar(this.usuarioRolEditando.id, {
+      role: role as any,
+      rolId: rolSeleccionado.id,
+    }).subscribe({
       next: () => {
-        this.snackBar.open('Permisos actualizados correctamente', 'Cerrar', { duration: 3000 });
-        this.cerrarModalPermisos();
-        this.cargarUsuarios();
-        this.cargarRoles();
+        this.snackBar.open('Rol actualizado correctamente', 'Cerrar', { duration: 3000 });
+        this.cerrarModalCambiarRol();
+        this.cargarUsuarios(); // refresca rol + permisos derivados
         this.guardando = false;
       },
       error: (error) => {
-        console.error('Error al actualizar permisos:', error);
-        this.snackBar.open('Error al actualizar permisos', 'Cerrar', { duration: 3000 });
+        console.error('Error al actualizar rol:', error);
+        const mensaje = error.error?.message || 'Error al actualizar rol';
+        this.snackBar.open(mensaje, 'Cerrar', { duration: 3000 });
         this.guardando = false;
       }
     });
   }
 
-  getPermisoControl(permisoId: number): FormControl {
-    return this.formularioPermisos.get('perm_' + permisoId) as FormControl;
-  }
-
+  // ===== Expand/collapse permisos (solo UI) =====
   togglePermisos(usuarioId: number) {
     this.permisosExpandidos[usuarioId] = !this.permisosExpandidos[usuarioId];
   }
@@ -348,9 +330,6 @@ export class UsuariosComponent implements OnInit {
   }
 
   getPermisosVisibles(permisos: Permiso[], usuarioId: number, limite: number = 3): Permiso[] {
-    if (this.isPermisosExpandidos(usuarioId)) {
-      return permisos;
-    }
-    return permisos.slice(0, limite);
+    return this.isPermisosExpandidos(usuarioId) ? permisos : permisos.slice(0, limite);
   }
 }
