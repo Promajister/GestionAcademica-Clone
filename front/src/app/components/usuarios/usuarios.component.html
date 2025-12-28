@@ -32,76 +32,77 @@
   } @else {
     <mat-card class="elev usuarios-card">
       <mat-card-content class="list-container">
-        @for (u of usuarios; track u.id) {
-          <div class="list-item">
-            <div class="item-content">
-              <!-- Información principal -->
-              <div class="item-main">
-                <div class="item-info">
-                  <h3>{{ u.nombre }}</h3>
-                  <p class="muted">{{ u.email }}</p>
+        <div class="cards-stack">
+          @for (u of usuarios; track u.id) {
+            <div class="list-item">
+              <div class="item-content">
+                <!-- Información principal -->
+                <div class="item-main">
+                  <div class="item-info">
+                    <h3>{{ u.nombre }}</h3>
+                    <p class="muted">{{ u.email }}</p>
+                  </div>
                 </div>
-              </div>
 
-              <!-- Rol -->
-              <div class="item-role">
-                <span class="role-badge" [style.background]="roleColor(u.role)">
-                  {{ roleLabel(u.role) }}
-                </span>
-              </div>
-
-              <!-- Estado -->
-              <div class="item-status">
-                <div class="pill" [ngClass]="getEstadoPillClass(u.activo)">
-                  {{ u.activo ? 'Activo' : 'Inactivo' }}
+                <!-- Rol -->
+                <div class="item-role">
+                  <span class="role-badge" [style.background]="roleColor(u.role)">
+                    {{ roleLabel(u.role) }}
+                  </span>
                 </div>
-              </div>
 
-              <!-- Permisos (solo lectura, derivados del rol) -->
-              <div class="item-permissions">
-                @let permisos = (u.rol?.permisos ?? []);
+                <!-- Estado -->
+                <div class="item-status">
+                  <div class="pill" [ngClass]="getEstadoPillClass(u.activo)">
+                    {{ u.activo ? 'Activo' : 'Inactivo' }}
+                  </div>
+                </div>
 
-                <div class="chips">
-                  @if (permisos.length > 0) {
-                    @for (p of getPermisosVisibles(permisos, u.id); track p.id) {
-                      <span class="chip chip-small">{{ label(p) }}</span>
+                <!-- Permisos (solo lectura, derivados del rol) -->
+                <div class="item-permissions">
+                  @let permisos = (u.rol?.permisos ?? []);
+
+                  <div class="chips">
+                    @if (permisos.length > 0) {
+                      @for (p of getPermisosVisibles(permisos, u.id); track p.id) {
+                        <span class="chip chip-small">{{ label(p) }}</span>
+                      }
+
+                      @if (permisos.length > 3) {
+                        <button
+                          mat-button
+                          class="chip-link"
+                          (click)="togglePermisos(u.id)"
+                          type="button">
+                          {{ isPermisosExpandidos(u.id) ? 'Ver menos' : 'Ver más (' + (permisos.length - 3) + ')' }}
+                        </button>
+                      }
+                    } @else {
+                      <span class="chip chip-small muted">Sin permisos</span>
                     }
-
-                    @if (permisos.length > 3) {
-                      <button
-                        mat-button
-                        class="chip-link"
-                        (click)="togglePermisos(u.id)"
-                        type="button">
-                        {{ isPermisosExpandidos(u.id) ? 'Ver menos' : 'Ver más (' + (permisos.length - 3) + ')' }}
-                      </button>
-                    }
-                  } @else {
-                    <span class="chip chip-small muted">Sin permisos</span>
-                  }
+                  </div>
                 </div>
-              </div>
 
+                <!-- Acciones -->
+                <div class="item-actions">
+                  <button mat-icon-button color="primary" (click)="editarUsuario(u)" title="Editar">
+                    <mat-icon>edit</mat-icon>
+                  </button>
 
-              <!-- Acciones -->
-              <div class="item-actions">
-                <button mat-icon-button color="primary" (click)="editarUsuario(u)" title="Editar">
-                  <mat-icon>edit</mat-icon>
-                </button>
-
-                <!-- NUEVO: cambiar rol (sin permisos manuales) -->
-                <button mat-icon-button color="accent" (click)="abrirCambiarRol(u)" title="Asignar / cambiar rol">
-                  <mat-icon>admin_panel_settings</mat-icon>
-                </button>
+                  <!-- Cambiar rol -->
+                  <button mat-icon-button color="accent" (click)="abrirCambiarRol(u)" title="Asignar / cambiar rol">
+                    <mat-icon>admin_panel_settings</mat-icon>
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        }
+          }
+        </div>
       </mat-card-content>
     </mat-card>
   }
 
-  <!-- MODAL CREAR/EDITAR USUARIO (se mantiene igual) -->
+  <!-- MODAL CREAR/EDITAR USUARIO -->
   @if (mostrarModalUsuario) {
     <div class="modal-overlay" (click)="cerrarModalUsuario()">
       <div class="modal-content" (click)="$event.stopPropagation()">
@@ -138,8 +139,11 @@
 
             <mat-form-field appearance="outline" class="form-field">
               <mat-label>Contraseña {{ usuarioEditando ? '(dejar vacío para no cambiar)' : '*' }}</mat-label>
-              <input matInput type="password" formControlName="password"
-                     [placeholder]="usuarioEditando ? 'Nueva contraseña (opcional)' : 'Mínimo 4 caracteres'" />
+              <input
+                matInput
+                type="password"
+                formControlName="password"
+                [placeholder]="usuarioEditando ? 'Nueva contraseña (opcional)' : 'Mínimo 4 caracteres'" />
               @if (formularioUsuario.get('password')?.hasError('required') && formularioUsuario.get('password')?.touched && !usuarioEditando) {
                 <mat-error>La contraseña es requerida</mat-error>
               }
@@ -182,7 +186,7 @@
     </div>
   }
 
-  <!-- MODAL CONFIRMACIÓN GUARDAR USUARIO (se mantiene igual) -->
+  <!-- MODAL CONFIRMACIÓN GUARDAR USUARIO -->
   @if (mostrarConfirmarGuardar) {
     <div class="confirm-dialog">
       <div class="dialog-overlay" (click)="cerrarConfirmarGuardar()" tabindex="0"></div>
@@ -219,7 +223,7 @@
     </div>
   }
 
-  <!--  MODAL CAMBIAR ROL -->
+  <!-- MODAL CAMBIAR ROL -->
   @if (mostrarModalCambiarRol && usuarioRolEditando) {
     <div class="modal-overlay" (click)="cerrarModalCambiarRol()">
       <div class="modal-content modal-cambiar-rol" (click)="$event.stopPropagation()">
