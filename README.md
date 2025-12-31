@@ -44,3 +44,8 @@ El sistema está construido bajo una **arquitectura cliente-servidor** compuesta
 
 ---
 
+## License
+
+This project is proprietary software.
+All rights are reserved. Unauthorized use is prohibited.
+
