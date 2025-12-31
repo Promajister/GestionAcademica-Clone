@@ -1,6 +1,6 @@
 # Sistema de Gestión Académica (SGA)
 
-**Proyecto III — Universidad de Tarapacá**  
+**Práctica profesional I — Universidad de Tarapacá**  
 **Carrera:** Ingeniería Civil en Computación e Informática
 
 ---
@@ -44,10 +44,3 @@ El sistema está construido bajo una **arquitectura cliente-servidor** compuesta
 
 ---
 
-## Instalación y configuración
-
-### **1. Clonar el repositorio**
-```bash
-git clone https://github.com/GaboNto/gestionAcademica.git
-cd gestionAcademica
-----
