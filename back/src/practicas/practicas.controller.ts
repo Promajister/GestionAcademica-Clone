@@ -13,7 +13,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 
 @Controller('practicas')
 @UseGuards(JwtCookieAuthGuard, RolesGuard)
-@Roles('practicas', 'jefatura')
+@Roles('practicas', 'jefatura', 'vinculacion')
 export class PracticasController {
   constructor(private readonly service: PracticasService) {}
 

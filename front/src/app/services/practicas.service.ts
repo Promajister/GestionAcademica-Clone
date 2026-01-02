@@ -67,7 +67,6 @@ export interface CreatePracticaDto {
   fecha_termino?: string;
   tipo?: string;
   estado?: EstadoPractica;
-  // Compatibilidad con versiones anteriores del backend
   colaboradorId?: number;
   tutorId?: number;
   tutorRole?: TutorRol;
