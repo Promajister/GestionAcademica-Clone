@@ -1,6 +1,6 @@
 # Sistema de Gestión Académica (SGA)
 
-**Proyecto III — Universidad de Tarapacá**  
+**Práctica profesional I — Universidad de Tarapacá**  
 **Carrera:** Ingeniería Civil en Computación e Informática
 
 ---
