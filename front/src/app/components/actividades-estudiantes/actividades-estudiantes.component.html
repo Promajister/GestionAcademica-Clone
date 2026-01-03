@@ -70,6 +70,7 @@
   <div class="FormContainer" [class.FormOpen]="mostrarFormulario" *ngIf="!esJefatura">
     @if (mostrarFormulario) {
       <mat-card class="Elev FormCard">
+        <div class="form-topline"></div>
         <mat-card-header class="FormHeader">
           <div class="FormTitleSection">
             <div class="FormIcon">
@@ -192,8 +193,8 @@
                     }
 
                     <mat-hint>
-                      Puedes seleccionar uno o múltiples archivos. Se agregarán a la lista y se comprimirán en un ZIP.
-                      Formatos permitidos: PDF, JPG, PNG
+                      Puedes seleccionar múltiples archivos, se comprimirán en un ZIP.
+                      (Formatos permitidos: PDF, JPG, PNG)
                     </mat-hint>
                   </div>
                 </div>

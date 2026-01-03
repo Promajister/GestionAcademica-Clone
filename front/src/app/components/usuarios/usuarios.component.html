@@ -116,7 +116,7 @@
         <div class="modal-body">
           <form [formGroup]="formularioUsuario" class="form-grid">
             <mat-form-field appearance="outline" class="form-field">
-              <mat-label>Nombre *</mat-label>
+              <mat-label>Nombre </mat-label>
               <input matInput formControlName="nombre" placeholder="Nombre completo" />
               @if (formularioUsuario.get('nombre')?.hasError('required') && formularioUsuario.get('nombre')?.touched) {
                 <mat-error>El nombre es requerido</mat-error>
@@ -127,7 +127,7 @@
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="form-field">
-              <mat-label>Email *</mat-label>
+              <mat-label>Email </mat-label>
               <input matInput type="email" formControlName="email" placeholder="correo@ejemplo.com" />
               @if (formularioUsuario.get('email')?.hasError('required') && formularioUsuario.get('email')?.touched) {
                 <mat-error>El email es requerido</mat-error>
@@ -153,7 +153,7 @@
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="form-field">
-              <mat-label>Rol *</mat-label>
+              <mat-label>Rol </mat-label>
               <mat-select formControlName="role">
                 <mat-option value="">Seleccione un rol</mat-option>
                 @for (rol of roles; track rol.id) {
