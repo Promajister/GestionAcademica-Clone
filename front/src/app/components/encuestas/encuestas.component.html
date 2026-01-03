@@ -398,6 +398,17 @@
     </div>
 
     <div class="head-actions">
+      <button
+  mat-stroked-button
+  color="primary"
+  class="head-pill"
+  type="button"
+  (click)="downloadEstadisticasColaboradoresExcel()"
+>
+  <mat-icon>download</mat-icon>
+  Exportar Excel
+</button>
+
       <button mat-icon-button class="close-btn" (click)="cerrarEstadisticas()">
         <mat-icon>close</mat-icon>
       </button>
