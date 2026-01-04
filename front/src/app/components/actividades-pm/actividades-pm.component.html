@@ -1,0 +1,338 @@
+<div class="Container Section">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero__bg"></div>
+    <div class="hero__content">
+
+      <div class="hero__left">
+        <div class="hero__icon">
+          <mat-icon>handshake</mat-icon>
+        </div>
+
+        <div class="hero__titles">
+          <h1>Actividades Plan de Mejora</h1>
+          <p>Registra actividades de vinculación asociadas al plan de mejora, con campos dinámicos por tipo.</p>
+
+          <div class="hero__chips">
+            <!-- si quieres chips, agrégalos aquí -->
+          </div>
+        </div>
+      </div>
+
+      <div class="hero__actions">
+        <button
+          mat-flat-button
+          color="primary"
+          class="btn-cta"
+          type="button"
+          (click)="guardar()"
+          [disabled]="form.invalid"
+        >
+          <mat-icon>save</mat-icon>
+          Guardar actividad
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FORMULARIO -->
+  <mat-card class="elev FormCard">
+    <div class="form-topline"></div>
+
+    <mat-card-header class="FormHeader">
+      <div class="FormTitleSection">
+        <div class="FormIcon">
+          <mat-icon>assignment_add</mat-icon>
+        </div>
+
+        <div class="FormTitles">
+          <h2>Registrar actividad</h2>
+          <p>Completa los datos generales y los campos específicos según el tipo de actividad.</p>
+        </div>
+      </div>
+
+      <!-- badge de estado -->
+      <div class="HeaderMeta">
+        <span
+          class="status-pill"
+          [class.status-pill--ok]="form.valid"
+          [class.status-pill--warn]="form.invalid"
+        >
+          <mat-icon>{{ form.valid ? 'check_circle' : 'error' }}</mat-icon>
+          {{ form.valid ? 'Formulario listo' : 'Faltan campos' }}
+        </span>
+      </div>
+    </mat-card-header>
+
+    <mat-card-content class="FormContent">
+      <form [formGroup]="form" class="FormGrid">
+
+        <!-- Datos generales -->
+        <div class="SectionHead">
+          <mat-icon>info</mat-icon>
+          <h3>Datos generales</h3>
+        </div>
+
+        <div class="FormRow">
+          <mat-form-field appearance="outline" class="FormField FullWidth">
+            <mat-label>Nombre de la actividad *</mat-label>
+            <input matInput formControlName="nombreActividad" placeholder="Ej: Feria vocacional" />
+            <mat-hint>Identifica la actividad dentro del plan de mejora.</mat-hint>
+            <mat-error *ngIf="form.get('nombreActividad')?.invalid && form.get('nombreActividad')?.touched">
+              Campo obligatorio
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="FormRow">
+          <mat-form-field appearance="outline" class="FormField">
+            <mat-label>Tipo de actividad *</mat-label>
+            <mat-select formControlName="tipoActividad">
+              <mat-option *ngFor="let tipo of tiposActividad" [value]="tipo">
+                {{ tipo }}
+              </mat-option>
+            </mat-select>
+            <mat-error *ngIf="form.get('tipoActividad')?.invalid && form.get('tipoActividad')?.touched">
+              Seleccione un tipo
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="FormField">
+            <mat-label>Responsable *</mat-label>
+            <input matInput formControlName="responsable" placeholder="Ej: Coordinación de Vinculación" />
+            <mat-error *ngIf="form.get('responsable')?.invalid && form.get('responsable')?.touched">
+              Campo obligatorio
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="FormRow">
+          <mat-form-field appearance="outline" class="FormField">
+            <mat-label>Año *</mat-label>
+            <input matInput type="number" formControlName="anio" />
+            <mat-error *ngIf="form.get('anio')?.invalid && form.get('anio')?.touched">
+              Año inválido
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="FormField">
+            <mat-label>Fecha *</mat-label>
+            <input matInput type="date" formControlName="fecha" />
+            <mat-error *ngIf="form.get('fecha')?.invalid && form.get('fecha')?.touched">
+              Fecha obligatoria
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="FormRow">
+          <mat-form-field appearance="outline" class="FormField">
+            <mat-label>Hora *</mat-label>
+            <input matInput type="time" formControlName="hora" />
+            <mat-error *ngIf="form.get('hora')?.invalid && form.get('hora')?.touched">
+              Hora obligatoria
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="FormField">
+            <mat-label>Lugar *</mat-label>
+            <input matInput formControlName="lugar" placeholder="Ej: UTA / Colegio / Auditorio..." />
+            <mat-error *ngIf="form.get('lugar')?.invalid && form.get('lugar')?.touched">
+              Campo obligatorio
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <!-- Datos específicos -->
+        <div class="SectionDivider" *ngIf="form.get('tipoActividad')?.value"></div>
+
+        <div class="SectionHead" *ngIf="form.get('tipoActividad')?.value">
+          <mat-icon>tune</mat-icon>
+          <h3>Datos específicos</h3>
+        </div>
+
+        <div class="DynamicHint" *ngIf="form.get('tipoActividad')?.value">
+          <mat-icon>info</mat-icon>
+          <span>Estos campos se ajustan automáticamente según el tipo de actividad seleccionado.</span>
+        </div>
+
+        <div
+          class="FormRow DynamicGrid"
+          *ngIf="form.get('tipoActividad')?.value"
+          [formGroup]="datosEspecificosGroup"
+        >
+          <mat-form-field
+            appearance="outline"
+            class="FormField"
+            *ngFor="let key of camposKeys"
+            [class.FullWidth]="key === 'estudiantes' || key === 'talleres' || key === 'objetivoPedagogico'"
+          >
+            <mat-label>{{ labelFor(key) }} *</mat-label>
+
+            <textarea
+              *ngIf="key === 'estudiantes' || key === 'talleres' || key === 'objetivoPedagogico' || key === 'ponencia'"
+              matInput
+              rows="3"
+              [formControlName]="key"
+              placeholder="Escribe aquí..."
+            ></textarea>
+
+            <input
+              *ngIf="!(key === 'estudiantes' || key === 'talleres' || key === 'objetivoPedagogico' || key === 'ponencia')"
+              matInput
+              [formControlName]="key"
+            />
+
+            <mat-error *ngIf="datosEspecificosGroup.get(key)?.invalid && datosEspecificosGroup.get(key)?.touched">
+              Campo obligatorio
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <!-- Plan de mejora -->
+        <div class="SectionDivider"></div>
+
+        <div class="SectionHead">
+          <mat-icon>payments</mat-icon>
+          <h3>Plan de mejora</h3>
+        </div>
+
+        <div class="FormRow">
+          <mat-form-field appearance="outline" class="FormField">
+            <mat-label>Presupuesto total *</mat-label>
+            <input matInput type="number" formControlName="presupuesto" />
+            <mat-hint>Monto total planificado para la actividad.</mat-hint>
+            <mat-error *ngIf="form.get('presupuesto')?.invalid && form.get('presupuesto')?.touched">
+              Valor inválido
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="FormField">
+            <mat-label>Gasto asociado</mat-label>
+            <input matInput type="number" formControlName="gastoAsociado" />
+            <mat-hint>Si ya hubo ejecución de gasto, regístralo aquí.</mat-hint>
+            <mat-error *ngIf="form.get('gastoAsociado')?.invalid && form.get('gastoAsociado')?.touched">
+              Valor inválido
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <!-- Evidencias -->
+        <div class="SectionDivider"></div>
+
+        <div class="SectionHead">
+          <mat-icon>verified</mat-icon>
+          <h3>Evidencias</h3>
+        </div>
+
+        <div class="EvidenceHint">
+          <mat-icon>info</mat-icon>
+          <span>
+            Aquí podrás adjuntar evidencias asociadas a la actividad.
+          </span>
+        </div>
+
+        <div class="EvidenceGrid">
+
+          <div class="EvidenceCard">
+            <div class="EvidenceIcon">
+              <mat-icon>groups</mat-icon>
+            </div>
+            <div class="EvidenceBody">
+              <h4>Lista de asistencia</h4>
+              <p>Archivo PDF o Excel con los asistentes.</p>
+              <button mat-stroked-button disabled>
+                <mat-icon>upload</mat-icon>
+                Subir archivo
+              </button>
+            </div>
+          </div>
+
+          <div class="EvidenceCard">
+            <div class="EvidenceIcon">
+              <mat-icon>description</mat-icon>
+            </div>
+            <div class="EvidenceBody">
+              <h4>Documentos</h4>
+              <p>Resoluciones, informes u otros documentos (.pdf).</p>
+              <button mat-stroked-button disabled>
+                <mat-icon>upload_file</mat-icon>
+                Adjuntar PDF
+              </button>
+            </div>
+          </div>
+
+          <div class="EvidenceCard">
+            <div class="EvidenceIcon">
+              <mat-icon>photo_camera</mat-icon>
+            </div>
+            <div class="EvidenceBody">
+              <h4>Fotografías</h4>
+              <p>Registro fotográfico de la actividad.</p>
+              <button mat-stroked-button disabled>
+                <mat-icon>photo_library</mat-icon>
+                Agregar fotos
+              </button>
+            </div>
+          </div>
+
+          <div class="EvidenceCard EvidenceCard--full">
+            <div class="EvidenceIcon">
+              <mat-icon>link</mat-icon>
+            </div>
+            <div class="EvidenceBody">
+              <h4>Enlace de noticia</h4>
+              <p>Publicación web, nota institucional o red social.</p>
+
+              <mat-form-field appearance="outline" class="FullWidth">
+                <mat-label>URL de la noticia</mat-label>
+                <input matInput formControlName="enlaceNoticia" placeholder="https://..." />
+              </mat-form-field>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Observaciones -->
+        <div class="FormRow">
+          <mat-form-field appearance="outline" class="FormField FullWidth">
+            <mat-label>Observaciones</mat-label>
+            <textarea
+              matInput
+              rows="3"
+              formControlName="observaciones"
+              placeholder="Notas, acuerdos, resultados, observaciones generales..."
+            ></textarea>
+          </mat-form-field>
+        </div>
+
+        <!-- Acciones -->
+        <div class="FormActions">
+          <button
+            mat-stroked-button
+            class="CancelBtn"
+            type="button"
+            (click)="limpiar()"
+          >
+            Limpiar
+          </button>
+
+          <button
+            mat-flat-button
+            color="primary"
+            class="SubmitBtn"
+            type="button"
+            (click)="guardar()"
+            [disabled]="form.invalid"
+          >
+            <mat-icon>save</mat-icon>
+            Guardar actividad
+          </button>
+        </div>
+
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+</div>
