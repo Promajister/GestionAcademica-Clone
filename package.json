@@ -10,7 +10,7 @@
     "start": "concurrently \"npm run frontend\" \"npm run backend\"",
     "frontend": "cd front && ng serve --open",
     "backend": "cd back && npm run start:dev",
-    "build:prod": "cd front && ng build --configuration production && xcopy /E /I /Y dist\\gestion-academica\\browser ..\\back\\public && cd ..\\back && npm run build",
+    "build:prod": "cd front && npm ci && npm run build -- --configuration production && cd .. && rm -rf back/public && mkdir -p back/public && cp -R front/dist/gestion-academica/browser/* back/public/ && cd back && npm ci && npx prisma generate && npm run build",
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start:dev": "nest start --watch",

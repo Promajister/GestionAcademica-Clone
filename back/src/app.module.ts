@@ -25,8 +25,8 @@ import { ReportesModule } from './reportes/reportes.module';
 @Module({
   imports: [
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', 'public'),
-      exclude: ['/api'], 
+      rootPath: join(process.cwd(), 'public'),
+      exclude: ['/api'],
     }),
 
     PrismaModule,
