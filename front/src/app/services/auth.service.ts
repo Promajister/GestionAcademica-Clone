@@ -101,10 +101,11 @@ export class AuthService {
 
   forgotPassword(email: string) {
     return this.http.post<{ message: string }>(
-      'http://localhost:3000/api/auth/forgot-password',
-      { email },
+      `${API}/forgot-password`,
+      { email }
     );
   }
+
 
   refreshSession(): Observable<boolean> {
     if (typeof localStorage === 'undefined') {
