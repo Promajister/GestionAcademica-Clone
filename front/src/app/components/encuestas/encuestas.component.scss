@@ -1150,3 +1150,17 @@ mat-card-actions {
     flex: none;
   }
 }
+
+.perfil-egreso {
+  background: #f8f9fa;
+  padding: 16px;
+  border-radius: 8px;
+  border-left: 4px solid #3f51b5;
+  margin-bottom: 20px;
+
+  .section-head {
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 15px;
+    padding-bottom: 5px;
+  }
+}
