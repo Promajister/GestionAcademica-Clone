@@ -231,6 +231,113 @@ export class ReportesService {
         
         return rows;
   }
+
+  async listarEstudiantes(params: {
+    search?: string;
+    page?: number;
+    limit?: number;
+    orderBy?: 'nombre' | 'rut';
+    orderDir?: 'asc' | 'desc';
+  }) {
+    const {
+      search,
+      page = 1,
+      limit = 10,
+      orderBy = 'nombre',
+      orderDir = 'asc',
+    } = params;
+
+    const term = (search ?? '').trim();
+    const where: any = {};
+
+    if (term) {
+      where.OR = [
+        // Estudiante
+        { nombre: { contains: term } },
+        { rut: { contains: term } },
+        { plan: { contains: term } },
+
+        // Centro educativo (por prácticas)
+        {
+          practicas: {
+            some: {
+              centro: { nombre: { contains: term } },
+            },
+          },
+        },
+
+        // Supervisor (Tutor con rol Supervisor)
+        {
+          practicas: {
+            some: {
+              practicaTutores: {
+                some: {
+                  rol: 'Supervisor', // enum TipoTutor
+                  tutor: { nombre: { contains: term } },
+                },
+              },
+            },
+          },
+        },
+      ];
+    }
+
+    const safeLimit = Math.max(1, Math.min(100, Number(limit) || 10));
+    const safePage = Math.max(1, Number(page) || 1);
+
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.estudiante.findMany({
+        where,
+        orderBy: { [orderBy]: orderDir },
+        skip: (safePage - 1) * safeLimit,
+        take: safeLimit,
+        select: {
+          rut: true,
+          nombre: true,
+          plan: true,
+          practicas: {
+            select: {
+              centro: { select: { nombre: true } },
+              practicaTutores: {
+                where: { rol: 'Supervisor' },
+                select: { tutor: { select: { nombre: true } } },
+              },
+            },
+          },
+        },
+      }),
+      this.prisma.estudiante.count({ where }),
+    ]);
+
+    const mapped = items.map((e) => {
+      const centros = new Set<string>();
+      const supervisores = new Set<string>();
+
+      for (const p of e.practicas ?? []) {
+        if (p.centro?.nombre) centros.add(p.centro.nombre);
+        for (const pt of p.practicaTutores ?? []) {
+          const n = pt.tutor?.nombre;
+          if (n) supervisores.add(n);
+        }
+      }
+
+      return {
+        rut: e.rut,
+        nombre: e.nombre,
+        plan: e.plan,
+        centros: Array.from(centros),
+        supervisores: Array.from(supervisores),
+      };
+    });
+
+    return {
+      items: mapped,
+      page: safePage,
+      limit: safeLimit,
+      total,
+      pages: Math.ceil(total / safeLimit),
+    };
+  }
   
   async getHistorico(params: { fromYear: number; toYear: number; tipo?: string | null; groupBy: 'semester' | 'year' }) {
     const { fromYear, toYear, tipo, groupBy } = params;
