@@ -72,7 +72,6 @@ export interface ReporteSatisfaccion {
   generatedAt: string;
 }
 
-
 export interface ReporteEstudiante {
   rut: string;
   nombre: string;
@@ -81,7 +80,11 @@ export interface ReporteEstudiante {
     id: number;
     tipo?: string | null;
     estado: EstadoPractica;
-    fechaInicio: string;      
+
+    anio?: number;       
+    semestre?: number;   
+
+    fechaInicio: string;
     fechaTermino?: string | null;
     centro?: string | null;
     tutores: string[];
@@ -109,6 +112,22 @@ export interface ReportesHistoricoResponse {
   tipo: string | null;
   groupBy: 'semester' | 'year';
   series: ReportesHistoricoItem[];
+}
+
+export interface EstudianteIndexItem {
+  rut: string;
+  nombre: string;
+  plan?: string | null;
+  centros: string[];
+  supervisores: string[];
+}
+
+export interface EstudiantesIndexResponse {
+  items: EstudianteIndexItem[];
+  page: number;
+  limit: number;
+  total: number;
+  pages: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -150,8 +169,26 @@ export class ReportesService {
     return this.http.get<EstudianteSearchItem[]>(
        `${API}/estudiantes/buscar?nombre=${encodeURIComponent(nombre)}`
       );
-    }
+  }
 
+  listarEstudiantes(params?: {
+    search?: string;
+    page?: number;
+    limit?: number;
+    orderBy?: 'nombre' | 'rut';
+    orderDir?: 'asc' | 'desc';
+  }): Observable<EstudiantesIndexResponse> {
+    const q = new URLSearchParams();
+
+    if (params?.search?.trim()) q.set('search', params.search.trim());
+    q.set('page', String(params?.page ?? 1));
+    q.set('limit', String(params?.limit ?? 10));
+    q.set('orderBy', params?.orderBy ?? 'nombre');
+    q.set('orderDir', params?.orderDir ?? 'asc');
+
+    return this.http.get<EstudiantesIndexResponse>(`${API}/estudiantes?${q.toString()}`);
+  }
+    
   getHistorico(params: {
     fromYear: number;
     toYear: number;
