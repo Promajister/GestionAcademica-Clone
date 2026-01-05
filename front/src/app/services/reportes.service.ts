@@ -96,11 +96,12 @@ export interface EstudianteSearchItem {
 }
 
 export interface ReportesHistoricoItem {
-  periodo: string; 
+  periodo: string;
   totalEstudiantes: number;
   centrosPorTipo: { tipo: string; total: number }[];
+  colaboradores: string[];
   supervisores: string[];
-  mentores: string[];
+  talleristas: string[];
 }
 
 export interface ReportesHistoricoResponse {

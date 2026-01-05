@@ -136,16 +136,22 @@
             <td mat-cell *matCellDef="let r">{{ centrosToText(r) }}</td>
           </ng-container>
 
-          <!-- SUPERVISORES -->
+          <!-- COLABORADORES -->
+          <ng-container matColumnDef="colaboradores">
+            <th mat-header-cell *matHeaderCellDef>Colaboradores</th>
+            <td mat-cell *matCellDef="let r">{{ listToText(r.colaboradores) }}</td>
+          </ng-container>
+
+          <!-- SUPERVISORES (igual) -->
           <ng-container matColumnDef="supervisores">
             <th mat-header-cell *matHeaderCellDef>Supervisores</th>
             <td mat-cell *matCellDef="let r">{{ listToText(r.supervisores) }}</td>
           </ng-container>
 
-          <!-- MENTORES -->
-          <ng-container matColumnDef="mentores">
-            <th mat-header-cell *matHeaderCellDef>Tutores</th>
-            <td mat-cell *matCellDef="let r">{{ listToText(r.mentores) }}</td>
+          <!-- TALLERISTAS -->
+          <ng-container matColumnDef="talleristas">
+            <th mat-header-cell *matHeaderCellDef>Talleristas</th>
+            <td mat-cell *matCellDef="let r">{{ listToText(r.talleristas) }}</td>
           </ng-container>
 
           <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
