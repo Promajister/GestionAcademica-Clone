@@ -89,7 +89,7 @@ export class ReportesHistoricoComponent {
   data: ReportesHistoricoResponse | null = null;
   rows: any[] = [];
 
-  displayedColumns = ['periodo', 'totalEstudiantes', 'centrosPorTipo', 'supervisores', 'mentores'];
+  displayedColumns = ['periodo', 'totalEstudiantes', 'centrosPorTipo', 'colaboradores', 'supervisores', 'talleristas'];
 
   tiposPractica = TIPOS_PRACTICA;
   tipo: TipoPracticaValue | null = null;
@@ -244,8 +244,9 @@ export class ReportesHistoricoComponent {
       r.periodo,
       String(r.totalEstudiantes),
       this.centrosToText(r),
+      this.listToText(r.colaboradores),
       this.listToText(r.supervisores),
-      this.listToText(r.mentores),
+      this.listToText(r.talleristas),
     ]);
 
     autoTable(doc, {
@@ -254,8 +255,9 @@ export class ReportesHistoricoComponent {
         this.data.groupBy === 'year' ? 'Año' : 'Periodo',
         'Total estudiantes',
         'Centros por tipo',
-        'Supervisor',
-        'Mentor',
+        'Colaboradores',
+        'Supervisores',
+        'Talleristas',
       ]],
       body: rows,
     });
@@ -271,8 +273,9 @@ export class ReportesHistoricoComponent {
       Periodo: r.periodo,
       TotalEstudiantes: r.totalEstudiantes,
       CentrosPorTipo: this.centrosToText(r),
+      Colaboradores: this.listToText(r.colaboradores),
       Supervisores: this.listToText(r.supervisores),
-      Mentores: this.listToText(r.mentores),
+      Talleristas: this.listToText(r.talleristas),
     }));
 
     const ws = XLSX.utils.json_to_sheet(json);
