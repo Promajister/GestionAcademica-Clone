@@ -87,8 +87,6 @@ export class ReportesComponent implements OnInit {
   },
 };
 
-
-
   lineData: ChartData<'line'> = {
     labels: [],
     datasets: [{ data: [], label: 'Prácticas', tension: 0.35, pointRadius: 3 }],

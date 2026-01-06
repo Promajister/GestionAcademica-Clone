@@ -83,6 +83,7 @@ const anioActual = new Date().getFullYear();
 export class EncuestasComponent implements OnInit {
   // Inyección moderna de FormBuilder
   private fb = inject(FormBuilder);
+  public perfilSeleccionado: number = 2026;
 
   // Opcional: sanitizar nombres de hoja (máx 31 caracteres y sin caracteres raros)
 private sanitizeSheetName(name: string): string {
@@ -865,6 +866,7 @@ downloadEstadisticasColaboradoresExcel(): void {
     this.requestCloseSidenav();
     this.tipoRegistroActivo = tipo;
     this.selectedEncuesta = null;
+    this.perfilSeleccionado = 2026;
 
     if (tipo === 'ESTUDIANTIL') {
       this.registroForm = this.buildEstudiantilForm();

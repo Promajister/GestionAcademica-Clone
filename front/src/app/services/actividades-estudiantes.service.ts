@@ -12,6 +12,7 @@ export interface Actividad {
   mes: string;
   nombre_actividad: string;
   estudiantes?: string;
+  terceros_asistieron?: boolean;
   fecha: Date | string;
   horario?: string;
   lugar?: string;
@@ -41,6 +42,7 @@ export interface CreateActividadDto {
   descripcion: string;
   tallerista: string;
   estudiante: string;
+  tercerosAsistieron?: boolean;
   fechaRegistro?: string;
   evidenciaUrl?: string;
 }
@@ -110,6 +112,7 @@ export class ActividadesEstudiantesService {
     formData.append('descripcion', actividad.lugar || '');
     formData.append('tallerista', actividad.horario || '');
     formData.append('estudiante', actividad.estudiantes || '');
+    formData.append('tercerosAsistieron', (actividad.terceros_asistieron ?? false).toString());
     formData.append('fechaRegistro', fechaRegistro);
     
     // Si hay una URL de evidencia (base64 convertido a URL o URL directa)
@@ -150,6 +153,9 @@ export class ActividadesEstudiantesService {
     }
     if (actividad.estudiantes !== undefined) {
       formData.append('estudiante', actividad.estudiantes);
+    }
+    if (actividad.terceros_asistieron !== undefined) {
+      formData.append('tercerosAsistieron', actividad.terceros_asistieron.toString());
     }
     
     if (actividad.fecha) {

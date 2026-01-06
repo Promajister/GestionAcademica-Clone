@@ -36,7 +36,7 @@ import {
 
 // PDF
 import { jsPDF } from 'jspdf';
-import { PdfDialogComponent } from './pdf-dialog.component'; // Asegúrate que la ruta sea correcta
+import { PdfDialogComponent } from './pdf-dialog.component';
 
 interface PdfAsset {
   dataUrl: string;
@@ -50,7 +50,6 @@ interface PdfAsset {
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    // Material
     MatFormFieldModule,
     MatSelectModule,
     MatButtonModule,
@@ -120,7 +119,7 @@ export class CartaComponent {
       periodoInicio: [null as Date | null, Validators.required],
       periodoFin: [null as Date | null, Validators.required],
 
-      // 🔹 Campos de configuración de la carta
+      // Campos de configuración de la carta
       referencia: ['', [Validators.required, Validators.maxLength(150)]],
       jefaturaNombre: ['', Validators.required],
       jefaturaCargo: ['', Validators.required],
@@ -170,7 +169,6 @@ export class CartaComponent {
   }
 
   // Texto de referencia por tipo de práctica
-    // Texto de referencia por tipo de practica
   private referenciaPorTipo(tipo?: string | null): string {
     switch (tipo) {
       case 'Apoyo a la Docencia I':
@@ -205,7 +203,7 @@ export class CartaComponent {
     const sup = this.supervisorSeleccionado;
     const tutora =
       sup?.nombre != null
-        ? `La tutora de practica responsable es ${sup.trato ? sup.trato + ' ' : ''}${sup.nombre}.`
+        ? `El tutor de practica responsable es ${sup.trato ? sup.trato + ' ' : ''}${sup.nombre}.`
         : 'La tutora de practica responsable es la Srta. Carolina Quintana Talvac.';
 
     return {
@@ -266,7 +264,7 @@ export class CartaComponent {
     //  LOGOS [UTA] ........ [FEH]
     // ==========================
     const utaWidth = 90;
-    const fehWidth = 72; // mas pequeno para que no se vea estirado
+    const fehWidth = 72;
     const logoHeightFallback = 40;
     const yLogos = 32;
 
@@ -302,7 +300,6 @@ export class CartaComponent {
       doc.setTextColor(0);
     }
 
-    // Bloque de referencia alineado a la derecha
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
     doc.text(data.referencia, pageWidth - margin.right, y, { align: 'right' });
@@ -471,9 +468,6 @@ export class CartaComponent {
   }
 
   // ===========================================
-  // ===========================================
-
-  // ===========================================
   // --- Ciclo de Vida y Carga de Datos ---
   // ===========================================
 
@@ -553,7 +547,7 @@ export class CartaComponent {
     );
   }
 
-  // --- Acciones de Botones (Actualizadas) ---
+  // --- Acciones de Botones  ---
 
   private async ensureLogos(): Promise<void> {
     if (this.logosCargados) {
@@ -659,16 +653,14 @@ export class CartaComponent {
     const dto: CreateCartaDto = {
       tipoPractica: v.tipoPractica!,
       centroId: v.centroId!,
-      estudiantesIds: v.estudiantesIds!, // string[] (RUTs)
+      estudiantesIds: v.estudiantesIds!,
       supervisorId: v.supervisorId!,
       periodoInicio: this.toISO(v.periodoInicio),
       periodoFin: this.toISO(v.periodoFin),
     };
 
-    // 1. Llamar al backend para guardar
     this.data.crearCarta(dto).subscribe({
       next: (respuesta: any) => {
-        // 2. Si es exitoso, usar el 'folio' devuelto para generar el PDF
         const folio = respuesta?.folio ?? 'S/F'; // Tomamos el folio del backend
 
         this.crearYMostrarPDF(`Carta folio ${folio}`, false, folio).catch((err) => {
@@ -685,7 +677,6 @@ export class CartaComponent {
       },
       error: (err) => {
         console.error(err);
-        // Usamos SnackBar en lugar de alert
         this.snack.open('Error al crear la carta ', 'Cerrar', {
           duration: 3000,
         });
