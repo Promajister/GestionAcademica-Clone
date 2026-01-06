@@ -136,6 +136,7 @@ model Actividad {
   mes              String
   nombre_actividad String
   estudiantes      String?
+  terceros_asistieron Boolean @default(false)
   fecha            DateTime
   horario          String?
   lugar            String?
