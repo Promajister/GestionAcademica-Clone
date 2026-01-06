@@ -1,0 +1,306 @@
+.re-students {
+  .muted { opacity: .8; }
+  .error { color: #b42318; opacity: 1; }
+  .spacer { flex: 1; }
+
+  .topbar {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 12px;
+
+    .btn-back { border-radius: 999px; }
+
+    .titles {
+      h1 {
+        margin: 0;
+        font-size: 26px;
+        font-weight: 800;
+        letter-spacing: -0.3px;
+      }
+      p {
+        margin: 6px 0 0;
+        font-size: 13px;
+      }
+    }
+  }
+
+  .bulkbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 6px 0 14px;
+
+    .bulk-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn-pill {
+      border-radius: 999px;
+      padding: 0 14px;
+    }
+
+    .btn-link {
+      border-radius: 999px;
+    }
+
+    .exporting { margin-left: 6px; }
+  }
+
+  .card {
+    border-radius: 14px;
+  }
+
+  .search-card {
+    .search-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+
+      .search-field {
+        min-width: 320px;
+        flex: 1;
+      }
+
+      .counter {
+        white-space: nowrap;
+      }
+    }
+  }
+
+  .list-card {
+    margin-top: 12px;
+
+    .list-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 2px 10px;
+    }
+
+    .rows {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 34px 1fr auto;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.65);
+      border: 1px solid rgba(15, 23, 42, 0.08);
+
+      &:hover {
+        border-color: rgba(15, 23, 42, 0.16);
+        background: rgba(255, 255, 255, 0.9);
+      }
+
+      .row-main {
+        min-width: 0;
+
+        .row-name {
+          font-weight: 800;
+          letter-spacing: .1px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .row-sub {
+          font-size: 12px;
+          margin-top: 2px;
+        }
+      }
+
+      .row-actions {
+        display: flex;
+        gap: 8px;
+
+        .btn-pill {
+          border-radius: 999px;
+          padding: 0 14px;
+        }
+      }
+    }
+
+    .state {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 0;
+    }
+
+    .paginator-wrap {
+      margin-top: 8px;
+      border-top: 1px solid rgba(15, 23, 42, 0.08);
+      padding-top: 6px;
+    }
+  }
+}
+
+/* =========================
+   MODAL (overlay real)
+   ========================= */
+.DetailsDialog {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+
+  display: grid;
+  place-items: center;
+  padding: 18px;
+}
+
+.DialogOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.55);
+  backdrop-filter: blur(2px);
+}
+
+.DialogContent {
+  position: relative;
+  width: min(980px, calc(100vw - 24px));
+  max-height: calc(100vh - 24px);
+  overflow: hidden;
+
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(2, 6, 23, 0.35);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+
+  display: flex;
+  flex-direction: column;
+}
+
+.DialogHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+
+  padding: 14px 14px 10px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+
+  .DialogHeaderLeft {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  .DialogAvatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+
+    background: rgba(30, 64, 175, 0.10);
+    border: 1px solid rgba(30, 64, 175, 0.20);
+
+    mat-icon { color: rgb(30, 64, 175); }
+  }
+
+  .DialogTitles {
+    min-width: 0;
+    h2 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: -0.2px;
+    }
+
+    .DialogSubtitle {
+      margin-top: 4px;
+      font-size: 13px;
+      opacity: .85;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: min(700px, 70vw);
+    }
+  }
+
+  .CloseBtn { border-radius: 999px; }
+}
+
+.DialogBody {
+  padding: 14px;
+  overflow: auto;
+
+  .state {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+  }
+
+  .chips {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    background: rgba(248, 250, 252, 0.9);
+    font-size: 12px;
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      opacity: .9;
+    }
+  }
+
+  .chip-primary {
+    border-color: rgba(30, 64, 175, 0.25);
+    background: rgba(30, 64, 175, 0.08);
+  }
+
+  .table-wrap {
+    border: 1px solid rgba(15, 23, 42, 0.10);
+    border-radius: 12px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.9);
+  }
+
+  .details-table {
+    width: 100%;
+    border-radius: 10px;
+    overflow: hidden;
+
+    th {
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    td, th {
+      padding: 10px 10px;
+    }
+  }
+}
+
+.DialogActions {
+  padding: 12px 14px;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}

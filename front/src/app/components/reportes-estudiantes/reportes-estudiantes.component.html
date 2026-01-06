@@ -1,157 +1,247 @@
-<div class="container section">
-  <!-- HEADER -->
-  <div class="header">
+<div class="re-students container section">
+
+  <!-- Header -->
+  <div class="topbar">
     <button mat-stroked-button color="primary" routerLink="/reportes" class="btn-back">
       <mat-icon>arrow_back</mat-icon>
-      Volver a Reportes
+      Volver
     </button>
 
-    <div class="headline">
-      <h1>Reporte del estudiante</h1>
-      <p class="muted">Búsqueda por RUT o por nombre para visualizar prácticas, centros y supervisores</p>
+    <div class="titles">
+      <h1>Reporte de estudiantes</h1>
+      <p class="muted">Listado paginado con búsqueda y exportación múltiple</p>
     </div>
 
     <div class="spacer"></div>
   </div>
 
-  <div style="display:flex; gap:8px; margin-bottom:12px;">
-    <button mat-stroked-button color="primary" (click)="exportarPDF()">
-      <mat-icon>picture_as_pdf</mat-icon>
-      Exportar PDF
-    </button>
-    <button mat-stroked-button color="accent" (click)="exportarExcel()">
-      <mat-icon>grid_on</mat-icon>
-      Exportar Excel
-    </button>
+  <!-- Actions (FUERA del modal) -->
+  <div class="bulkbar">
+    <div class="bulk-left">
+      <span class="muted">
+        <strong>{{ selectedCount }}</strong> seleccionado(s)
+      </span>
+
+      <button
+        mat-stroked-button
+        color="primary"
+        class="btn-pill"
+        (click)="exportarSeleccionPDF()"
+        [disabled]="!selectedCount || exporting">
+        <mat-icon>picture_as_pdf</mat-icon>
+        PDF
+      </button>
+
+      <button
+        mat-stroked-button
+        color="accent"
+        class="btn-pill"
+        (click)="exportarSeleccionExcel()"
+        [disabled]="!selectedCount || exporting">
+        <mat-icon>grid_on</mat-icon>
+        Excel
+      </button>
+
+      <button mat-button class="btn-link" (click)="limpiarSeleccion()" [disabled]="!selectedCount || exporting">
+        Limpiar
+      </button>
+
+      <span class="muted exporting" *ngIf="exporting">
+        Exportando...
+      </span>
+
+      <span class="muted error" *ngIf="exportError">
+        {{ exportError }}
+      </span>
+    </div>
   </div>
 
-  <!-- TARJETA BUSCADOR -->
-  <mat-card class="elev">
+  <!-- Search -->
+  <mat-card class="card elev search-card">
+    <mat-card-content class="search-row">
+      <mat-icon class="muted">search</mat-icon>
+
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>Buscar</mat-label>
+        <input
+          matInput
+          [(ngModel)]="terminoBusqueda"
+          (ngModelChange)="onFiltersChange()"
+          placeholder="Nombre, RUT, plan, centro, supervisor..." />
+      </mat-form-field>
+
+      <div class="muted counter">
+        <span *ngIf="!cargandoLista">{{ totalItems }} resultado(s)</span>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- List -->
+  <mat-card class="card elev list-card">
     <mat-card-content>
 
-      <!-- BUSCAR POR NOMBRE -->
-      <div style="display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap;">
-        <mat-form-field appearance="outline" style="min-width:320px; flex:1;">
-          <mat-label>Buscar por nombre</mat-label>
-          <input
-            matInput
-            [value]="nombreQuery"
-            (input)="onNombreInput($any($event.target).value)"
-            placeholder="Ej: Ana"
-          />
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" style="min-width:240px;">
-          <mat-label>RUT del estudiante</mat-label>
-          <input matInput [(ngModel)]="rut" placeholder="12.345.678-9" />
-        </mat-form-field>
-
-        <button mat-raised-button color="primary" (click)="buscar()">
-          Buscar
-        </button>
+      <div *ngIf="cargandoLista" class="state">
+        <mat-spinner diameter="28"></mat-spinner>
+        <span class="muted">Cargando estudiantes...</span>
       </div>
 
-      <!-- RESULTADOS POR NOMBRE -->
-      <mat-card class="elev" *ngIf="resultados?.length" style="margin-top:10px;">
-        <mat-card-content>
-          <div class="muted" style="margin-bottom:8px;">
-            Resultados (click para seleccionar):
+      <p class="muted error" *ngIf="!cargandoLista && errorLista">
+        {{ errorLista }}
+      </p>
+
+      <div *ngIf="!cargandoLista && !errorLista && totalItems > 0" class="list-header">
+        <mat-checkbox
+          [checked]="allSelectedOnPage()"
+          [indeterminate]="someSelectedOnPage()"
+          (change)="toggleAllOnPage($event.checked)">
+          Seleccionar página
+        </mat-checkbox>
+      </div>
+
+      <div *ngIf="!cargandoLista && !errorLista && totalItems > 0" class="rows">
+        <div class="row" *ngFor="let e of estudiantes; trackBy: trackByRut">
+          <mat-checkbox
+            class="row-check"
+            [checked]="isSelected(e.rut)"
+            (change)="toggleOne(e.rut, $event.checked)">
+          </mat-checkbox>
+
+          <div class="row-main">
+            <div class="row-name">{{ e.nombre }}</div>
+            <div class="row-sub muted"> RUT: {{ e.rut }}</div>
           </div>
 
-          <mat-nav-list>
-            <a mat-list-item *ngFor="let e of resultados" (click)="seleccionar(e.rut)">
-              <div style="display:flex; flex-direction:column;">
-                <strong>{{ e.nombre }}</strong>
-                <span class="muted">{{ e.rut }} • {{ e.plan || 'Sin plan' }}</span>
-              </div>
-            </a>
-          </mat-nav-list>
-        </mat-card-content>
-      </mat-card>
-
-      <!-- LOADING -->
-      <div class="center" *ngIf="loading" style="margin-top:12px;">
-        <mat-spinner diameter="32"></mat-spinner>
-      </div>
-
-      <!-- ERROR -->
-      <p class="muted" *ngIf="!loading && error" style="margin-top:12px;">
-        {{ error }}
-      </p>
-
-    </mat-card-content>
-  </mat-card>
-
-  <!-- RESULTADO DEL ESTUDIANTE -->
-  <mat-card class="elev" style="margin-top:12px;" *ngIf="!loading && estudiante">
-    <mat-card-content>
-
-      <div style="margin:12px 0;">
-        <div style="font-weight:700; font-size:18px;">
-          {{ estudiante.nombre }}
+          <div class="row-actions">
+            <button mat-stroked-button class="btn-pill" color="primary" (click)="verDetalles(e.rut)">
+              <mat-icon>visibility</mat-icon>
+              Ver
+            </button>
+          </div>
         </div>
-        <div class="muted">RUT: {{ estudiante.rut }}</div>
-        <div class="muted" *ngIf="estudiante.plan">Plan: {{ estudiante.plan }}</div>
       </div>
 
-      <table mat-table [dataSource]="estudiante.practicas"
-            class="mat-elevation-z0"
-            style="width:100%;">
+      <div *ngIf="!cargandoLista && !errorLista && totalItems === 0" class="state muted">
+        No se encontraron estudiantes con el filtro.
+      </div>
 
-        <!-- tipo -->
-        <ng-container matColumnDef="tipo">
-          <th mat-header-cell *matHeaderCellDef>Tipo</th>
-          <td mat-cell *matCellDef="let p">{{ p.tipo || '—' }}</td>
-        </ng-container>
-
-        <!-- estado -->
-        <ng-container matColumnDef="estado">
-          <th mat-header-cell *matHeaderCellDef>Estado</th>
-          <td mat-cell *matCellDef="let p">{{ p.estado }}</td>
-        </ng-container>
-
-        <!-- 🔹 AQUÍ VA SEMESTRE -->
-        <ng-container matColumnDef="semestre">
-          <th mat-header-cell *matHeaderCellDef>Semestre</th>
-          <td mat-cell *matCellDef="let p">
-            {{ p.semestre }}° {{ p.anio }}
-          </td>
-        </ng-container>
-
-        <!-- centro -->
-        <ng-container matColumnDef="centro">
-          <th mat-header-cell *matHeaderCellDef>Centro</th>
-          <td mat-cell *matCellDef="let p">{{ p.centro || '—' }}</td>
-        </ng-container>
-
-        <!-- tutores -->
-        <ng-container matColumnDef="tutores">
-          <th mat-header-cell *matHeaderCellDef>Supervisores</th>
-          <td mat-cell *matCellDef="let p">
-            {{ p.tutores?.length ? p.tutores.join(', ') : '—' }}
-          </td>
-        </ng-container>
-
-        <!-- inicio -->
-        <ng-container matColumnDef="inicio">
-          <th mat-header-cell *matHeaderCellDef>Inicio</th>
-          <td mat-cell *matCellDef="let p">{{ formatDate(p.fechaInicio) }}</td>
-        </ng-container>
-
-        <!-- termino -->
-        <ng-container matColumnDef="termino">
-          <th mat-header-cell *matHeaderCellDef>Término</th>
-          <td mat-cell *matCellDef="let p">{{ formatDate(p.fechaTermino) }}</td>
-        </ng-container>
-
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
-      </table>
-
-      <p class="muted" *ngIf="!estudiante.practicas?.length" style="margin-top:12px;">
-        El estudiante no registra prácticas.
-      </p>
+      <div class="paginator-wrap" *ngIf="!cargandoLista && !errorLista && totalItems > 0">
+        <mat-paginator
+          [length]="totalItems"
+          [pageIndex]="pageIndex"
+          [pageSize]="pageSize"
+          [pageSizeOptions]="pageSizeOptions"
+          (page)="onPageChange($event)">
+        </mat-paginator>
+      </div>
 
     </mat-card-content>
   </mat-card>
+
+  <!-- MODAL DETALLE -->
+  @if (mostrarDetalles) {
+    <div class="DetailsDialog" (keydown.escape)="cerrarDetalles()">
+      <div class="DialogOverlay" (click)="cerrarDetalles()"></div>
+
+      <div class="DialogContent" role="dialog" aria-modal="true" aria-label="Detalle del estudiante">
+        <div class="DialogHeader">
+          <div class="DialogHeaderLeft">
+            <div class="DialogAvatar">
+              <mat-icon>person</mat-icon>
+            </div>
+
+            <div class="DialogTitles">
+              <h2>Detalle del estudiante</h2>
+              <div class="DialogSubtitle">
+                {{ estudianteSeleccionado?.nombre || 'Cargando...' }}
+              </div>
+            </div>
+          </div>
+
+          <button mat-icon-button (click)="cerrarDetalles()" class="CloseBtn" aria-label="Cerrar">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+
+        <div class="DialogBody">
+          @if (loadingDetalle) {
+            <div class="state">
+              <mat-spinner diameter="28"></mat-spinner>
+              <span class="muted">Cargando detalle...</span>
+            </div>
+          } @else if (errorDetalle) {
+            <p class="muted error">{{ errorDetalle }}</p>
+          } @else if (estudianteSeleccionado) {
+
+            <div class="chips">
+              <span class="chip chip-primary">
+                <mat-icon>badge</mat-icon>
+                <span>{{ estudianteSeleccionado.rut }}</span>
+              </span>
+
+              @if (estudianteSeleccionado.plan) {
+                <span class="chip">
+                  <mat-icon>school</mat-icon>
+                  <span>{{ estudianteSeleccionado.plan }}</span>
+                </span>
+              }
+            </div>
+
+            <div class="table-wrap">
+              <table mat-table [dataSource]="estudianteSeleccionado.practicas" class="mat-elevation-z0 details-table">
+
+                <ng-container matColumnDef="tipo">
+                  <th mat-header-cell *matHeaderCellDef>Tipo</th>
+                  <td mat-cell *matCellDef="let p">{{ p.tipo || '—' }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="estado">
+                  <th mat-header-cell *matHeaderCellDef>Estado</th>
+                  <td mat-cell *matCellDef="let p">{{ p.estado }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="semestre">
+                  <th mat-header-cell *matHeaderCellDef>Periodo</th>
+                  <td mat-cell *matCellDef="let p">{{ formatPeriodo(p) }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="centro">
+                  <th mat-header-cell *matHeaderCellDef>Centro</th>
+                  <td mat-cell *matCellDef="let p">{{ p.centro || '—' }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="tutores">
+                  <th mat-header-cell *matHeaderCellDef>Supervisores</th>
+                  <td mat-cell *matCellDef="let p">
+                    {{ p.tutores?.length ? p.tutores.join(', ') : '—' }}
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="inicio">
+                  <th mat-header-cell *matHeaderCellDef>Inicio</th>
+                  <td mat-cell *matCellDef="let p">{{ formatDate(p.fechaInicio) }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="termino">
+                  <th mat-header-cell *matHeaderCellDef>Término</th>
+                  <td mat-cell *matCellDef="let p">{{ formatDate(p.fechaTermino) }}</td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+              </table>
+
+              <p class="muted" *ngIf="!estudianteSeleccionado.practicas?.length" style="margin-top:12px;">
+                El estudiante no registra prácticas.
+              </p>
+            </div>
+          }
+        </div>
+
+        <div class="DialogActions">
+          <button mat-stroked-button (click)="cerrarDetalles()">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  }
+
 </div>

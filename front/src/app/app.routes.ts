@@ -129,7 +129,7 @@ export const routes: Routes = [
   {
     path: 'reportes',
     canActivate: [authGuard, RoleGuard],
-    data: { roles: [ROLES.JEFATURA, ROLES.PRACTICAS] },
+    data: { roles: [ROLES.JEFATURA] },
     loadComponent: () =>
       import('./components/reportes/reportes.component')
         .then(m => m.ReportesComponent)
@@ -138,7 +138,7 @@ export const routes: Routes = [
    {
     path: 'reportes/estudiante',
     canActivate: [authGuard, RoleGuard],
-    data: { roles: [ROLES.JEFATURA, ROLES.PRACTICAS] },
+    data: { roles: [ROLES.JEFATURA] },
     loadComponent: () =>
       import('./components/reportes-estudiantes/reportes-estudiantes.component')
         .then(m => m.ReportesEstudianteComponent),
@@ -147,7 +147,7 @@ export const routes: Routes = [
   {
     path: 'reportes/satisfaccion',
     canActivate: [authGuard, RoleGuard],
-    data: { roles: [ROLES.JEFATURA, ROLES.PRACTICAS] },
+    data: { roles: [ROLES.JEFATURA] },
     loadComponent: () =>
       import('./components/reportes-satisfaccion/reportes-satisfaccion.component')
         .then(m => m.ReportesSatisfaccionComponent),
@@ -157,7 +157,7 @@ export const routes: Routes = [
   {
     path: 'reportes/historico',
     canActivate: [authGuard, RoleGuard],
-    data: { roles: [ROLES.JEFATURA, ROLES.PRACTICAS] },
+    data: { roles: [ROLES.JEFATURA] },
     loadComponent: () =>
       import('./components/reportes-historico/reportes-historico.component')
         .then(m => m.ReportesHistoricoComponent),

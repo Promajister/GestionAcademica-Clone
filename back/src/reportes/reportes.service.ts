@@ -231,6 +231,113 @@ export class ReportesService {
         
         return rows;
   }
+
+  async listarEstudiantes(params: {
+    search?: string;
+    page?: number;
+    limit?: number;
+    orderBy?: 'nombre' | 'rut';
+    orderDir?: 'asc' | 'desc';
+  }) {
+    const {
+      search,
+      page = 1,
+      limit = 10,
+      orderBy = 'nombre',
+      orderDir = 'asc',
+    } = params;
+
+    const term = (search ?? '').trim();
+    const where: any = {};
+
+    if (term) {
+      where.OR = [
+        // Estudiante
+        { nombre: { contains: term } },
+        { rut: { contains: term } },
+        { plan: { contains: term } },
+
+        // Centro educativo (por prácticas)
+        {
+          practicas: {
+            some: {
+              centro: { nombre: { contains: term } },
+            },
+          },
+        },
+
+        // Supervisor (Tutor con rol Supervisor)
+        {
+          practicas: {
+            some: {
+              practicaTutores: {
+                some: {
+                  rol: 'Supervisor', // enum TipoTutor
+                  tutor: { nombre: { contains: term } },
+                },
+              },
+            },
+          },
+        },
+      ];
+    }
+
+    const safeLimit = Math.max(1, Math.min(100, Number(limit) || 10));
+    const safePage = Math.max(1, Number(page) || 1);
+
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.estudiante.findMany({
+        where,
+        orderBy: { [orderBy]: orderDir },
+        skip: (safePage - 1) * safeLimit,
+        take: safeLimit,
+        select: {
+          rut: true,
+          nombre: true,
+          plan: true,
+          practicas: {
+            select: {
+              centro: { select: { nombre: true } },
+              practicaTutores: {
+                where: { rol: 'Supervisor' },
+                select: { tutor: { select: { nombre: true } } },
+              },
+            },
+          },
+        },
+      }),
+      this.prisma.estudiante.count({ where }),
+    ]);
+
+    const mapped = items.map((e) => {
+      const centros = new Set<string>();
+      const supervisores = new Set<string>();
+
+      for (const p of e.practicas ?? []) {
+        if (p.centro?.nombre) centros.add(p.centro.nombre);
+        for (const pt of p.practicaTutores ?? []) {
+          const n = pt.tutor?.nombre;
+          if (n) supervisores.add(n);
+        }
+      }
+
+      return {
+        rut: e.rut,
+        nombre: e.nombre,
+        plan: e.plan,
+        centros: Array.from(centros),
+        supervisores: Array.from(supervisores),
+      };
+    });
+
+    return {
+      items: mapped,
+      page: safePage,
+      limit: safeLimit,
+      total,
+      pages: Math.ceil(total / safeLimit),
+    };
+  }
   
   async getHistorico(params: { fromYear: number; toYear: number; tipo?: string | null; groupBy: 'semester' | 'year' }) {
     const { fromYear, toYear, tipo, groupBy } = params;
@@ -239,18 +346,24 @@ export class ReportesService {
     const to = new Date(toYear + 1, 0, 1);
 
     const practicas = await this.prisma.practica.findMany({
-        where: {
+      where: {
         fecha_inicio: { gte: from, lt: to },
         ...(tipo ? { tipo } : {}),
-        },
-        include: {
+      },
+      include: {
         estudiante: { select: { rut: true } },
         centro: { select: { tipo: true } },
+
+        practicaColaboradores: {
+          include: { colaborador: { select: { nombre: true } } },
+        },
+
         practicaTutores: {
-            include: { tutor: { select: { id: true, nombre: true } } },
+          include: { tutor: { select: { nombre: true } } },
         },
-        },
+      },
     });
+
 
     type Key = string;
     const buckets = new Map<Key, any>();
@@ -266,11 +379,12 @@ export class ReportesService {
         const key = getKey(p.fecha_inicio);
         if (!buckets.has(key)) {
         buckets.set(key, {
-            key,
-            totalEstudiantesSet: new Set<string>(),
-            centrosPorTipo: new Map<string, number>(),
-            supervisoresSet: new Set<string>(),
-            mentoresSet: new Set<string>(),
+          key,
+          totalEstudiantesSet: new Set<string>(),
+          centrosPorTipo: new Map<string, number>(),
+          colaboradoresSet: new Set<string>(),
+          supervisoresSet: new Set<string>(),
+          talleristasSet: new Set<string>(),
         });
         }
 
@@ -283,31 +397,38 @@ export class ReportesService {
         const tipoCentro = p.centro?.tipo ?? 'SIN_TIPO';
         b.centrosPorTipo.set(tipoCentro, (b.centrosPorTipo.get(tipoCentro) ?? 0) + 1);
 
+
+        for (const pc of p.practicaColaboradores ?? []) {
+          const nombreCol = pc.colaborador?.nombre;
+          if (nombreCol) {
+            b.colaboradoresSet.add(nombreCol);
+          }
+        }        
+
         // tutores por rol
-        // tutores por rol (defensivo: evita crash si tutor es null)
         for (const pt of p.practicaTutores ?? []) {
           const nombreTutor = pt.tutor?.nombre;
           if (!nombreTutor) continue;
 
           if (pt.rol === 'Supervisor') {
             b.supervisoresSet.add(nombreTutor);
-          } else {
-            b.mentoresSet.add(nombreTutor);
+          } else if (pt.rol === 'Tallerista') {
+            b.talleristasSet.add(nombreTutor);
           }
         }
-
     }
 
     // salida serializable
     const series = Array.from(buckets.values())
-        .map(b => ({
+      .map(b => ({
         periodo: b.key,
         totalEstudiantes: b.totalEstudiantesSet.size,
         centrosPorTipo: Array.from(b.centrosPorTipo.entries()).map(([tipo, total]) => ({ tipo, total })),
+        colaboradores: Array.from(b.colaboradoresSet),
         supervisores: Array.from(b.supervisoresSet),
-        mentores: Array.from(b.mentoresSet),
-        }))
-        .sort((a, b) => a.periodo.localeCompare(b.periodo));
+        talleristas: Array.from(b.talleristasSet),
+      }))
+      .sort((a, b) => a.periodo.localeCompare(b.periodo));
 
     return { fromYear, toYear, tipo: tipo ?? null, groupBy, series };
   }
@@ -321,16 +442,10 @@ export class ReportesService {
     if (semestre !== 1 && semestre !== 2) {
       throw new BadRequestException('Semestre inválido');
     }
-
-    // -------------------------
-    // RANGO FECHAS
-    // -------------------------
+    
     const from = new Date(anio, semestre === 1 ? 0 : 6, 1);
     const to   = new Date(anio, semestre === 1 ? 6 : 12, 1);
 
-    // -------------------------
-    // PRÁCTICAS
-    // -------------------------
     const practicas = await this.prisma.practica.findMany({
       where: {
         fecha_inicio: { gte: from, lt: to },

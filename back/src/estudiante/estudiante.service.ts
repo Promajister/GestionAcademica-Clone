@@ -117,16 +117,26 @@ export class EstudianteService {
       },
       include: {
         practicas: {
-          orderBy: { fecha_inicio: 'desc' },
-          include: {
-            practicaColaboradores: {
-              include: { colaborador: true },
-            },
-            practicaTutores: {
-              include: { tutor: true },
-            },
-          },
-        },
+  orderBy: { fecha_inicio: 'desc' },
+  include: {
+    centro: {
+      select: {
+        id: true,
+        nombre: true,
+        tipo: true,
+        region: true,
+        comuna: true,
+        direccion: true,
+        telefono: true,
+        correo: true,
+      },
+    },
+    practicaColaboradores: { include: { colaborador: true } },
+    practicaTutores: { include: { tutor: true } },
+  },
+},
+
+        
       },
     });
 
