@@ -26,6 +26,7 @@ export class ActividadPracticaService {
         lugar: dto.descripcion,
         horario: dto.tallerista,
         estudiantes: dto.estudiante,
+        terceros_asistieron: dto.tercerosAsistieron ?? false,
         fecha,
         mes, 
         archivo_adjunto: dto.evidenciaUrl ?? null,
@@ -86,6 +87,7 @@ export class ActividadPracticaService {
     if (dto.descripcion !== undefined) data.lugar = dto.descripcion;
     if (dto.tallerista !== undefined) data.horario = dto.tallerista;
     if (dto.estudiante !== undefined) data.estudiantes = dto.estudiante;
+    if (dto.tercerosAsistieron !== undefined) data.terceros_asistieron = dto.tercerosAsistieron;
     if (dto.evidenciaUrl !== undefined) data.archivo_adjunto = dto.evidenciaUrl;
 
     if (dto.fechaRegistro !== undefined) {

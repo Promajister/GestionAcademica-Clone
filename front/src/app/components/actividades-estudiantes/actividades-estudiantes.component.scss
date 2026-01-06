@@ -211,6 +211,137 @@
   gap: 14px;
 }
 .FullWidth{ grid-column: 1 / -1; }
+.StudentsRow{
+  display:flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.StudentsColumn{
+  display:flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.StudentsHeader{
+  display:flex;
+  align-items:flex-end;
+  gap: 12px;
+}
+.StudentsFilterField{
+  margin-bottom: -2px;
+  width: 100%;
+}
+.StudentsField{ flex: 1 1 auto; min-width: 0; }
+.TicketField{
+  display:flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding-top: 4px;
+  min-width: 160px;
+}
+.StudentsPanel{
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 10px 12px;
+  background: #fff;
+}
+.StudentsResults{
+  display:flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+.StudentOption{
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  border-radius: 10px;
+  padding: 8px 10px;
+  text-align: left;
+  font-size: 13px;
+  color:#0f172a;
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+}
+.StudentOption:hover{
+  background: #f8fafc;
+}
+.StudentsSelected{
+  display:flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px dashed #e5e7eb;
+  margin-top: 8px;
+}
+.StudentChip{
+  display:inline-flex;
+  align-items:center;
+  gap: 6px;
+  border: 1px solid #cbd5f5;
+  background: #eef2ff;
+  color:#1e3a8a;
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.StudentChipText{
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.StudentChipRemove{
+  border: none;
+  background: transparent;
+  padding: 0;
+  display:inline-flex;
+  align-items:center;
+  cursor: pointer;
+  color:#1e3a8a;
+}
+.StudentChipRemove mat-icon{
+  font-size: 14px;
+  height: 14px;
+  width: 14px;
+  line-height: 14px;
+}
+.StudentsHint{
+  font-size: 12.5px;
+  color:#64748b;
+}
+.StudentsError{
+  margin-top: 6px;
+  font-size: 12px;
+  color: #dc2626;
+  font-weight: 600;
+}
+.TicketBadge{
+  display:inline-flex;
+  align-items:center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(37,99,235,.25);
+  background: rgba(37,99,235,.08);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #1e3a8a;
+}
+.TicketBadge--inline{
+  padding: 2px 6px;
+  font-size: 10.5px;
+}
+.OptionRut{
+  color:#64748b;
+  font-size: 12px;
+  margin-left: 4px;
+}
 
 .FormLabel{
   font-size: 12.5px;
@@ -235,6 +366,9 @@
 
 @media (max-width: 768px){
   .FormRow{ grid-template-columns: 1fr; }
+  .StudentsRow{ flex-direction: column; }
+  .StudentsHeader{ flex-direction: column; align-items: stretch; }
+  .TicketField{ min-width: 0; }
   .FormContent{ padding: 12px 14px 14px; }
   .FormHeader{ padding: 16px 14px 10px; }
   .FormActions{ flex-direction: column; }
@@ -356,6 +490,9 @@
   display:flex;
   align-items:center;
   min-width: 0;
+}
+.TableCell--students{
+  gap: 8px;
 }
 
 .ActivityName{

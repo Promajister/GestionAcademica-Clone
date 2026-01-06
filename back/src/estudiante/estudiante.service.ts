@@ -76,7 +76,10 @@ export class EstudianteService {
         : {}),
     };
 
-    const estudiantes = await this.prisma.estudiante.findMany({
+    const page = q.page && q.page > 0 ? q.page : 1;
+    const limit = q.limit && q.limit > 0 ? q.limit : undefined;
+
+    const query = Prisma.validator<Prisma.EstudianteFindManyArgs>()({
       where,
       orderBy: { nombre: 'asc' },
       include: {
@@ -86,7 +89,10 @@ export class EstudianteService {
           select: { estado: true, fecha_inicio: true, fecha_termino: true, tipo: true },
         },
       },
+      ...(limit ? { skip: (page - 1) * limit, take: limit } : {}),
     });
+
+    const estudiantes = await this.prisma.estudiante.findMany(query);
 
     return estudiantes.map((e) => ({
       rut: e.rut,

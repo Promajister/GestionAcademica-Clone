@@ -118,15 +118,92 @@
             </div>
 
             <div class="FormRow">
-              <mat-form-field appearance="outline" class="FormField">
+              <mat-form-field appearance="outline" class="FormField FullWidth">
                 <mat-label>Ubicación</mat-label>
                 <input matInput formControlName="lugar" placeholder="Ej: Sala A, Auditorio, Online" />
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="FormField">
-                <mat-label>Estudiantes</mat-label>
-                <input matInput formControlName="estudiantes" placeholder="Ej: Ana Torres, Carlos Sanchez, ..." />
-              </mat-form-field>
+            </div>
+
+            <div class="FormRow">
+              <div class="StudentsRow FullWidth">
+                <div class="StudentsColumn">
+                  <div class="StudentsHeader">
+                    <mat-form-field appearance="outline" class="FormField StudentsFilterField">
+                    <mat-label>Buscar estudiante</mat-label>
+                    <input
+                      matInput
+                      [value]="estudiantesFiltro"
+                      (input)="onBuscarEstudiantes($any($event.target).value)"
+                      placeholder="Nombre o RUT" />
+                    @if (estudiantesFiltro) {
+                      <button
+                        mat-icon-button
+                        matSuffix
+                        type="button"
+                        aria-label="Limpiar búsqueda"
+                        (click)="limpiarBusquedaEstudiantes()">
+                        <mat-icon>close</mat-icon>
+                      </button>
+                    }
+                    </mat-form-field>
+
+                    <div class="TicketField">
+                      <label class="FormLabel">Terceros</label>
+                      <mat-checkbox formControlName="terceros_asistieron">Asistieron terceros</mat-checkbox>
+                      @if (formularioActividad.get('terceros_asistieron')?.value) {
+                        <span class="TicketBadge">TERCEROS</span>
+                      }
+                    </div>
+                  </div>
+
+                  <div class="StudentsPanel">
+                    <label class="FormLabel">Estudiantes*</label>
+                    <div class="StudentsResults">
+                      @if (cargandoEstudiantes) {
+                        <div class="StudentsHint">Cargando estudiantes...</div>
+                      } @else if (estudiantesDisponibles.length === 0) {
+                        <div class="StudentsHint">No hay estudiantes disponibles</div>
+                      } @else {
+                        @for (estudiante of estudiantesDisponibles; track estudiante.rut) {
+                          <button
+                            type="button"
+                            class="StudentOption"
+                            (click)="agregarEstudiante(getEstudianteEtiqueta(estudiante))">
+                            <span>{{ estudiante.nombre }}</span>
+                            @if (estudiante.rut) {
+                              <span class="OptionRut">({{ estudiante.rut }})</span>
+                            }
+                          </button>
+                        }
+                      }
+                    </div>
+                    <div class="StudentsSelected">
+                      @if (estudiantesSeleccionados.length === 0) {
+                        <div class="StudentsHint">Sin estudiantes seleccionados</div>
+                      } @else {
+                        @for (estudiante of estudiantesSeleccionados; track estudiante) {
+                          <span class="StudentChip">
+                            <span class="StudentChipText">{{ estudiante }}</span>
+                            <button
+                              type="button"
+                              class="StudentChipRemove"
+                              (click)="quitarEstudiante(estudiante)"
+                              aria-label="Quitar estudiante">
+                              <mat-icon>close</mat-icon>
+                            </button>
+                          </span>
+                        }
+                      }
+                    </div>
+                    @if (formularioActividad.get('estudiantes')?.invalid && formularioActividad.get('estudiantes')?.touched) {
+                      <div class="StudentsError">Selecciona al menos un estudiante</div>
+                    }
+                  </div>
+
+                </div>
+
+              </div>
             </div>
 
             @if (!estaEditando) {
@@ -276,6 +353,9 @@
 
           <div class="TableCell TableCell--students">
             <div class="StudentsText">{{ actividad.estudiantes || '—' }}</div>
+            @if (actividad.terceros_asistieron) {
+              <span class="TicketBadge TicketBadge--inline">TERCEROS</span>
+            }
           </div>
 
           <div class="TableCell TableCell--evidence">
@@ -421,6 +501,11 @@
               <div class="KV KV--full">
                 <div class="K">Estudiantes</div>
                 <div class="V">{{ actividadSeleccionada.estudiantes || 'No especificados' }}</div>
+              </div>
+
+              <div class="KV">
+                <div class="K">Terceros</div>
+                <div class="V">{{ actividadSeleccionada.terceros_asistieron ? 'Si' : 'No' }}</div>
               </div>
             </div>
           </div>

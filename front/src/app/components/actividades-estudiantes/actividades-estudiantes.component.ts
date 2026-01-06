@@ -14,10 +14,12 @@ import { MatNativeDateModule, NativeDateAdapter, MAT_DATE_FORMATS, DateAdapter, 
 import { Injectable } from '@angular/core';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatSelectModule } from '@angular/material/select';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { ActividadesEstudiantesService, Actividad } from '../../services/actividades-estudiantes.service';
+import { EstudiantesService, EstudianteResumen } from '../../services/estudiantes.service';
 import JSZip from 'jszip';
 
 // DateAdapter personalizado para formato DD/MM/YYYY
@@ -87,6 +89,7 @@ export const MY_DATE_FORMATS = {
     MatNativeDateModule,
     MatPaginatorModule,
     MatSelectModule,
+    MatCheckboxModule,
     MatSnackBarModule,
     MatProgressSpinnerModule
   ],
@@ -101,10 +104,15 @@ export class ActividadesEstudiantesComponent implements OnInit {
   private platformId = inject(PLATFORM_ID);
   private snack = inject(MatSnackBar);
   private actividadesService = inject(ActividadesEstudiantesService);
+  private estudiantesService = inject(EstudiantesService);
   
   searchTerm: string = '';
   selectedMes: string = 'all';
   cargando: boolean = false;
+  cargandoEstudiantes: boolean = false;
+  estudiantesDisponibles: EstudianteResumen[] = [];
+  estudiantesFiltro: string = '';
+  readonly estudiantesLimit: number = 5;
   
   // Lista de meses disponibles
   readonly meses = [
@@ -166,7 +174,8 @@ export class ActividadesEstudiantesComponent implements OnInit {
     fecha: ['', [Validators.required]],
     horario: [''],
     lugar: [''],
-    estudiantes: [''],
+    estudiantes: [[], [Validators.required]],
+    terceros_asistieron: [false],
     archivo_adjunto: ['']
   });
   
@@ -174,6 +183,56 @@ export class ActividadesEstudiantesComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargarActividades();
+    this.cargarEstudiantes();
+  }
+
+  cargarEstudiantes(): void {
+    this.cargandoEstudiantes = true;
+    const term = this.estudiantesFiltro.trim();
+    const params = {
+      nombre: term || undefined,
+      rut: term || undefined,
+      limit: this.estudiantesLimit,
+    };
+
+    this.estudiantesService.listar(params).subscribe({
+      next: (estudiantes) => {
+        this.estudiantesDisponibles = estudiantes || [];
+        this.cargandoEstudiantes = false;
+      },
+      error: (err) => {
+        console.error('Error al cargar estudiantes:', err);
+        this.snack.open('Error al cargar estudiantes', 'Cerrar', { duration: 3000 });
+        this.cargandoEstudiantes = false;
+      }
+    });
+  }
+
+  onBuscarEstudiantes(value: string): void {
+    this.estudiantesFiltro = value;
+    this.cargarEstudiantes();
+  }
+
+  limpiarBusquedaEstudiantes(): void {
+    this.estudiantesFiltro = '';
+    this.cargarEstudiantes();
+  }
+
+  get estudiantesSeleccionados(): string[] {
+    return this.formularioActividad.get('estudiantes')?.value || [];
+  }
+
+  agregarEstudiante(etiqueta: string): void {
+    const actuales = this.estudiantesSeleccionados;
+    if (actuales.includes(etiqueta)) return;
+    this.formularioActividad.patchValue({ estudiantes: [...actuales, etiqueta] });
+  }
+
+  quitarEstudiante(etiqueta: string): void {
+    const actuales = this.estudiantesSeleccionados;
+    this.formularioActividad.patchValue({
+      estudiantes: actuales.filter((item) => item !== etiqueta),
+    });
   }
 
   cargarActividades(): void {
@@ -329,7 +388,7 @@ export class ActividadesEstudiantesComponent implements OnInit {
     if (!this.mostrarFormulario) {
       this.estaEditando = false;
       this.actividadEditando = null;
-      this.formularioActividad.reset();
+      this.resetFormularioActividad();
       this.archivosSeleccionados = [];
       this.archivoZip = null;
     }
@@ -341,11 +400,37 @@ export class ActividadesEstudiantesComponent implements OnInit {
     } else {
       this.estaEditando = false;
       this.actividadEditando = null;
-      this.formularioActividad.reset();
+      this.resetFormularioActividad();
       this.archivosSeleccionados = [];
       this.archivoZip = null;
       this.mostrarFormulario = true;
     }
+  }
+
+  private resetFormularioActividad(): void {
+    this.formularioActividad.reset({
+      nombre_actividad: '',
+      fecha: '',
+      horario: '',
+      lugar: '',
+      estudiantes: [],
+      terceros_asistieron: false,
+      archivo_adjunto: ''
+    });
+  }
+
+  getEstudianteEtiqueta(estudiante: EstudianteResumen): string {
+    return estudiante.rut ? `${estudiante.nombre} (${estudiante.rut})` : estudiante.nombre;
+  }
+
+  private serializarEstudiantes(estudiantesSeleccionados: string[] | null | undefined): string | undefined {
+    if (!estudiantesSeleccionados || estudiantesSeleccionados.length === 0) return undefined;
+    return estudiantesSeleccionados.join(', ');
+  }
+
+  private parsearEstudiantes(value: string | null | undefined): string[] {
+    if (!value) return [];
+    return value.split(',').map((item) => item.trim()).filter((item) => item.length > 0);
   }
 
   async onFileSelected(event: Event): Promise<void> {
@@ -493,7 +578,8 @@ export class ActividadesEstudiantesComponent implements OnInit {
       fecha: fechaCompleta,
       horario: formValue.horario || undefined,
       lugar: formValue.lugar || undefined,
-      estudiantes: formValue.estudiantes || undefined,
+      estudiantes: this.serializarEstudiantes(formValue.estudiantes),
+      terceros_asistieron: formValue.terceros_asistieron === true,
     };
 
     // Determinar qué archivo enviar (el ZIP comprimido)
@@ -642,7 +728,8 @@ export class ActividadesEstudiantesComponent implements OnInit {
       fecha: fecha,
       horario: actividad.horario || '',
       lugar: actividad.lugar || '',
-      estudiantes: actividad.estudiantes || '',
+      estudiantes: this.parsearEstudiantes(actividad.estudiantes),
+      terceros_asistieron: actividad.terceros_asistieron === true,
       archivo_adjunto: actividad.archivo_adjunto || ''
     });
     
