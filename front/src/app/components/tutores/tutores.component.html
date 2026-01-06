@@ -148,11 +148,12 @@
               mat-flat-button
               color="primary"
               class="SubmitBtn"
-              (click)="actualizarTutor()"
+              (click)="estaEditando ? actualizarTutor() : agregarTutor()"
               [disabled]="formularioTutor.invalid">
-              <mat-icon>save</mat-icon>
-              Guardar cambios
+              <mat-icon>{{ estaEditando ? 'save' : 'person_add' }}</mat-icon>
+              {{ estaEditando ? 'Guardar cambios' : 'Agregar tutor' }}
             </button>
+
 
           </div>
         </mat-card-content>

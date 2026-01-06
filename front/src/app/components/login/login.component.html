@@ -1,22 +1,15 @@
 <div class="login-wrapper">
-  <!-- Fondo decorativo -->
+  <!-- Overlay -->
   <div class="login-background"></div>
 
   <mat-card class="login-card">
-    <!-- ENCABEZADO -->
-    <div class="login-header">
-      <div class="login-icon">
-        <mat-icon>school</mat-icon>
-      </div>
-      <div>
-        <h1 class="title">Ingresar al sistema</h1>
-        <p class="subtitle">
-          Plataforma de gestión de prácticas pedagógicas.
-        </p>
-      </div>
+    <!-- LOGO -->
+    <div class="login-logo">
+      <img src="assets/img/feh.png" alt="Logo Facultad" />
     </div>
 
-    <mat-divider class="login-divider"></mat-divider>
+    <!-- TITULO -->
+    <h1 class="login-title">Iniciar sesión</h1>
 
     <!-- FORMULARIO -->
     <form
@@ -43,8 +36,7 @@
         <input
           matInput
           [type]="hidePassword ? 'password' : 'text'"
-          formControlName="password"
-        />
+          formControlName="password" />
         <button
           mat-icon-button
           matSuffix
@@ -62,26 +54,22 @@
         </mat-error>
       </mat-form-field>
 
-      <!-- Botón ingresar -->
+      <!-- BOTÓN -->
       <button
         mat-flat-button
         color="primary"
-        class="full-width login-btn"
+        class="login-btn"
         type="submit"
         [disabled]="loading">
-        {{ loading ? 'Ingresando...' : 'Ingresar' }}
+        {{ loading ? 'Ingresando…' : 'Ingresar' }}
       </button>
     </form>
 
-    <!-- FOOTER -->
+    <!-- OLVIDO CONTRASEÑA -->
     <div class="login-footer">
-      <button
-        mat-button
-        type="button"
-        class="full-width forgot-btn"
-        routerLink="/recuperar-clave">
+      <a routerLink="/recuperar-clave">
         ¿Olvidaste tu contraseña?
-      </button>
+      </a>
     </div>
   </mat-card>
 </div>
