@@ -1,7 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -49,7 +48,6 @@ export class ActividadesPmComponent implements OnInit {
   equipoFiltrado: EquipoRow[] = [];
   financiamientos: FinRow[] = [];
   centrosCosto: CentroCostoRow[] = [];
-  difusiones: string[] = [];
   instituciones: InstRow[] = [];
 
   // columnas
@@ -58,7 +56,6 @@ export class ActividadesPmComponent implements OnInit {
   equipoCols = ['n', 'rut', 'nombre', 'tipo'];
   finCols = ['n', 'tipo', 'monto', 'accion'];
   ccCols = ['n', 'tipo', 'codigo', 'nombre', 'accion'];
-  difCols = ['n', 'tipo', 'accion'];
   instCols = ['n', 'tipo', 'nombre', 'accion'];
 
   // catálogos (ajústalos según tu backend real)
@@ -115,9 +112,7 @@ export class ActividadesPmComponent implements OnInit {
   ngOnInit(): void {
     this.form = this.fb.group({
       proyecto: this.fb.group({
-        // Unidad
         unidadSearch: [''],
-        // Responsable (inputs para agregar)
         responsableRut: [''],
         responsableNombre: [''],
         responsableTipo: ['INTERNO'],
@@ -159,10 +154,6 @@ export class ActividadesPmComponent implements OnInit {
         ccNombre: [''],
       }),
 
-      difusion: this.fb.group({
-        difusionEquipo: ['TODOS']
-      }),
-
       participantes: this.fb.group({
         // inputs para instituciones
         instTipo: ['CONVENIO'],
@@ -177,6 +168,11 @@ export class ActividadesPmComponent implements OnInit {
         medidaImpacto: ['NO APLICA', Validators.required],
         indicadorImpacto: ['', Validators.required],
         interpretacion: ['', Validators.required],
+      }),
+
+      difusion: this.fb.group({
+        difusionEquipo: ['SELECCIONE', Validators.required],
+        difusionUrl: ['', [this.urlOptionalValidator()]],
       }),
     });
 
@@ -328,21 +324,15 @@ export class ActividadesPmComponent implements OnInit {
   // =========================
   // Difusión
   // =========================
-  addDifusion(): void {
-    const g = this.form.get('difusion') as FormGroup;
-    const v = String(g.get('difusionEquipo')?.value ?? '').trim();
 
-    if (!v || v === 'SELECCIONE') return;
-    if (v === 'TODOS') return;
-
-    if (!this.difusiones.includes(v)) {
-      this.difusiones = [...this.difusiones, v];
-    }
-  }
-
-  removeDifusion(tipo: string): void {
-    this.difusiones = this.difusiones.filter(x => x !== tipo);
-  }
+  private urlOptionalValidator() {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const v = String(control.value ?? '').trim();
+    if (!v) return null; // opcional
+    const ok = /^https?:\/\/.+/i.test(v);
+    return ok ? null : { url: true };
+  };
+}
 
   // =========================
   // Participantes (matriz)
@@ -426,7 +416,6 @@ export class ActividadesPmComponent implements OnInit {
       equipoTrabajo: this.equipoTrabajo,
       financiamientos: this.financiamientos,
       centrosCosto: this.centrosCosto,
-      difusiones: this.difusiones,
       instituciones: this.instituciones,
 
       evidenciasFiles: {
@@ -445,7 +434,6 @@ export class ActividadesPmComponent implements OnInit {
     this.responsables = [];
     this.financiamientos = [];
     this.centrosCosto = [];
-    this.difusiones = [];
     this.instituciones = [];
     this.asistenciaFile = null; this.asistenciaFileName = '';
     this.documentosFile = null; this.documentosFileName = '';
@@ -491,7 +479,7 @@ export class ActividadesPmComponent implements OnInit {
 
       equipoTrabajo: { equipoFiltro: 'TODOS' },
       financiamiento: { finTipo: '', finMonto: 0, ccTipo: '', ccCodigo: '', ccNombre: '' },
-      difusion: { difusionEquipo: 'TODOS' },
+      difusion: { difusionEquipo: 'TODOS', difusionUrl: '' },
       participantes: { instTipo: 'CONVENIO', instNombre: '' },
       impacto: { impactoResponsableSearch: '', medidaImpacto: 'NO APLICA', indicadorImpacto: '', interpretacion: '' }
     });

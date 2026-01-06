@@ -522,66 +522,63 @@
           </mat-tab>
 
           <!-- =======================
-               TAB: DIFUSIÓN
-               ======================= -->
-          <mat-tab>
-            <ng-template mat-tab-label>
-              <mat-icon class="TabIcon">campaign</mat-icon>
-              Difusión
-            </ng-template>
+                TAB: DIFUSIÓN
+              ======================= -->
+            <mat-tab>
+              <ng-template mat-tab-label>
+                <mat-icon class="TabIcon">campaign</mat-icon>
+                Difusión
+              </ng-template>
 
-            <div class="TabBody" formGroupName="difusion">
-              <div class="SectionHead">
-                <mat-icon>campaign</mat-icon>
-                <h3>Difusión Actividad</h3>
-              </div>
+              <div class="TabBody" formGroupName="difusion">
+                <div class="SectionHead">
+                  <mat-icon>campaign</mat-icon>
+                  <h3>Difusión Actividad</h3>
+                </div>
 
-              <div class="FormRow">
-                <mat-form-field appearance="outline" class="FormField">
-                  <mat-label>Equipo</mat-label>
-                  <mat-select formControlName="difusionEquipo">
-                    <mat-option *ngFor="let d of difusionCatalogo" [value]="d">{{ d }}</mat-option>
-                  </mat-select>
-                </mat-form-field>
+                <div class="FormRow">
+                  <mat-form-field appearance="outline" class="FormField">
+                    <mat-label>Medio de difusión *</mat-label>
+                    <mat-select formControlName="difusionEquipo">
+                      <mat-option *ngFor="let d of difusionCatalogo" [value]="d" [disabled]="d === 'SELECCIONE'">
+                        {{ d }}
+                      </mat-option>
+                    </mat-select>
 
-                <button mat-stroked-button type="button" class="AlignBtn" (click)="addDifusion()">
-                  <mat-icon>add</mat-icon>
-                  Agregar
-                </button>
-              </div>
+                    <mat-error *ngIf="form.get('difusion.difusionEquipo')?.touched && form.get('difusion.difusionEquipo')?.invalid">
+                      Debes seleccionar una opción
+                    </mat-error>
+                  </mat-form-field>
 
-              <div class="TableCard">
-                <table mat-table [dataSource]="difusiones" class="mat-elevation-z0 SimpleTable">
-                  <ng-container matColumnDef="n">
-                    <th mat-header-cell *matHeaderCellDef>#</th>
-                    <td mat-cell *matCellDef="let row; let i = index">{{ i + 1 }}</td>
-                  </ng-container>
+                  <mat-form-field appearance="outline" class="FormField">
+                    <mat-label>URL (opcional)</mat-label>
+                    <input
+                      matInput
+                      formControlName="difusionUrl"
+                      placeholder="https://..."
+                      autocomplete="off"
+                    />
+                    <mat-hint>Opcional. Enlace a publicación/red social.</mat-hint>
+                    <mat-error *ngIf="form.get('difusion.difusionUrl')?.touched && form.get('difusion.difusionUrl')?.invalid">
+                      URL inválida (debe empezar con http:// o https://)
+                    </mat-error>
+                  </mat-form-field>
+                </div>
 
-                  <ng-container matColumnDef="tipo">
-                    <th mat-header-cell *matHeaderCellDef>Tipo</th>
-                    <td mat-cell *matCellDef="let row">{{ row }}</td>
-                  </ng-container>
-
-                  <ng-container matColumnDef="accion">
-                    <th mat-header-cell *matHeaderCellDef class="col-actions">Acción</th>
-                    <td mat-cell *matCellDef="let row" class="col-actions">
-                      <button mat-icon-button color="warn" type="button" (click)="removeDifusion(row)">
-                        <mat-icon>close</mat-icon>
-                      </button>
-                    </td>
-                  </ng-container>
-
-                  <tr mat-header-row *matHeaderRowDef="difCols"></tr>
-                  <tr mat-row *matRowDef="let row; columns: difCols;"></tr>
-                </table>
-
-                <div class="EmptyState" *ngIf="difusiones.length === 0">
-                  <mat-icon>info</mat-icon>
-                  <span>No hay registros.</span>
+                <div class="TableCard">
+                  <div class="EmptyState">
+                    <mat-icon>info</mat-icon>
+                    <span>
+                      Seleccionado: <b>{{ form.get('difusion.difusionEquipo')?.value }}</b>
+                      <span *ngIf="form.get('difusion.difusionUrl')?.value">
+                        — URL: <b>{{ form.get('difusion.difusionUrl')?.value }}</b>
+                      </span>
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          </mat-tab>
+            </mat-tab>
+
 
           <!-- =======================
                TAB: PARTICIPANTES
