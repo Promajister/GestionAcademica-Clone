@@ -455,7 +455,7 @@
 
 .TableHeader, .TableRow{
   display: grid;
-  grid-template-columns: 1.7fr .9fr .8fr 1fr 1.1fr .7fr .8fr;
+  grid-template-columns: 1.7fr .9fr .8fr 1fr .7fr .7fr .7fr .8fr;
   min-width: 0; 
 }
 .TableCell--students .StudentsText{
@@ -479,6 +479,9 @@
   color: #475569;
   white-space: nowrap;
 }
+.HeaderCell--students{
+  text-align: center;
+}
 
 .TableRow{
   border-bottom: 1px solid #f1f5f9;
@@ -493,6 +496,10 @@
 }
 .TableCell--students{
   gap: 8px;
+  justify-content: center;
+}
+.TableCell--terceros{
+  justify-content: center;
 }
 
 .ActivityName{
@@ -504,6 +511,10 @@
   white-space: nowrap;
 }
 .DateText, .TimeText, .LocationText, .StudentsText{
+  font-size: 13px;
+  color:#0f172a;
+}
+.TercerosText{
   font-size: 13px;
   color:#0f172a;
 }

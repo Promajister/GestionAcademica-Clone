@@ -329,6 +329,7 @@
           <div class="HeaderCell HeaderCell--time">HORA</div>
           <div class="HeaderCell HeaderCell--location">UBICACIÓN</div>
           <div class="HeaderCell HeaderCell--students">ESTUDIANTES</div>
+          <div class="HeaderCell HeaderCell--terceros">TERCEROS</div>
           <div class="HeaderCell HeaderCell--evidence">EVIDENCIAS</div>
           <div class="HeaderCell HeaderCell--actions">ACCIONES</div>
         </div>
@@ -352,10 +353,11 @@
           </div>
 
           <div class="TableCell TableCell--students">
-            <div class="StudentsText">{{ actividad.estudiantes || '—' }}</div>
-            @if (actividad.terceros_asistieron) {
-              <span class="TicketBadge TicketBadge--inline">TERCEROS</span>
-            }
+            <div class="StudentsText">{{ contarEstudiantes(actividad.estudiantes) }}</div>
+          </div>
+
+          <div class="TableCell TableCell--terceros">
+            <span class="TercerosText">{{ actividad.terceros_asistieron ? 'Si' : 'No' }}</span>
           </div>
 
           <div class="TableCell TableCell--evidence">

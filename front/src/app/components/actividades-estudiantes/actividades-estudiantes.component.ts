@@ -433,6 +433,10 @@ export class ActividadesEstudiantesComponent implements OnInit {
     return value.split(',').map((item) => item.trim()).filter((item) => item.length > 0);
   }
 
+  contarEstudiantes(value: string | null | undefined): number {
+    return this.parsearEstudiantes(value).length;
+  }
+
   async onFileSelected(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
