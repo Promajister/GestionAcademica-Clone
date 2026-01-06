@@ -200,14 +200,23 @@
       </div>
     </mat-card>
 
-    @if (totalItems === 0) {
-      <mat-card class="Elev Empty">
-        <mat-card-content class="Muted EmptyContent">
-          <mat-icon>school</mat-icon>
-          <p>No se encontraron estudiantes en práctica con los filtros seleccionados.</p>
-        </mat-card-content>
-      </mat-card>
-    }
+    @if (!cargando && totalItems === 0) {
+  <mat-card class="elev empty-card">
+    <mat-card-content class="empty-content">
+      <div class="empty-icon">
+        <mat-icon>school</mat-icon>
+      </div>
+
+      <div>
+        <div class="empty-title">Sin resultados</div>
+        <div class="muted">
+          No se encontraron estudiantes en práctica con los filtros seleccionados.
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+}
+
   }
 
   <!-- DIALOGO DE CONFIRMACIÓN PARA CAMBIAR ESTADO -->

@@ -407,16 +407,24 @@
     </div>
   </mat-card>
 
-  <!-- MENSAJE VACÍO -->
-  <mat-card class="EmptyCard Elev" *ngIf="filteredActivities.length === 0">
-    <mat-card-content class="EmptyContent">
+  <!-- EMPTY (igual a Centros) -->
+<mat-card class="elev empty-card" *ngIf="!cargando && totalItems === 0">
+  <mat-card-content class="empty-content">
+    <div class="empty-icon">
       <mat-icon>event_busy</mat-icon>
-      <h3>No hay actividades</h3>
-      <p class="Muted">
-        {{ searchTerm ? 'No se encontraron actividades que coincidan con tu búsqueda.' : 'Aún no hay actividades registradas.' }}
-      </p>
-    </mat-card-content>
-  </mat-card>
+    </div>
+
+    <div>
+      <div class="empty-title">Sin resultados</div>
+      <div class="muted">
+        {{ searchTerm
+          ? 'No se encontraron actividades que coincidan con tu búsqueda.'
+          : 'Aún no hay actividades registradas.' }}
+      </div>
+    </div>
+  </mat-card-content>
+</mat-card>
+
 
   <!-- DIALOG DETALLES -->
   @if (actividadSeleccionada) {
