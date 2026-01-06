@@ -12,11 +12,7 @@
 
         <div class="hero__titles">
           <h1>Actividades Plan de Mejora</h1>
-          <p>Registra actividades de vinculación asociadas al plan de mejora, con campos dinámicos por tipo.</p>
-
-          <div class="hero__chips">
-            <!-- si quieres chips, agrégalos aquí -->
-          </div>
+          <p>Formulario por pestañas (Proyecto, Equipo de Trabajo, Financiamiento, Difusión, Participantes e Impacto).</p>
         </div>
       </div>
 
@@ -30,30 +26,29 @@
           [disabled]="form.invalid"
         >
           <mat-icon>save</mat-icon>
-          Guardar actividad
+          Grabar
         </button>
       </div>
 
     </div>
   </div>
 
-  <!-- FORMULARIO -->
+  <!-- FORM -->
   <mat-card class="elev FormCard">
     <div class="form-topline"></div>
 
     <mat-card-header class="FormHeader">
       <div class="FormTitleSection">
         <div class="FormIcon">
-          <mat-icon>assignment_add</mat-icon>
+          <mat-icon>assignment</mat-icon>
         </div>
 
         <div class="FormTitles">
-          <h2>Registrar actividad</h2>
-          <p>Completa los datos generales y los campos específicos según el tipo de actividad.</p>
+          <h2>Registro de actividad</h2>
+          <p>Completa los datos según pestañas, como el formulario institucional.</p>
         </div>
       </div>
 
-      <!-- badge de estado -->
       <div class="HeaderMeta">
         <span
           class="status-pill"
@@ -67,267 +62,874 @@
     </mat-card-header>
 
     <mat-card-content class="FormContent">
-      <form [formGroup]="form" class="FormGrid">
+      <form [formGroup]="form">
 
-        <!-- Datos generales -->
-        <div class="SectionHead">
-          <mat-icon>info</mat-icon>
-          <h3>Datos generales</h3>
-        </div>
+        <mat-tab-group class="Tabs" animationDuration="200ms">
+          <!-- =======================
+               TAB: PROYECTO
+               ======================= -->
+          <mat-tab>
+            <ng-template mat-tab-label>
+              <mat-icon class="TabIcon">folder</mat-icon>
+              Proyecto
+            </ng-template>
 
-        <div class="FormRow">
-          <mat-form-field appearance="outline" class="FormField FullWidth">
-            <mat-label>Nombre de la actividad *</mat-label>
-            <input matInput formControlName="nombreActividad" placeholder="Ej: Feria vocacional" />
-            <mat-hint>Identifica la actividad dentro del plan de mejora.</mat-hint>
-            <mat-error *ngIf="form.get('nombreActividad')?.invalid && form.get('nombreActividad')?.touched">
-              Campo obligatorio
-            </mat-error>
-          </mat-form-field>
-        </div>
+            <div class="TabBody" formGroupName="proyecto">
 
-        <div class="FormRow">
-          <mat-form-field appearance="outline" class="FormField">
-            <mat-label>Tipo de actividad *</mat-label>
-            <mat-select formControlName="tipoActividad">
-              <mat-option *ngFor="let tipo of tiposActividad" [value]="tipo">
-                {{ tipo }}
-              </mat-option>
-            </mat-select>
-            <mat-error *ngIf="form.get('tipoActividad')?.invalid && form.get('tipoActividad')?.touched">
-              Seleccione un tipo
-            </mat-error>
-          </mat-form-field>
+              <div class="SectionHead">
+                <mat-icon>apartment</mat-icon>
+                <h3>Unidad *</h3>
+              </div>
 
-          <mat-form-field appearance="outline" class="FormField">
-            <mat-label>Responsable *</mat-label>
-            <input matInput formControlName="responsable" placeholder="Ej: Coordinación de Vinculación" />
-            <mat-error *ngIf="form.get('responsable')?.invalid && form.get('responsable')?.touched">
-              Campo obligatorio
-            </mat-error>
-          </mat-form-field>
-        </div>
+              <div class="InlineBar">
+                <mat-form-field appearance="outline" class="InlineField">
+                  <mat-label>Buscar unidad</mat-label>
+                  <input matInput formControlName="unidadSearch" placeholder="Escribe y presiona buscar..." />
+                </mat-form-field>
 
-        <div class="FormRow">
-          <mat-form-field appearance="outline" class="FormField">
-            <mat-label>Año *</mat-label>
-            <input matInput type="number" formControlName="anio" />
-            <mat-error *ngIf="form.get('anio')?.invalid && form.get('anio')?.touched">
-              Año inválido
-            </mat-error>
-          </mat-form-field>
+                <button mat-stroked-button type="button" (click)="buscarUnidad()">
+                  <mat-icon>search</mat-icon>
+                  Buscar
+                </button>
+              </div>
 
-          <mat-form-field appearance="outline" class="FormField">
-            <mat-label>Fecha *</mat-label>
-            <input matInput type="date" formControlName="fecha" />
-            <mat-error *ngIf="form.get('fecha')?.invalid && form.get('fecha')?.touched">
-              Fecha obligatoria
-            </mat-error>
-          </mat-form-field>
-        </div>
+              <div class="TableCard">
+                <table mat-table [dataSource]="unidades" class="mat-elevation-z0 SimpleTable">
+                  <ng-container matColumnDef="n">
+                    <th mat-header-cell *matHeaderCellDef>#</th>
+                    <td mat-cell *matCellDef="let row; let i = index">{{ i + 1 }}</td>
+                  </ng-container>
 
-        <div class="FormRow">
-          <mat-form-field appearance="outline" class="FormField">
-            <mat-label>Hora *</mat-label>
-            <input matInput type="time" formControlName="hora" />
-            <mat-error *ngIf="form.get('hora')?.invalid && form.get('hora')?.touched">
-              Hora obligatoria
-            </mat-error>
-          </mat-form-field>
+                  <ng-container matColumnDef="cod">
+                    <th mat-header-cell *matHeaderCellDef>Cod</th>
+                    <td mat-cell *matCellDef="let row">{{ row.cod }}</td>
+                  </ng-container>
 
-          <mat-form-field appearance="outline" class="FormField">
-            <mat-label>Lugar *</mat-label>
-            <input matInput formControlName="lugar" placeholder="Ej: UTA / Colegio / Auditorio..." />
-            <mat-error *ngIf="form.get('lugar')?.invalid && form.get('lugar')?.touched">
-              Campo obligatorio
-            </mat-error>
-          </mat-form-field>
-        </div>
+                  <ng-container matColumnDef="unidad">
+                    <th mat-header-cell *matHeaderCellDef>Unidad</th>
+                    <td mat-cell *matCellDef="let row">{{ row.unidad }}</td>
+                  </ng-container>
 
-        <!-- Datos específicos -->
-        <div class="SectionDivider" *ngIf="form.get('tipoActividad')?.value"></div>
+                  <ng-container matColumnDef="accion">
+                    <th mat-header-cell *matHeaderCellDef class="col-actions">Acción</th>
+                    <td mat-cell *matCellDef="let row" class="col-actions">
+                      <button mat-icon-button color="warn" type="button" (click)="removeUnidad(row)">
+                        <mat-icon>close</mat-icon>
+                      </button>
+                    </td>
+                  </ng-container>
 
-        <div class="SectionHead" *ngIf="form.get('tipoActividad')?.value">
-          <mat-icon>tune</mat-icon>
-          <h3>Datos específicos</h3>
-        </div>
+                  <tr mat-header-row *matHeaderRowDef="unidadCols"></tr>
+                  <tr mat-row *matRowDef="let row; columns: unidadCols;"></tr>
+                </table>
 
-        <div class="DynamicHint" *ngIf="form.get('tipoActividad')?.value">
-          <mat-icon>info</mat-icon>
-          <span>Estos campos se ajustan automáticamente según el tipo de actividad seleccionado.</span>
-        </div>
+                <div class="EmptyState" *ngIf="unidades.length === 0">
+                  <mat-icon>info</mat-icon>
+                  <span>No hay unidad seleccionada.</span>
+                </div>
+              </div>
 
-        <div
-          class="FormRow DynamicGrid"
-          *ngIf="form.get('tipoActividad')?.value"
-          [formGroup]="datosEspecificosGroup"
-        >
-          <mat-form-field
-            appearance="outline"
-            class="FormField"
-            *ngFor="let key of camposKeys"
-            [class.FullWidth]="key === 'estudiantes' || key === 'talleres' || key === 'objetivoPedagogico'"
-          >
-            <mat-label>{{ labelFor(key) }} *</mat-label>
+              <div class="SectionDivider"></div>
 
-            <textarea
-              *ngIf="key === 'estudiantes' || key === 'talleres' || key === 'objetivoPedagogico' || key === 'ponencia'"
-              matInput
-              rows="3"
-              [formControlName]="key"
-              placeholder="Escribe aquí..."
-            ></textarea>
+              <div class="SectionHead">
+                <mat-icon>person</mat-icon>
+                <h3>Responsable *</h3>
+              </div>
 
-            <input
-              *ngIf="!(key === 'estudiantes' || key === 'talleres' || key === 'objetivoPedagogico' || key === 'ponencia')"
-              matInput
-              [formControlName]="key"
-            />
+              <div class="InlineBar">
+                <mat-form-field appearance="outline" class="InlineField">
+                  <mat-label>RUT</mat-label>
+                  <input matInput formControlName="responsableRut" placeholder="12.345.678-9" />
+                </mat-form-field>
 
-            <mat-error *ngIf="datosEspecificosGroup.get(key)?.invalid && datosEspecificosGroup.get(key)?.touched">
-              Campo obligatorio
-            </mat-error>
-          </mat-form-field>
-        </div>
+                <mat-form-field appearance="outline" class="InlineField">
+                  <mat-label>Nombre</mat-label>
+                  <input matInput formControlName="responsableNombre" placeholder="Nombre completo" />
+                </mat-form-field>
 
-        <!-- Plan de mejora -->
-        <div class="SectionDivider"></div>
+                <mat-form-field appearance="outline" class="InlineField small">
+                  <mat-label>Tipo</mat-label>
+                  <mat-select formControlName="responsableTipo">
+                    <mat-option *ngFor="let t of tiposResponsable" [value]="t">{{ t }}</mat-option>
+                  </mat-select>
+                </mat-form-field>
 
-        <div class="SectionHead">
-          <mat-icon>payments</mat-icon>
-          <h3>Plan de mejora</h3>
-        </div>
+                <button mat-stroked-button type="button" (click)="addResponsable()">
+                  <mat-icon>add</mat-icon>
+                  Agregar
+                </button>
+              </div>
 
-        <div class="FormRow">
-          <mat-form-field appearance="outline" class="FormField">
-            <mat-label>Presupuesto total *</mat-label>
-            <input matInput type="number" formControlName="presupuesto" />
-            <mat-hint>Monto total planificado para la actividad.</mat-hint>
-            <mat-error *ngIf="form.get('presupuesto')?.invalid && form.get('presupuesto')?.touched">
-              Valor inválido
-            </mat-error>
-          </mat-form-field>
+              <div class="TableCard">
+                <table mat-table [dataSource]="responsables" class="mat-elevation-z0 SimpleTable">
+                  <ng-container matColumnDef="n">
+                    <th mat-header-cell *matHeaderCellDef>#</th>
+                    <td mat-cell *matCellDef="let row; let i = index">{{ i + 1 }}</td>
+                  </ng-container>
 
-          <mat-form-field appearance="outline" class="FormField">
-            <mat-label>Gasto asociado</mat-label>
-            <input matInput type="number" formControlName="gastoAsociado" />
-            <mat-hint>Si ya hubo ejecución de gasto, regístralo aquí.</mat-hint>
-            <mat-error *ngIf="form.get('gastoAsociado')?.invalid && form.get('gastoAsociado')?.touched">
-              Valor inválido
-            </mat-error>
-          </mat-form-field>
-        </div>
+                  <ng-container matColumnDef="rut">
+                    <th mat-header-cell *matHeaderCellDef>R.U.T.</th>
+                    <td mat-cell *matCellDef="let row">{{ row.rut }}</td>
+                  </ng-container>
 
-        <!-- Evidencias -->
-        <div class="SectionDivider"></div>
+                  <ng-container matColumnDef="nombre">
+                    <th mat-header-cell *matHeaderCellDef>Nombre</th>
+                    <td mat-cell *matCellDef="let row">{{ row.nombre }}</td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="tipo">
+                    <th mat-header-cell *matHeaderCellDef>Tipo Responsable</th>
+                    <td mat-cell *matCellDef="let row">{{ row.tipo }}</td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="accion">
+                    <th mat-header-cell *matHeaderCellDef class="col-actions">Acción</th>
+                    <td mat-cell *matCellDef="let row" class="col-actions">
+                      <button mat-icon-button color="warn" type="button" (click)="removeResponsable(row)">
+                        <mat-icon>close</mat-icon>
+                      </button>
+                    </td>
+                  </ng-container>
+
+                  <tr mat-header-row *matHeaderRowDef="responsableCols"></tr>
+                  <tr mat-row *matRowDef="let row; columns: responsableCols;"></tr>
+                </table>
+
+                <div class="EmptyState" *ngIf="responsables.length === 0">
+                  <mat-icon>info</mat-icon>
+                  <span>No hay responsables agregados.</span>
+                </div>
+              </div>
+
+              <div class="SectionDivider"></div>
+
+              <div class="SectionHead">
+                <mat-icon>edit_note</mat-icon>
+                <h3>Datos de la actividad</h3>
+              </div>
+
+              <div class="FormRow">
+                <mat-form-field appearance="outline" class="FormField FullWidth">
+                  <mat-label>Nombre *</mat-label>
+                  <input matInput formControlName="nombre" maxlength="200" />
+                  <mat-hint>Máx 200 caracteres</mat-hint>
+                  <mat-error *ngIf="fProy('nombre').touched && fProy('nombre').invalid">Campo obligatorio</mat-error>
+                </mat-form-field>
+              </div>
+
+              <div class="FormRow">
+                <mat-form-field appearance="outline" class="FormField FullWidth">
+                  <mat-label>Objetivo *</mat-label>
+                  <textarea matInput rows="3" formControlName="objetivo" maxlength="400"></textarea>
+                  <mat-hint>Máx 400 caracteres</mat-hint>
+                  <mat-error *ngIf="fProy('objetivo').touched && fProy('objetivo').invalid">Campo obligatorio</mat-error>
+                </mat-form-field>
+              </div>
+
+              <div class="FormRow">
+                <mat-form-field appearance="outline" class="FormField FullWidth">
+                  <mat-label>Descripción *</mat-label>
+                  <textarea matInput rows="5" formControlName="descripcion" maxlength="1000"></textarea>
+                  <mat-hint>Máx 1000 caracteres</mat-hint>
+                  <mat-error *ngIf="fProy('descripcion').touched && fProy('descripcion').invalid">Campo obligatorio</mat-error>
+                </mat-form-field>
+              </div>
+
+              <div class="FormRow">
+                <mat-form-field appearance="outline" class="FormField">
+                  <mat-label>Tipo Vinculación *</mat-label>
+                  <mat-select formControlName="tipoVinculacion">
+                    <mat-option *ngFor="let o of tiposVinculacion" [value]="o">{{ o }}</mat-option>
+                  </mat-select>
+                  <mat-error *ngIf="fProy('tipoVinculacion').touched && fProy('tipoVinculacion').invalid">Obligatorio</mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="FormField">
+                  <mat-label>Área Vinculación *</mat-label>
+                  <mat-select formControlName="areaVinculacion">
+                    <mat-option *ngFor="let o of areasVinculacion" [value]="o">{{ o }}</mat-option>
+                  </mat-select>
+                  <mat-error *ngIf="fProy('areaVinculacion').touched && fProy('areaVinculacion').invalid">Obligatorio</mat-error>
+                </mat-form-field>
+              </div>
+
+              <div class="FormRow">
+                <mat-form-field appearance="outline" class="FormField">
+                  <mat-label>Área Impacto *</mat-label>
+                  <mat-select formControlName="areaImpacto">
+                    <mat-option *ngFor="let o of areasImpacto" [value]="o">{{ o }}</mat-option>
+                  </mat-select>
+                  <mat-error *ngIf="fProy('areaImpacto').touched && fProy('areaImpacto').invalid">Obligatorio</mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="FormField">
+                  <mat-label>Sede *</mat-label>
+                  <mat-select formControlName="sede">
+                    <mat-option *ngFor="let o of sedes" [value]="o">{{ o }}</mat-option>
+                  </mat-select>
+                  <mat-error *ngIf="fProy('sede').touched && fProy('sede').invalid">Obligatorio</mat-error>
+                </mat-form-field>
+              </div>
+
+              <div class="FormRow">
+                <mat-form-field appearance="outline" class="FormField">
+                  <mat-label>Fecha Inicio *</mat-label>
+                  <input matInput type="date" formControlName="fechaInicio" />
+                  <mat-error *ngIf="fProy('fechaInicio').touched && fProy('fechaInicio').invalid">Obligatorio</mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="FormField">
+                  <mat-label>Fecha Término *</mat-label>
+                  <input matInput type="date" formControlName="fechaTermino" />
+                  <mat-error *ngIf="fProy('fechaTermino').touched && fProy('fechaTermino').invalid">Obligatorio</mat-error>
+                </mat-form-field>
+              </div>
+
+              <div class="FormRow">
+                <mat-form-field appearance="outline" class="FormField">
+                  <mat-label>Lugar</mat-label>
+                  <input matInput formControlName="lugar" />
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="FormField">
+                  <mat-label>Ingresos</mat-label>
+                  <input matInput type="number" formControlName="ingresos" />
+                </mat-form-field>
+              </div>
+
+              <div class="FormRow">
+                <mat-form-field appearance="outline" class="FormField">
+                  <mat-label>Proyecto</mat-label>
+                  <mat-select formControlName="proyectoAsociado">
+                    <mat-option *ngFor="let o of proyectos" [value]="o">{{ o }}</mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <div class="FormField"></div>
+              </div>
+
+              <div class="FormRow">
+                <mat-form-field appearance="outline" class="FormField FullWidth">
+                  <mat-label>Resultados</mat-label>
+                  <textarea matInput rows="4" formControlName="resultados" maxlength="1000"></textarea>
+                  <mat-hint>Máx 1000 caracteres</mat-hint>
+                </mat-form-field>
+              </div>
+
+            </div>
+          </mat-tab>
+
+          <!-- =======================
+               TAB: EQUIPO DE TRABAJO
+               ======================= -->
+          <mat-tab>
+            <ng-template mat-tab-label>
+              <mat-icon class="TabIcon">groups</mat-icon>
+              Equipo Trabajo
+            </ng-template>
+
+            <div class="TabBody" formGroupName="equipoTrabajo">
+              <div class="SectionHead">
+                <mat-icon>groups</mat-icon>
+                <h3>Equipo de Trabajo</h3>
+              </div>
+
+              <div class="FormRow">
+                <mat-form-field appearance="outline" class="FormField">
+                  <mat-label>Equipo</mat-label>
+                  <mat-select formControlName="equipoFiltro" (selectionChange)="aplicarFiltroEquipo()">
+                    <mat-option *ngFor="let e of equiposCatalogo" [value]="e">{{ e }}</mat-option>
+                  </mat-select>
+                </mat-form-field>
+                <div class="FormField"></div>
+              </div>
+
+              <div class="TableCard">
+                <table mat-table [dataSource]="equipoFiltrado" class="mat-elevation-z0 SimpleTable">
+                  <ng-container matColumnDef="n">
+                    <th mat-header-cell *matHeaderCellDef>#</th>
+                    <td mat-cell *matCellDef="let row; let i = index">{{ i + 1 }}</td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="rut">
+                    <th mat-header-cell *matHeaderCellDef>R.U.T.</th>
+                    <td mat-cell *matCellDef="let row">{{ row.rut }}</td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="nombre">
+                    <th mat-header-cell *matHeaderCellDef>Nombre</th>
+                    <td mat-cell *matCellDef="let row">{{ row.nombre }}</td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="tipo">
+                    <th mat-header-cell *matHeaderCellDef>Equipo</th>
+                    <td mat-cell *matCellDef="let row">{{ row.tipo }}</td>
+                  </ng-container>
+
+                  <tr mat-header-row *matHeaderRowDef="equipoCols"></tr>
+                  <tr mat-row *matRowDef="let row; columns: equipoCols;"></tr>
+                </table>
+
+                <div class="EmptyState" *ngIf="equipoFiltrado.length === 0">
+                  <mat-icon>info</mat-icon>
+                  <span>No hay registros para el filtro seleccionado.</span>
+                </div>
+              </div>
+
+            </div>
+          </mat-tab>
+
+          <!-- =======================
+               TAB: FINANCIAMIENTO
+               ======================= -->
+          <mat-tab>
+            <ng-template mat-tab-label>
+              <mat-icon class="TabIcon">payments</mat-icon>
+              Financiamiento
+            </ng-template>
+
+            <div class="TabBody" formGroupName="financiamiento">
+
+              <div class="SectionHead">
+                <mat-icon>payments</mat-icon>
+                <h3>Financiamiento</h3>
+              </div>
+
+              <div class="InlineBar">
+                <mat-form-field appearance="outline" class="InlineField">
+                  <mat-label>Tipo</mat-label>
+                  <input matInput formControlName="finTipo" placeholder="Ej: Aporte interno" />
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="InlineField small">
+                  <mat-label>Monto</mat-label>
+                  <input matInput type="number" formControlName="finMonto" />
+                </mat-form-field>
+
+                <button mat-stroked-button type="button" (click)="addFinanciamiento()">
+                  <mat-icon>add</mat-icon>
+                  Agregar
+                </button>
+              </div>
+
+              <div class="TableCard">
+                <table mat-table [dataSource]="financiamientos" class="mat-elevation-z0 SimpleTable">
+                  <ng-container matColumnDef="n">
+                    <th mat-header-cell *matHeaderCellDef>#</th>
+                    <td mat-cell *matCellDef="let row; let i = index">{{ i + 1 }}</td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="tipo">
+                    <th mat-header-cell *matHeaderCellDef>Tipo</th>
+                    <td mat-cell *matCellDef="let row">{{ row.tipo }}</td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="monto">
+                    <th mat-header-cell *matHeaderCellDef>Monto</th>
+                    <td mat-cell *matCellDef="let row">{{ row.monto | number:'1.0-0' }}</td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="accion">
+                    <th mat-header-cell *matHeaderCellDef class="col-actions">Acción</th>
+                    <td mat-cell *matCellDef="let row" class="col-actions">
+                      <button mat-icon-button color="warn" type="button" (click)="removeFin(row)">
+                        <mat-icon>close</mat-icon>
+                      </button>
+                    </td>
+                  </ng-container>
+
+                  <tr mat-header-row *matHeaderRowDef="finCols"></tr>
+                  <tr mat-row *matRowDef="let row; columns: finCols;"></tr>
+                </table>
+
+                <div class="EmptyState" *ngIf="financiamientos.length === 0">
+                  <mat-icon>info</mat-icon>
+                  <span>No hay registro.</span>
+                </div>
+              </div>
+
+              <div class="SectionDivider"></div>
+
+              <div class="SectionHead">
+                <mat-icon>account_tree</mat-icon>
+                <h3>Centro de Costo</h3>
+              </div>
+
+              <div class="InlineBar">
+                <mat-form-field appearance="outline" class="InlineField">
+                  <mat-label>Tipo</mat-label>
+                  <input matInput formControlName="ccTipo" placeholder="Ej: FORMA FINAN 1" />
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="InlineField small">
+                  <mat-label>Código C.C.</mat-label>
+                  <input matInput formControlName="ccCodigo" placeholder="3506" />
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="InlineField">
+                  <mat-label>Nombre C.C.</mat-label>
+                  <input matInput formControlName="ccNombre" placeholder="PLAN DE MEJORA ..." />
+                </mat-form-field>
+
+                <button mat-stroked-button type="button" (click)="addCentroCosto()">
+                  <mat-icon>add</mat-icon>
+                  Agregar
+                </button>
+              </div>
+
+              <div class="TableCard">
+                <table mat-table [dataSource]="centrosCosto" class="mat-elevation-z0 SimpleTable">
+                  <ng-container matColumnDef="n">
+                    <th mat-header-cell *matHeaderCellDef>#</th>
+                    <td mat-cell *matCellDef="let row; let i = index">{{ i + 1 }}</td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="tipo">
+                    <th mat-header-cell *matHeaderCellDef>Tipo</th>
+                    <td mat-cell *matCellDef="let row">{{ row.tipo }}</td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="codigo">
+                    <th mat-header-cell *matHeaderCellDef>Código C.C.</th>
+                    <td mat-cell *matCellDef="let row">{{ row.codigo }}</td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="nombre">
+                    <th mat-header-cell *matHeaderCellDef>Nombre C.C.</th>
+                    <td mat-cell *matCellDef="let row">{{ row.nombre }}</td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="accion">
+                    <th mat-header-cell *matHeaderCellDef class="col-actions">Acción</th>
+                    <td mat-cell *matCellDef="let row" class="col-actions">
+                      <button mat-icon-button color="warn" type="button" (click)="removeCC(row)">
+                        <mat-icon>close</mat-icon>
+                      </button>
+                    </td>
+                  </ng-container>
+
+                  <tr mat-header-row *matHeaderRowDef="ccCols"></tr>
+                  <tr mat-row *matRowDef="let row; columns: ccCols;"></tr>
+                </table>
+
+                <div class="EmptyState" *ngIf="centrosCosto.length === 0">
+                  <mat-icon>info</mat-icon>
+                  <span>No hay registro.</span>
+                </div>
+              </div>
+
+            </div>
+          </mat-tab>
+
+          <!-- =======================
+               TAB: DIFUSIÓN
+               ======================= -->
+          <mat-tab>
+            <ng-template mat-tab-label>
+              <mat-icon class="TabIcon">campaign</mat-icon>
+              Difusión
+            </ng-template>
+
+            <div class="TabBody" formGroupName="difusion">
+              <div class="SectionHead">
+                <mat-icon>campaign</mat-icon>
+                <h3>Difusión Actividad</h3>
+              </div>
+
+              <div class="FormRow">
+                <mat-form-field appearance="outline" class="FormField">
+                  <mat-label>Equipo</mat-label>
+                  <mat-select formControlName="difusionEquipo">
+                    <mat-option *ngFor="let d of difusionCatalogo" [value]="d">{{ d }}</mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <button mat-stroked-button type="button" class="AlignBtn" (click)="addDifusion()">
+                  <mat-icon>add</mat-icon>
+                  Agregar
+                </button>
+              </div>
+
+              <div class="TableCard">
+                <table mat-table [dataSource]="difusiones" class="mat-elevation-z0 SimpleTable">
+                  <ng-container matColumnDef="n">
+                    <th mat-header-cell *matHeaderCellDef>#</th>
+                    <td mat-cell *matCellDef="let row; let i = index">{{ i + 1 }}</td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="tipo">
+                    <th mat-header-cell *matHeaderCellDef>Tipo</th>
+                    <td mat-cell *matCellDef="let row">{{ row }}</td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="accion">
+                    <th mat-header-cell *matHeaderCellDef class="col-actions">Acción</th>
+                    <td mat-cell *matCellDef="let row" class="col-actions">
+                      <button mat-icon-button color="warn" type="button" (click)="removeDifusion(row)">
+                        <mat-icon>close</mat-icon>
+                      </button>
+                    </td>
+                  </ng-container>
+
+                  <tr mat-header-row *matHeaderRowDef="difCols"></tr>
+                  <tr mat-row *matRowDef="let row; columns: difCols;"></tr>
+                </table>
+
+                <div class="EmptyState" *ngIf="difusiones.length === 0">
+                  <mat-icon>info</mat-icon>
+                  <span>No hay registros.</span>
+                </div>
+              </div>
+            </div>
+          </mat-tab>
+
+          <!-- =======================
+               TAB: PARTICIPANTES
+               ======================= -->
+          <mat-tab>
+            <ng-template mat-tab-label>
+              <mat-icon class="TabIcon">group</mat-icon>
+              Participantes
+            </ng-template>
+
+            <div class="TabBody" formGroupName="participantes">
+              <div class="SectionHead">
+                <mat-icon>grid_on</mat-icon>
+                <h3>Participantes</h3>
+              </div>
+
+              <div class="MatrixCard">
+                <div class="MatrixHeader">
+                  <span class="MatrixTitle">Matriz por tipo de participante</span>
+                  <button mat-stroked-button type="button" (click)="grabarParticipantes()">
+                    <mat-icon>save</mat-icon>
+                    Grabar
+                  </button>
+                </div>
+
+                <div class="MatrixScroll">
+                  <table class="Matrix">
+                    <thead>
+                      <tr>
+                        <th>Tipo Participante</th>
+                        <th *ngFor="let c of participantesColumnas">{{ c }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td class="rowHead">ASISTENTE</td>
+                        <td *ngFor="let c of participantesColumnas">
+                          <input class="MatrixInput" type="number" min="0"
+                                 [formControlName]="key('ASISTENTE', c)" />
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="rowHead">EXPOSITOR</td>
+                        <td *ngFor="let c of participantesColumnas">
+                          <input class="MatrixInput" type="number" min="0"
+                                 [formControlName]="key('EXPOSITOR', c)" />
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+              </div>
+
+              <div class="SectionDivider"></div>
+
+              <div class="SectionHead">
+                <mat-icon>school</mat-icon>
+                <h3>Instituciones</h3>
+              </div>
+
+              <div class="InlineBar">
+                <mat-form-field appearance="outline" class="InlineField small">
+                  <mat-label>Tipo</mat-label>
+                  <input matInput formControlName="instTipo" placeholder="CONVENIO" />
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="InlineField">
+                  <mat-label>Nombre</mat-label>
+                  <input matInput formControlName="instNombre" placeholder="Nombre institución" />
+                </mat-form-field>
+
+                <button mat-stroked-button type="button" (click)="addInstitucion()">
+                  <mat-icon>add</mat-icon>
+                  Agregar
+                </button>
+              </div>
+
+              <div class="TableCard">
+                <table mat-table [dataSource]="instituciones" class="mat-elevation-z0 SimpleTable">
+                  <ng-container matColumnDef="n">
+                    <th mat-header-cell *matHeaderCellDef>#</th>
+                    <td mat-cell *matCellDef="let row; let i = index">{{ i + 1 }}</td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="tipo">
+                    <th mat-header-cell *matHeaderCellDef>Tipo</th>
+                    <td mat-cell *matCellDef="let row">{{ row.tipo }}</td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="nombre">
+                    <th mat-header-cell *matHeaderCellDef>Nombre</th>
+                    <td mat-cell *matCellDef="let row">{{ row.nombre }}</td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="accion">
+                    <th mat-header-cell *matHeaderCellDef class="col-actions">Acción</th>
+                    <td mat-cell *matCellDef="let row" class="col-actions">
+                      <button mat-icon-button color="warn" type="button" (click)="removeInstitucion(row)">
+                        <mat-icon>close</mat-icon>
+                      </button>
+                    </td>
+                  </ng-container>
+
+                  <tr mat-header-row *matHeaderRowDef="instCols"></tr>
+                  <tr mat-row *matRowDef="let row; columns: instCols;"></tr>
+                </table>
+
+                <div class="EmptyState" *ngIf="instituciones.length === 0">
+                  <mat-icon>info</mat-icon>
+                  <span>No hay instituciones agregadas.</span>
+                </div>
+              </div>
+
+            </div>
+          </mat-tab>
+
+          <!-- =======================
+               TAB: EVALUACIÓN IMPACTO
+               ======================= -->
+          <mat-tab>
+            <ng-template mat-tab-label>
+              <mat-icon class="TabIcon">analytics</mat-icon>
+              Evaluación de Impacto
+            </ng-template>
+
+            <div class="TabBody" formGroupName="impacto">
+              <div class="SectionHead">
+                <mat-icon>analytics</mat-icon>
+                <h3>Evaluación de Impacto</h3>
+              </div>
+
+              <div class="InlineBar">
+                <mat-form-field appearance="outline" class="InlineField">
+                  <mat-label>Responsable</mat-label>
+                  <input matInput formControlName="impactoResponsableSearch" placeholder="Buscar responsable..." />
+                </mat-form-field>
+
+                <button mat-stroked-button type="button" (click)="buscarResponsableImpacto()">
+                  <mat-icon>search</mat-icon>
+                  Buscar
+                </button>
+              </div>
+
+              <div class="FormRow">
+                <mat-form-field appearance="outline" class="FormField">
+                  <mat-label>Medida de impacto (*)</mat-label>
+                  <mat-select formControlName="medidaImpacto">
+                    <mat-option *ngFor="let o of medidasImpacto" [value]="o">{{ o }}</mat-option>
+                  </mat-select>
+                  <mat-error *ngIf="fImp('medidaImpacto').touched && fImp('medidaImpacto').invalid">Obligatorio</mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="FormField">
+                  <mat-label>Indicador de Impacto (*)</mat-label>
+                  <input matInput formControlName="indicadorImpacto" />
+                  <mat-error *ngIf="fImp('indicadorImpacto').touched && fImp('indicadorImpacto').invalid">Obligatorio</mat-error>
+                </mat-form-field>
+              </div>
+
+              <div class="FormRow">
+                <mat-form-field appearance="outline" class="FormField FullWidth">
+                  <mat-label>Interpretación del Indicador (*)</mat-label>
+                  <textarea matInput rows="5" formControlName="interpretacion"></textarea>
+                  <mat-error *ngIf="fImp('interpretacion').touched && fImp('interpretacion').invalid">Obligatorio</mat-error>
+                </mat-form-field>
+              </div>
+
+            </div>
+          </mat-tab>
+
+          <!-- =======================
+     TAB: EVIDENCIAS
+     ======================= -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon class="TabIcon">verified</mat-icon>
+          Evidencias
+        </ng-template>
+
+        <div class="TabBody" formGroupName="evidencias">
 
         <div class="SectionHead">
           <mat-icon>verified</mat-icon>
-          <h3>Evidencias</h3>
+          <h3>Evidencias de la actividad</h3>
         </div>
 
         <div class="EvidenceHint">
           <mat-icon>info</mat-icon>
-          <span>
-            Aquí podrás adjuntar evidencias asociadas a la actividad.
-          </span>
+          <span>Adjunta o registra evidencias que respalden la actividad (asistencia, documentos, fotos, enlaces, etc.).</span>
         </div>
 
         <div class="EvidenceGrid">
 
+          <!-- Lista asistencia -->
           <div class="EvidenceCard">
             <div class="EvidenceIcon">
               <mat-icon>groups</mat-icon>
             </div>
+
             <div class="EvidenceBody">
               <h4>Lista de asistencia</h4>
-              <p>Archivo PDF o Excel con los asistentes.</p>
-              <button mat-stroked-button disabled>
-                <mat-icon>upload</mat-icon>
-                Subir archivo
-              </button>
+              <p>Sube Excel o PDF.</p>
+
+              <!-- input file oculto -->
+              <input
+                #fileAsistencia
+                type="file"
+                class="FileInputHidden"
+                accept=".pdf,.xls,.xlsx"
+                (change)="onFileSelected($event, 'asistencia')"
+              />
+
+              <div class="FileRow">
+                <button mat-stroked-button type="button" (click)="fileAsistencia.click()">
+                  <mat-icon>upload</mat-icon>
+                  Subir archivo
+                </button>
+
+                <span class="FileName" *ngIf="asistenciaFileName; else noAsis">
+                  {{ asistenciaFileName }}
+                </span>
+                <ng-template #noAsis>
+                  <span class="FileName muted">Sin archivo</span>
+                </ng-template>
+              </div>
             </div>
           </div>
 
+          <!-- Documentos -->
           <div class="EvidenceCard">
             <div class="EvidenceIcon">
               <mat-icon>description</mat-icon>
             </div>
+
             <div class="EvidenceBody">
               <h4>Documentos</h4>
-              <p>Resoluciones, informes u otros documentos (.pdf).</p>
-              <button mat-stroked-button disabled>
-                <mat-icon>upload_file</mat-icon>
-                Adjuntar PDF
-              </button>
+              <p>Sube PDF o Excel.</p>
+
+              <input
+                #fileDocs
+                type="file"
+                class="FileInputHidden"
+                accept=".pdf,.xls,.xlsx"
+                (change)="onFileSelected($event, 'documentos')"
+              />
+
+              <div class="FileRow">
+                <button mat-stroked-button type="button" (click)="fileDocs.click()">
+                  <mat-icon>upload_file</mat-icon>
+                  Subir archivo
+                </button>
+
+                <span class="FileName" *ngIf="documentosFileName; else noDoc">
+                  {{ documentosFileName }}
+                </span>
+                <ng-template #noDoc>
+                  <span class="FileName muted">Sin archivo</span>
+                </ng-template>
+              </div>
             </div>
           </div>
 
+          <!-- Fotografías -->
           <div class="EvidenceCard">
             <div class="EvidenceIcon">
               <mat-icon>photo_camera</mat-icon>
             </div>
+
             <div class="EvidenceBody">
               <h4>Fotografías</h4>
-              <p>Registro fotográfico de la actividad.</p>
-              <button mat-stroked-button disabled>
-                <mat-icon>photo_library</mat-icon>
-                Agregar fotos
-              </button>
+              <p>Sube JPG (también acepta PNG/JPEG).</p>
+
+              <input
+                #fileFotos
+                type="file"
+                class="FileInputHidden"
+                accept=".jpg,.jpeg,.png"
+                (change)="onFileSelected($event, 'fotos')"
+              />
+
+              <div class="FileRow">
+                <button mat-stroked-button type="button" (click)="fileFotos.click()">
+                  <mat-icon>photo_library</mat-icon>
+                  Subir foto
+                </button>
+
+                <span class="FileName" *ngIf="fotosFileName; else noFoto">
+                  {{ fotosFileName }}
+                </span>
+                <ng-template #noFoto>
+                  <span class="FileName muted">Sin archivo</span>
+                </ng-template>
+              </div>
             </div>
           </div>
 
+          <!-- URL noticia (ANCHO COMPLETO) -->
           <div class="EvidenceCard EvidenceCard--full">
             <div class="EvidenceIcon">
               <mat-icon>link</mat-icon>
             </div>
+
             <div class="EvidenceBody">
               <h4>Enlace de noticia</h4>
-              <p>Publicación web, nota institucional o red social.</p>
+              <p>Publicación institucional o red social.</p>
 
               <mat-form-field appearance="outline" class="FullWidth">
-                <mat-label>URL de la noticia</mat-label>
+                <mat-label>URL</mat-label>
                 <input matInput formControlName="enlaceNoticia" placeholder="https://..." />
               </mat-form-field>
             </div>
           </div>
 
-        </div>
+          <!-- Observaciones (ANCHO COMPLETO + MÁS GRANDE) -->
+          <div class="EvidenceCard EvidenceCard--full">
+            <div class="EvidenceIcon">
+              <mat-icon>notes</mat-icon>
+            </div>
 
-        <!-- Observaciones -->
-        <div class="FormRow">
-          <mat-form-field appearance="outline" class="FormField FullWidth">
-            <mat-label>Observaciones</mat-label>
-            <textarea
-              matInput
-              rows="3"
-              formControlName="observaciones"
-              placeholder="Notas, acuerdos, resultados, observaciones generales..."
-            ></textarea>
-          </mat-form-field>
-        </div>
+            <div class="EvidenceBody">
+              <h4>Observaciones</h4>
+              <p>Detalles adicionales sobre las evidencias.</p>
 
-        <!-- Acciones -->
+              <mat-form-field appearance="outline" class="FullWidth">
+                <mat-label>Observaciones</mat-label>
+                <textarea matInput rows="6" formControlName="observaciones" class="ObsBig"></textarea>
+              </mat-form-field>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+</mat-tab>
+
+
+        </mat-tab-group>
+
+        <!-- Acciones inferiores -->
         <div class="FormActions">
-          <button
-            mat-stroked-button
-            class="CancelBtn"
-            type="button"
-            (click)="limpiar()"
-          >
+          <button mat-stroked-button class="CancelBtn" type="button" (click)="limpiar()">
             Limpiar
           </button>
 
-          <button
-            mat-flat-button
-            color="primary"
-            class="SubmitBtn"
-            type="button"
-            (click)="guardar()"
-            [disabled]="form.invalid"
-          >
+          <button mat-flat-button color="primary" class="SubmitBtn" type="button" (click)="guardar()" [disabled]="form.invalid">
             <mat-icon>save</mat-icon>
-            Guardar actividad
+            Grabar
           </button>
         </div>
 

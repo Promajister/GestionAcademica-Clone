@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+
 import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -8,6 +9,16 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatTabsModule } from '@angular/material/tabs';
+import { MatTableModule } from '@angular/material/table';
+
+type UnidadRow = { cod: string; unidad: string };
+type ResponsableRow = { rut: string; nombre: string; tipo: string };
+type EquipoRow = { rut: string; nombre: string; tipo: string };
+type FinRow = { tipo: string; monto: number };
+type CentroCostoRow = { tipo: string; codigo: string; nombre: string };
+type InstRow = { tipo: string; nombre: string };
+
 
 @Component({
   selector: 'app-actividades-pm',
@@ -21,163 +32,472 @@ import { MatIconModule } from '@angular/material/icon';
     MatInputModule,
     MatSelectModule,
     MatButtonModule,
-    MatIconModule],
+    MatIconModule,
+    MatTabsModule,
+    MatTableModule,
+  ],
   templateUrl: './actividades-pm.component.html',
   styleUrls: ['./actividades-pm.component.scss']
 })
 export class ActividadesPmComponent implements OnInit {
   form!: FormGroup;
 
-  camposKeys: string[] = [];
+  // tablas (como en el sistema de las fotos)
+  unidades: UnidadRow[] = [];
+  responsables: ResponsableRow[] = [];
+  equipoTrabajo: EquipoRow[] = [];
+  equipoFiltrado: EquipoRow[] = [];
+  financiamientos: FinRow[] = [];
+  centrosCosto: CentroCostoRow[] = [];
+  difusiones: string[] = [];
+  instituciones: InstRow[] = [];
 
-  tiposActividad = [
-    'Feria Vocacional',
-    'Jornada Pedagógica',
-    'Taller Remedial',
-    'Congreso Académico',
-    'Alternancia Pedagógica',
-    'Salida a Terreno'
+  // columnas
+  unidadCols = ['n', 'cod', 'unidad', 'accion'];
+  responsableCols = ['n', 'rut', 'nombre', 'tipo', 'accion'];
+  equipoCols = ['n', 'rut', 'nombre', 'tipo'];
+  finCols = ['n', 'tipo', 'monto', 'accion'];
+  ccCols = ['n', 'tipo', 'codigo', 'nombre', 'accion'];
+  difCols = ['n', 'tipo', 'accion'];
+  instCols = ['n', 'tipo', 'nombre', 'accion'];
+
+  // catálogos (ajústalos según tu backend real)
+  tiposResponsable = ['INTERNO', 'EXTERNO'];
+  tiposVinculacion = ['VcM (Bidireccionales)', 'VcM (Unidireccionales)', 'Extensión', 'Otro'];
+  areasVinculacion = ['Educación', 'Salud', 'Cultura', 'Territorio', 'Investigación', 'Otro'];
+  areasImpacto = ['SELECCIONE', 'Educación', 'Social', 'Productivo', 'Territorial', 'Otro'];
+  sedes = ['CASA MATRIZ ARICA', 'IQUIQUE', 'ANTOFAGASTA'];
+  proyectos = ['SELECCIONE', 'PLAN DE MEJORA', 'PRACTICAS', 'OTRO'];
+
+  equiposCatalogo = [
+    'SELECCIONE',
+    'TODOS',
+    'DIRECTIVOS (UTA)',
+    'DOCENTES (UTA)',
+    'ESTUDIANTES (UTA)',
+    'EXALUMNOS',
+    'FUNCIONARIOS DE GESTIÓN (UTA)',
+    'OTROS (EXTERNOS)'
   ];
 
-  labels: Record<string, string> = {
-    institucionVisitada: 'Institución visitada',
-    estudiantes: 'Estudiantes (nombres o listado)',
-    temaCentral: 'Tema central',
-    talleres: 'Talleres',
-    responsableTaller: 'Responsable de taller',
-    nAsistentes: 'Nº de asistentes',
-    satisfaccion: '% satisfacción',
-    asignatura: 'Asignatura',
-    competencia: 'Competencia a reforzar',
-    nEstudiantes: 'Nº estudiantes beneficiados',
-    nombreEvento: 'Nombre del evento',
-    ponencia: 'Ponencia presentada',
-    relator: 'Relator',
-    colegio: 'Colegio asociado',
-    docenteColaborador: 'Docente colaborador',
-    curso: 'Curso',
-    objetivoPedagogico: 'Objetivo pedagógico',
-    profesorResponsable: 'Profesor responsable'
-  };
+  difusionCatalogo = [
+    'SELECCIONE',
+    'TODOS',
+    'MEDIOS DIG. REDES SO',
+    'PRENSA ESCRITA',
+    'RADIO',
+    'TELEVISIÓN',
+    'VÍA PÚBLICA'
+  ];
+
+  participantesColumnas = [
+    'DIRECTIVOS (UTA)',
+    'DOCENTES (UTA)',
+    'ESTUDIANTES (UTA)',
+    'EXALUMNOS',
+    'FUNCIONARIOS DE GESTIÓN (UTA)',
+    'OTROS (EXTERNOS)'
+  ];
+
+  medidasImpacto = ['NO APLICA', 'ENCUESTA', 'INDICADOR', 'RÚBRICA', 'OTRA'];
+
+  asistenciaFile: File | null = null;
+  documentosFile: File | null = null;
+  fotosFile: File | null = null;
+
+  asistenciaFileName = '';
+  documentosFileName = '';
+  fotosFileName = '';
+
 
   constructor(private fb: FormBuilder) {}
 
   ngOnInit(): void {
     this.form = this.fb.group({
-      nombreActividad: ['', Validators.required],
-      tipoActividad: ['', Validators.required],
-      responsable: ['', Validators.required],
-      anio: [new Date().getFullYear(), [Validators.required, Validators.min(2000), Validators.max(2100)]],
-      fecha: ['', Validators.required],
-      hora: ['', Validators.required],
-      lugar: ['', Validators.required],
+      proyecto: this.fb.group({
+        // Unidad
+        unidadSearch: [''],
+        // Responsable (inputs para agregar)
+        responsableRut: [''],
+        responsableNombre: [''],
+        responsableTipo: ['INTERNO'],
 
-      presupuesto: [0, [Validators.required, Validators.min(0)]],
-      gastoAsociado: [0, [Validators.min(0)]],
+        // campos de la actividad (como la foto)
+        nombre: ['', [Validators.required, Validators.maxLength(200)]],
+        objetivo: ['', [Validators.required, Validators.maxLength(400)]],
+        descripcion: ['', [Validators.required, Validators.maxLength(1000)]],
+        tipoVinculacion: ['', Validators.required],
+        areaVinculacion: ['', Validators.required],
+        areaImpacto: ['SELECCIONE', Validators.required],
+        fechaInicio: ['', Validators.required],
+        fechaTermino: ['', Validators.required],
+        sede: ['', Validators.required],
+        lugar: [''],
+        ingresos: [0, [Validators.min(0)]],
+        proyectoAsociado: ['SELECCIONE'],
+        resultados: ['', [Validators.maxLength(1000)]],
+      }),
 
-      // dinámicos
-      datosEspecificos: this.fb.group({}),
+      equipoTrabajo: this.fb.group({
+        equipoFiltro: ['TODOS'],
+      }),
 
-      enlaceNoticia: [''],
-      observaciones: ['']
+      evidencias: this.fb.group({
+        listaAsistenciaRef: [''],
+        documentosRef: [''],
+        fotosRef: [''],
+        enlaceNoticia: [''],
+        observaciones: [''],
+      }),
+
+
+      financiamiento: this.fb.group({
+        finTipo: [''],
+        finMonto: [0],
+        ccTipo: [''],
+        ccCodigo: [''],
+        ccNombre: [''],
+      }),
+
+      difusion: this.fb.group({
+        difusionEquipo: ['TODOS']
+      }),
+
+      participantes: this.fb.group({
+        // inputs para instituciones
+        instTipo: ['CONVENIO'],
+        instNombre: [''],
+
+        // matriz participantes (ASISTENTE/EXPOSITOR x columnas)
+        ...this.buildParticipantesControls(),
+      }),
+
+      impacto: this.fb.group({
+        impactoResponsableSearch: [''],
+        medidaImpacto: ['NO APLICA', Validators.required],
+        indicadorImpacto: ['', Validators.required],
+        interpretacion: ['', Validators.required],
+      }),
     });
 
-    this.form.get('tipoActividad')?.valueChanges.subscribe((tipo) => {
-      this.cargarCamposPorTipo(String(tipo ?? ''));
-    });
+    // dataset ejemplo (si ya tienes backend, elimínalo)
+    this.equipoTrabajo = [
+      { rut: '10.018.950-K', nombre: 'Nombre 1', tipo: 'DIRECTIVOS (UTA)' },
+      { rut: '16.226.319-6', nombre: 'Nombre 2', tipo: 'DOCENTES (UTA)' },
+      { rut: '18.943.018-3', nombre: 'Nombre 3', tipo: 'OTROS (EXTERNOS)' },
+    ];
+    this.aplicarFiltroEquipo();
   }
 
-  get datosEspecificosGroup(): FormGroup {
-    return this.form.get('datosEspecificos') as FormGroup;
+  // helpers
+  fProy(name: string) {
+    return (this.form.get('proyecto') as FormGroup).get(name)!;
   }
 
-  cargarCamposPorTipo(tipo: string): void {
-    const grupo = this.fb.group({});
+  fImp(name: string) {
+    return (this.form.get('impacto') as FormGroup).get(name)!;
+  }
 
-    switch (tipo) {
-      case 'Feria Vocacional':
-        grupo.addControl('institucionVisitada', this.fb.control('', Validators.required));
-        grupo.addControl('estudiantes', this.fb.control('', Validators.required));
-        break;
+  // =========================
+  // Unidad
+  // =========================
+  buscarUnidad(): void {
+    const q = String(this.fProy('unidadSearch').value ?? '').trim();
+    if (!q) return;
 
-      case 'Jornada Pedagógica':
-        grupo.addControl('temaCentral', this.fb.control('', Validators.required));
-        grupo.addControl('talleres', this.fb.control('', Validators.required));
-        grupo.addControl('responsableTaller', this.fb.control('', Validators.required));
-        grupo.addControl('nAsistentes', this.fb.control('', [Validators.required, Validators.min(0)]));
-        grupo.addControl('satisfaccion', this.fb.control('', [Validators.required, Validators.min(0), Validators.max(100)]));
-        break;
+    // Simulación: tu backend aquí
+    this.unidades = [{ cod: '74', unidad: 'FACULTAD DE EDUCACIÓN Y HUMANIDADES' }];
+    this.fProy('unidadSearch').setValue('');
+  }
 
-      case 'Taller Remedial':
-        grupo.addControl('asignatura', this.fb.control('', Validators.required));
-        grupo.addControl('competencia', this.fb.control('', Validators.required));
-        grupo.addControl('nEstudiantes', this.fb.control('', [Validators.required, Validators.min(0)]));
-        break;
+  removeUnidad(row: UnidadRow): void {
+    this.unidades = this.unidades.filter(x => x !== row);
+  }
 
-      case 'Congreso Académico':
-        grupo.addControl('nombreEvento', this.fb.control('', Validators.required));
-        grupo.addControl('ponencia', this.fb.control('', Validators.required));
-        grupo.addControl('relator', this.fb.control('', Validators.required));
-        grupo.addControl('nAsistentes', this.fb.control('', [Validators.required, Validators.min(0)]));
-        grupo.addControl('satisfaccion', this.fb.control('', [Validators.required, Validators.min(0), Validators.max(100)]));
-        break;
+  // =========================
+  // Responsable
+  // =========================
+  addResponsable(): void {
+    const rut = String(this.fProy('responsableRut').value ?? '').trim();
+    const nombre = String(this.fProy('responsableNombre').value ?? '').trim();
+    const tipo = String(this.fProy('responsableTipo').value ?? 'INTERNO');
 
-      case 'Alternancia Pedagógica':
-        grupo.addControl('colegio', this.fb.control('', Validators.required));
-        grupo.addControl('docenteColaborador', this.fb.control('', Validators.required));
-        grupo.addControl('asignatura', this.fb.control('', Validators.required));
-        grupo.addControl('curso', this.fb.control('', Validators.required));
-        grupo.addControl('estudiantes', this.fb.control('', Validators.required));
-        break;
+    if (!rut || !nombre) return;
 
-      case 'Salida a Terreno':
-        grupo.addControl('objetivoPedagogico', this.fb.control('', Validators.required));
-        grupo.addControl('asignatura', this.fb.control('', Validators.required));
-        grupo.addControl('profesorResponsable', this.fb.control('', Validators.required));
-        grupo.addControl('estudiantes', this.fb.control('', Validators.required));
-        break;
+    this.responsables = [...this.responsables, { rut, nombre, tipo }];
+
+    this.fProy('responsableRut').setValue('');
+    this.fProy('responsableNombre').setValue('');
+    this.fProy('responsableTipo').setValue('INTERNO');
+  }
+
+  removeResponsable(row: ResponsableRow): void {
+    this.responsables = this.responsables.filter(x => x !== row);
+  }
+
+  // =========================
+  // Equipo de trabajo (filtro)
+  // =========================
+  aplicarFiltroEquipo(): void {
+    const filtro = String(this.form.get('equipoTrabajo.equipoFiltro')?.value ?? 'TODOS');
+
+    if (filtro === 'TODOS') {
+      this.equipoFiltrado = [...this.equipoTrabajo];
+      return;
+    }
+    if (filtro === 'SELECCIONE') {
+      this.equipoFiltrado = [];
+      return;
+    }
+    this.equipoFiltrado = this.equipoTrabajo.filter(x => x.tipo === filtro);
+  }
+
+  // =========================
+  // Financiamiento
+  // =========================
+  addFinanciamiento(): void {
+    const g = this.form.get('financiamiento') as FormGroup;
+    const tipo = String(g.get('finTipo')?.value ?? '').trim();
+    const monto = Number(g.get('finMonto')?.value ?? 0);
+
+    if (!tipo) return;
+
+    this.financiamientos = [...this.financiamientos, { tipo, monto: isNaN(monto) ? 0 : monto }];
+    g.get('finTipo')?.setValue('');
+    g.get('finMonto')?.setValue(0);
+  }
+
+  removeFin(row: FinRow): void {
+    this.financiamientos = this.financiamientos.filter(x => x !== row);
+  }
+
+  addCentroCosto(): void {
+    const g = this.form.get('financiamiento') as FormGroup;
+    const tipo = String(g.get('ccTipo')?.value ?? '').trim();
+    const codigo = String(g.get('ccCodigo')?.value ?? '').trim();
+    const nombre = String(g.get('ccNombre')?.value ?? '').trim();
+
+    if (!tipo || !codigo || !nombre) return;
+
+    this.centrosCosto = [...this.centrosCosto, { tipo, codigo, nombre }];
+    g.get('ccTipo')?.setValue('');
+    g.get('ccCodigo')?.setValue('');
+    g.get('ccNombre')?.setValue('');
+  }
+
+  onFileSelected(event: Event, tipo: 'asistencia' | 'documentos' | 'fotos'): void {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
+
+  // Validaciones rápidas (ajusta si quieres)
+  const maxMb = 10;
+  const sizeOk = file.size <= maxMb * 1024 * 1024;
+
+  const ext = (file.name.split('.').pop() ?? '').toLowerCase();
+  const allow = {
+    asistencia: ['pdf', 'xls', 'xlsx'],
+    documentos: ['pdf', 'xls', 'xlsx'],
+    fotos: ['jpg', 'jpeg', 'png'],
+  }[tipo];
+
+  if (!allow.includes(ext) || !sizeOk) {
+    // si quieres, aquí puedes mostrar snackBar
+    console.warn(`Archivo inválido. Permitidos: ${allow.join(', ')}. Máx: ${maxMb}MB`);
+    input.value = '';
+    return;
+  }
+
+  if (tipo === 'asistencia') {
+    this.asistenciaFile = file;
+    this.asistenciaFileName = file.name;
+  } else if (tipo === 'documentos') {
+    this.documentosFile = file;
+    this.documentosFileName = file.name;
+  } else {
+    this.fotosFile = file;
+    this.fotosFileName = file.name;
+  }
+}
+
+
+  removeCC(row: CentroCostoRow): void {
+    this.centrosCosto = this.centrosCosto.filter(x => x !== row);
+  }
+
+  // =========================
+  // Difusión
+  // =========================
+  addDifusion(): void {
+    const g = this.form.get('difusion') as FormGroup;
+    const v = String(g.get('difusionEquipo')?.value ?? '').trim();
+
+    if (!v || v === 'SELECCIONE') return;
+    if (v === 'TODOS') return;
+
+    if (!this.difusiones.includes(v)) {
+      this.difusiones = [...this.difusiones, v];
+    }
+  }
+
+  removeDifusion(tipo: string): void {
+    this.difusiones = this.difusiones.filter(x => x !== tipo);
+  }
+
+  // =========================
+  // Participantes (matriz)
+  // =========================
+  private buildParticipantesControls(): Record<string, any> {
+    const obj: Record<string, any> = {};
+    const tipos = ['ASISTENTE', 'EXPOSITOR'];
+
+    for (const t of tipos) {
+      for (const col of this.participantesColumnas) {
+        obj[this.key(t, col)] = [0, [Validators.min(0)]];
+      }
+    }
+    return obj;
+  }
+
+  key(tipo: string, col: string): string {
+    // clave segura para formControlName
+    return `${tipo}__${col}`.replace(/\s+/g, '_').replace(/[()]/g, '');
+  }
+
+  grabarParticipantes(): void {
+    // aquí normalmente llamas al backend
+    const g = this.form.get('participantes') as FormGroup;
+    console.log('Participantes (matriz):', g.value);
+  }
+
+  // =========================
+  // Instituciones
+  // =========================
+  addInstitucion(): void {
+    const g = this.form.get('participantes') as FormGroup;
+    const tipo = String(g.get('instTipo')?.value ?? '').trim();
+    const nombre = String(g.get('instNombre')?.value ?? '').trim();
+    if (!tipo || !nombre) return;
+
+    this.instituciones = [...this.instituciones, { tipo, nombre }];
+    g.get('instNombre')?.setValue('');
+  }
+
+  removeInstitucion(row: InstRow): void {
+    this.instituciones = this.instituciones.filter(x => x !== row);
+  }
+
+  // =========================
+  // Impacto
+  // =========================
+  buscarResponsableImpacto(): void {
+    // simulado (con backend: buscar por texto)
+    const q = String(this.form.get('impacto.impactoResponsableSearch')?.value ?? '').trim();
+    console.log('Buscar responsable impacto:', q);
+  }
+
+  // =========================
+  // Guardar general
+  // =========================
+  guardar(): void {
+    // REGLAS mínimas como el formulario real:
+    // - Debe existir 1 unidad
+    // - Debe existir >= 1 responsable
+    if (this.unidades.length === 0) {
+      this.form.markAllAsTouched();
+      console.warn('Falta Unidad.');
+      return;
+    }
+    if (this.responsables.length === 0) {
+      this.form.markAllAsTouched();
+      console.warn('Falta Responsable.');
+      return;
     }
 
-    this.form.setControl('datosEspecificos', grupo);
-    this.camposKeys = Object.keys(grupo.controls);
-  }
-
-  labelFor(key: string): string {
-    return this.labels[key] ?? key;
-  }
-
-  guardar(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
-    console.log('Guardar Actividad PM:', this.form.value);
+
+    const payload = {
+      ...this.form.value,
+      unidades: this.unidades,
+      responsables: this.responsables,
+      equipoTrabajo: this.equipoTrabajo,
+      financiamientos: this.financiamientos,
+      centrosCosto: this.centrosCosto,
+      difusiones: this.difusiones,
+      instituciones: this.instituciones,
+
+      evidenciasFiles: {
+        asistencia: this.asistenciaFile,
+        documentos: this.documentosFile,
+        fotos: this.fotosFile,
+      },
+    };
+
+    
+    console.log('GRABAR (payload):', payload);
   }
+
   limpiar(): void {
-  // Vaciar dinámicos también (si hay un tipo seleccionado)
-  this.form.get('tipoActividad')?.setValue('', { emitEvent: false });
+    this.unidades = [];
+    this.responsables = [];
+    this.financiamientos = [];
+    this.centrosCosto = [];
+    this.difusiones = [];
+    this.instituciones = [];
+    this.asistenciaFile = null; this.asistenciaFileName = '';
+    this.documentosFile = null; this.documentosFileName = '';
+    this.fotosFile = null; this.fotosFileName = '';
 
-  // Reinicia datosEspecificos y sus keys
-  const emptyGroup = this.fb.group({});
-  this.form.setControl('datosEspecificos', emptyGroup);
-  this.camposKeys = [];
 
-  this.form.reset({
-    nombreActividad: '',
-    tipoActividad: '',
-    responsable: '',
-    anio: new Date().getFullYear(),
-    fecha: '',
-    hora: '',
-    lugar: '',
-    presupuesto: 0,
-    gastoAsociado: 0,
-    enlaceNoticia: '',
-    observaciones: '',
-  });
+    // vuelve a setear matriz participantes a 0
+    const part = this.form.get('participantes') as FormGroup;
+    Object.keys(part.controls).forEach(k => {
+      if (k.includes('ASISTENTE__') || k.includes('EXPOSITOR__')) part.get(k)?.setValue(0);
+    });
 
-  this.form.markAsPristine();
-  this.form.markAsUntouched();
-}
+    this.form.reset({
+      proyecto: {
+        unidadSearch: '',
+        responsableRut: '',
+        responsableNombre: '',
+        responsableTipo: 'INTERNO',
 
+        nombre: '',
+        objetivo: '',
+        descripcion: '',
+        tipoVinculacion: '',
+        areaVinculacion: '',
+        areaImpacto: 'SELECCIONE',
+        fechaInicio: '',
+        fechaTermino: '',
+        sede: '',
+        lugar: '',
+        ingresos: 0,
+        proyectoAsociado: 'SELECCIONE',
+        resultados: '',
+      },
+
+      evidencias: {
+        listaAsistenciaRef: '',
+        documentosRef: '',
+        fotosRef: '',
+        enlaceNoticia: '',
+        observaciones: '',
+      },
+
+
+      equipoTrabajo: { equipoFiltro: 'TODOS' },
+      financiamiento: { finTipo: '', finMonto: 0, ccTipo: '', ccCodigo: '', ccNombre: '' },
+      difusion: { difusionEquipo: 'TODOS' },
+      participantes: { instTipo: 'CONVENIO', instNombre: '' },
+      impacto: { impactoResponsableSearch: '', medidaImpacto: 'NO APLICA', indicadorImpacto: '', interpretacion: '' }
+    });
+
+    this.aplicarFiltroEquipo();
+    this.form.markAsPristine();
+    this.form.markAsUntouched();
+  }
 }

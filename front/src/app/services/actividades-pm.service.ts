@@ -1,0 +1,100 @@
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpParams, HttpEvent } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
+
+export interface EvidenciasFiles {
+  asistencia?: File | null;
+  documentos?: File | null;
+  fotos?: File | null;
+}
+
+export interface GuardarActividadPmRequest {
+
+  payload: any;
+  unidades: any[];
+  responsables: any[];
+  financiamientos: any[];
+  centrosCosto: any[];
+  difusiones: string[];
+  instituciones: any[];
+  files?: EvidenciasFiles;
+}
+
+@Injectable({ providedIn: 'root' })
+export class ActividadesPmService {
+  private readonly baseUrl = `${environment.apiUrl}/actividades-pm`;
+
+  constructor(private http: HttpClient) {}
+
+  /**
+   * Crea una actividad PM enviando JSON + archivos en multipart/form-data.
+   * Retorna el response del backend.
+   */
+  crear(req: GuardarActividadPmRequest): Observable<any> {
+    const formData = this.buildFormData(req);
+    return this.http.post(this.baseUrl, formData);
+  }
+
+  /**
+   * Actualiza una actividad PM.
+   */
+  actualizar(id: number | string, req: GuardarActividadPmRequest): Observable<any> {
+    const formData = this.buildFormData(req);
+    return this.http.put(`${this.baseUrl}/${id}`, formData);
+  }
+
+  /**
+   * Listar actividades
+   */
+  listar(filters?: { anio?: number; tipo?: string; q?: string }): Observable<any[]> {
+    let params = new HttpParams();
+    if (filters?.anio) params = params.set('anio', String(filters.anio));
+    if (filters?.tipo) params = params.set('tipo', filters.tipo);
+    if (filters?.q) params = params.set('q', filters.q);
+
+    return this.http.get<any[]>(this.baseUrl, { params });
+  }
+
+  /**
+   * Obtener detalle
+   */
+  obtener(id: number | string): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/${id}`);
+  }
+
+  /**
+   * Construye FormData con:
+   * - metadata (JSON) en un campo "data"
+   * - archivos en campos: asistencia, documentos, fotos
+   */
+  private buildFormData(req: GuardarActividadPmRequest): FormData {
+    const fd = new FormData();
+
+    // 1) JSON: junta todo en un solo objeto para backend
+    const data = {
+      ...req.payload,
+      unidades: req.unidades,
+      responsables: req.responsables,
+      financiamientos: req.financiamientos,
+      centrosCosto: req.centrosCosto,
+      difusiones: req.difusiones,
+      instituciones: req.instituciones,
+    };
+
+    fd.append('data', JSON.stringify(data));
+
+    // 2) archivos (si vienen)
+    if (req.files?.asistencia) {
+      fd.append('asistencia', req.files.asistencia, req.files.asistencia.name);
+    }
+    if (req.files?.documentos) {
+      fd.append('documentos', req.files.documentos, req.files.documentos.name);
+    }
+    if (req.files?.fotos) {
+      fd.append('fotos', req.files.fotos, req.files.fotos.name);
+    }
+
+    return fd;
+  }
+}
