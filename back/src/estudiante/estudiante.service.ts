@@ -162,6 +162,7 @@ export class EstudianteService {
         orderBy: { fecha: 'desc' },
         select: {
           id: true,
+          nombre_actividad: true,
           estudiantes: true,
           fecha: true,
           horario: true,
