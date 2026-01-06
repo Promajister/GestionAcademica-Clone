@@ -15,7 +15,7 @@ type UnidadRow = { cod: string; unidad: string };
 type ResponsableRow = { rut: string; nombre: string; tipo: string };
 type EquipoRow = { rut: string; nombre: string; tipo: string };
 type FinRow = { tipo: string; monto: number };
-type CentroCostoRow = { tipo: string; codigo: string; nombre: string };
+type CentroCostoRow = { tipo: string };
 type InstRow = { tipo: string; nombre: string };
 
 
@@ -53,17 +53,17 @@ export class ActividadesPmComponent implements OnInit {
   // columnas
   unidadCols = ['n', 'cod', 'unidad', 'accion'];
   responsableCols = ['n', 'rut', 'nombre', 'tipo', 'accion'];
-  equipoCols = ['n', 'rut', 'nombre', 'tipo'];
+  equipoCols = ['n', 'rut', 'nombre', 'tipo', 'accion'];
   finCols = ['n', 'tipo', 'monto', 'accion'];
-  ccCols = ['n', 'tipo', 'codigo', 'nombre', 'accion'];
+  ccCols = ['n', 'tipo', 'accion'];
   instCols = ['n', 'tipo', 'nombre', 'accion'];
 
   // catálogos (ajústalos según tu backend real)
   tiposResponsable = ['INTERNO', 'EXTERNO'];
-  tiposVinculacion = ['VcM (Bidireccionales)', 'VcM (Unidireccionales)', 'Extensión', 'Otro'];
+  tiposVinculacion = ['VcM (Bidireccionales)', 'VcM (Unidireccionales)','Extencion' , 'Otro'];
   areasVinculacion = ['Educación', 'Salud', 'Cultura', 'Territorio', 'Investigación', 'Otro'];
   areasImpacto = ['SELECCIONE', 'Educación', 'Social', 'Productivo', 'Territorial', 'Otro'];
-  sedes = ['CASA MATRIZ ARICA', 'IQUIQUE', 'ANTOFAGASTA'];
+  sedes = ['CASA MATRIZ ARICA', 'SEDE IQUIQUE'];
   proyectos = ['SELECCIONE', 'PLAN DE MEJORA', 'PRACTICAS', 'OTRO'];
 
   equiposCatalogo = [
@@ -76,6 +76,14 @@ export class ActividadesPmComponent implements OnInit {
     'FUNCIONARIOS DE GESTIÓN (UTA)',
     'OTROS (EXTERNOS)'
   ];
+
+  institucionesCatalogo = [
+  'PACE',
+  'PROPEDÉUTICO',
+  'INSTITUCIÓN EXTERNA',
+  'INSTITUCIÓN INTERNA',
+  'CENTROS EDUCATIVOS',
+];
 
   difusionCatalogo = [
     'SELECCIONE',
@@ -91,12 +99,13 @@ export class ActividadesPmComponent implements OnInit {
     'DIRECTIVOS (UTA)',
     'DOCENTES (UTA)',
     'ESTUDIANTES (UTA)',
-    'EXALUMNOS',
     'FUNCIONARIOS DE GESTIÓN (UTA)',
+    'EXALUMNOS',
     'OTROS (EXTERNOS)'
   ];
 
-  medidasImpacto = ['NO APLICA', 'ENCUESTA', 'INDICADOR', 'RÚBRICA', 'OTRA'];
+  medidasImpacto = ['ENCUESTA'];
+
 
   asistenciaFile: File | null = null;
   documentosFile: File | null = null;
@@ -112,16 +121,18 @@ export class ActividadesPmComponent implements OnInit {
   ngOnInit(): void {
     this.form = this.fb.group({
       proyecto: this.fb.group({
-        unidadSearch: [''],
         responsableRut: [''],
+        unidadCod: [''],
+        unidadNombre: [''],
         responsableNombre: [''],
         responsableTipo: ['INTERNO'],
 
-        // campos de la actividad (como la foto)
+        // campos de la actividad
         nombre: ['', [Validators.required, Validators.maxLength(200)]],
         objetivo: ['', [Validators.required, Validators.maxLength(400)]],
         descripcion: ['', [Validators.required, Validators.maxLength(1000)]],
         tipoVinculacion: ['', Validators.required],
+        tipoVinculacionOtro: [{ value: '', disabled: true }],
         areaVinculacion: ['', Validators.required],
         areaImpacto: ['SELECCIONE', Validators.required],
         fechaInicio: ['', Validators.required],
@@ -134,8 +145,11 @@ export class ActividadesPmComponent implements OnInit {
       }),
 
       equipoTrabajo: this.fb.group({
-        equipoFiltro: ['TODOS'],
+        rut: ['', [Validators.required, this.rutValidator()]],
+        nombre: ['', [Validators.required, Validators.maxLength(120)]],
+        tipo: ['', Validators.required], // aquí irá DIRECTIVOS, DOCENTES, etc.
       }),
+
 
       evidencias: this.fb.group({
         listaAsistenciaRef: [''],
@@ -150,25 +164,22 @@ export class ActividadesPmComponent implements OnInit {
         finTipo: [''],
         finMonto: [0],
         ccTipo: [''],
-        ccCodigo: [''],
-        ccNombre: [''],
       }),
 
       participantes: this.fb.group({
-        // inputs para instituciones
-        instTipo: ['CONVENIO'],
-        instNombre: [''],
+        instTipo: ['PACE', Validators.required],
+        instNombre: ['', [Validators.required, Validators.maxLength(150)]],
 
-        // matriz participantes (ASISTENTE/EXPOSITOR x columnas)
+        // matriz
         ...this.buildParticipantesControls(),
       }),
 
+
       impacto: this.fb.group({
-        impactoResponsableSearch: [''],
-        medidaImpacto: ['NO APLICA', Validators.required],
+        medidaImpacto: ['ENCUESTA', Validators.required],
         indicadorImpacto: ['', Validators.required],
-        interpretacion: ['', Validators.required],
       }),
+
 
       difusion: this.fb.group({
         difusionEquipo: ['SELECCIONE', Validators.required],
@@ -176,13 +187,23 @@ export class ActividadesPmComponent implements OnInit {
       }),
     });
 
-    // dataset ejemplo (si ya tienes backend, elimínalo)
-    this.equipoTrabajo = [
-      { rut: '10.018.950-K', nombre: 'Nombre 1', tipo: 'DIRECTIVOS (UTA)' },
-      { rut: '16.226.319-6', nombre: 'Nombre 2', tipo: 'DOCENTES (UTA)' },
-      { rut: '18.943.018-3', nombre: 'Nombre 3', tipo: 'OTROS (EXTERNOS)' },
-    ];
-    this.aplicarFiltroEquipo();
+
+    this.fProy('tipoVinculacion').valueChanges.subscribe((v: string) => {
+  const otroCtrl = this.fProy('tipoVinculacionOtro');
+
+  if (v === 'Otro') {
+    otroCtrl.enable({ emitEvent: false });
+    otroCtrl.setValidators([Validators.required, Validators.maxLength(100)]);
+  } else {
+    otroCtrl.reset('', { emitEvent: false });
+    otroCtrl.clearValidators();
+    otroCtrl.disable({ emitEvent: false });
+  }
+
+  otroCtrl.updateValueAndValidity({ emitEvent: false });
+});
+
+
   }
 
   // helpers
@@ -197,14 +218,25 @@ export class ActividadesPmComponent implements OnInit {
   // =========================
   // Unidad
   // =========================
-  buscarUnidad(): void {
-    const q = String(this.fProy('unidadSearch').value ?? '').trim();
-    if (!q) return;
+  addUnidad(): void {
+    const cod = String(this.fProy('unidadCod').value ?? '').trim();
+    const unidad = String(this.fProy('unidadNombre').value ?? '').trim();
 
-    // Simulación: tu backend aquí
-    this.unidades = [{ cod: '74', unidad: 'FACULTAD DE EDUCACIÓN Y HUMANIDADES' }];
-    this.fProy('unidadSearch').setValue('');
+    if (!cod || !unidad) return;
+
+    // evitar duplicados por código (opcional)
+    const exists = this.unidades.some(u => u.cod.toLowerCase() === cod.toLowerCase());
+    if (exists) {
+      console.warn('El código de unidad ya existe.');
+      return;
+    }
+
+    this.unidades = [...this.unidades, { cod, unidad }];
+
+    this.fProy('unidadCod').setValue('');
+    this.fProy('unidadNombre').setValue('');
   }
+
 
   removeUnidad(row: UnidadRow): void {
     this.unidades = this.unidades.filter(x => x !== row);
@@ -248,6 +280,81 @@ export class ActividadesPmComponent implements OnInit {
     this.equipoFiltrado = this.equipoTrabajo.filter(x => x.tipo === filtro);
   }
 
+
+  fEq(name: string) {
+  return (this.form.get('equipoTrabajo') as FormGroup).get(name)!;
+}
+
+  addEquipo(): void {
+    const g = this.form.get('equipoTrabajo') as FormGroup;
+
+    let rut = String(g.get('rut')?.value ?? '').trim();
+    const nombre = String(g.get('nombre')?.value ?? '').trim();
+    const tipo = String(g.get('tipo')?.value ?? '').trim();
+
+    if (!rut || !nombre || !tipo) {
+      g.markAllAsTouched();
+      return;
+    }
+    if (g.invalid) {
+      g.markAllAsTouched();
+      return;
+    }
+
+    rut = this.formatRut(rut);
+
+    // evitar duplicados por RUT (opcional)
+    const exists = this.equipoTrabajo.some(x => x.rut.toLowerCase() === rut.toLowerCase());
+    if (exists) {
+      console.warn('Este RUT ya está agregado.');
+      return;
+    }
+
+    this.equipoTrabajo = [...this.equipoTrabajo, { rut, nombre, tipo }];
+
+    g.reset({ rut: '', nombre: '', tipo: '' });
+    g.markAsPristine();
+    g.markAsUntouched();
+  }
+
+  removeEquipo(row: EquipoRow): void {
+    this.equipoTrabajo = this.equipoTrabajo.filter(x => x !== row);
+  }
+
+onRutInputEquipo(ev: Event): void {
+  const input = ev.target as HTMLInputElement;
+  const formatted = this.formatRut(input.value);
+  this.fEq('rut').setValue(formatted, { emitEvent: false });
+}
+
+private formatRut(value: string): string {
+  // deja solo 0-9 y K
+  const clean = value.toUpperCase().replace(/[^0-9K]/g, '');
+  if (clean.length < 2) return clean;
+
+  const body = clean.slice(0, -1);
+  const dv = clean.slice(-1);
+
+  // puntos cada 3 desde el final
+  const withDots = body.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+  return `${withDots}-${dv}`;
+}
+
+private rutValidator() {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const v = String(control.value ?? '').trim();
+    if (!v) return null;
+
+    // Formato esperado: 12.345.678-9 o 12.345.678-K
+    const okFormat = /^\d{1,2}(\.\d{3}){2}-[0-9K]$/i.test(v);
+    if (!okFormat) return { rut: true };
+
+    // (Opcional) aquí podrías validar DV real si quieres
+    return null;
+  };
+}
+
   // =========================
   // Financiamiento
   // =========================
@@ -270,16 +377,17 @@ export class ActividadesPmComponent implements OnInit {
   addCentroCosto(): void {
     const g = this.form.get('financiamiento') as FormGroup;
     const tipo = String(g.get('ccTipo')?.value ?? '').trim();
-    const codigo = String(g.get('ccCodigo')?.value ?? '').trim();
-    const nombre = String(g.get('ccNombre')?.value ?? '').trim();
 
-    if (!tipo || !codigo || !nombre) return;
+    if (!tipo) {
+      g.get('ccTipo')?.markAsTouched();
+      return;
+    }
 
-    this.centrosCosto = [...this.centrosCosto, { tipo, codigo, nombre }];
+    this.centrosCosto = [...this.centrosCosto, { tipo }];
+
     g.get('ccTipo')?.setValue('');
-    g.get('ccCodigo')?.setValue('');
-    g.get('ccNombre')?.setValue('');
   }
+
 
   onFileSelected(event: Event, tipo: 'asistencia' | 'documentos' | 'fotos'): void {
   const input = event.target as HTMLInputElement;
@@ -365,13 +473,22 @@ export class ActividadesPmComponent implements OnInit {
   // =========================
   addInstitucion(): void {
     const g = this.form.get('participantes') as FormGroup;
+
     const tipo = String(g.get('instTipo')?.value ?? '').trim();
     const nombre = String(g.get('instNombre')?.value ?? '').trim();
-    if (!tipo || !nombre) return;
+
+    if (!tipo || !nombre) {
+      g.markAllAsTouched();
+      return;
+    }
 
     this.instituciones = [...this.instituciones, { tipo, nombre }];
+
     g.get('instNombre')?.setValue('');
+    g.get('instNombre')?.markAsPristine();
+    g.get('instNombre')?.markAsUntouched();
   }
+
 
   removeInstitucion(row: InstRow): void {
     this.instituciones = this.instituciones.filter(x => x !== row);
@@ -390,44 +507,53 @@ export class ActividadesPmComponent implements OnInit {
   // Guardar general
   // =========================
   guardar(): void {
-    // REGLAS mínimas como el formulario real:
-    // - Debe existir 1 unidad
-    // - Debe existir >= 1 responsable
-    if (this.unidades.length === 0) {
-      this.form.markAllAsTouched();
-      console.warn('Falta Unidad.');
-      return;
-    }
-    if (this.responsables.length === 0) {
-      this.form.markAllAsTouched();
-      console.warn('Falta Responsable.');
-      return;
-    }
 
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
-    }
-
-    const payload = {
-      ...this.form.value,
-      unidades: this.unidades,
-      responsables: this.responsables,
-      equipoTrabajo: this.equipoTrabajo,
-      financiamientos: this.financiamientos,
-      centrosCosto: this.centrosCosto,
-      instituciones: this.instituciones,
-
-      evidenciasFiles: {
-        asistencia: this.asistenciaFile,
-        documentos: this.documentosFile,
-        fotos: this.fotosFile,
-      },
-    };
-
-    
-    console.log('GRABAR (payload):', payload);
+  // 1️Debe existir al menos 1 unidad
+  if (this.unidades.length === 0) {
+    this.form.markAllAsTouched();
+    console.warn('Falta Unidad.');
+    return;
   }
+
+  // 2️Debe existir al menos 1 responsable
+  if (this.responsables.length === 0) {
+    this.form.markAllAsTouched();
+    console.warn('Falta Responsable.');
+    return;
+  }
+
+  // 3️Debe existir al menos 1 integrante del equipo de trabajo
+  if (this.equipoTrabajo.length === 0) {
+    this.form.markAllAsTouched();
+    console.warn('Falta Equipo de trabajo.');
+    return;
+  }
+
+  // Validación general del formulario
+  if (this.form.invalid) {
+    this.form.markAllAsTouched();
+    return;
+  }
+
+  // Construcción del payload
+  const payload = {
+    ...this.form.value,
+    unidades: this.unidades,
+    responsables: this.responsables,
+    equipoTrabajo: this.equipoTrabajo,
+    financiamientos: this.financiamientos,
+    centrosCosto: this.centrosCosto,
+    instituciones: this.instituciones,
+    evidenciasFiles: {
+      asistencia: this.asistenciaFile,
+      documentos: this.documentosFile,
+      fotos: this.fotosFile,
+    },
+  };
+
+  console.log('GRABAR (payload):', payload);
+}
+
 
   limpiar(): void {
     this.unidades = [];
@@ -448,11 +574,12 @@ export class ActividadesPmComponent implements OnInit {
 
     this.form.reset({
       proyecto: {
-        unidadSearch: '',
+        unidadCod: '',
+        unidadNombre: '',
         responsableRut: '',
         responsableNombre: '',
+        tipoVinculacionOtro: '',
         responsableTipo: 'INTERNO',
-
         nombre: '',
         objetivo: '',
         descripcion: '',
@@ -477,11 +604,11 @@ export class ActividadesPmComponent implements OnInit {
       },
 
 
-      equipoTrabajo: { equipoFiltro: 'TODOS' },
-      financiamiento: { finTipo: '', finMonto: 0, ccTipo: '', ccCodigo: '', ccNombre: '' },
+      equipoTrabajo: { rut: '', nombre: '', tipo: '' },
+      financiamiento: { finTipo: '', finMonto: 0, ccTipo: ''},
       difusion: { difusionEquipo: 'TODOS', difusionUrl: '' },
       participantes: { instTipo: 'CONVENIO', instNombre: '' },
-      impacto: { impactoResponsableSearch: '', medidaImpacto: 'NO APLICA', indicadorImpacto: '', interpretacion: '' }
+      impacto: { medidaImpacto: 'ENCUESTA', indicadorImpacto: ''}
     });
 
     this.aplicarFiltroEquipo();
