@@ -1,25 +1,57 @@
 .historico {
   max-width: 1200px;
   margin: 0 auto;
+  padding: 18px 18px 26px;
+
+  .spacer { flex: 1; }
+  .muted { opacity: .82; color: #6b7280; font-size: 13px; }
+  .error { color: #b42318; opacity: 1; }
+
+  background: linear-gradient(180deg, rgba(248,250,252,.9), rgba(248,250,252,.0));
+  border-radius: 18px;
 }
 
-.header {
+.topbar {
   display: flex;
   align-items: flex-start;
-  gap: 16px;
+  gap: 14px;
   margin-bottom: 12px;
 
-  .headline {
-    flex: 1;
+  .btn-back { border-radius: 999px; }
+
+  .titles {
+    h1 {
+      margin: 0;
+      font-size: 26px;
+      font-weight: 850;
+      letter-spacing: -0.3px;
+    }
+    p { margin: 6px 0 0; }
   }
 
-  h1 {
-    margin: 0;
-    font-size: 22px;
-    font-weight: 700;
+  .top-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+
+    .btn-pill {
+      border-radius: 999px;
+      padding: 0 14px;
+    }
   }
 }
 
+.card {
+  border-radius: 16px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.elev {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+}
+
+/* ===== filtros ===== */
 .filters {
   display: grid;
   grid-template-columns: 140px 140px 1fr 160px auto;
@@ -27,94 +59,61 @@
   align-items: end;
 }
 
-@media (max-width: 900px) {
+.ff-lg { min-width: 260px; }
+
+.btn-search {
+  border-radius: 999px;
+  height: 56px; // mismo alto que outline
+}
+
+@media (max-width: 980px) {
   .filters {
     grid-template-columns: 1fr;
   }
+  .btn-search {
+    width: 100%;
+  }
 }
 
-.actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 14px;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-}
-.center {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 80px;
-}
-
-.center-col {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-}
-
-.muted {
-  font-size: 13px;
-  color: #6b7280;
-}
-
-.card {
-  border-radius: 14px;
-}
-
-.elev {
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
-}
-
-.table-wrap {
-  overflow-x: auto;
-}
-
-table {
-  width: 100%;
-}
-
-th {
-  font-weight: 600;
-  font-size: 13px;
-  color: #374151;
-}
-
-td {
-  font-size: 13px;
-}
-
+/* ===== meta chips ===== */
 .meta {
   display: flex;
-  gap: 8px;
+  gap: 10px;
+  flex-wrap: wrap;
   align-items: center;
-  font-size: 13px;
-  color: #6b7280;
-  margin-bottom: 12px;
-}
+  margin-top: 12px;
 
-.pill {
-  padding: 2px 10px;
-  border-radius: 999px;
-  background: #e5e7eb;
-}
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 11px;
+    border-radius: 999px;
+    border: 1px solid rgba(15, 23, 42, 0.10);
+    background: rgba(255, 255, 255, 0.8);
+    font-size: 12px;
+    color: #334155;
 
-.empty {
-  text-align: center;
-
-  mat-icon {
-    font-size: 40px;
-    opacity: 0.6;
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      opacity: .9;
+    }
   }
 
-  .empty-title {
-    font-weight: 600;
-    margin-top: 6px;
-  }
+  .right { margin-left: auto; }
 }
 
-/* ====== CHARTS ====== */
+/* ===== loading / states ===== */
+.state {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 0;
+}
+
+/* ===== charts ===== */
 .charts-card {
   margin-top: 12px;
 }
@@ -125,26 +124,70 @@ td {
   gap: 16px;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 980px) {
   .charts-grid {
     grid-template-columns: 1fr;
   }
 }
 
 .chart-box {
-  border: 1px solid #e2e6ef;
-  background: #f9fbff;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  background: rgba(255, 255, 255, 0.75);
   border-radius: 14px;
   padding: 14px;
 }
 
 .chart-title {
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 800;
   margin-bottom: 10px;
   color: #111827;
 }
 
 .chart-wrap {
-  height: 280px; /* clave para que Chart.js se vea bien */
+  height: 280px;
+}
+
+/* ===== tabla ===== */
+.table-wrap { overflow-x: auto; }
+
+.table {
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+
+  th {
+    font-weight: 800;
+    font-size: 13px;
+    color: #374151;
+    background: #fff;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+
+  td { font-size: 13px; }
+}
+
+/* ===== empty state ===== */
+.empty {
+  margin-top: 12px;
+  text-align: center;
+
+  mat-icon {
+    font-size: 40px;
+    opacity: 0.6;
+  }
+
+  .empty-title {
+    font-weight: 700;
+    margin-top: 6px;
+  }
+}
+
+.center-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
 }

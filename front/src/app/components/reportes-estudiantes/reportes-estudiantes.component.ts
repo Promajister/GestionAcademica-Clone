@@ -336,11 +336,8 @@ export class ReportesEstudianteComponent {
               return;
             }
 
-            // ===== Cargar logo (desde assets) =====
-            // Cambia la ruta si tu archivo tiene otro nombre
             const logoDataUrl = await this.loadImageAsDataURL('assets/img/feh.png');
 
-            // ===== Colores (logo) =====
             const NAVY: [number, number, number] = [10, 26, 75];
             const GOLD: [number, number, number] = [245, 180, 0];
 
@@ -348,7 +345,6 @@ export class ReportesEstudianteComponent {
             const pageWidth = doc.internal.pageSize.getWidth();
             const marginX = 48;
 
-            // Header de la primera página
             this.addPdfHeaderFooter(doc, {
               title: 'Reporte de Estudiantes',
               subtitle: 'Sistema de Prácticas · Jefatura de Carrera',
@@ -356,7 +352,6 @@ export class ReportesEstudianteComponent {
               logoDataUrl,
             });
 
-            // Área útil debajo del header
             let y = 98;
 
             for (let idx = 0; idx < estudiantes.length; idx++) {
