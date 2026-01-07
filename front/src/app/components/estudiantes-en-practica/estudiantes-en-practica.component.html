@@ -1,4 +1,4 @@
-<div class="Container Section">
+﻿<div class="Container Section">
 
   <!-- HERO -->
   <div class="hero">
@@ -219,8 +219,8 @@
 
   }
 
-  <!-- DIALOGO DE CONFIRMACIÓN PARA CAMBIAR ESTADO -->
-  @if (mostrarConfirmarCambioEstado && practicaACambiarEstado) {
+    <!-- DIALOGO PARA NOTA FINAL -->
+  @if (mostrarDialogoNotaFinal && practicaANotar) {
     <div class="confirm-dialog" role="dialog" aria-modal="true">
       <div class="dialog-overlay" (click)="cerrarDialogoCambioEstado()" tabindex="0"></div>
 
@@ -229,26 +229,20 @@
           <div class="warn-icon">
             <mat-icon>info</mat-icon>
           </div>
-          <h2>Cambiar estado de práctica</h2>
+          <h2>Asignar nota final</h2>
         </div>
 
         <div class="confirm-body">
           <p>
-            Estudiante: <b>{{ practicaACambiarEstado.estudiante.nombre }}</b>
+            Estudiante: <b>{{ practicaANotar.estudiante.nombre }}</b>
           </p>
           <p class="Muted">
-            Estado actual: <b>{{ formatearEstado(practicaACambiarEstado.estado) }}</b>
+            Nota actual: <b>{{ practicaANotar.notaFinal ?? 'Sin nota' }}</b>
           </p>
 
           <mat-form-field appearance="outline" class="EstadoSelect">
-            <mat-label>Nuevo estado</mat-label>
-            <mat-select [(ngModel)]="nuevoEstadoSeleccionado">
-              @for (estado of estadosPractica; track estado) {
-                <mat-option [value]="estado">
-                  {{ formatearEstado(estado) }}
-                </mat-option>
-              }
-            </mat-select>
+            <mat-label>Nota final (1 a 7)</mat-label>
+            <input matInput type="number" min="1" max="7" step="0.1" [(ngModel)]="notaFinalEditada" />
           </mat-form-field>
         </div>
 
@@ -260,9 +254,9 @@
             mat-flat-button
             color="primary"
             (click)="confirmarCambioEstado()"
-            [disabled]="!nuevoEstadoSeleccionado || nuevoEstadoSeleccionado === practicaACambiarEstado.estado">
+            [disabled]="guardandoNotaFinal || notaFinalEditada === null">
             <mat-icon>check</mat-icon>
-            Confirmar cambio
+            Guardar nota
           </button>
         </div>
       </div>
@@ -284,7 +278,7 @@
             <div class="DialogTitles">
               <h2>Detalles de la Práctica</h2>
               <div class="DialogSubtitle">
-                {{ practicaSeleccionada.estudiante.nombre }} • {{ practicaSeleccionada.estudiante.rut }}
+                {{ practicaSeleccionada.estudiante.nombre }} â€¢ {{ practicaSeleccionada.estudiante.rut }}
               </div>
             </div>
           </div>
@@ -353,6 +347,20 @@
               <div class="KV">
                 <div class="K">Fecha de término</div>
                 <div class="V">{{ practicaSeleccionada.fechaTermino || 'Sin fecha de término' }}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="DetailsSection">
+            <div class="SectionHead">
+              <mat-icon>description</mat-icon>
+              <h3>Nota final</h3>
+            </div>
+
+            <div class="DetailsGrid DetailsGrid--2">
+              <div class="KV">
+                <div class="K">Actual</div>
+                <div class="V">{{ practicaSeleccionada.notaFinal ?? 'Sin nota' }}</div>
               </div>
             </div>
           </div>
@@ -440,8 +448,8 @@
                       <div class="PersonText">
                         <div class="PersonName">{{ colaborador.nombre }}</div>
                         <div class="PersonMeta">
-                          @if (colaborador.cargo) { <span>• {{ colaborador.cargo }}</span> }
-                          @if (colaborador.correo) { <span>• {{ colaborador.correo }}</span> }
+                          @if (colaborador.cargo) { <span>â€¢ {{ colaborador.cargo }}</span> }
+                          @if (colaborador.correo) { <span>â€¢ {{ colaborador.correo }}</span> }
                         </div>
                       </div>
                     </div>
@@ -468,8 +476,8 @@
                       <div class="PersonText">
                         <div class="PersonName">{{ tutor.tutor.nombre }}</div>
                         <div class="PersonMeta">
-                          <span>• {{ tutor.rol }}</span>
-                          @if (tutor.tutor.correo) { <span>• {{ tutor.tutor.correo }}</span> }
+                          <span>â€¢ {{ tutor.rol }}</span>
+                          @if (tutor.tutor.correo) { <span>â€¢ {{ tutor.tutor.correo }}</span> }
                         </div>
                       </div>
                     </div>
@@ -544,3 +552,6 @@
   }
 
 </div>
+
+
+
