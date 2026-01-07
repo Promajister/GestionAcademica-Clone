@@ -1,0 +1,96 @@
+.dialog {
+  width: min(980px, 90vw);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.muted { color: #64748b; }
+.error { color: #dc2626; }
+
+.DialogHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px;
+  border-bottom: 1px solid rgba(15,23,42,.08);
+}
+
+.DialogAvatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: rgba(25,118,210,.12);
+  border: 1px solid rgba(25,118,210,.25);
+
+  mat-icon { color: #1976d2; }
+}
+
+.DialogTitles h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.DialogSubtitle {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.DialogBody {
+  padding: 14px;
+  overflow: auto;
+}
+
+.chips {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.chip {
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(15,23,42,.12);
+  background: #f8fafc;
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 12px;
+}
+
+.chip-primary {
+  background: #e8f0fe;
+  border-color: rgba(25,118,210,.3);
+}
+
+.table-wrap {
+  border: 1px solid rgba(15,23,42,.1);
+  border-radius: 14px;
+  padding: 10px;
+  background: white;
+  overflow: auto;
+}
+
+.details-table {
+  width: 100%;
+  min-width: 860px;
+
+  th {
+    font-weight: 800;
+    position: sticky;
+    top: 0;
+    background: white;
+  }
+
+  td, th { padding: 10px; }
+}
+
+.DialogActions {
+  padding: 12px 14px;
+  border-top: 1px solid rgba(15,23,42,.08);
+  display: flex;
+  justify-content: flex-end;
+}

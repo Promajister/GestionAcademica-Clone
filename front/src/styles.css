@@ -110,3 +110,18 @@ body {
   color: white !important;
   font-weight: 500 !important;
 }
+
+body.student-modal-open {
+  overflow: hidden; 
+}
+
+body.student-modal-open .mat-drawer-content,
+body.student-modal-open mat-sidenav-content {
+  transform: none !important;
+}
+
+body.student-modal-open .mat-drawer-content,
+body.student-modal-open mat-sidenav-content,
+body.student-modal-open .mat-sidenav-content {
+  transform: none !important;
+}

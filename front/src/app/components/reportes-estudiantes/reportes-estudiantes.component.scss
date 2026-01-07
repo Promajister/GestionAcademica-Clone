@@ -1,7 +1,17 @@
 .re-students {
-  .muted { opacity: .8; }
+  // Contenedor real
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 18px 18px 26px;
+
+  .muted { opacity: .82; }
   .error { color: #b42318; opacity: 1; }
   .spacer { flex: 1; }
+
+  // Un fondo suave ayuda a separar cards del layout general
+  // (si tu layout padre ya tiene fondo, esto igual funciona bien)
+  background: linear-gradient(180deg, rgba(248,250,252,.9), rgba(248,250,252,.0));
+  border-radius: 18px;
 
   .topbar {
     display: flex;
@@ -15,7 +25,7 @@
       h1 {
         margin: 0;
         font-size: 26px;
-        font-weight: 800;
+        font-weight: 850;
         letter-spacing: -0.3px;
       }
       p {
@@ -25,55 +35,67 @@
     }
   }
 
-  .bulkbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin: 6px 0 14px;
+  .card {
+    border-radius: 16px;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+  }
+
+  // Header combinado: export + búsqueda
+  .header-card {
+    margin-top: 6px;
+
+    .header-actions {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+
+      @media (min-width: 860px) {
+        grid-template-columns: 1.2fr 1fr;
+        align-items: center;
+      }
+    }
 
     .bulk-left {
       display: flex;
       align-items: center;
       gap: 10px;
       flex-wrap: wrap;
+      padding: 8px 10px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(15, 23, 42, 0.06);
     }
 
     .btn-pill {
       border-radius: 999px;
       padding: 0 14px;
     }
+    .btn-link { border-radius: 999px; }
 
-    .btn-link {
-      border-radius: 999px;
-    }
-
-    .exporting { margin-left: 6px; }
-  }
-
-  .card {
-    border-radius: 14px;
-  }
-
-  .search-card {
-    .search-row {
-      display: flex;
+    .search-right {
+      display: grid;
+      grid-template-columns: 22px 1fr auto;
+      gap: 10px;
       align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
+      padding: 8px 10px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(15, 23, 42, 0.06);
 
       .search-field {
-        min-width: 320px;
-        flex: 1;
+        min-width: 240px;
+        width: 100%;
       }
-
-      .counter {
-        white-space: nowrap;
-      }
+      .counter { white-space: nowrap; }
     }
   }
 
   .list-card {
     margin-top: 12px;
+
+    mat-card-content {
+      padding-top: 10px;
+    }
 
     .list-header {
       display: flex;
@@ -85,29 +107,39 @@
     .rows {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
     }
 
     .row {
       display: grid;
       grid-template-columns: 34px 1fr auto;
       align-items: center;
-      gap: 10px;
-      padding: 10px 12px;
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.65);
+      gap: 12px;
+      padding: 12px 12px;
+      border-radius: 14px;
+
+      background: rgba(255, 255, 255, 0.78);
       border: 1px solid rgba(15, 23, 42, 0.08);
+      box-shadow: 0 1px 0 rgba(2, 6, 23, 0.02);
+
+      transition: transform .08s ease, background .12s ease, border-color .12s ease;
 
       &:hover {
         border-color: rgba(15, 23, 42, 0.16);
-        background: rgba(255, 255, 255, 0.9);
+        background: rgba(255, 255, 255, 0.95);
+        transform: translateY(-1px);
+      }
+
+      &.row-selected {
+        border-color: rgba(30, 64, 175, 0.25);
+        background: rgba(30, 64, 175, 0.06);
       }
 
       .row-main {
         min-width: 0;
 
         .row-name {
-          font-weight: 800;
+          font-weight: 850;
           letter-spacing: .1px;
           white-space: nowrap;
           overflow: hidden;
@@ -116,7 +148,7 @@
 
         .row-sub {
           font-size: 12px;
-          margin-top: 2px;
+          margin-top: 3px;
         }
       }
 
@@ -139,31 +171,32 @@
     }
 
     .paginator-wrap {
-      margin-top: 8px;
+      margin-top: 10px;
       border-top: 1px solid rgba(15, 23, 42, 0.08);
-      padding-top: 6px;
+      padding-top: 8px;
     }
   }
 }
 
-/* =========================
-   MODAL (overlay real)
-   ========================= */
 .DetailsDialog {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
 
-  display: grid;
-  place-items: center;
-  padding: 18px;
+  z-index: 10000 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  padding: 18px !important;
 }
 
 .DialogOverlay {
   position: absolute;
   inset: 0;
   background: rgba(2, 6, 23, 0.55);
-  backdrop-filter: blur(2px);
+  backdrop-filter: blur(3px);
 }
 
 .DialogContent {
@@ -173,7 +206,7 @@
   overflow: hidden;
 
   background: #fff;
-  border-radius: 16px;
+  border-radius: 18px;
   box-shadow: 0 24px 60px rgba(2, 6, 23, 0.35);
   border: 1px solid rgba(15, 23, 42, 0.12);
 
@@ -248,14 +281,14 @@
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
   }
 
   .chip {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 6px 10px;
+    padding: 7px 11px;
     border-radius: 999px;
     border: 1px solid rgba(15, 23, 42, 0.12);
     background: rgba(248, 250, 252, 0.9);
@@ -276,19 +309,25 @@
 
   .table-wrap {
     border: 1px solid rgba(15, 23, 42, 0.10);
-    border-radius: 12px;
+    border-radius: 14px;
     padding: 10px;
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.95);
+    overflow: auto; // clave si hay muchas columnas
   }
 
   .details-table {
     width: 100%;
-    border-radius: 10px;
+    min-width: 860px; // evita que “apriete” columnas en pantallas medianas
+    border-radius: 12px;
     overflow: hidden;
 
     th {
-      font-weight: 800;
+      font-weight: 850;
       white-space: nowrap;
+      position: sticky;
+      top: 0;
+      background: #fff;
+      z-index: 1;
     }
 
     td, th {

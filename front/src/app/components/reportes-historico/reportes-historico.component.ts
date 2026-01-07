@@ -29,30 +29,14 @@ import { saveAs } from 'file-saver';
 type GroupBy = 'semester' | 'year';
 
 const TIPOS_PRACTICA = [
-  {
-    label: 'PRÁCTICA DE APOYO A LA DOCENCIA I',
-    value: 'PRÁCTICA DE APOYO A LA DOCENCIA I',
-  },
-  {
-    label: 'PRÁCTICA DE APOYO A LA DOCENCIA II',
-    value: 'PRÁCTICA DE APOYO A LA DOCENCIA II',
-  },
-  {
-    label: 'PRÁCTICA DE APOYO A LA DOCENCIA III',
-    value: 'PRÁCTICA DE APOYO A LA DOCENCIA III',
-  },
-  {
-    label: 'PRÁCTICA DE APOYO A LA DOCENCIA IV',
-    value: 'PRÁCTICA DE APOYO A LA DOCENCIA IV',
-  },
-    {
-    label: 'PRÁCTICA PROFESIONAL DOCENTE',
-    value: 'PRÁCTICA PROFESIONAL DOCENTE',
-  },
+  { label: 'PRÁCTICA DE APOYO A LA DOCENCIA I', value: 'PRÁCTICA DE APOYO A LA DOCENCIA I' },
+  { label: 'PRÁCTICA DE APOYO A LA DOCENCIA II', value: 'PRÁCTICA DE APOYO A LA DOCENCIA II' },
+  { label: 'PRÁCTICA DE APOYO A LA DOCENCIA III', value: 'PRÁCTICA DE APOYO A LA DOCENCIA III' },
+  { label: 'PRÁCTICA DE APOYO A LA DOCENCIA IV', value: 'PRÁCTICA DE APOYO A LA DOCENCIA IV' },
+  { label: 'PRÁCTICA PROFESIONAL DOCENTE', value: 'PRÁCTICA PROFESIONAL DOCENTE' },
 ] as const;
 
 type TipoPracticaValue = typeof TIPOS_PRACTICA[number]['value'];
-
 
 @Component({
   standalone: true,
@@ -72,10 +56,9 @@ type TipoPracticaValue = typeof TIPOS_PRACTICA[number]['value'];
     MatProgressSpinnerModule,
     MatTableModule,
     MatDividerModule,
-    BaseChartDirective, 
+    BaseChartDirective,
   ],
 })
-
 export class ReportesHistoricoComponent {
   private reportes = inject(ReportesService);
 
@@ -94,13 +77,24 @@ export class ReportesHistoricoComponent {
   tiposPractica = TIPOS_PRACTICA;
   tipo: TipoPracticaValue | null = null;
 
+  hasSearched = false;
+  filtersDirty = false;
+
+  onFiltersChanged() {
+    this.filtersDirty = true;
+    this.error = null;
+  }
+
   get showCharts(): boolean {
     return !!this.data
       && !this.loading
-      && (this.tipo === null)
-      && (this.groupBy === 'semester');
+      && (this.data?.tipo === null)           // usa el "último estado aplicado"
+      && (this.data?.groupBy === 'semester'); // usa el "último estado aplicado"
   }
 
+  get canExport(): boolean {
+    return !!this.data?.series?.length && !this.loading;
+  }
 
   // 1) Línea: estudiantes por periodo
   lineData: ChartData<'line'> = { labels: [], datasets: [] };
@@ -111,9 +105,7 @@ export class ReportesHistoricoComponent {
       legend: { display: false },
       tooltip: { intersect: false },
     },
-    scales: {
-      y: { beginAtZero: true },
-    },
+    scales: { y: { beginAtZero: true } },
   };
 
   // 2) Barras apiladas: centros por tipo por periodo
@@ -132,12 +124,17 @@ export class ReportesHistoricoComponent {
   };
 
   buscar() {
+    this.filtersDirty = false;
+    this.hasSearched = true;
     this.loading = true;
     this.error = null;
 
     if (!this.fromYear || !this.toYear || this.fromYear > this.toYear) {
       this.loading = false;
       this.error = 'Rango de años inválido.';
+      this.rows = [];
+      this.data = null;
+      this.buildChartsFromSeries([]);
       return;
     }
 
@@ -157,6 +154,8 @@ export class ReportesHistoricoComponent {
         this.loading = false;
         this.error = 'No se pudo cargar el reporte histórico.';
         this.rows = [];
+        this.data = null;
+        this.buildChartsFromSeries([]);
       },
     });
   }
@@ -170,7 +169,6 @@ export class ReportesHistoricoComponent {
 
     const labels = series.map(s => s.periodo);
 
-    // --------- CHART 1: LINEA (estudiantes) ----------
     this.lineData = {
       labels,
       datasets: [
@@ -184,8 +182,6 @@ export class ReportesHistoricoComponent {
       ],
     };
 
-    // --------- CHART 2: BARRAS APILADAS (centros por tipo) ----------
-    // Unificamos todos los tipos que aparezcan en cualquier periodo
     const tiposSet = new Set<string>();
     for (const s of series) {
       for (const c of (s.centrosPorTipo ?? [])) {
@@ -194,27 +190,18 @@ export class ReportesHistoricoComponent {
     }
     const tipos = Array.from(tiposSet).sort((a, b) => a.localeCompare(b));
 
-    // Dataset por tipo: un array con el total en cada periodo
     const datasets = tipos.map((tipoCentro) => {
       const data = series.map((s) => {
         const found = (s.centrosPorTipo ?? []).find((x: any) => String(x.tipo ?? 'SIN_TIPO') === tipoCentro);
         return Number(found?.total ?? 0);
       });
 
-      return {
-        label: tipoCentro,
-        data,
-      };
+      return { label: tipoCentro, data };
     });
 
-    this.stackedBarData = {
-      labels,
-      datasets,
-    };
-
+    this.stackedBarData = { labels, datasets };
   }
 
-  // helpers tabla (tu código igual)
   centrosToText(row: any): string {
     if (!row?.centrosPorTipo?.length) return '—';
     return row.centrosPorTipo.map((x: any) => `${x.tipo}: ${x.total}`).join(' • ');
@@ -225,7 +212,7 @@ export class ReportesHistoricoComponent {
     return list.join(', ');
   }
 
-  // EXPORT PDF
+  // EXPORT PDF (funcional, luego lo mejoramos visualmente como el de Estudiantes)
   exportarPDF() {
     if (!this.data?.series?.length) return;
 
@@ -265,7 +252,6 @@ export class ReportesHistoricoComponent {
     doc.save(`reporte_historico_${this.data.fromYear}_${this.data.toYear}.pdf`);
   }
 
-  // EXPORT EXCEL
   exportarExcel() {
     if (!this.data?.series?.length) return;
 
@@ -287,5 +273,4 @@ export class ReportesHistoricoComponent {
       `reporte_historico_${this.data.fromYear}_${this.data.toYear}.xlsx`
     );
   }
-
 }
