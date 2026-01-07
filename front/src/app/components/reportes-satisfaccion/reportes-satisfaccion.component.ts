@@ -126,7 +126,7 @@ export class ReportesSatisfaccionComponent {
       ['Reprobadas', `${this.data.practicas.reprobadas} (${this.data.practicas.porcentajes.reprobadas}%)`],
       ['En curso', `${this.data.practicas.enCurso} (${this.data.practicas.porcentajes.enCurso}%)`],
 
-      ['% aprobación (solo evaluadas)', `${this.data.practicas.porcentajeAprobacionEvaluadas}%`],
+      ['Colaboradores', String(this.data.practicas.colaboradoresUnicos)],
 
       ['Encuestas Estudiantes (registradas)', String(this.data.encuestasEstudiantes.totalEncuestas)],
       ['Alternativas respondidas (Estudiantes)', String(this.data.encuestasEstudiantes.totalAlternativasRespondidas)],
@@ -167,7 +167,7 @@ export class ReportesSatisfaccionComponent {
       { Indicador: 'En curso', Valor: this.data.practicas.enCurso },
       { Indicador: '% En curso', Valor: this.data.practicas.porcentajes.enCurso },
 
-      { Indicador: '% aprobación (solo evaluadas)', Valor: this.data.practicas.porcentajeAprobacionEvaluadas },
+      { Indicador: 'Colaboradores', Valor: this.data.practicas.colaboradoresUnicos },
 
       { Indicador: 'Encuestas Estudiantes (registradas)', Valor: this.data.encuestasEstudiantes.totalEncuestas },
       { Indicador: 'Alternativas respondidas (Estudiantes)', Valor: this.data.encuestasEstudiantes.totalAlternativasRespondidas },

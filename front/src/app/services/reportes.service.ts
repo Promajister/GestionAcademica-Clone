@@ -46,6 +46,7 @@ export interface ReporteSatisfaccion {
   practicas: {
     totalPracticas: number;
     estudiantesUnicos: number;
+    colaboradoresUnicos: number;
     aprobadas: number;
     reprobadas: number;
     enCurso: number;
@@ -54,7 +55,6 @@ export interface ReporteSatisfaccion {
       reprobadas: number;
       enCurso: number;
     };
-    porcentajeAprobacionEvaluadas: number;
   };
 
   encuestasEstudiantes: {
