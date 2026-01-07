@@ -234,239 +234,383 @@ export class EstudiantesComponent implements OnInit {
   }
 
   async exportarPdf(): Promise<void> {
-    if (!this.detalle) return;
+  if (!this.detalle) return;
+  const detalle = this.detalle;
 
-    const detalle = this.detalle;
-    const doc = new jsPDF({ unit: 'pt', format: 'letter' });
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const marginX = 46;
-    let y = 32;
+  const doc = new jsPDF({ unit: 'pt', format: 'letter' });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
 
-    const [logoUta, logoFeh] = await Promise.all([
-      this.cargarLogo('assets/img/uta.png'),
-      this.cargarLogo('assets/img/feh.png'),
-    ]);
+  const margin = 52;
+  const bottom = 54;
+  const contentW = pageWidth - margin * 2;
 
-    // Header con logos (UTA a la izquierda, Depto. a la derecha)
-    const logoUtaBox = { width: 76, height: 56 };
-    const logoFehBox = { width: 76, height: 76 };
-    const logosHeight = Math.max(logoUtaBox.height, logoFehBox.height);
-    const drawLogo = (
-      logo: { data: string; width: number; height: number } | null,
-      boxX: number,
-      boxY: number,
-      boxWidth: number,
-      boxHeight: number,
-    ) => {
-      if (!logo) return;
-      const scale = Math.min(boxWidth / logo.width, boxHeight / logo.height);
-      const width = logo.width * scale;
-      const height = logo.height * scale;
-      const x = boxX + (boxWidth - width) / 2;
-      const yPos = boxY + (boxHeight - height) / 2;
-      doc.addImage(logo.data, 'PNG', x, yPos, width, height);
+  const colors = {
+    text: '#111827',
+    muted: '#6b7280',
+    line: '#e5e7eb',
+    border: '#d1d5db',
+    headerFill: '#f8fafc',
+    tableHead: '#f1f5f9',
+  };
+
+  const safe = (v: any) => (v === null || v === undefined || v === '' ? '-' : String(v));
+
+  const setFont = (size: number, style: 'normal' | 'bold' = 'normal', color = colors.text) => {
+    doc.setFont('helvetica', style);
+    doc.setFontSize(size);
+    doc.setTextColor(color);
+  };
+
+  const drawLine = (yy: number) => {
+    doc.setDrawColor(colors.line);
+    doc.setLineWidth(1);
+    doc.line(margin, yy, pageWidth - margin, yy);
+  };
+
+  // Logos
+  const [logoUta, logoFeh] = await Promise.all([
+    this.cargarLogo('assets/img/uta.png'),
+    this.cargarLogo('assets/img/feh.png'),
+  ]);
+
+  const drawLogo = (
+    logo: { data: string; width: number; height: number } | null,
+    boxX: number,
+    boxY: number,
+    boxW: number,
+    boxH: number,
+  ) => {
+    if (!logo) return;
+    const scale = Math.min(boxW / logo.width, boxH / logo.height);
+    const w = logo.width * scale;
+    const h = logo.height * scale;
+    const x = boxX + (boxW - w) / 2;
+    const yy = boxY + (boxH - h) / 2;
+    doc.addImage(logo.data, 'PNG', x, yy, w, h);
+  };
+
+  // Header reutilizable
+  const headerH = 92;
+
+  const drawHeader = () => {
+    doc.setFillColor(colors.headerFill);
+    doc.rect(0, 0, pageWidth, headerH, 'F');
+
+    drawLogo(logoUta, margin, 16, 76, 56);
+    drawLogo(logoFeh, pageWidth - margin - 76, 8, 76, 76);
+
+    setFont(14, 'bold', colors.text);
+    doc.text('FICHA DE ESTUDIANTE', pageWidth / 2, 36, { align: 'center' as any });
+
+    setFont(10, 'normal', colors.muted);
+    doc.text('Registro académico', pageWidth / 2, 56, { align: 'center' as any });
+
+    doc.setDrawColor(colors.line);
+    doc.line(margin, headerH, pageWidth - margin, headerH);
+  };
+
+  const contentStartY = () => headerH + 22;
+
+  let y = contentStartY();
+
+  const addPageWithHeader = () => {
+    doc.addPage();
+    drawHeader();
+    y = contentStartY();
+  };
+
+  const ensure = (needed: number) => {
+    if (y + needed <= pageHeight - bottom) return;
+    addPageWithHeader();
+  };
+
+  // Primera página
+  drawHeader();
+  y = contentStartY();
+
+  // Identificación
+  const now = new Date();
+  const fecha = now.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const hora = now.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+  const practicasCount = detalle.practicas?.length || 0;
+
+  setFont(13, 'bold', colors.text);
+  doc.text(safe(detalle.nombre), pageWidth / 2, y, { align: 'center' as any });
+  y += 16;
+
+  setFont(10, 'normal', colors.muted);
+  doc.text(
+    `${this.formatearRut(detalle.rut)}  •  ${safe(detalle.plan)}  •  Prácticas: ${practicasCount}`,
+    pageWidth / 2,
+    y,
+    { align: 'center' as any },
+  );
+  y += 14;
+
+  setFont(9, 'normal', colors.muted);
+  doc.text(`Emitido: ${fecha}  ${hora}`, pageWidth / 2, y, { align: 'center' as any });
+  y += 18;
+
+  drawLine(y);
+  y += 18;
+
+  // Secciones apiladas
+  const section = (title: string, rows: [string, string][]) => {
+    y += 18;
+    ensure(70);
+
+    setFont(11, 'bold', colors.text);
+    doc.text(title.toUpperCase(), margin, y);
+
+    y += 8;
+    doc.setDrawColor(colors.line);
+    doc.setLineWidth(1);
+    doc.line(margin, y, margin + 260, y);
+
+    y += 14;
+
+    const labelW = 170;
+    const valueW = contentW - labelW;
+
+    rows.forEach(([label, value]) => {
+      const v = safe(value);
+
+      setFont(9, 'normal', colors.text);
+      const lines = doc.splitTextToSize(v, valueW - 14);
+      const rowH = Math.max(22, lines.length * 12 + 10);
+
+      ensure(rowH + 12);
+
+      doc.setDrawColor(colors.border);
+      doc.setLineWidth(1);
+      doc.rect(margin, y, contentW, rowH);
+
+      doc.setDrawColor(colors.line);
+      doc.line(margin + labelW, y, margin + labelW, y + rowH);
+
+      setFont(9, 'bold', colors.muted);
+      doc.text(`${label}:`, margin + 10, y + 15);
+
+      setFont(9, 'normal', colors.text);
+      doc.text(lines, margin + labelW + 10, y + 15);
+
+      y += rowH;
+    });
+
+    y += 16;
+  };
+
+  section('Datos personales', [
+    ['RUT', this.formatearRut(detalle.rut)],
+    ['Género', safe(detalle.genero)],
+    ['Año nacimiento', this.formatearFecha(detalle.anio_nacimiento)],
+    ['Dirección', safe((detalle as any).direccion)],
+  ]);
+
+  section('Datos académicos', [
+    ['Carrera / Plan', safe(detalle.plan)],
+    ['Año de ingreso', safe((detalle as any).anio_ingreso)],
+    ['Sistema de ingreso', safe((detalle as any).sistema_ingreso)],
+    ['N° inscripciones', safe((detalle as any).numero_inscripciones)],
+    ['Avance', this.formatearNumero((detalle as any).avance)],
+    ['Puntaje ponderado', this.formatearNumero((detalle as any).puntaje_ponderado)],
+    ['Puntaje PSU', this.formatearNumero((detalle as any).puntaje_psu)],
+    ['Promedio', this.formatearNumero((detalle as any).promedio)],
+  ]);
+
+  section('Contacto', [
+    ['Correo', safe((detalle as any).email)],
+    ['Teléfono', safe((detalle as any).fono)],
+  ]);
+
+  // Forzar prácticas a nueva página
+  addPageWithHeader();
+
+  // Historial de prácticas
+  ensure(80);
+  setFont(11, 'bold', colors.text);
+  doc.text('HISTORIAL DE PRÁCTICAS', margin, y);
+  y += 8;
+
+  doc.setDrawColor(colors.line);
+  doc.setLineWidth(1);
+  doc.line(margin, y, margin + 260, y);
+
+  y += 14;
+
+  const drawSimpleTitle = (title: string) => {
+    y += 18;
+
+    ensure(70);
+    setFont(11, 'bold', colors.text);
+    doc.text(title, margin, y);
+
+    y += 8;
+    doc.setDrawColor(colors.line);
+    doc.setLineWidth(1);
+    doc.line(margin, y, margin + 260, y);
+
+    y += 14;
+  };
+
+
+  const drawTable = (
+    cols: { label: string; w: number }[],
+    rows: (string | string[])[][],
+  ) => {
+    const headH = 22;
+
+    const drawTableHead = () => {
+      ensure(headH + 10);
+
+      doc.setDrawColor(colors.border);
+      doc.setFillColor(colors.tableHead);
+      doc.rect(margin, y, contentW, headH, 'FD');
+
+      setFont(9, 'bold', colors.text);
+      let x = margin;
+
+      cols.forEach((c, idx) => {
+        doc.text(c.label, x + 8, y + 15);
+        x += c.w;
+        doc.setDrawColor(colors.line);
+        if (idx < cols.length - 1) {
+          doc.line(x, y, x, y + headH);
+        }
+      });
+
+      y += headH;
     };
-    drawLogo(logoUta, marginX, y, logoUtaBox.width, logoUtaBox.height);
-    drawLogo(
-      logoFeh,
-      pageWidth - marginX - logoFehBox.width,
-      y,
-      logoFehBox.width,
-      logoFehBox.height,
-    );
 
-    // Información del documento debajo del header (centrada)
-    const rightBoxWidth = 165;
-    const rightBoxX = pageWidth - marginX - rightBoxWidth;
-    const rightBoxY = y + logosHeight + 8;
-    const rightBoxHeight = 80;
-    
-    // Dibujar cuadro con mejor estilo
-    doc.setDrawColor('#cbd5e1');
-    doc.setFillColor('#ffffff');
-    doc.setLineWidth(1.5);
-    doc.roundedRect(rightBoxX, rightBoxY, rightBoxWidth, rightBoxHeight, 5, 5, 'FD');
-    
-    // Contenido del cuadro
-    const now = new Date();
-    const fecha = now.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    const hora = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-    
-    doc.setFontSize(8);
-    doc.setTextColor('#6b7280');
-    doc.setFont('helvetica', 'normal');
+    drawTableHead();
 
-    const labelX = rightBoxX + 12;
-    const labelWidth = 70;
-    const valueX = labelX + labelWidth;
-    const lineHeight = 14;
-    let lineY = rightBoxY + 22;
+    const rowHBase = 22;
 
-    const drawRow = (label: string, value: string) => {
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor('#6b7280');
-      doc.text(label, labelX, lineY);
-      doc.setTextColor('#111827');
-      doc.text(value, valueX, lineY);
-      lineY += lineHeight;
-    };
+    rows.forEach((r) => {
+      // detectar wraps por celda
+      const wrapped: string[][] = r.map((cell, i) => {
+        const txt = safe(cell as any);
+        const maxW = cols[i].w - 14;
+        setFont(9, 'normal', colors.text);
+        return doc.splitTextToSize(txt, maxW) as string[];
+      });
 
-    drawRow('Fecha:', fecha);
-    drawRow('Hora:', hora);
-    drawRow('Paginas:', '1/1');
-    drawRow('Cant. Practicas:', String(detalle.practicas?.length || 0));
-    // Título centrado
-    const headerBlockHeight = logosHeight + 8 + rightBoxHeight;
-    y = y + headerBlockHeight + 18;
-    
-    doc.setFontSize(13);
-    doc.setTextColor('#111827');
-    doc.setFont('helvetica', 'bold');
-    const title = 'FICHA DE ESTUDIANTE - REGISTRO ACADÉMICO Y PRÁCTICAS';
-    const titleWidth = doc.getTextWidth(title);
-    const titleX = (pageWidth - titleWidth) / 2;
-    doc.text(title, titleX, y);
-    
-    y += 24;
+      const maxLines = Math.max(...wrapped.map((w) => w.length));
+      const rowH = Math.max(rowHBase, maxLines * 12 + 10);
 
-    // Información del estudiante en una tarjeta
-    const infoRows: [string, string][] = [
-      ['Nombre', detalle.nombre],
-      ['RUT', this.formatearRut(detalle.rut)],
-      ['Carrera / Plan', detalle.plan || '-'],
-      ['Género', detalle.genero || '-'],
-      ['Año nacimiento', this.formatearFecha(detalle.anio_nacimiento)],
-      ['Correo', detalle.email || '-'],
-      ['Teléfono', String(detalle.fono ?? '-')],
-      ['Dirección', detalle.direccion || '-'],
-      ['Año de ingreso', String(detalle.anio_ingreso ?? '-')],
-      ['Sistema de ingreso', detalle.sistema_ingreso || '-'],
-      ['N° inscripciones', String(detalle.numero_inscripciones ?? '-')],
-      ['Avance', this.formatearNumero(detalle.avance)],
-      ['Puntaje ponderado', this.formatearNumero(detalle.puntaje_ponderado)],
-      ['Puntaje PSU', this.formatearNumero(detalle.puntaje_psu)],
-      ['Promedio', this.formatearNumero(detalle.promedio)],
+      if (y + rowH > pageHeight - bottom) {
+        addPageWithHeader();
+        drawTableHead();
+      }
+
+      doc.setDrawColor(colors.border);
+      doc.setLineWidth(1);
+      doc.rect(margin, y, contentW, rowH);
+
+      let x = margin;
+      cols.forEach((c, i) => {
+        x += c.w;
+        doc.setDrawColor(colors.line);
+        if (i < cols.length - 1) {
+          doc.line(x, y, x, y + rowH);
+        }
+      });
+
+      let cx = margin;
+      wrapped.forEach((lines, i) => {
+        // alineación centro solo para N°
+        if (i === 0) {
+          doc.text(lines[0] ?? '-', cx + cols[i].w / 2, y + 15, { align: 'center' as any });
+        } else {
+          doc.text(lines, cx + 8, y + 15);
+        }
+        cx += cols[i].w;
+      });
+
+      y += rowH;
+    });
+
+    y += 14;
+  };
+
+  if (!detalle.practicas?.length) {
+    setFont(10, 'normal', colors.muted);
+    doc.text('Sin prácticas registradas.', margin, y);
+    y += 18;
+  } else {
+    const cols = [
+      { label: 'N°', w: 34 },
+      { label: 'Tipo', w: 170 },
+      { label: 'Estado', w: 82 },
+      { label: 'Fechas', w: 150 },
+      { label: 'Centro', w: contentW - (34 + 170 + 82 + 150) },
     ];
 
-    const drawCard = (rows: [string, string][]) => {
-      const labelWidth = 140;
-      const valueWidth = pageWidth - marginX * 2 - labelWidth - 16;
-      const rowHeights = rows.map(([, value]) => {
-        const split = doc.splitTextToSize(String(value ?? '-'), valueWidth);
-        return Math.max(18, split.length * 12);
-      });
-      const cardHeight = rowHeights.reduce((total, height) => total + height, 0) + 14;
+    const rows = detalle.practicas.map((p: any, idx: number) => {
+      const tipo = safe(p?.tipo);
+      const estado = this.estadoLabel(p?.estado);
+      const fechas = `${this.formatearFecha(p?.fecha_inicio)} - ${this.formatearFecha(p?.fecha_termino)}`;
+      const centro = safe(p?.centro?.nombre);
+      return [String(idx + 1), tipo, estado, fechas, centro];
+    });
 
-      doc.setDrawColor('#d1d5db');
-      doc.setFillColor('#ffffff');
-      doc.setLineWidth(1.5);
-      doc.roundedRect(
-        marginX - 6,
-        y - 10,
-        pageWidth - marginX * 2 + 12,
-        cardHeight,
-        6,
-        6,
-        'FD',
-      );
-      let ly = y + 8;
-      const valueX = marginX + 8 + labelWidth;
-      doc.setFontSize(10);
-      rows.forEach(([label, value], index) => {
-        const safeValue = String(value ?? '-');
-        doc.setTextColor('#6b7280');
-        doc.setFont('helvetica', 'normal');
-        doc.text(`${label}:`, marginX + 8, ly);
-        doc.setTextColor('#111827');
-        doc.setFont('helvetica', 'normal');
-        const split = doc.splitTextToSize(safeValue, valueWidth);
-        doc.text(split, valueX, ly);
-        ly += rowHeights[index];
-      });
-      y = ly + 6;
-    };
-
-    drawCard(infoRows);
-
-    const sectionTitle = (title: string) => {
-      y += 14; // Espacio antes del título
-      doc.setTextColor('#1f2937');
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'bold');
-      doc.text(title, marginX, y);
-      // Línea decorativa debajo del título de sección
-      doc.setDrawColor('#e5e7eb');
-      doc.setLineWidth(0.5);
-      doc.line(marginX, y + 5, marginX + 250, y + 5);
-      y += 18; // Espacio después del título
-    };
-
-    const bodyText = (text: string) => {
-      doc.setFontSize(11);
-      doc.setTextColor('#6b7280');
-      doc.setFont('helvetica', 'normal');
-      const split = doc.splitTextToSize(text, pageWidth - marginX * 2);
-      doc.text(split, marginX, y);
-      y += split.length * 14;
-    };
-
-    // Historial de prácticas
-    sectionTitle('Historial de prácticas');
-    if (detalle.practicas?.length) {
-      detalle.practicas.forEach((p, idx) => {
-        if (y > doc.internal.pageSize.getHeight() - 100) {
-          doc.addPage();
-          y = 52;
-        }
-        
-        // Tipo de práctica en línea separada (si existe)
-        if (p.tipo) {
-          doc.setFontSize(11);
-          doc.setTextColor('#0f172a');
-          doc.setFont('helvetica', 'bold');
-          doc.text(`${idx + 1}. ${p.tipo}`, marginX, y);
-          y += 18;
-          
-          // Estado y fechas en línea siguiente
-          doc.setFontSize(10);
-          doc.setFont('helvetica', 'normal');
-          doc.setTextColor('#4b5563');
-          doc.text(
-            `${this.estadoLabel(p.estado)} • ${this.formatearFecha(p.fecha_inicio)} - ${this.formatearFecha(p.fecha_termino)}`,
-            marginX + 18,
-            y,
-          );
-          y += 16;
-        } else {
-          // Si no hay tipo, mostrar número con estado y fechas
-          doc.setFontSize(11);
-          doc.setTextColor('#0f172a');
-          doc.setFont('helvetica', 'normal');
-          doc.text(
-            `${idx + 1}. ${this.estadoLabel(p.estado)} • ${this.formatearFecha(p.fecha_inicio)} - ${this.formatearFecha(p.fecha_termino)}`,
-            marginX,
-            y,
-          );
-          y += 16;
-        }
-        
-        // Centro educativo (si existe)
-        if (p.centro?.nombre) {
-          doc.setFontSize(9);
-          doc.setTextColor('#6b7280');
-          doc.text(`Centro: ${p.centro.nombre}`, marginX + 18, y);
-          y += 14;
-        }
-        y += 6;
-      });
-    } else {
-      bodyText('Sin prácticas registradas.');
-      y += 8;
-    }
-
-    doc.save(`estudiante_${detalle.rut}.pdf`);
+    drawTable(cols, rows);
   }
+
+  // Actividades asociadas (después de prácticas)
+  drawSimpleTitle('ACTIVIDADES ASOCIADAS');
+
+  const actividades = ((detalle as any).actividades || []) as any[];
+
+  if (!actividades.length) {
+    setFont(10, 'normal', colors.muted);
+    doc.text('Sin actividades asociadas.', margin, y);
+    y += 16;
+  } else {
+    // Columnas (ajustadas a tu modelo Actividad)
+    const colsAct = [
+      { label: 'N°', w: 34 },
+      { label: 'Actividad', w: 220 },
+      { label: 'Fecha', w: 110 },
+      { label: 'Horario', w: 85 },
+      { label: 'Lugar', w: contentW - (34 + 220 + 110 + 85) },
+    ];
+
+    const rowsAct = actividades.map((a: any, idx: number) => {
+      const nombre = safe(a?.nombre_actividad ?? a?.titulo ?? a?.nombre);
+      const fechaAct = this.formatearFecha(a?.fecha ?? a?.fechaRegistro);
+      const horario = safe(a?.horario);
+      const lugar = safe(a?.lugar ?? a?.descripcion);
+      return [String(idx + 1), nombre, fechaAct, horario, lugar];
+    });
+
+    drawTable(colsAct, rowsAct);
+
+    // Opcional: si quieres incluir “Terceros asistieron” y “Evidencia”
+    // puedes agregar otra tabla o ampliar columnas.
+  }
+
+  // Footer con total páginas
+  const totalPages = doc.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+
+    doc.setDrawColor(colors.line);
+    doc.setLineWidth(1);
+    doc.line(margin, pageHeight - 34, pageWidth - margin, pageHeight - 34);
+
+    setFont(9, 'normal', colors.muted);
+    doc.text('Gestión Académica • Ficha de estudiante', margin, pageHeight - 18);
+    doc.text(`Página ${i} / ${totalPages}`, pageWidth - margin, pageHeight - 18, {
+      align: 'right' as any,
+    });
+  }
+
+  doc.save(`estudiante_${detalle.rut}.pdf`);
+}
+
+
 }
 
 
