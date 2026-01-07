@@ -1,105 +1,164 @@
-<div class="dialog">
+<div class="DetailsDialogShell">
 
   <!-- HEADER -->
-  <div class="DialogHeader">
+  <div class="DialogHeader DialogHeader--details">
     <div class="DialogHeaderLeft">
-      <div class="DialogAvatar">
+      <div class="DialogAvatar DialogAvatar--student">
         <mat-icon>person</mat-icon>
       </div>
 
       <div class="DialogTitles">
         <h2>Detalle del estudiante</h2>
         <div class="DialogSubtitle">
-          {{ data?.nombre || '—' }}
+          {{ data?.nombre || data?.estudiante?.nombre || '—' }}
         </div>
       </div>
     </div>
 
-    <button mat-icon-button class="CloseBtn" (click)="cerrar()">
+    <button mat-icon-button class="CloseBtn" (click)="cerrar()" aria-label="Cerrar">
       <mat-icon>close</mat-icon>
     </button>
   </div>
 
   <!-- BODY -->
-  <div class="DialogBody">
+  <div class="DialogBody DialogBody--details">
 
-    <div *ngIf="data?.loading" class="state">
+    <!-- LOADING -->
+    <div *ngIf="data?.loading" class="state state--loading">
       <mat-spinner diameter="28"></mat-spinner>
       <span class="muted">Cargando detalle...</span>
     </div>
 
-    <div *ngIf="data?.error" class="muted error">
-      {{ data.error }}
+    <!-- ERROR -->
+    <div *ngIf="data?.error" class="state state--error">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ data.error }}</span>
     </div>
 
-    <ng-container *ngIf="!data?.loading && data?.estudiante">
+    <!-- CONTENT -->
+    <ng-container *ngIf="!data?.loading && !data?.error && data?.estudiante as e">
 
-      <div class="chips">
-        <span class="chip chip-primary">
+      <!-- Chips top -->
+      <div class="DetailsTop">
+        <span class="Chip Chip--primary">
           <mat-icon>badge</mat-icon>
-          {{ data.estudiante.rut }}
+          <span class="ChipText">{{ e.rut || '—' }}</span>
         </span>
 
-        <span class="chip" *ngIf="data.estudiante.plan">
+        <span class="Chip" *ngIf="e.plan">
           <mat-icon>school</mat-icon>
-          {{ data.estudiante.plan }}
+          <span class="ChipText">{{ e.plan }}</span>
+        </span>
+
+        <span class="Chip Chip--soft">
+          <mat-icon>layers</mat-icon>
+          <span class="ChipText">{{ (e.practicas?.length || 0) }} práctica(s)</span>
         </span>
       </div>
 
-      <div class="table-wrap">
-        <table mat-table [dataSource]="data.estudiante.practicas" class="details-table">
+      <!-- Section -->
+      <div class="DetailsSection">
+        <div class="SectionHead">
+          <mat-icon>fact_check</mat-icon>
+          <h3>Prácticas</h3>
+        </div>
 
-          <ng-container matColumnDef="tipo">
-            <th mat-header-cell *matHeaderCellDef>Tipo</th>
-            <td mat-cell *matCellDef="let p">{{ p.tipo || '—' }}</td>
-          </ng-container>
+        <div class="table-wrap elev-soft">
 
-          <ng-container matColumnDef="estado">
-            <th mat-header-cell *matHeaderCellDef>Estado</th>
-            <td mat-cell *matCellDef="let p">{{ p.estado }}</td>
-          </ng-container>
+          <!-- Tabla -->
+          <div class="table-scroll" *ngIf="e.practicas?.length; else emptyPracticas">
+            <table mat-table [dataSource]="e.practicas || []" class="details-table">
 
-          <ng-container matColumnDef="semestre">
-            <th mat-header-cell *matHeaderCellDef>Periodo</th>
-            <td mat-cell *matCellDef="let p">{{ formatPeriodo(p) }}</td>
-          </ng-container>
+              <!-- Tipo -->
+              <ng-container matColumnDef="tipo">
+                <th mat-header-cell *matHeaderCellDef>Tipo</th>
+                <td mat-cell *matCellDef="let p" class="cell-wrap">
+                  {{ p?.tipo || '—' }}
+                </td>
+              </ng-container>
 
-          <ng-container matColumnDef="centro">
-            <th mat-header-cell *matHeaderCellDef>Centro</th>
-            <td mat-cell *matCellDef="let p">{{ p.centro || '—' }}</td>
-          </ng-container>
+              <!-- Estado -->
+              <ng-container matColumnDef="estado">
+                <th mat-header-cell *matHeaderCellDef>Estado</th>
+                <td mat-cell *matCellDef="let p" class="cell-nowrap">
+                  <span
+                    class="StatusPill"
+                    [class.isOk]="p?.estado === 'APROBADO'"
+                    [class.isBad]="p?.estado === 'REPROBADO'">
+                    {{ p?.estado || '—' }}
+                  </span>
+                </td>
+              </ng-container>
 
-          <ng-container matColumnDef="tutores">
-            <th mat-header-cell *matHeaderCellDef>Supervisores</th>
-            <td mat-cell *matCellDef="let p">
-              {{ p.tutores?.length ? p.tutores.join(', ') : '—' }}
-            </td>
-          </ng-container>
+              <!-- Periodo -->
+              <ng-container matColumnDef="semestre">
+                <th mat-header-cell *matHeaderCellDef>Periodo</th>
+                <td mat-cell *matCellDef="let p" class="cell-nowrap">
+                  {{ formatPeriodo(p) }}
+                </td>
+              </ng-container>
 
-          <ng-container matColumnDef="inicio">
-            <th mat-header-cell *matHeaderCellDef>Inicio</th>
-            <td mat-cell *matCellDef="let p">{{ formatDate(p.fechaInicio) }}</td>
-          </ng-container>
+              <!-- Centro -->
+              <ng-container matColumnDef="centro">
+                <th mat-header-cell *matHeaderCellDef>Centro</th>
+                <td mat-cell *matCellDef="let p" class="cell-wrap">
+                  {{ p?.centro || '—' }}
+                </td>
+              </ng-container>
 
-          <ng-container matColumnDef="termino">
-            <th mat-header-cell *matHeaderCellDef>Término</th>
-            <td mat-cell *matCellDef="let p">{{ formatDate(p.fechaTermino) }}</td>
-          </ng-container>
+              <!-- Supervisores -->
+              <ng-container matColumnDef="tutores">
+                <th mat-header-cell *matHeaderCellDef>Supervisores</th>
+                <td mat-cell *matCellDef="let p" class="cell-wrap">
+                  {{ p?.tutores?.length ? p.tutores.join(', ') : '—' }}
+                </td>
+              </ng-container>
 
-          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
-        </table>
+              <!-- Inicio -->
+              <ng-container matColumnDef="inicio">
+                <th mat-header-cell *matHeaderCellDef>Inicio</th>
+                <td mat-cell *matCellDef="let p" class="cell-nowrap">
+                  {{ formatDate(p?.fechaInicio) }}
+                </td>
+              </ng-container>
 
-        <p class="muted" *ngIf="!data.estudiante.practicas?.length">
-          El estudiante no registra prácticas.
-        </p>
+              <!-- Término -->
+              <ng-container matColumnDef="termino">
+                <th mat-header-cell *matHeaderCellDef>Término</th>
+                <td mat-cell *matCellDef="let p" class="cell-nowrap">
+                  {{ formatDate(p?.fechaTermino) }}
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+
+            </table>
+          </div>
+
+          <!-- Empty -->
+          <ng-template #emptyPracticas>
+            <div class="EmptyInline">
+              <div class="EmptyInline__icon">
+                <mat-icon>folder_off</mat-icon>
+              </div>
+              <div>
+                <div class="EmptyInline__title">Sin prácticas</div>
+                <div class="muted">El estudiante no registra prácticas.</div>
+              </div>
+            </div>
+          </ng-template>
+
+        </div>
       </div>
     </ng-container>
+
   </div>
 
   <!-- FOOTER -->
-  <div class="DialogActions">
-    <button mat-stroked-button color="primary" (click)="cerrar()">Cerrar</button>
+  <div class="DialogActions DialogActions--details">
+    <button mat-stroked-button (click)="cerrar()">Cerrar</button>
   </div>
 
 </div>
+
