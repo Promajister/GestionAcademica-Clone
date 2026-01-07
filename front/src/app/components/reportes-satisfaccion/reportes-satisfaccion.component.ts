@@ -61,10 +61,26 @@ export class ReportesSatisfaccionComponent {
   tiposPractica = TIPOS_PRACTICA;
   tipo: TipoPracticaValue | null = null;
 
+  hasSearched = false;
+  filtersDirty = false;
+
+  onFiltersChanged() {
+    this.filtersDirty = true;
+    this.error = null;
+  }
+
+  get canExport(): boolean {
+    return !!this.data;
+  }
 
   buscar() {
     this.loading = true;
     this.error = null;
+
+    this.hasSearched = true;
+    this.filtersDirty = false;
+
+    // si quieres limpiar al buscar para evitar “flash” de info vieja:
     this.data = null;
 
     this.reportesService.getSatisfaccion({
@@ -78,6 +94,7 @@ export class ReportesSatisfaccionComponent {
       },
       error: () => {
         this.loading = false;
+        this.data = null;
         this.error = 'No se pudo cargar el reporte de satisfacción.';
       },
     });
