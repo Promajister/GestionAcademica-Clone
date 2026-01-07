@@ -1,11 +1,11 @@
-import { Component, inject, ViewChild } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { Subject, forkJoin, of } from 'rxjs';
-import { catchError, finalize, map, switchMap } from 'rxjs/operators';
+import { catchError, finalize, map } from 'rxjs/operators';
 
 import { MatListModule } from '@angular/material/list';
 import { MatCardModule } from '@angular/material/card';
@@ -17,8 +17,8 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatTableModule } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
-import { DetalleEstudianteDialogComponent } from './detalle-estudiante-dialog.component';
 
+import { DetalleEstudianteDialogComponent } from './detalle-estudiante-dialog.component';
 
 import {
   ReportesService,
@@ -53,7 +53,6 @@ import { saveAs } from 'file-saver';
 })
 export class ReportesEstudianteComponent {
   private reportesService = inject(ReportesService);
-
   private dialog = inject(MatDialog);
 
   // ===== listado server-side =====
@@ -78,12 +77,6 @@ export class ReportesEstudianteComponent {
   isSelected(rut: string): boolean {
     return this.selectedRuts.has(rut);
   }
-
-  // ===== modal detalle =====
-  estudianteSeleccionado: ReporteEstudiante | null = null;
-  mostrarDetalles = false;
-  loadingDetalle = false;
-  errorDetalle: string | null = null;
 
   displayedColumns = ['tipo', 'estado', 'semestre', 'centro', 'tutores', 'inicio', 'termino'];
 
@@ -131,7 +124,6 @@ export class ReportesEstudianteComponent {
           this.estudiantes = res.items ?? [];
           this.totalItems = res.total ?? 0;
 
-          // Tip UX: si estás en una página donde ya no hay items tras filtrar, vuelve a 0
           if (this.totalItems > 0 && this.estudiantes.length === 0 && this.pageIndex > 0) {
             this.pageIndex = 0;
             this.cargarListado(term);
@@ -205,14 +197,6 @@ export class ReportesEstudianteComponent {
     });
   }
 
-  cerrarDetalles() {
-    this.mostrarDetalles = false;
-    this.estudianteSeleccionado = null;
-    this.errorDetalle = null;
-    this.loadingDetalle = false;
-    document.body.classList.remove('student-modal-open');
-  }
-
   formatDate(value?: string | null): string {
     if (!value) return '—';
     const d = new Date(value);
@@ -247,393 +231,373 @@ export class ReportesEstudianteComponent {
   }
 
   // ==========================
-// PDF helpers (nuevo)
-// ==========================
-private async loadImageAsDataURLSafe(path: string): Promise<string | null> {
-  try {
-    const res = await fetch(path);
-    if (!res.ok) return null;
-    const blob = await res.blob();
-    return await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  } catch {
-    return null;
+  // PDF helpers
+  // ==========================
+  private async loadImageAsDataURLSafe(path: string): Promise<string | null> {
+    try {
+      const res = await fetch(path);
+      if (!res.ok) return null;
+      const blob = await res.blob();
+      return await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch {
+      return null;
+    }
   }
-}
 
-private drawPdfHeader(
-  doc: jsPDF,
-  opts: {
-    title: string;
-    subtitle: string;
-    generatedText: string;
-    logoLeft?: string | null;
-    logoRight?: string | null;
+  private drawPdfHeader(
+    doc: jsPDF,
+    opts: {
+      title: string;
+      subtitle: string;
+      generatedText: string;
+      logoLeft?: string | null;
+      logoRight?: string | null;
+    }
+  ) {
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    const margin = 52;
+    const headerH = 92;
+
+    const headerFill = [248, 250, 252];
+    const line = [229, 231, 235];
+    const text = [17, 24, 39];
+    const muted = [100, 116, 139];
+
+    doc.setFillColor(headerFill[0], headerFill[1], headerFill[2]);
+    doc.rect(0, 0, pageWidth, headerH, 'F');
+
+    const drawLogo = (dataUrl: string | null | undefined, x: number, y: number, w: number, h: number) => {
+      if (!dataUrl) return;
+      doc.addImage(dataUrl, 'PNG', x, y, w, h);
+    };
+
+    drawLogo(opts.logoLeft, margin, 18, 76, 56);
+    drawLogo(opts.logoRight, pageWidth - margin - 76, 10, 76, 76);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.setTextColor(text[0], text[1], text[2]);
+    doc.text(opts.title, pageWidth / 2, 36, { align: 'center' as any });
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(muted[0], muted[1], muted[2]);
+    doc.text(opts.subtitle, pageWidth / 2, 56, { align: 'center' as any });
+
+    doc.setFontSize(9);
+    doc.text(opts.generatedText, pageWidth / 2, 72, { align: 'center' as any });
+
+    doc.setDrawColor(line[0], line[1], line[2]);
+    doc.setLineWidth(1);
+    doc.line(margin, headerH, pageWidth - margin, headerH);
   }
-) {
-  const pageWidth = doc.internal.pageSize.getWidth();
 
-  const margin = 52;
-  const headerH = 92;
+  private drawPdfFooter(doc: jsPDF, page: number, totalPages: number) {
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
 
-  // Paleta estilo "Ficha estudiante"
-  const headerFill = [248, 250, 252]; // #f8fafc
-  const line = [229, 231, 235];       // #e5e7eb
-  const text = [17, 24, 39];          // #111827
-  const muted = [100, 116, 139];      // #64748b
+    const margin = 52;
+    const line = [229, 231, 235];
+    const muted = [100, 116, 139];
 
-  // Fondo del header
-  doc.setFillColor(headerFill[0], headerFill[1], headerFill[2]);
-  doc.rect(0, 0, pageWidth, headerH, 'F');
+    const footerY = pageHeight - 34;
 
-  // Logos
-  const drawLogo = (dataUrl: string | null | undefined, boxX: number, boxY: number, boxW: number, boxH: number) => {
-    if (!dataUrl) return;
-    // jsPDF no sabe el tamaño real del PNG sin decodificar; usamos box fijo y lo dibujamos “centrado” por convención
-    // (si tus logos vienen bien proporcionados, se ve perfecto).
-    doc.addImage(dataUrl, 'PNG', boxX, boxY, boxW, boxH);
-  };
+    doc.setDrawColor(line[0], line[1], line[2]);
+    doc.setLineWidth(1);
+    doc.line(margin, footerY, pageWidth - margin, footerY);
 
-  // Tamaños similares a la ficha
-  drawLogo(opts.logoLeft, margin, 18, 76, 56);                        // UTA
-  drawLogo(opts.logoRight, pageWidth - margin - 76, 10, 76, 76);      // FEH
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(muted[0], muted[1], muted[2]);
 
-  // Títulos centrados
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
-  doc.setTextColor(text[0], text[1], text[2]);
-  doc.text(opts.title, pageWidth / 2, 36, { align: 'center' as any });
+    doc.text('Gestión Académica • Reporte de estudiantes', margin, pageHeight - 18);
+    doc.text(`Página ${page} / ${totalPages}`, pageWidth - margin, pageHeight - 18, { align: 'right' as any });
+  }
 
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  doc.setTextColor(muted[0], muted[1], muted[2]);
-  doc.text(opts.subtitle, pageWidth / 2, 56, { align: 'center' as any });
+  // ==========================
+  // PDF export
+  // ==========================
+  exportarSeleccionPDF() {
+    if (!this.selectedCount || this.exporting) return;
 
-  doc.setFontSize(9);
-  doc.text(opts.generatedText, pageWidth / 2, 72, { align: 'center' as any });
+    this.exportError = null;
+    this.exporting = true;
 
-  // Línea inferior
-  doc.setDrawColor(line[0], line[1], line[2]);
-  doc.setLineWidth(1);
-  doc.line(margin, headerH, pageWidth - margin, headerH);
-}
+    this.fetchSelectedDetalles()
+      .pipe(finalize(() => (this.exporting = false)))
+      .subscribe({
+        next: async (estudiantes) => {
+          try {
+            if (!estudiantes.length) {
+              this.exportError = 'No se pudieron obtener datos para exportar.';
+              return;
+            }
 
-private drawPdfFooter(doc: jsPDF, page: number, totalPages: number) {
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
+            const [logoUta, logoFeh] = await Promise.all([
+              this.loadImageAsDataURLSafe('assets/img/uta.png'),
+              this.loadImageAsDataURLSafe('assets/img/feh.png'),
+            ]);
 
-  const margin = 52;
-  const line = [229, 231, 235];  // #e5e7eb
-  const muted = [100, 116, 139]; // #64748b
+            const doc = new jsPDF({ unit: 'pt', format: 'letter' });
 
-  const footerY = pageHeight - 34;
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
 
-  doc.setDrawColor(line[0], line[1], line[2]);
-  doc.setLineWidth(1);
-  doc.line(margin, footerY, pageWidth - margin, footerY);
+            const margin = 52;
+            const headerH = 92;
+            const top = headerH + 22;
+            const bottom = 54;
+            const contentW = pageWidth - margin * 2;
 
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.setTextColor(muted[0], muted[1], muted[2]);
+            const colors = {
+              text: [17, 24, 39] as [number, number, number],
+              muted: [100, 116, 139] as [number, number, number],
+              line: [229, 231, 235] as [number, number, number],
+              border: [209, 213, 219] as [number, number, number],
+              tableHead: [241, 245, 249] as [number, number, number],
+            };
 
-  doc.text('Gestión Académica • Reporte de estudiantes', margin, pageHeight - 18);
-  doc.text(`Página ${page} / ${totalPages}`, pageWidth - margin, pageHeight - 18, { align: 'right' as any });
-}
+            const generatedText = `Generado: ${new Date().toLocaleString('es-CL')}`;
 
-// ==========================
-// PDF export (nuevo)
-// ==========================
-exportarSeleccionPDF() {
-  if (!this.selectedCount || this.exporting) return;
+            const headerData = {
+              title: 'REPORTE DE ESTUDIANTES',
+              subtitle: 'Registro académico y prácticas',
+              generatedText,
+              logoLeft: logoUta,
+              logoRight: logoFeh,
+            };
 
-  this.exportError = null;
-  this.exporting = true;
-
-  this.fetchSelectedDetalles()
-    .pipe(finalize(() => (this.exporting = false)))
-    .subscribe({
-      next: async (estudiantes) => {
-        try {
-          if (!estudiantes.length) {
-            this.exportError = 'No se pudieron obtener datos para exportar.';
-            return;
-          }
-
-          // Logos (mismos que la ficha)
-          const [logoUta, logoFeh] = await Promise.all([
-            this.loadImageAsDataURLSafe('assets/img/uta.png'),
-            this.loadImageAsDataURLSafe('assets/img/feh.png'),
-          ]);
-
-          const doc = new jsPDF({ unit: 'pt', format: 'letter' });
-
-          const pageWidth = doc.internal.pageSize.getWidth();
-          const pageHeight = doc.internal.pageSize.getHeight();
-
-          const margin = 52;
-          const headerH = 92;
-          const top = headerH + 22;
-          const bottom = 54;
-          const contentW = pageWidth - margin * 2;
-
-          const colors = {
-            text: [17, 24, 39] as [number, number, number],   // #111827
-            muted: [100, 116, 139] as [number, number, number],// #64748b
-            line: [229, 231, 235] as [number, number, number], // #e5e7eb
-            border: [209, 213, 219] as [number, number, number],// #d1d5db
-            tableHead: [241, 245, 249] as [number, number, number],// #f1f5f9
-          };
-
-          const now = new Date();
-          const generatedText = `Generado: ${now.toLocaleString('es-CL')}`;
-
-          const headerData = {
-            title: 'REPORTE DE ESTUDIANTES',
-            subtitle: 'Registro académico y prácticas',
-            generatedText,
-            logoLeft: logoUta,
-            logoRight: logoFeh,
-          };
-
-          // Dibuja header en la 1ra página
-          this.drawPdfHeader(doc, headerData);
-
-          let y = top;
-
-          const ensureSpace = (needed: number) => {
-            if (y + needed <= pageHeight - bottom) return;
-            doc.addPage();
             this.drawPdfHeader(doc, headerData);
-            y = top;
-          };
 
-          const safe = (v: any) => (v === null || v === undefined || v === '' ? '—' : String(v));
+            let y = top;
 
-          const sectionTitle = (text: string) => {
-            y += 16;
-            ensureSpace(60);
+            const ensureSpace = (needed: number) => {
+              if (y + needed <= pageHeight - bottom) return;
+              doc.addPage();
+              this.drawPdfHeader(doc, headerData);
+              y = top;
+            };
 
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(11);
-            doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
-            doc.text(text.toUpperCase(), margin, y);
+            const safe = (v: any) => (v === null || v === undefined || v === '' ? '—' : String(v));
 
-            y += 8;
-            doc.setDrawColor(colors.line[0], colors.line[1], colors.line[2]);
-            doc.setLineWidth(1);
-            doc.line(margin, y, margin + 260, y);
+            const sectionTitle = (text: string) => {
+              y += 10;
+              ensureSpace(60);
 
-            y += 14;
-          };
+              doc.setFont('helvetica', 'bold');
+              doc.setFontSize(11);
+              doc.setTextColor(...colors.text);
+              doc.text(text.toUpperCase(), margin, y);
 
-          for (let idx = 0; idx < estudiantes.length; idx++) {
-            const est = estudiantes[idx];
+              y += 8;
+              doc.setDrawColor(...colors.line);
+              doc.setLineWidth(1);
+              doc.line(margin, y, margin + 260, y);
 
-            // Bloque estudiante (compacto, formal)
-            ensureSpace(80);
+              y += 14;
+            };
 
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(12);
-            doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
-            doc.text(safe(est.nombre), margin, y);
+            for (let idx = 0; idx < estudiantes.length; idx++) {
+              const est: any = estudiantes[idx];
 
-            y += 14;
+              // ===== Bloque estudiante (para que NO se mezcle visualmente) =====
+              ensureSpace(140);
 
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(10);
-            doc.setTextColor(colors.muted[0], colors.muted[1], colors.muted[2]);
-            doc.text(`RUT: ${safe(est.rut)}  •  Plan: ${safe(est.plan)}`, margin, y);
+              doc.setDrawColor(...colors.border);
+              doc.setFillColor(248, 250, 252);
+              (doc as any).roundedRect(margin, y - 6, contentW, 60, 12, 12, 'FD');
 
-            y += 14;
+              doc.setFont('helvetica', 'bold');
+              doc.setFontSize(12);
+              doc.setTextColor(...colors.text);
+              doc.text(safe(est.nombre), margin + 14, y + 16);
 
-            doc.setDrawColor(colors.line[0], colors.line[1], colors.line[2]);
-            doc.line(margin, y, pageWidth - margin, y);
-
-            y += 10;
-
-            // Sección prácticas
-            sectionTitle('Historial de prácticas');
-
-            const practicas = (est as any).practicas ?? [];
-
-            if (!practicas.length) {
               doc.setFont('helvetica', 'normal');
               doc.setFontSize(10);
-              doc.setTextColor(colors.muted[0], colors.muted[1], colors.muted[2]);
-              doc.text('Sin prácticas registradas.', margin, y);
-              y += 14;
-            } else {
-              const cols = [
-                { label: 'N°', w: 34 },
-                { label: 'Tipo', w: 170 },
-                { label: 'Estado', w: 82 },
-                { label: 'Periodo', w: 86 },
-                { label: 'Centro', w: contentW - (34 + 170 + 82 + 86) },
-              ];
+              doc.setTextColor(...colors.muted);
+              doc.text(`RUT: ${safe(est.rut)}  •  Plan: ${safe(est.plan)}`, margin + 14, y + 34);
 
-              autoTable(doc, {
-                startY: y,
-                head: [[cols[0].label, cols[1].label, cols[2].label, cols[3].label, cols[4].label]],
-                body: practicas.map((p: any, i: number) => [
-                  String(i + 1),
-                  safe(p.tipo),
-                  safe(p.estado),
-                  this.formatPeriodo(p),
-                  safe(p.centro),
-                ]),
-                margin: { left: margin, right: margin, top, bottom },
-                styles: {
-                  font: 'helvetica',
-                  fontSize: 9,
-                  cellPadding: 6,
-                  textColor: colors.text,
-                  lineColor: colors.line,
-                  lineWidth: 0.8,
-                  overflow: 'linebreak',
-                },
-                headStyles: {
-                  fillColor: colors.tableHead,
-                  textColor: colors.text,
-                  fontStyle: 'bold',
-                  lineColor: colors.border,
-                  lineWidth: 1,
-                },
-                alternateRowStyles: { fillColor: [248, 250, 252] },
-                columnStyles: {
-                  0: { cellWidth: cols[0].w, halign: 'center' },
-                  1: { cellWidth: cols[1].w },
-                  2: { cellWidth: cols[2].w },
-                  3: { cellWidth: cols[3].w },
-                  4: { cellWidth: cols[4].w },
-                },
-                tableWidth: contentW,
-              });
+              y += 76;
 
-              // @ts-ignore
-              y = doc.lastAutoTable.finalY + 12;
+              sectionTitle('Historial de prácticas');
+
+              const practicas = est.practicas ?? [];
+
+              if (!practicas.length) {
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(10);
+                doc.setTextColor(...colors.muted);
+                doc.text('Sin prácticas registradas.', margin, y);
+                y += 14;
+              } else {
+                const cols = [
+                  { label: 'N°', w: 34 },
+                  { label: 'Tipo', w: 170 },
+                  { label: 'Estado', w: 82 },
+                  { label: 'Periodo', w: 86 },
+                  { label: 'Centro', w: contentW - (34 + 170 + 82 + 86) },
+                ];
+
+                autoTable(doc, {
+                  startY: y,
+                  head: [[cols[0].label, cols[1].label, cols[2].label, cols[3].label, cols[4].label]],
+                  body: practicas.map((p: any, i: number) => [
+                    String(i + 1),
+                    safe(p.tipo),
+                    safe(p.estado),
+                    this.formatPeriodo(p),
+                    safe(p.centro),
+                  ]),
+                  margin: { left: margin, right: margin, top, bottom },
+                  styles: {
+                    font: 'helvetica',
+                    fontSize: 9,
+                    cellPadding: 6,
+                    textColor: colors.text as any,
+                    lineColor: colors.line as any,
+                    lineWidth: 0.8,
+                    overflow: 'linebreak',
+                  },
+                  headStyles: {
+                    fillColor: colors.tableHead as any,
+                    textColor: colors.text as any,
+                    fontStyle: 'bold',
+                    lineColor: colors.border as any,
+                    lineWidth: 1,
+                  },
+                  alternateRowStyles: { fillColor: [248, 250, 252] as any },
+                  columnStyles: {
+                    0: { cellWidth: cols[0].w, halign: 'center' },
+                    1: { cellWidth: cols[1].w },
+                    2: { cellWidth: cols[2].w },
+                    3: { cellWidth: cols[3].w },
+                    4: { cellWidth: cols[4].w },
+                  },
+                  tableWidth: contentW,
+                });
+
+                // @ts-ignore
+                y = doc.lastAutoTable.finalY + 14;
+              }
+
+              // Separador entre estudiantes (más claro)
+              if (idx < estudiantes.length - 1) {
+                ensureSpace(28);
+                doc.setDrawColor(...colors.line);
+                doc.setLineWidth(1);
+                doc.line(margin, y, pageWidth - margin, y);
+                y += 16;
+              }
             }
 
-            // Separador entre estudiantes (si no es el último)
-            if (idx < estudiantes.length - 1) {
-              ensureSpace(30);
-              doc.setDrawColor(colors.line[0], colors.line[1], colors.line[2]);
-              doc.line(margin, y, pageWidth - margin, y);
-              y += 12;
-            }
-          }
-
-          // Footer con páginas (segunda pasada, como en tu ficha)
-          const totalPages = (doc as any).getNumberOfPages();
-
-          for (let i = 1; i <= totalPages; i++) {
-            doc.setPage(i);
-            this.drawPdfHeader(doc, headerData);
-            this.drawPdfFooter(doc, i, totalPages);
-          }
-
-
-          doc.save('reporte_estudiantes.pdf');
-        } catch {
-          this.exportError = 'Error al generar PDF.';
-        }
-      },
-      error: () => {
-        this.exportError = 'Error al exportar PDF.';
-      },
-    });
-}
-exportarSeleccionExcel() {
-  if (!this.selectedCount || this.exporting) return;
-
-  this.exportError = null;
-  this.exporting = true;
-
-  this.fetchSelectedDetalles()
-    .pipe(finalize(() => (this.exporting = false)))
-    .subscribe({
-      next: (estudiantes) => {
-        try {
-          if (!estudiantes.length) {
-            this.exportError = 'No se pudieron obtener datos para exportar.';
-            return;
-          }
-
-          const rows: any[] = [];
-
-          for (const est of estudiantes as any[]) {
-            const practicas = est.practicas ?? [];
-
-            // Si no tiene prácticas, igualmente agregar fila base
-            if (!practicas.length) {
-              rows.push({
-                Estudiante: est.nombre ?? '',
-                RUT: est.rut ?? '',
-                Plan: est.plan ?? '',
-                Tipo: '',
-                Estado: '',
-                Periodo: '',
-                Centro: '',
-                Supervisores: '',
-                Inicio: '',
-                Termino: '',
-              });
-              continue;
+            const totalPages = (doc as any).getNumberOfPages();
+            for (let i = 1; i <= totalPages; i++) {
+              doc.setPage(i);
+              this.drawPdfHeader(doc, headerData);
+              this.drawPdfFooter(doc, i, totalPages);
             }
 
-            for (const p of practicas) {
-              rows.push({
-                Estudiante: est.nombre ?? '',
-                RUT: est.rut ?? '',
-                Plan: est.plan ?? '',
-                Tipo: p.tipo ?? '',
-                Estado: p.estado ?? '',
-                Periodo: this.formatPeriodo(p),
-                Centro: p.centro ?? '',
-                Supervisores: Array.isArray(p.tutores) ? p.tutores.join(', ') : (p.tutores ?? ''),
-                Inicio: this.formatDate(p.fechaInicio ?? p.fecha_inicio ?? null),
-                Termino: this.formatDate(p.fechaTermino ?? p.fecha_termino ?? null),
-              });
-            }
+            doc.save('reporte_estudiantes.pdf');
+          } catch {
+            this.exportError = 'Error al generar PDF.';
           }
+        },
+        error: () => {
+          this.exportError = 'Error al exportar PDF.';
+        },
+      });
+  }
 
-          const worksheet = XLSX.utils.json_to_sheet(rows);
+  // ==========================
+  // Excel export (recuperado)
+  // ==========================
+  exportarSeleccionExcel() {
+    if (!this.selectedCount || this.exporting) return;
 
-          // Ajuste simple de anchos (opcional, pero mejora)
-          worksheet['!cols'] = [
-            { wch: 34 }, // Estudiante
-            { wch: 14 }, // RUT
-            { wch: 16 }, // Plan
-            { wch: 28 }, // Tipo
-            { wch: 14 }, // Estado
-            { wch: 12 }, // Periodo
-            { wch: 28 }, // Centro
-            { wch: 28 }, // Supervisores
-            { wch: 12 }, // Inicio
-            { wch: 12 }, // Termino
-          ];
+    this.exportError = null;
+    this.exporting = true;
 
-          const workbook = XLSX.utils.book_new();
-          XLSX.utils.book_append_sheet(workbook, worksheet, 'Reporte');
+    this.fetchSelectedDetalles()
+      .pipe(finalize(() => (this.exporting = false)))
+      .subscribe({
+        next: (estudiantes) => {
+          try {
+            if (!estudiantes.length) {
+              this.exportError = 'No se pudieron obtener datos para exportar.';
+              return;
+            }
 
-          const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-          const blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
-          saveAs(blob, 'reporte_estudiantes.xlsx');
-        } catch {
+            const rows: any[] = [];
+
+            for (const est of estudiantes as any[]) {
+              const practicas = est.practicas ?? [];
+
+              if (!practicas.length) {
+                rows.push({
+                  Estudiante: est.nombre ?? '',
+                  RUT: est.rut ?? '',
+                  Plan: est.plan ?? '',
+                  Tipo: '',
+                  Estado: '',
+                  Periodo: '',
+                  Centro: '',
+                  Supervisores: '',
+                  Inicio: '',
+                  Termino: '',
+                });
+                continue;
+              }
+
+              for (const p of practicas) {
+                rows.push({
+                  Estudiante: est.nombre ?? '',
+                  RUT: est.rut ?? '',
+                  Plan: est.plan ?? '',
+                  Tipo: p.tipo ?? '',
+                  Estado: p.estado ?? '',
+                  Periodo: this.formatPeriodo(p),
+                  Centro: p.centro ?? '',
+                  Supervisores: Array.isArray(p.tutores) ? p.tutores.join(', ') : (p.tutores ?? ''),
+                  Inicio: this.formatDate(p.fechaInicio ?? p.fecha_inicio ?? null),
+                  Termino: this.formatDate(p.fechaTermino ?? p.fecha_termino ?? null),
+                });
+              }
+            }
+
+            const worksheet = XLSX.utils.json_to_sheet(rows);
+
+            worksheet['!cols'] = [
+              { wch: 34 }, // Estudiante
+              { wch: 14 }, // RUT
+              { wch: 16 }, // Plan
+              { wch: 28 }, // Tipo
+              { wch: 14 }, // Estado
+              { wch: 12 }, // Periodo
+              { wch: 28 }, // Centro
+              { wch: 28 }, // Supervisores
+              { wch: 12 }, // Inicio
+              { wch: 12 }, // Termino
+            ];
+
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Reporte');
+
+            const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+            const blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
+            saveAs(blob, 'reporte_estudiantes.xlsx');
+          } catch {
+            this.exportError = 'Error al exportar Excel.';
+          }
+        },
+        error: () => {
           this.exportError = 'Error al exportar Excel.';
-        }
-      },
-      error: () => {
-        this.exportError = 'Error al exportar Excel.';
-      },
-    });
-}
-
-
-
-
-
+        },
+      });
+  }
 }
