@@ -19,14 +19,14 @@ import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 
 const TIPOS_PRACTICA = [
-  { label: 'PRÁCTICA DE APOYO A LA DOCENCIA I',   value: 'Apoyo a la Docencia I' },
-  { label: 'PRÁCTICA DE APOYO A LA DOCENCIA II',  value: 'Apoyo a la Docencia II' },
+  { label: 'PRÁCTICA DE APOYO A LA DOCENCIA I', value: 'Apoyo a la Docencia I' },
+  { label: 'PRÁCTICA DE APOYO A LA DOCENCIA II', value: 'Apoyo a la Docencia II' },
   { label: 'PRÁCTICA DE APOYO A LA DOCENCIA III', value: 'Apoyo a la Docencia III' },
-  { label: 'PRÁCTICA DE APOYO A LA DOCENCIA IV',  value: 'Apoyo a la Docencia IV' },
-  { label: 'PRÁCTICA PROFESIONAL DOCENTE',        value: 'Práctica Profesional Docente' },
+  { label: 'PRÁCTICA DE APOYO A LA DOCENCIA IV', value: 'Apoyo a la Docencia IV' },
+  { label: 'PRÁCTICA PROFESIONAL DOCENTE', value: 'Práctica Profesional Docente' },
 ] as const;
 
-type TipoPracticaValue = typeof TIPOS_PRACTICA[number]['value'];
+type TipoPracticaValue = (typeof TIPOS_PRACTICA)[number]['value'];
 
 @Component({
   standalone: true,
@@ -44,9 +44,8 @@ type TipoPracticaValue = typeof TIPOS_PRACTICA[number]['value'];
     MatInputModule,
   ],
   templateUrl: './reportes-satisfaccion.component.html',
-  styleUrls: ['./reportes-satisfaccion.component.scss'], 
+  styleUrls: ['./reportes-satisfaccion.component.scss'],
 })
-
 export class ReportesSatisfaccionComponent {
   private reportesService = inject(ReportesService);
 
@@ -80,73 +79,270 @@ export class ReportesSatisfaccionComponent {
     this.hasSearched = true;
     this.filtersDirty = false;
 
-    // si quieres limpiar al buscar para evitar “flash” de info vieja:
     this.data = null;
 
-    this.reportesService.getSatisfaccion({
-      anio: this.anio,
-      semestre: this.semestre,
-      tipo: this.tipo,
-    }).subscribe({
-      next: (res) => {
-        this.data = res;
-        this.loading = false;
-      },
-      error: () => {
-        this.loading = false;
-        this.data = null;
-        this.error = 'No se pudo cargar el reporte de satisfacción.';
-      },
-    });
+    this.reportesService
+      .getSatisfaccion({
+        anio: this.anio,
+        semestre: this.semestre,
+        tipo: this.tipo,
+      })
+      .subscribe({
+        next: (res) => {
+          this.data = res;
+          this.loading = false;
+        },
+        error: () => {
+          this.loading = false;
+          this.data = null;
+          this.error = 'No se pudo cargar el reporte de satisfacción.';
+        },
+      });
   }
 
-  exportarPDF() {
+  // ==========================
+  // Helpers PDF (mismo estilo "estudiantes")
+  // ==========================
+  private async loadImageAsDataURLSafe(path: string): Promise<string | null> {
+    try {
+      const res = await fetch(path);
+      if (!res.ok) return null;
+      const blob = await res.blob();
+      return await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch {
+      return null;
+    }
+  }
+
+  private drawPdfHeader(
+    doc: jsPDF,
+    opts: {
+      title: string;
+      subtitle: string;
+      generatedText: string;
+      logoLeft?: string | null;
+      logoRight?: string | null;
+    }
+  ) {
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 52;
+    const headerH = 92;
+
+    const headerFill: [number, number, number] = [248, 250, 252];
+    const line: [number, number, number] = [229, 231, 235];
+    const text: [number, number, number] = [17, 24, 39];
+    const muted: [number, number, number] = [100, 116, 139];
+
+    doc.setFillColor(...headerFill);
+    doc.rect(0, 0, pageWidth, headerH, 'F');
+
+    const drawLogo = (dataUrl: string | null | undefined, x: number, y: number, w: number, h: number) => {
+      if (!dataUrl) return;
+      doc.addImage(dataUrl, 'PNG', x, y, w, h);
+    };
+
+    drawLogo(opts.logoLeft, margin, 16, 76, 56);
+    drawLogo(opts.logoRight, pageWidth - margin - 76, 10, 76, 76);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.setTextColor(...text);
+    doc.text(opts.title, pageWidth / 2, 36, { align: 'center' as any });
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(...muted);
+    doc.text(opts.subtitle, pageWidth / 2, 56, { align: 'center' as any });
+
+    doc.setFontSize(9);
+    doc.text(opts.generatedText, pageWidth / 2, 72, { align: 'center' as any });
+
+    doc.setDrawColor(...line);
+    doc.setLineWidth(1);
+    doc.line(margin, headerH, pageWidth - margin, headerH);
+  }
+
+  private drawPdfFooter(doc: jsPDF, page: number, totalPages: number) {
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 52;
+
+    const line: [number, number, number] = [229, 231, 235];
+    const muted: [number, number, number] = [100, 116, 139];
+
+    const footerY = pageHeight - 34;
+
+    doc.setDrawColor(...line);
+    doc.setLineWidth(1);
+    doc.line(margin, footerY, pageWidth - margin, footerY);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(...muted);
+
+    doc.text('Gestión Académica • Reporte de satisfacción', margin, pageHeight - 18);
+    doc.text(`Página ${page} / ${totalPages}`, pageWidth - margin, pageHeight - 18, { align: 'right' as any });
+  }
+
+  // ==========================
+  // Export PDF (nuevo estilo)
+  // ==========================
+  async exportarPDF() {
     if (!this.data) return;
 
-    const doc = new jsPDF();
-    doc.setFontSize(14);
-    doc.text('Reporte de satisfacción en prácticas', 14, 15);
+    const data = this.data;
 
+    const doc = new jsPDF({ unit: 'pt', format: 'letter' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+
+    const margin = 52;
+    const headerH = 92;
+    const top = headerH + 22;
+    const bottom = 54;
+    const contentW = pageWidth - margin * 2;
+
+    const colors = {
+      text: [17, 24, 39] as [number, number, number],
+      muted: [100, 116, 139] as [number, number, number],
+      line: [229, 231, 235] as [number, number, number],
+      border: [209, 213, 219] as [number, number, number],
+      tableHead: [241, 245, 249] as [number, number, number],
+      cardFill: [248, 250, 252] as [number, number, number],
+    };
+
+    const safe = (v: any) => (v === null || v === undefined || v === '' ? '—' : String(v));
+
+    const [logoUta, logoFeh] = await Promise.all([
+      this.loadImageAsDataURLSafe('assets/img/uta.png'),
+      this.loadImageAsDataURLSafe('assets/img/feh.png'),
+    ]);
+
+    const now = new Date();
+    const generatedText = `Generado: ${now.toLocaleString('es-CL')}`;
+
+    const headerData = {
+      title: 'REPORTE DE SATISFACCIÓN',
+      subtitle: 'Indicadores de prácticas y encuestas',
+      generatedText,
+      logoLeft: logoUta,
+      logoRight: logoFeh,
+    };
+
+    this.drawPdfHeader(doc, headerData);
+
+    let y = top;
+
+    const ensureSpace = (needed: number) => {
+      if (y + needed <= pageHeight - bottom) return;
+      doc.addPage();
+      this.drawPdfHeader(doc, headerData);
+      y = top;
+    };
+
+    // Card de parámetros
+    ensureSpace(90);
+
+    doc.setFillColor(...colors.cardFill);
+    (doc as any).roundedRect(margin, y, contentW, 72, 12, 12, 'F');
+
+    doc.setDrawColor(...colors.border);
+    doc.setLineWidth(1);
+    (doc as any).roundedRect(margin, y, contentW, 72, 12, 12, 'S');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(...colors.text);
+    doc.text('Parámetros del reporte', margin + 14, y + 24);
+
+    doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
-    doc.text(
-      `Año: ${this.data.anio} | Semestre: ${this.data.semestre} | Tipo: ${this.data.tipo ?? 'Todo'}`,
-      14,
-      22
-    );
+    doc.setTextColor(...colors.muted);
 
-    const rows = [
-      ['Año', String(this.data.anio)],
-      ['Semestre', String(this.data.semestre)],
-      ['Tipo', String(this.data.tipo ?? 'Todo')],
+    doc.text(`Año: ${safe(data.anio)}`, margin + 14, y + 44);
+    doc.text(`Semestre: ${safe(data.semestre)}`, margin + 160, y + 44);
+    doc.text(`Tipo de practica: ${safe(data.tipo ?? 'Todo')}`, margin + 290, y + 44);
 
-      ['Prácticas (total)', String(this.data.practicas.totalPracticas)],
-      ['Estudiantes', String(this.data.practicas.estudiantesUnicos)],
+    y += 92;
 
-      ['Aprobadas', `${this.data.practicas.aprobadas} (${this.data.practicas.porcentajes.aprobadas}%)`],
-      ['Reprobadas', `${this.data.practicas.reprobadas} (${this.data.practicas.porcentajes.reprobadas}%)`],
-      ['En curso', `${this.data.practicas.enCurso} (${this.data.practicas.porcentajes.enCurso}%)`],
+    // Título sección
+    ensureSpace(60);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(...colors.text);
+    doc.text('RESUMEN DE INDICADORES', margin, y);
 
-      ['% aprobación (solo evaluadas)', `${this.data.practicas.porcentajeAprobacionEvaluadas}%`],
+    y += 8;
+    doc.setDrawColor(...colors.line);
+    doc.setLineWidth(1);
+    doc.line(margin, y, margin + 260, y);
+    y += 14;
 
-      ['Encuestas Estudiantes (registradas)', String(this.data.encuestasEstudiantes.totalEncuestas)],
-      ['Alternativas respondidas (Estudiantes)', String(this.data.encuestasEstudiantes.totalAlternativasRespondidas)],
-      ['% Satisfacción Estudiantes', `${this.data.encuestasEstudiantes.porcentajeSatisfaccion}%`],
+    const rows: [string, string][] = [
+      ['Prácticas (total)', safe(data.practicas.totalPracticas)],
+      ['Estudiantes', safe(data.practicas.estudiantesUnicos)],
 
-      ['Encuestas Colaboradores (registradas)', String(this.data.encuestasColaboradores.totalEncuestas)],
-      ['Alternativas respondidas (Colaboradores)', String(this.data.encuestasColaboradores.totalAlternativasRespondidas)],
-      ['% Satisfacción Colaboradores', `${this.data.encuestasColaboradores.porcentajeSatisfaccion}%`],
+      ['Aprobadas', `${safe(data.practicas.aprobadas)} (${safe(data.practicas.porcentajes.aprobadas)}%)`],
+      ['Reprobadas', `${safe(data.practicas.reprobadas)} (${safe(data.practicas.porcentajes.reprobadas)}%)`],
+      ['En curso', `${safe(data.practicas.enCurso)} (${safe(data.practicas.porcentajes.enCurso)}%)`],
+      ['% aprobación (solo evaluadas)', `${safe(data.practicas.porcentajeAprobacionEvaluadas)}%`],
 
+      ['Encuestas Estudiantes (registradas)', safe(data.encuestasEstudiantes.totalEncuestas)],
+      ['Alternativas respondidas (Estudiantes)', safe(data.encuestasEstudiantes.totalAlternativasRespondidas)],
+      ['% Satisfacción Estudiantes', `${safe(data.encuestasEstudiantes.porcentajeSatisfaccion)}%`],
+
+      ['Encuestas Colaboradores (registradas)', safe(data.encuestasColaboradores.totalEncuestas)],
+      ['Alternativas respondidas (Colaboradores)', safe(data.encuestasColaboradores.totalAlternativasRespondidas)],
+      ['% Satisfacción Colaboradores', `${safe(data.encuestasColaboradores.porcentajeSatisfaccion)}%`],
     ];
 
     autoTable(doc, {
-      startY: 28,
+      startY: y,
       head: [['Indicador', 'Valor']],
       body: rows,
+      margin: { left: margin, right: margin, top, bottom },
+      tableWidth: contentW,
+      styles: {
+        font: 'helvetica',
+        fontSize: 9,
+        cellPadding: 6,
+        textColor: colors.text as any,
+        lineColor: colors.line as any,
+        lineWidth: 0.8,
+        overflow: 'linebreak',
+      },
+      headStyles: {
+        fillColor: colors.tableHead as any,
+        textColor: colors.text as any,
+        fontStyle: 'bold',
+        lineColor: colors.border as any,
+        lineWidth: 1,
+      },
+      alternateRowStyles: { fillColor: [248, 250, 252] as any },
+      columnStyles: {
+        0: { cellWidth: Math.floor(contentW * 0.68) },
+        1: { cellWidth: Math.floor(contentW * 0.32) },
+      },
     });
 
-    doc.save(`reporte_satisfaccion_${this.data.anio}_S${this.data.semestre}.pdf`);
+    const totalPages = (doc as any).getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      this.drawPdfHeader(doc, headerData);
+      this.drawPdfFooter(doc, i, totalPages);
+    }
+
+    doc.save(`reporte_satisfaccion_${data.anio}_S${data.semestre}.pdf`);
   }
 
+  // ==========================
+  // Export Excel (se mantiene)
+  // ==========================
   exportarExcel() {
     if (!this.data) return;
 

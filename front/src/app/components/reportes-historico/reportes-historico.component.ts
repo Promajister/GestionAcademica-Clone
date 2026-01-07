@@ -88,8 +88,8 @@ export class ReportesHistoricoComponent {
   get showCharts(): boolean {
     return !!this.data
       && !this.loading
-      && (this.data?.tipo === null)           // usa el "último estado aplicado"
-      && (this.data?.groupBy === 'semester'); // usa el "último estado aplicado"
+      && (this.data?.tipo === null)
+      && (this.data?.groupBy === 'semester');
   }
 
   get canExport(): boolean {
@@ -212,46 +212,266 @@ export class ReportesHistoricoComponent {
     return list.join(', ');
   }
 
-  // EXPORT PDF (funcional, luego lo mejoramos visualmente como el de Estudiantes)
-  exportarPDF() {
-    if (!this.data?.series?.length) return;
+  // ==========================
+  // PDF helpers (estilo Estudiantes)
+  // ==========================
+  private async loadImageAsDataURLSafe(path: string): Promise<string | null> {
+    try {
+      const res = await fetch(path);
+      if (!res.ok) return null;
+      const blob = await res.blob();
+      return await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch {
+      return null;
+    }
+  }
 
-    const doc = new jsPDF();
+  private drawPdfHeader(
+    doc: jsPDF,
+    opts: {
+      title: string;
+      subtitle: string;
+      generatedText: string;
+      logoLeft?: string | null;
+      logoRight?: string | null;
+    }
+  ) {
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 52;
+    const headerH = 92;
+
+    const headerFill: [number, number, number] = [248, 250, 252];
+    const line: [number, number, number] = [229, 231, 235];
+    const text: [number, number, number] = [17, 24, 39];
+    const muted: [number, number, number] = [100, 116, 139];
+
+    doc.setFillColor(...headerFill);
+    doc.rect(0, 0, pageWidth, headerH, 'F');
+
+    const drawLogo = (dataUrl: string | null | undefined, x: number, y: number, w: number, h: number) => {
+      if (!dataUrl) return;
+      doc.addImage(dataUrl, 'PNG', x, y, w, h);
+    };
+
+    drawLogo(opts.logoLeft, margin, 16, 76, 56);
+    drawLogo(opts.logoRight, pageWidth - margin - 76, 10, 76, 76);
+
+    doc.setFont('helvetica', 'bold');
     doc.setFontSize(14);
-    doc.text('Reporte histórico de prácticas', 14, 15);
+    doc.setTextColor(...text);
+    doc.text(opts.title, pageWidth / 2, 36, { align: 'center' as any });
 
+    doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
-    doc.text(
-      `Años: ${this.data.fromYear} - ${this.data.toYear} | Agrupar: ${this.data.groupBy} | Tipo: ${this.data.tipo ?? 'Todas'}`,
-      14,
-      22
-    );
+    doc.setTextColor(...muted);
+    doc.text(opts.subtitle, pageWidth / 2, 56, { align: 'center' as any });
 
-    const rows = this.data.series.map((r) => [
-      r.periodo,
-      String(r.totalEstudiantes),
-      this.centrosToText(r),
-      this.listToText(r.colaboradores),
-      this.listToText(r.supervisores),
-      this.listToText(r.talleristas),
+    doc.setFontSize(9);
+    doc.text(opts.generatedText, pageWidth / 2, 72, { align: 'center' as any });
+
+    doc.setDrawColor(...line);
+    doc.setLineWidth(1);
+    doc.line(margin, headerH, pageWidth - margin, headerH);
+  }
+
+  private drawPdfFooter(doc: jsPDF, page: number, totalPages: number) {
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 52;
+
+    const line: [number, number, number] = [229, 231, 235];
+    const muted: [number, number, number] = [100, 116, 139];
+
+    const footerY = pageHeight - 34;
+
+    doc.setDrawColor(...line);
+    doc.setLineWidth(1);
+    doc.line(margin, footerY, pageWidth - margin, footerY);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(...muted);
+
+    doc.text('Gestión Académica • Reporte histórico', margin, pageHeight - 18);
+    doc.text(`Página ${page} / ${totalPages}`, pageWidth - margin, pageHeight - 18, { align: 'right' as any });
+  }
+
+  private wrapText(doc: jsPDF, text: string, maxWidth: number): string[] {
+    return (doc as any).splitTextToSize(text, maxWidth) as string[];
+  }
+
+  // ==========================
+  // EXPORT PDF (nuevo)
+  // ==========================
+  exportarPDF() {
+  if (!this.data?.series?.length) return;
+
+  const data = this.data; // ✅ fija nullability para TS strict
+
+  (async () => {
+    const doc = new jsPDF({ unit: 'pt', format: 'letter' });
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+
+    const margin = 52;
+    const headerH = 92;
+    const top = headerH + 22;
+    const bottom = 54;
+    const contentW = pageWidth - margin * 2;
+
+    const colors = {
+      text: [17, 24, 39] as [number, number, number],
+      muted: [100, 116, 139] as [number, number, number],
+      line: [229, 231, 235] as [number, number, number],
+      border: [209, 213, 219] as [number, number, number],
+      tableHead: [241, 245, 249] as [number, number, number],
+      zebra: [248, 250, 252] as [number, number, number],
+      cardFill: [248, 250, 252] as [number, number, number],
+    };
+
+    const safe = (v: any) => (v === null || v === undefined || v === '' ? '—' : String(v));
+
+    const [logoUta, logoFeh] = await Promise.all([
+      this.loadImageAsDataURLSafe('assets/img/uta.png'),
+      this.loadImageAsDataURLSafe('assets/img/feh.png'),
+    ]);
+
+    const now = new Date();
+    const generatedText = `Generado: ${now.toLocaleString('es-CL')}`;
+
+    const groupLabel = data.groupBy === 'year' ? 'Año' : 'Periodo';
+    const groupLabelPretty = data.groupBy === 'year' ? 'Por año' : 'Por semestre';
+
+    const headerData = {
+      title: 'REPORTE HISTÓRICO',
+      subtitle: `Prácticas • ${groupLabelPretty}`,
+      generatedText,
+      logoLeft: logoUta,
+      logoRight: logoFeh,
+    };
+
+    // Header primera página
+    this.drawPdfHeader(doc, headerData);
+
+    let y = top;
+
+    const ensureSpace = (needed: number) => {
+      if (y + needed <= pageHeight - bottom) return;
+      doc.addPage();
+      this.drawPdfHeader(doc, headerData);
+      y = top;
+    };
+
+    // ===== Card parámetros =====
+    ensureSpace(120);
+
+    doc.setFillColor(...colors.cardFill);
+    (doc as any).roundedRect(margin, y, contentW, 90, 12, 12, 'F');
+
+    doc.setDrawColor(...colors.border);
+    doc.setLineWidth(1);
+    (doc as any).roundedRect(margin, y, contentW, 90, 12, 12, 'S');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(...colors.text);
+    doc.text('Parámetros del reporte', margin + 14, y + 26);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(...colors.muted);
+
+    const tipoTxt = safe(data.tipo ?? 'Todas');
+
+    doc.text(`Rango: ${safe(data.fromYear)} - ${safe(data.toYear)}`, margin + 14, y + 48);
+    doc.text(`Agrupación: ${groupLabelPretty}`, margin + 250, y + 48);
+
+    const tipoLines = this.wrapText(doc, `Tipo: ${tipoTxt}`, contentW - 28);
+    doc.text(tipoLines.slice(0, 2), margin + 14, y + 70);
+
+    y += 120;
+
+    // ===== Título sección =====
+    ensureSpace(60);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(...colors.text);
+    doc.text('SERIES HISTÓRICAS', margin, y);
+
+    y += 8;
+    doc.setDrawColor(...colors.line);
+    doc.setLineWidth(1);
+    doc.line(margin, y, margin + 220, y);
+    y += 14;
+
+    // ===== Tabla =====
+    const tableBody = data.series.map((r) => [
+      safe(r.periodo),
+      safe(r.totalEstudiantes),
+      safe(this.centrosToText(r)),
+      safe(this.listToText(r.colaboradores)),
+      safe(this.listToText(r.supervisores)),
+      safe(this.listToText(r.talleristas)),
     ]);
 
     autoTable(doc, {
-      startY: 28,
+      startY: y,
       head: [[
-        this.data.groupBy === 'year' ? 'Año' : 'Periodo',
+        groupLabel,
         'Total estudiantes',
         'Centros por tipo',
         'Colaboradores',
         'Supervisores',
         'Talleristas',
       ]],
-      body: rows,
+      body: tableBody,
+      margin: { left: margin, right: margin, top, bottom },
+      tableWidth: contentW,
+
+      styles: {
+        font: 'helvetica',
+        fontSize: 9,
+        cellPadding: 6,
+        textColor: colors.text as any,
+        lineColor: colors.line as any,
+        lineWidth: 0.8,
+        overflow: 'linebreak',
+        valign: 'top',
+      },
+
+      headStyles: {
+        fillColor: colors.tableHead as any,
+        textColor: colors.text as any,
+        fontStyle: 'bold',
+        lineColor: colors.border as any,
+        lineWidth: 1,
+      },
+
+      alternateRowStyles: { fillColor: colors.zebra as any },
     });
 
-    doc.save(`reporte_historico_${this.data.fromYear}_${this.data.toYear}.pdf`);
-  }
+    // Segunda pasada: header+footer + paginación correcta
+    const totalPages = (doc as any).getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      this.drawPdfHeader(doc, headerData);
+      this.drawPdfFooter(doc, i, totalPages);
+    }
 
+    doc.save(`reporte_historico_${data.fromYear}_${data.toYear}.pdf`);
+  })();
+}
+
+
+  // ==========================
+  // EXPORT EXCEL (se mantiene)
+  // ==========================
   exportarExcel() {
     if (!this.data?.series?.length) return;
 
@@ -269,7 +489,8 @@ export class ReportesHistoricoComponent {
     XLSX.utils.book_append_sheet(wb, ws, 'Historico');
 
     const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-    saveAs(new Blob([buf], { type: 'application/octet-stream' }),
+    saveAs(
+      new Blob([buf], { type: 'application/octet-stream' }),
       `reporte_historico_${this.data.fromYear}_${this.data.toYear}.xlsx`
     );
   }
