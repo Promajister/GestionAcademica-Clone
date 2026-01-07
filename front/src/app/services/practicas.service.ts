@@ -46,6 +46,7 @@ export type EstadoPractica =
 export interface Practica {
   id: number;
   estado: EstadoPractica;
+  nota_final?: number;
   fecha_inicio: string;
   fecha_termino?: string;
   tipo?: string;
@@ -133,5 +134,11 @@ export class PracticasService {
 
   actualizarEstado(id: number, estado: EstadoPractica): Observable<{ message: string; data: Practica }> {
     return this.http.patch<{ message: string; data: Practica }>(`${API_URL}/${id}/estado`, { estado });
+  }
+
+  actualizarNotaFinal(id: number, notaFinal: number): Observable<{ message: string; data: Practica }> {
+    return this.http.patch<{ message: string; data: Practica }>(`${API_URL}/${id}/nota-final`, {
+      nota_final: notaFinal,
+    });
   }
 }
