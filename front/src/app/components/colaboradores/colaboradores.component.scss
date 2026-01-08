@@ -85,47 +85,58 @@
   border: 1px solid #e2e8f0;
 }
 
-.FormHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 24px 24px 0;
-  border-bottom: 1px solid #f1f5f9;
-  margin-bottom: 24px;
+.FormHeader{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding: 18px 18px 16px;
+  border-bottom: 1px solid #eef2f7;
+  margin: 0;
+  
 }
 
-.FormTitleSection {
+.FormTitleSection{
   display: flex;
   align-items: center;
   gap: 12px;
-  flex: 1;
+  min-width: 0;
 }
 
-.FormIcon {
-  width: 40px;
-  height: 40px;
-  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-  border-radius: 10px;
+
+.FormIcon{
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display:grid;
+  place-items:center;
+  background: linear-gradient(135deg, #303880);
+  color:#fff;
+  box-shadow: 0 10px 22px rgba(15,23,42,.14);
+}
+
+.FormTitleSection{
   display: flex;
   align-items: center;
-  justify-content: center;
-  color: white;
-  flex-shrink: 0;
+  gap: 12px;
+  min-width: 0;
 }
 
-.FormTitles h2 {
+
+
+.FormTitles{
+  min-width: 0;
+}
+.FormTitles h2{
   margin: 0;
-  font-size: 20px;
-  font-weight: 600;
-  color: #1e293b;
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
 }
-
-.FormTitles p {
-  margin: 4px 0 0;
-  font-size: 14px;
-  color: #64748b;
+.FormTitles p{
+  margin: 3px 0 0;
+  font-size: 13px;
+  color: #475569;
 }
-
 .CloseFormBtn {
   color: #64748b;
   transition: color 0.2s ease;
@@ -136,7 +147,7 @@
 }
 
 .FormContent {
-  padding: 0 24px 24px;
+  padding: 18px 24px 24px;
 }
 
 .FormGrid {
@@ -145,11 +156,12 @@
   gap: 20px;
 }
 
-.FormRow {
+.FormRow{
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 14px;
   align-items: start;
+  margin-bottom: 4px;
 }
 
 .FormField.FullWidth {
@@ -458,10 +470,6 @@
   border-radius: 0 0 14px 14px;
 }
 
-/* Empty */
-.Empty { margin-top: 12px; }
-.EmptyContent { display: grid; place-items: center; gap: 8px; }
-
 ::ng-deep .success-snackbar {
   .mdc-snackbar__surface {
     background: #374151 !important;
@@ -664,8 +672,8 @@
   border-bottom: 1px solid #eef2f7;
   margin-bottom: 0;
   background:
-    radial-gradient(circle at 0% 0%, rgba(37,99,235,.10), transparent 55%),
-    radial-gradient(circle at 100% 0%, rgba(124,58,237,.10), transparent 55%),
+    radial-gradient(circle at 0% 0%, rgba(4, 65, 197, 0.16), transparent 55%),
+    radial-gradient(circle at 100% 0%, rgba(4, 65, 197, 0.16), transparent 60%),
     #ffffff;
 }
 
@@ -682,7 +690,7 @@
   border-radius: 14px;
   display: grid;
   place-items: center;
-  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  background: linear-gradient(135deg, #303880);
   color: #fff;
   box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
   flex: 0 0 auto;
@@ -911,8 +919,8 @@
 .hero__bg{
   position:absolute; inset:0;
   background:
-    radial-gradient(circle at 0% 10%, rgba(37,99,235,.16), transparent 55%),
-    radial-gradient(circle at 100% 0%, rgba(124,58,237,.14), transparent 60%),
+    radial-gradient(circle at 0% 10%, rgba(4, 65, 197, 0.16), transparent 55%),
+    radial-gradient(circle at 100% 0%, rgba(4, 65, 197, 0.16), transparent 60%),
     linear-gradient(180deg, rgba(2,6,23,.02), transparent 60%);
   pointer-events:none;
 }
@@ -922,7 +930,7 @@
   width: 54px; height: 54px; border-radius: 18px;
   display:grid; place-items:center;
   color:#fff;
-  background: linear-gradient(135deg,#2563eb,#7c3aed);
+  background: linear-gradient(135deg,#303880);
   box-shadow: 0 18px 28px rgba(15,23,42,.18);
   flex: 0 0 auto;
 }
@@ -1048,7 +1056,7 @@
 .center-card__accent{
   position:absolute; inset:0 auto 0 0;
   width: 6px;
-  background: linear-gradient(180deg,#2563eb,#7c3aed);
+  background: linear-gradient(180deg,#303880, #DEB01F);
 }
 .center-card__top{
   display:flex;
@@ -1062,7 +1070,7 @@
   display:grid; place-items:center;
   background: rgba(37,99,235,.10);
   border: 1px solid rgba(37,99,235,.20);
-  color: #2563eb;
+  color: #446BA9;
   flex: 0 0 auto;
 }
 .center-card__meta{ min-width: 0; flex: 1 1 auto; }
@@ -1210,4 +1218,41 @@
 .mini-ico mat-icon{
   width:18px; height:18px;
   font-size:18px; line-height:18px;
+}
+
+.form-topline{
+  height: 6px;
+  background: linear-gradient(90deg, #303880, #DEB01F);
+}
+
+
+/* =========================
+   EMPTY (igual a Centros)
+   ========================= */
+.empty-card{
+  margin-top: 12px;
+  border-radius: 18px;
+}
+
+.empty-content{
+  display:flex;
+  align-items:center;
+  gap: 12px;
+  padding: 18px 16px !important;
+}
+
+.empty-icon{
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display:grid;
+  place-items:center;
+  background: rgba(37,99,235,.08);
+  border: 1px solid rgba(37,99,235,.20);
+  color: #2563eb;
+}
+
+.empty-title{
+  font-weight: 900;
+  color:#0f172a;
 }

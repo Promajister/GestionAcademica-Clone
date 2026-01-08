@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, PLATFORM_ID } from '@angular/core';
+﻿import { Component, inject, OnInit, PLATFORM_ID } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -34,6 +34,7 @@ interface Actividad {
 interface PracticaEstudiante {
   id: number;
   estado: EstadoPractica;
+  notaFinal?: number;
   fechaInicio: string;
   fechaTermino?: string;
   tipo?: string;
@@ -74,7 +75,7 @@ export class EstudiantesEnPracticaComponent implements OnInit {
   estadoSeleccionado: 'all' | EstadoPractica = 'all';
   nivelSeleccionado: 'all' | string = 'all';
   
-  // ===== paginación =====
+  // ===== paginaciÃ³n =====
   pageIndex = 0;
   pageSize = 5;
   totalItems = 0;
@@ -84,15 +85,16 @@ export class EstudiantesEnPracticaComponent implements OnInit {
   practicas: PracticaEstudiante[] = [];
   cargando = false;
 
-  // Estado para diálogo de confirmación
-  mostrarConfirmarCambioEstado = false;
-  practicaACambiarEstado: PracticaEstudiante | null = null;
-  nuevoEstadoSeleccionado: EstadoPractica | null = null;
+  // Estado para diÃ¡logo de confirmaciÃ³n
+  mostrarDialogoNotaFinal = false;
+  practicaANotar: PracticaEstudiante | null = null;
 
   // Estado para modal de detalles
   mostrarModalDetalles = false;
   practicaSeleccionada: PracticaEstudiante | null = null;
   observaciones: Observacion[] = [];
+  notaFinalEditada: number | null = null;
+  guardandoNotaFinal = false;
 
   // Opciones de filtros
   estadosPractica: EstadoPractica[] = [
@@ -117,8 +119,8 @@ export class EstudiantesEnPracticaComponent implements OnInit {
         this.cargando = false;
       },
       error: (err) => {
-        console.error('Error al cargar prácticas:', err);
-        this.snack.open('Error al cargar estudiantes en práctica', 'Cerrar', { duration: 3000 });
+        console.error('Error al cargar prÃ¡cticas:', err);
+        this.snack.open('Error al cargar estudiantes en prÃ¡ctica', 'Cerrar', { duration: 3000 });
         this.cargando = false;
       }
     });
@@ -161,6 +163,7 @@ export class EstudiantesEnPracticaComponent implements OnInit {
     return {
       id: p.id,
       estado: p.estado,
+      notaFinal: typeof p.nota_final === 'number' ? p.nota_final : undefined,
       fechaInicio: formatearFecha(p.fecha_inicio) || p.fecha_inicio,
       fechaTermino: p.fecha_termino ? formatearFecha(p.fecha_termino) : undefined,
       tipo: p.tipo,
@@ -203,7 +206,7 @@ export class EstudiantesEnPracticaComponent implements OnInit {
     return formato[estado] || estado;
   }
 
-  // Función para formatear el tipo de centro educativo
+  // FunciÃ³n para formatear el tipo de centro educativo
   formatearTipoCentro(tipo: string | null | undefined): string {
     if (!tipo) return 'Sin especificar';
     const formato: Record<string, string> = {
@@ -244,10 +247,10 @@ export class EstudiantesEnPracticaComponent implements OnInit {
     return filtradas.slice(startIndex, endIndex);
   }
 
-  // Actualizar paginación cuando cambian los filtros o datos
+  // Actualizar paginaciÃ³n cuando cambian los filtros o datos
   actualizarPaginacion(): void {
     this.totalItems = this.estudiantesFiltrados.length;
-    // Asegurar que pageIndex no exceda el número de páginas disponibles
+    // Asegurar que pageIndex no exceda el nÃºmero de pÃ¡ginas disponibles
     const maxPage = Math.max(0, Math.ceil(this.totalItems / this.pageSize) - 1);
     if (this.pageIndex > maxPage) {
       this.pageIndex = maxPage;
@@ -266,81 +269,88 @@ export class EstudiantesEnPracticaComponent implements OnInit {
   }
 
   abrirDialogoCambioEstado(practica: PracticaEstudiante) {
-    this.practicaACambiarEstado = practica;
-    this.nuevoEstadoSeleccionado = practica.estado;
-    this.mostrarConfirmarCambioEstado = true;
+    this.practicaANotar = practica;
+    this.notaFinalEditada = practica.notaFinal ?? null;
+    this.mostrarDialogoNotaFinal = true;
   }
 
   cerrarDialogoCambioEstado() {
-    this.mostrarConfirmarCambioEstado = false;
-    this.practicaACambiarEstado = null;
-    this.nuevoEstadoSeleccionado = null;
+    this.mostrarDialogoNotaFinal = false;
+    this.practicaANotar = null;
+    this.notaFinalEditada = null;
   }
 
   confirmarCambioEstado() {
-    if (!this.practicaACambiarEstado || !this.nuevoEstadoSeleccionado) {
-      return;
-    }
+    this.guardarNotaFinal();
+  }
 
-    if (this.practicaACambiarEstado.estado === this.nuevoEstadoSeleccionado) {
-      this.cerrarDialogoCambioEstado();
-      return; // No hacer nada si el estado es el mismo
-    }
-
-    this.practicasService.actualizarEstado(
-      this.practicaACambiarEstado.id,
-      this.nuevoEstadoSeleccionado
-    ).subscribe({
-      next: (response) => {
-        // Actualizar el estado en la lista local
-        const index = this.practicas.findIndex(
-          p => p.id === this.practicaACambiarEstado!.id
-        );
-        if (index !== -1) {
-          this.practicas[index].estado = this.nuevoEstadoSeleccionado!;
-        }
-        
-        this.actualizarPaginacion();
-        
-        this.snack.open(
-          `✓ Estado actualizado a: ${this.formatearEstado(this.nuevoEstadoSeleccionado!)}`,
-          'Cerrar',
-          {
-            duration: 3000,
-            horizontalPosition: 'center',
-            verticalPosition: 'bottom',
-            panelClass: ['success-snackbar']
-          }
-        );
-        
-        this.cerrarDialogoCambioEstado();
-      },
-      error: (err) => {
-        console.error('Error al actualizar estado:', err);
-        let mensaje = 'Error al actualizar el estado de la práctica';
-        if (err.error && err.error.message) {
-          mensaje = err.error.message;
-        }
-        this.snack.open(mensaje, 'Cerrar', {
-          duration: 4000,
-          horizontalPosition: 'center',
-          verticalPosition: 'bottom',
-          panelClass: ['error-snackbar']
-        });
-      }
-    });
+  private obtenerPracticaParaNota(): PracticaEstudiante | null {
+    return this.practicaSeleccionada ?? this.practicaANotar;
   }
 
   verDetalles(practica: PracticaEstudiante) {
     this.practicaSeleccionada = practica;
     this.mostrarModalDetalles = true;
     this.cargarObservaciones(practica.id);
+    this.notaFinalEditada = practica.notaFinal ?? null;
   }
 
   cerrarDetalles() {
     this.practicaSeleccionada = null;
     this.mostrarModalDetalles = false;
     this.observaciones = [];
+    this.notaFinalEditada = null;
+    this.guardandoNotaFinal = false;
+  }
+
+  guardarNotaFinal() {
+    const practica = this.obtenerPracticaParaNota();
+    if (!practica || this.notaFinalEditada === null) {
+      this.snack.open('Ingresa una nota final valida.', 'Cerrar', { duration: 3000 });
+      return;
+    }
+
+    const notaFinal = Number(this.notaFinalEditada);
+    if (!Number.isFinite(notaFinal)) {
+      this.snack.open('Ingresa una nota final valida.', 'Cerrar', { duration: 3000 });
+      return;
+    }
+    if (notaFinal < 1 || notaFinal > 7) {
+      this.snack.open('La nota final debe estar entre 1 y 7.', 'Cerrar', { duration: 3000 });
+      return;
+    }
+
+    if (practica.notaFinal === notaFinal) {
+      return;
+    }
+
+    this.guardandoNotaFinal = true;
+    this.practicasService.actualizarNotaFinal(practica.id, notaFinal).subscribe({
+      next: (response) => {
+        const estadoActualizado = response.data.estado;
+        practica.notaFinal = notaFinal;
+        practica.estado = estadoActualizado;
+        const idx = this.practicas.findIndex(p => p.id === practica.id);
+        if (idx !== -1) {
+          this.practicas[idx].notaFinal = notaFinal;
+          this.practicas[idx].estado = estadoActualizado;
+        }
+        this.snack.open('Nota final actualizada exitosamente', 'Cerrar', { duration: 3000 });
+        this.guardandoNotaFinal = false;
+        if (this.mostrarDialogoNotaFinal) {
+          this.cerrarDialogoCambioEstado();
+        }
+      },
+      error: (err) => {
+        console.error('Error al actualizar nota final:', err);
+        const mensaje = err.error?.message || 'Error al actualizar la nota final';
+        this.snack.open(mensaje, 'Cerrar', { duration: 4000, panelClass: ['error-snackbar'] });
+        this.guardandoNotaFinal = false;
+        if (this.mostrarDialogoNotaFinal) {
+          this.cerrarDialogoCambioEstado();
+        }
+      }
+    });
   }
 
   cargarObservaciones(practicaId: number) {
@@ -367,3 +377,4 @@ export class EstudiantesEnPracticaComponent implements OnInit {
     });
   }
 }
+

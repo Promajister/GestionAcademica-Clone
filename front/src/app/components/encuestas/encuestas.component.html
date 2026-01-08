@@ -398,6 +398,17 @@
     </div>
 
     <div class="head-actions">
+      <button
+  mat-stroked-button
+  color="primary"
+  class="head-pill"
+  type="button"
+  (click)="downloadEstadisticasColaboradoresExcel()"
+>
+  <mat-icon>download</mat-icon>
+  Exportar Excel
+</button>
+
       <button mat-icon-button class="close-btn" (click)="cerrarEstadisticas()">
         <mat-icon>close</mat-icon>
       </button>
@@ -1806,52 +1817,91 @@
           <!-- TEXTO PERFIL DE EGRESO ANTES DE LA PREGUNTA -->
 
           <div class="perfil-egreso">
-            <h3>Perfil de egreso</h3>
+  <div class="section-head" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+    <h3 style="margin: 0;">Perfil de Egreso</h3>
+    <mat-form-field appearance="outline" style="width: 160px; font-size: 12px;">
+      <mat-label>Versión del Perfil</mat-label>
+      <mat-select [(ngModel)]="perfilSeleccionado" [ngModelOptions]="{standalone: true}">
+        <mat-option [value]="2025">Cohorte 2025</mat-option>
+        <mat-option [value]="2026">Cohorte 2026</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
 
-            <p>
-              La Carrera de Historia y Geografía establece un perfil de egreso ideal que representa
-              los conocimientos habilidades fundamentales que adquieren nuestros futuros profesores,
-              en su formación académica dentro del departamento, siendo algunas de las principales:
-            </p>
+  <div *ngIf="perfilSeleccionado === 2025">
+    <p>
+      La Carrera de Historia y Geografía establece un perfil de egreso ideal que representa
+      los conocimientos habilidades fundamentales que adquieren nuestros futuros profesores,
+      en su formación académica dentro del departamento, siendo algunas de las principales:
+    </p>
+    <ul>
+      <li>El Profesor de Historia y Geografía de la Universidad de Tarapacá es un profesional de la Educación que se caracteriza por desarrollar en sus estudiantes habilidades de razonamiento crítico en las dimensiones temporales y espaciales, con una visión holística de la realidad social desde distintas perspectivas y dentro de su contexto histórico espacial.</li>
+      <li>Este profesional de la educación es capaz de respaldar y fundamentar teóricamente hechos históricos a través de evidencias documentales, desmembrando la realidad que explicaría a sus estudiantes con un énfasis humanista, facilitando en ellos el desarrollo del pensamiento analítico, con una mirada integradora de lo social, político, económico y cultural en la dimensión global y local.</li>
+      <li>Comprende las características generales de los principales procesos que ha vivido la humanidad desde sus orígenes hasta nuestros días y su aplicación al conocimiento, funcionamiento y construcción de la sociedad a través de la Historia, Geografía y Ciencias Sociales y las preguntas propias de estas disciplinas.</li>
+      <li>Al mismo tiempo, este profesor estudia las temáticas culturales, geográficas y socio-históricas de la zona centro sur andina, vinculándose con los lineamientos institucionales a través de la valoración de la interculturalidad, potenciando esta característica en el aula, y liderando procesos de integración social y profesional, convirtiéndose así en un agente motivador.</li>
+      <li>Este profesor está preparado para enfrentar entornos cambiantes, es autónomo en su quehacer pedagógico, flexible, proactivo y propositivo. Se alinea a los objetivos estratégicos de la institución en la cual se desempeña, colaborando y trabajando en equipo para alcanzar las metas establecidas.</li>
+      <li>El egresado de Pedagogía en Historia y Geografía maneja técnicas en didáctica, de dinámicas de grupo y disciplinarias, que le permiten, al mismo tiempo, conectar la teoría con la práctica, ejemplificar su disciplina y crear un adecuado ambiente en el aula, generando significatividad en el aprendizaje de sus estudiantes.</li>
+    </ul>
+  </div>
 
-            <ul>
-              <li>
-                El Profesor de Historia y Geografía de la Universidad de Tarapacá es un profesional de la Educación
-                que se caracteriza por desarrollar en sus estudiantes habilidades de razonamiento crítico en las
-                dimensiones temporales y espaciales, con una visión holística de la realidad social desde distintas
-                perspectivas y dentro de su contexto histórico espacial.
-              </li>
-              <li>
-                Este profesional de la educación es capaz de respaldar y fundamentar teóricamente hechos históricos
-                a través de evidencias documentales, desmembrando la realidad que explicaría a sus estudiantes con
-                un énfasis humanista, facilitando en ellos el desarrollo del pensamiento analítico, con una mirada
-                integradora de lo social, político, económico y cultural en la dimensión global y local.
-              </li>
-              <li>
-                Comprende las características generales de los principales procesos que ha vivido la humanidad desde
-                sus orígenes hasta nuestros días y su aplicación al conocimiento, funcionamiento y construcción de la
-                sociedad a través de la Historia, Geografía y Ciencias Sociales y las preguntas propias de estas
-                disciplinas.
-              </li>
-              <li>
-                Al mismo tiempo, este profesor estudia las temáticas culturales, geográficas y socio-históricas de la
-                zona centro sur andina, vinculándose con los lineamientos institucionales a través de la valoración de
-                la interculturalidad, potenciando esta característica en el aula, y liderando procesos de integración
-                social y profesional, convirtiéndose así en un agente motivador.
-              </li>
-              <li>
-                Este profesor está preparado para enfrentar entornos cambiantes, es autónomo en su quehacer
-                pedagógico, flexible, proactivo y propositivo. Se alinea a los objetivos estratégicos de la institución
-                en la cual se desempeña, colaborando y trabajando en equipo para alcanzar las metas establecidas.
-              </li>
-              <li>
-                El egresado de Pedagogía en Historia y Geografía maneja técnicas en didáctica, de dinámicas de grupo y
-                disciplinarias, que le permiten, al mismo tiempo, conectar la teoría con la práctica, ejemplificar su
-                disciplina y crear un adecuado ambiente en el aula, generando significatividad en el aprendizaje de sus
-                estudiantes.
-              </li>
-            </ul>
-          </div>
+  <div *ngIf="perfilSeleccionado === 2026">
+    <p>
+      El egresado/a de la carrera de Pedagogía en Historia, Geografía y Ciencias Sociales de la Universidad de Tarapacá, es un/a profesional integral que demuestra competencias teórico-prácticas requeridas para desempeñarse en diversos contextos educativos, principalmente en la realidad transfronteriza del Norte Grande de Chile, desde un enfoque inclusivo con ética y responsabilidad social, fomentando la equidad de género y la interculturalidad.
+    </p>
+    <p>
+      Se caracteriza por poseer una sólida formación disciplinaria que le permite comprender la realidad local, regional y global, proyectando una sensibilidad hacia las distintas perspectivas sociales, generando estrategias pedagógicas que promuevan el cambio social, la equidad e inclusión educativa y la participación ciudadana.
+    </p>
+    
+    <p><strong>Ámbitos y competencias de egreso:</strong></p>
+    
+    <div style="margin-bottom: 10px;">
+      <strong>Desarrollo del Pensamiento Histórico y su Enseñanza</strong>
+      <ul style="margin-top: 5px;">
+        <li>Utiliza los elementos del pensamiento histórico y sus diversos componentes claves, para comprender acontecimientos, procesos históricos, continuidades entre el presente y pasado a diversas escalas.</li>
+        <li>Evalúa críticamente las relaciones entre los principales acontecimientos, procesos y conceptos de la historia local, nacional y global desde los orígenes de la humanidad hasta el presente.</li>
+        <li>Implementa en el aula estrategias didácticas y evaluativas que permitan a sus estudiantes valorar la construcción del pensamiento histórico y su utilidad.</li>
+      </ul>
+    </div>
+
+    <div style="margin-bottom: 10px;">
+      <strong>Gestión del Conocimiento Geográfico y su Enseñanza</strong>
+      <ul style="margin-top: 5px;">
+        <li>Interpreta el espacio geográfico como una construcción social que surge de la interrelación entre naturaleza y sociedad, con el fin de comprender y explicar procesos socio naturales.</li>
+        <li>Explica los componentes ambientales, económicos y culturales que influyen en la configuración del territorio a distintas escalas espaciales.</li>
+        <li>Planifica e implementa estrategias didácticas enfocadas en el pensamiento geográfico, incluyendo el análisis de información cartográfica e instrumentos de evaluación.</li>
+      </ul>
+    </div>
+
+    <div style="margin-bottom: 10px;">
+      <strong>Investigación e indagación aplicada</strong>
+      <ul style="margin-top: 5px;">
+        <li>Explica procesos históricos, geográficos y sociales a partir del uso de recursos variados de información, su sistematización e interpretación.</li>
+        <li>Utilizar el método científico para la comprensión de problemáticas y procesos territoriales, sociales y culturales.</li>
+        <li>Implementa estrategias didácticas para promover la investigación y el análisis crítico durante el proceso formativo.</li>
+      </ul>
+    </div>
+
+    <div style="margin-bottom: 10px;">
+      <strong>Formación ciudadana y ciencias sociales</strong>
+      <ul style="margin-top: 5px;">
+        <li>Fomenta la inclusión, equidad y desarrollo sostenible como componente natural y enriquecedor para la vida y la justicia social.</li>
+        <li>Promueve la participación política, el compromiso por los derechos humanos y desarrollo sustentable para una forma de vida democrática, el ejercicio de la ciudadanía y cuidado del medio ambiente.</li>
+        <li>Implementa experiencias de aprendizaje que fomenten la participación, el pensamiento crítico y deliberativo para valorar la vida en sociedad, el bien común, y el respeto de los derechos humanos.</li>
+      </ul>
+    </div>
+
+    <p>
+      Las competencias transversales del egresado/a de la Universidad de Tarapacá se fundamentan en una formación integral, demostrando habilidades sociales, compromiso social, uso de herramientas tecnológicas de la información y comunicación, orientación a la calidad, y gestión del conocimiento para dar respuestas a las necesidades de una sociedad global y diversa.
+    </p>
+
+    <p>
+      El egresado/a de Pedagogía en Historia, Geografía y Ciencias Sociales de la Universidad de Tarapacá puede desempeñarse en instituciones de educación pública, particular subvencionada, privada y en el ejercicio libre de la profesión.
+    </p>
+
+    <p>
+      El Profesor/a de Historia, Geografía y Ciencias Sociales de la Universidad de Tarapacá está habilitado/a para complementar su formación profesional mediante perfeccionamientos y estudios de postgrado, en razón al grado de Licenciado/a en Educación obtenido.
+    </p>
+  </div> </div> 
 
           <!-- PREGUNTA FINAL: PERFIL DE EGRESO -->
 

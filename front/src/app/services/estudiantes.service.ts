@@ -46,6 +46,7 @@ export interface Actividad {
   nombre_actividad: string;
   mes: string;
   estudiantes?: string | null;
+  terceros_asistieron?: boolean | null;
   fecha: string;
   horario?: string | null;
   lugar?: string | null;
@@ -76,6 +77,8 @@ export interface EstudianteQuery {
   semestre?: number;
   anio?: number;
   anioIngreso?: number;
+  page?: number;
+  limit?: number;
 }
 
 export interface ImportSummary {

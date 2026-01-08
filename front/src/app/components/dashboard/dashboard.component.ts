@@ -164,7 +164,7 @@ export class DashboardComponent implements OnInit {
           desc: 'Visualización de actividades',
         },
         {
-          title: 'Reportes completos',
+          title: 'Supervisión general',
           icon: 'analytics',
           route: '/reportes',
           desc: 'Reportes y estadísticas',
@@ -173,7 +173,25 @@ export class DashboardComponent implements OnInit {
           title: 'Generar solicitud',
           icon: 'description',
           route: '/carta',
-          desc: 'Generar cartas de presentación',
+          desc: 'Generar cartas de solicitud de prácticas',
+        },
+        {
+          title: 'Estudiantes',
+          icon: 'school',
+          route: '/estudiantes',
+          desc: 'Visualización de estudiantes',
+        },
+        {
+          title: 'Importar estudiantes',
+          icon: 'upload_file',
+          route: '/importar-estudiantes',
+          desc: 'Importar estudiantes desde excel',
+        },
+        {
+          title: 'Centros educativos',
+          icon: 'domain',
+          route: '/centros-educativos',
+          desc: 'Visualización de centros educativos',
         },
         ...comunes,
       ];

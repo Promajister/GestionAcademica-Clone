@@ -72,7 +72,10 @@ export class EstudianteService {
         : {}),
     };
 
-    const estudiantes = await this.prisma.estudiante.findMany({
+    const page = q.page && q.page > 0 ? q.page : 1;
+    const limit = q.limit && q.limit > 0 ? q.limit : undefined;
+
+    const query = Prisma.validator<Prisma.EstudianteFindManyArgs>()({
       where,
       orderBy: { nombre: 'asc' },
       include: {
@@ -82,7 +85,10 @@ export class EstudianteService {
           select: { estado: true, fecha_inicio: true, fecha_termino: true, tipo: true },
         },
       },
+      ...(limit ? { skip: (page - 1) * limit, take: limit } : {}),
     });
+
+    const estudiantes = await this.prisma.estudiante.findMany(query);
 
     return estudiantes.map((e) => ({
       rut: e.rut,
@@ -113,16 +119,26 @@ export class EstudianteService {
       },
       include: {
         practicas: {
-          orderBy: { fecha_inicio: 'desc' },
-          include: {
-            practicaColaboradores: {
-              include: { colaborador: true },
-            },
-            practicaTutores: {
-              include: { tutor: true },
-            },
-          },
-        },
+  orderBy: { fecha_inicio: 'desc' },
+  include: {
+    centro: {
+      select: {
+        id: true,
+        nombre: true,
+        tipo: true,
+        region: true,
+        comuna: true,
+        direccion: true,
+        telefono: true,
+        correo: true,
+      },
+    },
+    practicaColaboradores: { include: { colaborador: true } },
+    practicaTutores: { include: { tutor: true } },
+  },
+},
+
+        
       },
     });
 
@@ -142,6 +158,7 @@ export class EstudianteService {
         orderBy: { fecha: 'desc' },
         select: {
           id: true,
+          nombre_actividad: true,
           estudiantes: true,
           fecha: true,
           horario: true,

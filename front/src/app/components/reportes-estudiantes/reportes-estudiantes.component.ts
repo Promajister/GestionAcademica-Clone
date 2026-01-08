@@ -1,11 +1,11 @@
-import { Component, inject, ViewChild } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { Subject, forkJoin, of } from 'rxjs';
-import { catchError, finalize, map, switchMap } from 'rxjs/operators';
+import { catchError, finalize, map } from 'rxjs/operators';
 
 import { MatListModule } from '@angular/material/list';
 import { MatCardModule } from '@angular/material/card';
@@ -17,8 +17,8 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatTableModule } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
-import { DetalleEstudianteDialogComponent } from './detalle-estudiante-dialog.component';
 
+import { DetalleEstudianteDialogComponent } from './detalle-estudiante-dialog.component';
 
 import {
   ReportesService,
@@ -53,7 +53,6 @@ import { saveAs } from 'file-saver';
 })
 export class ReportesEstudianteComponent {
   private reportesService = inject(ReportesService);
-
   private dialog = inject(MatDialog);
 
   // ===== listado server-side =====
@@ -78,12 +77,6 @@ export class ReportesEstudianteComponent {
   isSelected(rut: string): boolean {
     return this.selectedRuts.has(rut);
   }
-
-  // ===== modal detalle =====
-  estudianteSeleccionado: ReporteEstudiante | null = null;
-  mostrarDetalles = false;
-  loadingDetalle = false;
-  errorDetalle: string | null = null;
 
   displayedColumns = ['tipo', 'estado', 'semestre', 'centro', 'tutores', 'inicio', 'termino'];
 
@@ -131,7 +124,6 @@ export class ReportesEstudianteComponent {
           this.estudiantes = res.items ?? [];
           this.totalItems = res.total ?? 0;
 
-          // Tip UX: si estás en una página donde ya no hay items tras filtrar, vuelve a 0
           if (this.totalItems > 0 && this.estudiantes.length === 0 && this.pageIndex > 0) {
             this.pageIndex = 0;
             this.cargarListado(term);
@@ -205,14 +197,6 @@ export class ReportesEstudianteComponent {
     });
   }
 
-  cerrarDetalles() {
-    this.mostrarDetalles = false;
-    this.estudianteSeleccionado = null;
-    this.errorDetalle = null;
-    this.loadingDetalle = false;
-    document.body.classList.remove('student-modal-open');
-  }
-
   formatDate(value?: string | null): string {
     if (!value) return '—';
     const d = new Date(value);
@@ -246,80 +230,99 @@ export class ReportesEstudianteComponent {
     );
   }
 
-  private async loadImageAsDataURL(path: string): Promise<string> {
-    const res = await fetch(path);
-    const blob = await res.blob();
-    return await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
+  // ==========================
+  // PDF helpers
+  // ==========================
+  private async loadImageAsDataURLSafe(path: string): Promise<string | null> {
+    try {
+      const res = await fetch(path);
+      if (!res.ok) return null;
+      const blob = await res.blob();
+      return await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch {
+      return null;
+    }
   }
 
-  private addPdfHeaderFooter(
+  private drawPdfHeader(
     doc: jsPDF,
     opts: {
       title: string;
       subtitle: string;
       generatedText: string;
-      logoDataUrl?: string;
+      logoLeft?: string | null;
+      logoRight?: string | null;
     }
   ) {
     const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
 
-    // Paleta (similar al logo)
-    const NAVY: [number, number, number] = [10, 26, 75];   // azul marino
-    const GOLD: [number, number, number] = [245, 180, 0];  // dorado
+    const margin = 52;
+    const headerH = 92;
 
-    const marginX = 48;
+    const headerFill = [248, 250, 252];
+    const line = [229, 231, 235];
+    const text = [17, 24, 39];
+    const muted = [100, 116, 139];
 
-    // Banda superior
-    doc.setFillColor(...NAVY);
-    doc.rect(0, 0, pageWidth, 74, 'F');
+    doc.setFillColor(headerFill[0], headerFill[1], headerFill[2]);
+    doc.rect(0, 0, pageWidth, headerH, 'F');
 
-    // Línea dorada inferior (detalle)
-    doc.setFillColor(...GOLD);
-    doc.rect(0, 74, pageWidth, 3, 'F');
+    const drawLogo = (dataUrl: string | null | undefined, x: number, y: number, w: number, h: number) => {
+      if (!dataUrl) return;
+      doc.addImage(dataUrl, 'PNG', x, y, w, h);
+    };
 
-    // Título / subtítulo
-    doc.setTextColor(255, 255, 255);
+    drawLogo(opts.logoLeft, margin, 18, 76, 56);
+    drawLogo(opts.logoRight, pageWidth - margin - 76, 10, 76, 76);
+
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(16);
-    doc.text(opts.title, marginX, 34);
+    doc.setFontSize(14);
+    doc.setTextColor(text[0], text[1], text[2]);
+    doc.text(opts.title, pageWidth / 2, 36, { align: 'center' as any });
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
-    doc.setTextColor(230, 235, 255);
-    doc.text(opts.subtitle, marginX, 52);
+    doc.setTextColor(muted[0], muted[1], muted[2]);
+    doc.text(opts.subtitle, pageWidth / 2, 56, { align: 'center' as any });
 
-    doc.setTextColor(230, 235, 255);
     doc.setFontSize(9);
-    doc.text(opts.generatedText, marginX, 66);
+    doc.text(opts.generatedText, pageWidth / 2, 72, { align: 'center' as any });
 
-    // Logo arriba a la derecha (si existe)
-    if (opts.logoDataUrl) {
-      const logoSize = 46; // ajustable
-      const x = pageWidth - marginX - logoSize;
-      const y = 14;
-      // PNG recomendado
-      doc.addImage(opts.logoDataUrl, 'PNG', x, y, logoSize, logoSize);
-    }
+    doc.setDrawColor(line[0], line[1], line[2]);
+    doc.setLineWidth(1);
+    doc.line(margin, headerH, pageWidth - margin, headerH);
+  }
 
-    // Footer (línea + paginado)
+  private drawPdfFooter(doc: jsPDF, page: number, totalPages: number) {
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+
+    const margin = 52;
+    const line = [229, 231, 235];
+    const muted = [100, 116, 139];
+
     const footerY = pageHeight - 34;
-    doc.setDrawColor(210, 215, 230);
-    doc.line(marginX, footerY, pageWidth - marginX, footerY);
+
+    doc.setDrawColor(line[0], line[1], line[2]);
+    doc.setLineWidth(1);
+    doc.line(margin, footerY, pageWidth - margin, footerY);
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
-    doc.setTextColor(110);
-    const pageNumber = (doc as any).internal.getNumberOfPages?.() ?? 1;
-    // NOTA: El número final se ajusta al final en la export (ver abajo)
-    doc.text(`Página ${pageNumber}`, pageWidth - marginX, footerY + 18, { align: 'right' });
+    doc.setTextColor(muted[0], muted[1], muted[2]);
+
+    doc.text('Gestión Académica • Reporte de estudiantes', margin, pageHeight - 18);
+    doc.text(`Página ${page} / ${totalPages}`, pageWidth - margin, pageHeight - 18, { align: 'right' as any });
   }
 
+  // ==========================
+  // PDF export
+  // ==========================
   exportarSeleccionPDF() {
     if (!this.selectedCount || this.exporting) return;
 
@@ -336,119 +339,173 @@ export class ReportesEstudianteComponent {
               return;
             }
 
-            const logoDataUrl = await this.loadImageAsDataURL('assets/img/feh.png');
+            const [logoUta, logoFeh] = await Promise.all([
+              this.loadImageAsDataURLSafe('assets/img/uta.png'),
+              this.loadImageAsDataURLSafe('assets/img/feh.png'),
+            ]);
 
-            const NAVY: [number, number, number] = [10, 26, 75];
-            const GOLD: [number, number, number] = [245, 180, 0];
+            const doc = new jsPDF({ unit: 'pt', format: 'letter' });
 
-            const doc = new jsPDF({ unit: 'pt', format: 'a4' });
             const pageWidth = doc.internal.pageSize.getWidth();
-            const marginX = 48;
+            const pageHeight = doc.internal.pageSize.getHeight();
 
-            this.addPdfHeaderFooter(doc, {
-              title: 'Reporte de Estudiantes',
-              subtitle: 'Sistema de Prácticas · Jefatura de Carrera',
-              generatedText: `Generado: ${new Date().toLocaleString('es-CL')}`,
-              logoDataUrl,
-            });
+            const margin = 52;
+            const headerH = 92;
+            const top = headerH + 22;
+            const bottom = 54;
+            const contentW = pageWidth - margin * 2;
 
-            let y = 98;
+            const colors = {
+              text: [17, 24, 39] as [number, number, number],
+              muted: [100, 116, 139] as [number, number, number],
+              line: [229, 231, 235] as [number, number, number],
+              border: [209, 213, 219] as [number, number, number],
+              tableHead: [241, 245, 249] as [number, number, number],
+            };
+
+            const generatedText = `Generado: ${new Date().toLocaleString('es-CL')}`;
+
+            const headerData = {
+              title: 'REPORTE DE ESTUDIANTES',
+              subtitle: 'Registro académico y prácticas',
+              generatedText,
+              logoLeft: logoUta,
+              logoRight: logoFeh,
+            };
+
+            this.drawPdfHeader(doc, headerData);
+
+            let y = top;
+
+            const ensureSpace = (needed: number) => {
+              if (y + needed <= pageHeight - bottom) return;
+              doc.addPage();
+              this.drawPdfHeader(doc, headerData);
+              y = top;
+            };
+
+            const safe = (v: any) => (v === null || v === undefined || v === '' ? '—' : String(v));
+
+            const sectionTitle = (text: string) => {
+              y += 10;
+              ensureSpace(60);
+
+              doc.setFont('helvetica', 'bold');
+              doc.setFontSize(11);
+              doc.setTextColor(...colors.text);
+              doc.text(text.toUpperCase(), margin, y);
+
+              y += 8;
+              doc.setDrawColor(...colors.line);
+              doc.setLineWidth(1);
+              doc.line(margin, y, margin + 260, y);
+
+              y += 14;
+            };
 
             for (let idx = 0; idx < estudiantes.length; idx++) {
-              const est = estudiantes[idx];
+              const est: any = estudiantes[idx];
 
-              // Salto de página si queda poco espacio
-              if (y > 700) {
-                doc.addPage();
-                this.addPdfHeaderFooter(doc, {
-                  title: 'Reporte de Estudiantes',
-                  subtitle: 'Sistema de Prácticas · Jefatura de Carrera',
-                  generatedText: `Generado: ${new Date().toLocaleString('es-CL')}`,
-                  logoDataUrl,
-                });
-                y = 98;
-              }
+              // ===== Bloque estudiante (para que NO se mezcle visualmente) =====
+              ensureSpace(140);
 
-              // ===== “Card” de estudiante =====
-              // Fondo suave
+              doc.setDrawColor(...colors.border);
               doc.setFillColor(248, 250, 252);
-              doc.roundedRect(marginX, y - 10, pageWidth - marginX * 2, 56, 10, 10, 'F');
+              (doc as any).roundedRect(margin, y - 6, contentW, 60, 12, 12, 'FD');
 
-              // Barra lateral dorada (detalle)
-              doc.setFillColor(...GOLD);
-              doc.roundedRect(marginX, y - 10, 6, 56, 6, 6, 'F');
-
-              // Nombre
               doc.setFont('helvetica', 'bold');
-              doc.setFontSize(12.5);
-              doc.setTextColor(15);
-              doc.text(est.nombre, marginX + 14, y + 10);
+              doc.setFontSize(12);
+              doc.setTextColor(...colors.text);
+              doc.text(safe(est.nombre), margin + 14, y + 16);
 
-              // RUT y Plan
               doc.setFont('helvetica', 'normal');
               doc.setFontSize(10);
-              doc.setTextColor(90);
-              doc.text(`RUT: ${est.rut}`, marginX + 14, y + 28);
-              doc.text(`Plan: ${est.plan ?? '—'}`, marginX + 160, y + 28);
+              doc.setTextColor(...colors.muted);
+              doc.text(`RUT: ${safe(est.rut)}  •  Plan: ${safe(est.plan)}`, margin + 14, y + 34);
 
-              y += 64;
+              y += 76;
 
-              // ===== Tabla prácticas =====
-              const rows = (est.practicas ?? []).map((p: any) => [
-                p.tipo || '—',
-                p.estado || '—',
-                this.formatPeriodo(p),
-                p.centro || '—',
-                (p.tutores?.length ? p.tutores.join(', ') : '—'),
-                this.formatDate(p.fechaInicio),
-                this.formatDate(p.fechaTermino),
-              ]);
+              sectionTitle('Historial de prácticas');
 
-              if (rows.length) {
+              const practicas = est.practicas ?? [];
+
+              if (!practicas.length) {
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(10);
+                doc.setTextColor(...colors.muted);
+                doc.text('Sin prácticas registradas.', margin, y);
+                y += 14;
+              } else {
+                const cols = [
+                  { label: 'N°', w: 34 },
+                  { label: 'Tipo', w: 170 },
+                  { label: 'Estado', w: 82 },
+                  { label: 'Periodo', w: 86 },
+                  { label: 'Centro', w: contentW - (34 + 170 + 82 + 86) },
+                ];
+
                 autoTable(doc, {
                   startY: y,
-                  head: [['Tipo', 'Estado', 'Periodo', 'Centro', 'Supervisores', 'Inicio', 'Término']],
-                  body: rows,
+                  head: [[cols[0].label, cols[1].label, cols[2].label, cols[3].label, cols[4].label]],
+                  body: practicas.map((p: any, i: number) => [
+                    String(i + 1),
+                    safe(p.tipo),
+                    safe(p.estado),
+                    this.formatPeriodo(p),
+                    safe(p.centro),
+                  ]),
+                  margin: { left: margin, right: margin, top, bottom },
                   styles: {
                     font: 'helvetica',
                     fontSize: 9,
                     cellPadding: 6,
-                    textColor: 25,
-                    lineColor: [225, 230, 242],
-                    lineWidth: 0.6,
+                    textColor: colors.text as any,
+                    lineColor: colors.line as any,
+                    lineWidth: 0.8,
+                    overflow: 'linebreak',
                   },
                   headStyles: {
-                    fillColor: NAVY,
-                    textColor: 255,
+                    fillColor: colors.tableHead as any,
+                    textColor: colors.text as any,
                     fontStyle: 'bold',
+                    lineColor: colors.border as any,
+                    lineWidth: 1,
                   },
-                  alternateRowStyles: { fillColor: [245, 247, 252] },
-                  margin: { left: marginX, right: marginX },
-                  tableWidth: pageWidth - marginX * 2,
+                  alternateRowStyles: { fillColor: [248, 250, 252] as any },
+                  columnStyles: {
+                    0: { cellWidth: cols[0].w, halign: 'center' },
+                    1: { cellWidth: cols[1].w },
+                    2: { cellWidth: cols[2].w },
+                    3: { cellWidth: cols[3].w },
+                    4: { cellWidth: cols[4].w },
+                  },
+                  tableWidth: contentW,
                 });
 
                 // @ts-ignore
-                y = doc.lastAutoTable.finalY + 18;
-              } else {
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(10);
-                doc.setTextColor(120);
-                doc.text('Sin prácticas registradas.', marginX + 14, y + 10);
-                y += 28;
+                y = doc.lastAutoTable.finalY + 14;
               }
 
-              // Separador suave entre estudiantes
+              // Separador entre estudiantes (más claro)
               if (idx < estudiantes.length - 1) {
-                doc.setDrawColor(225, 230, 242);
-                doc.line(marginX, y, pageWidth - marginX, y);
-                y += 18;
+                ensureSpace(28);
+                doc.setDrawColor(...colors.line);
+                doc.setLineWidth(1);
+                doc.line(margin, y, pageWidth - margin, y);
+                y += 16;
               }
             }
 
-            // Guardar
+            const totalPages = (doc as any).getNumberOfPages();
+            for (let i = 1; i <= totalPages; i++) {
+              doc.setPage(i);
+              this.drawPdfHeader(doc, headerData);
+              this.drawPdfFooter(doc, i, totalPages);
+            }
+
             doc.save('reporte_estudiantes.pdf');
-          } catch (e) {
-            this.exportError = 'Error al generar PDF con logo.';
+          } catch {
+            this.exportError = 'Error al generar PDF.';
           }
         },
         error: () => {
@@ -457,6 +514,9 @@ export class ReportesEstudianteComponent {
       });
   }
 
+  // ==========================
+  // Excel export (recuperado)
+  // ==========================
   exportarSeleccionExcel() {
     if (!this.selectedCount || this.exporting) return;
 
@@ -467,61 +527,77 @@ export class ReportesEstudianteComponent {
       .pipe(finalize(() => (this.exporting = false)))
       .subscribe({
         next: (estudiantes) => {
-          if (!estudiantes.length) {
-            this.exportError = 'No se pudieron obtener datos para exportar.';
-            return;
-          }
-
-          const rows: any[] = [];
-
-          for (const est of estudiantes) {
-            const practicas = est.practicas ?? [];
-            if (!practicas.length) {
-              rows.push({
-                Estudiante: est.nombre,
-                RUT: est.rut,
-                Plan: est.plan ?? '',
-                Tipo: '',
-                Estado: '',
-                Periodo: '',
-                Centro: '',
-                Supervisores: '',
-                Inicio: '',
-                Termino: '',
-              });
-              continue;
+          try {
+            if (!estudiantes.length) {
+              this.exportError = 'No se pudieron obtener datos para exportar.';
+              return;
             }
 
-            for (const p of practicas as any[]) {
-              rows.push({
-                Estudiante: est.nombre,
-                RUT: est.rut,
-                Plan: est.plan ?? '',
-                Tipo: p.tipo ?? '',
-                Estado: p.estado ?? '',
-                Periodo: this.formatPeriodo(p),
-                Centro: p.centro ?? '',
-                Supervisores: (p.tutores?.length ? p.tutores.join(', ') : ''),
-                Inicio: this.formatDate(p.fechaInicio),
-                Termino: this.formatDate(p.fechaTermino),
-              });
+            const rows: any[] = [];
+
+            for (const est of estudiantes as any[]) {
+              const practicas = est.practicas ?? [];
+
+              if (!practicas.length) {
+                rows.push({
+                  Estudiante: est.nombre ?? '',
+                  RUT: est.rut ?? '',
+                  Plan: est.plan ?? '',
+                  Tipo: '',
+                  Estado: '',
+                  Periodo: '',
+                  Centro: '',
+                  Supervisores: '',
+                  Inicio: '',
+                  Termino: '',
+                });
+                continue;
+              }
+
+              for (const p of practicas) {
+                rows.push({
+                  Estudiante: est.nombre ?? '',
+                  RUT: est.rut ?? '',
+                  Plan: est.plan ?? '',
+                  Tipo: p.tipo ?? '',
+                  Estado: p.estado ?? '',
+                  Periodo: this.formatPeriodo(p),
+                  Centro: p.centro ?? '',
+                  Supervisores: Array.isArray(p.tutores) ? p.tutores.join(', ') : (p.tutores ?? ''),
+                  Inicio: this.formatDate(p.fechaInicio ?? p.fecha_inicio ?? null),
+                  Termino: this.formatDate(p.fechaTermino ?? p.fecha_termino ?? null),
+                });
+              }
             }
+
+            const worksheet = XLSX.utils.json_to_sheet(rows);
+
+            worksheet['!cols'] = [
+              { wch: 34 }, // Estudiante
+              { wch: 14 }, // RUT
+              { wch: 16 }, // Plan
+              { wch: 28 }, // Tipo
+              { wch: 14 }, // Estado
+              { wch: 12 }, // Periodo
+              { wch: 28 }, // Centro
+              { wch: 28 }, // Supervisores
+              { wch: 12 }, // Inicio
+              { wch: 12 }, // Termino
+            ];
+
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Reporte');
+
+            const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+            const blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
+            saveAs(blob, 'reporte_estudiantes.xlsx');
+          } catch {
+            this.exportError = 'Error al exportar Excel.';
           }
-
-          const worksheet = XLSX.utils.json_to_sheet(rows);
-          const workbook = XLSX.utils.book_new();
-          XLSX.utils.book_append_sheet(workbook, worksheet, 'Reporte');
-
-          const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-          const blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
-          saveAs(blob, 'reporte_estudiantes.xlsx');
         },
         error: () => {
           this.exportError = 'Error al exportar Excel.';
         },
       });
   }
-
-
-
 }

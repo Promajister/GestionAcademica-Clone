@@ -83,6 +83,7 @@ const anioActual = new Date().getFullYear();
 export class EncuestasComponent implements OnInit {
   // Inyección moderna de FormBuilder
   private fb = inject(FormBuilder);
+  public perfilSeleccionado: number = 2026;
 
   // Opcional: sanitizar nombres de hoja (máx 31 caracteres y sin caracteres raros)
 private sanitizeSheetName(name: string): string {
@@ -150,6 +151,53 @@ downloadEstadisticasEstudiantilesExcel(): void {
 
   saveAs(blob, 'estadisticas_encuestas_estudiantiles.xlsx');
 }
+downloadEstadisticasColaboradoresExcel(): void {
+  if (!this.estadisticasColaboradores || !this.estadisticasColaboradores.length) {
+    this.mostrarError('No hay estadísticas de colaboradores para exportar.');
+    return;
+  }
+
+  if (!this.totalEncuestasColaboradores) {
+    this.computeEstadisticasColaboradores();
+  }
+
+  const wb = XLSX.utils.book_new();
+
+  this.estadisticasColaboradores.forEach((grupo) => {
+    const columnas = this.getColumnasPorEscala(grupo.escala);
+
+    const header = [
+      'Aspecto a evaluar',
+      ...columnas.map((c) => c.label),
+      'Total encuestas',
+    ];
+
+    const data: any[][] = [header];
+
+    grupo.preguntas.forEach((p) => {
+      const row: any[] = [p.label];
+
+      columnas.forEach((col) => {
+        const conteo = (p.conteos && p.conteos[col.value]) || 0;
+        row.push(conteo);
+      });
+
+      row.push(p.totalEncuestas);
+      data.push(row);
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    XLSX.utils.book_append_sheet(wb, ws, this.sanitizeSheetName(grupo.titulo));
+  });
+
+  const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  const blob = new Blob([wbout], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  });
+
+  saveAs(blob, 'estadisticas_encuestas_colaboradores.xlsx');
+}
+
 
 
   // Claves de preguntas abiertas que se pueden editar posteriormente
@@ -818,6 +866,7 @@ downloadEstadisticasEstudiantilesExcel(): void {
     this.requestCloseSidenav();
     this.tipoRegistroActivo = tipo;
     this.selectedEncuesta = null;
+    this.perfilSeleccionado = 2026;
 
     if (tipo === 'ESTUDIANTIL') {
       this.registroForm = this.buildEstudiantilForm();

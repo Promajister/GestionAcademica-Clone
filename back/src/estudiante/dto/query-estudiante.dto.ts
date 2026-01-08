@@ -43,4 +43,14 @@ export class QueryEstudianteDto {
   @IsInt()
   @IsIn([1, 2])
   semestre?: number;
+
+  @IsOptional()
+  @Transform(({ value }) => (value !== undefined ? Number(value) : undefined))
+  @IsInt()
+  page?: number;
+
+  @IsOptional()
+  @Transform(({ value }) => (value !== undefined ? Number(value) : undefined))
+  @IsInt()
+  limit?: number;
 }
