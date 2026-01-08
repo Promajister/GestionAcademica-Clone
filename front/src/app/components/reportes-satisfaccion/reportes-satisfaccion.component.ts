@@ -287,10 +287,11 @@ export class ReportesSatisfaccionComponent {
       ['Prácticas (total)', safe(data.practicas.totalPracticas)],
       ['Estudiantes', safe(data.practicas.estudiantesUnicos)],
 
-      ['Aprobadas', `${safe(data.practicas.aprobadas)} (${safe(data.practicas.porcentajes.aprobadas)}%)`],
-      ['Reprobadas', `${safe(data.practicas.reprobadas)} (${safe(data.practicas.porcentajes.reprobadas)}%)`],
-      ['En curso', `${safe(data.practicas.enCurso)} (${safe(data.practicas.porcentajes.enCurso)}%)`],
-      ['% aprobación (solo evaluadas)', `${safe(data.practicas.porcentajeAprobacionEvaluadas)}%`],
+      ['Aprobadas', `${this.data.practicas.aprobadas} (${this.data.practicas.porcentajes.aprobadas}%)`],
+      ['Reprobadas', `${this.data.practicas.reprobadas} (${this.data.practicas.porcentajes.reprobadas}%)`],
+      ['En curso', `${this.data.practicas.enCurso} (${this.data.practicas.porcentajes.enCurso}%)`],
+
+      ['Colaboradores', String(this.data.practicas.colaboradoresUnicos)],
 
       ['Encuestas Estudiantes (registradas)', safe(data.encuestasEstudiantes.totalEncuestas)],
       ['Alternativas respondidas (Estudiantes)', safe(data.encuestasEstudiantes.totalAlternativasRespondidas)],
