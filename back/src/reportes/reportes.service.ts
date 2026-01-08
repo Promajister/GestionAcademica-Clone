@@ -1,13 +1,14 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'prisma/prisma.service';
+import { calcSatisfaccionFromRespuestas } from './utils/satisfaccion.util';
 
 @Injectable()
 export class ReportesService {
   constructor(private readonly prisma: PrismaService) {}
   
   private calcularSemestre(fecha: Date): 1 | 2 {
-    const mes = fecha.getMonth(); // 0..11
-    return mes <= 5 ? 1 : 2;      // Ene-Jun = 1, Jul-Dic = 2
+    const mes = fecha.getMonth();
+    return mes <= 5 ? 1 : 2;     
   }
 
   private rangoAnio(anio: number) {
@@ -442,10 +443,13 @@ export class ReportesService {
     if (semestre !== 1 && semestre !== 2) {
       throw new BadRequestException('Semestre inválido');
     }
-    
+
     const from = new Date(anio, semestre === 1 ? 0 : 6, 1);
     const to   = new Date(anio, semestre === 1 ? 6 : 12, 1);
 
+    // -------------------------
+    // PRÁCTICAS (incluye colaboradores)
+    // -------------------------
     const practicas = await this.prisma.practica.findMany({
       where: {
         fecha_inicio: { gte: from, lt: to },
@@ -454,11 +458,17 @@ export class ReportesService {
       select: {
         estudianteRut: true,
         estado: true,
+        practicaColaboradores: { select: { colaboradorId: true } }, // ✅
       },
     });
 
     const totalPracticas = practicas.length;
+
     const estudiantesUnicos = new Set(practicas.map(p => p.estudianteRut)).size;
+
+    const colaboradoresUnicos = new Set(
+      practicas.flatMap(p => p.practicaColaboradores?.map(pc => pc.colaboradorId) ?? [])
+    ).size;
 
     const aprobadas = practicas.filter(p => p.estado === 'APROBADO').length;
     const reprobadas = practicas.filter(p => p.estado === 'REPROBADO').length;
@@ -473,84 +483,46 @@ export class ReportesService {
       enCurso: pct(enCurso),
     };
 
-    const evaluadas = aprobadas + reprobadas;
-    const porcentajeAprobacionEvaluadas =
-      evaluadas > 0 ? Number(((aprobadas / evaluadas) * 100).toFixed(1)) : 0;
+    // -------------------------
+    // ENCUESTAS (por semestre relacionado)
+    // -------------------------
+    const whereEncuestas = {
+      semestre: { is: { anio, semestre } },
+      ...(tipo ? { tipo_practica: tipo } : {}),
+    };
 
-    // -------------------------
-    // ENCUESTAS: CANTIDAD = ENCUESTAS REGISTRADAS (NO respuestas por alternativa)
-    // -------------------------
     const [totalEncuestasEstudiantes, totalEncuestasColaboradores] = await Promise.all([
-      this.prisma.encuestaEstudiante.count({
-        where: {
-          fecha: { gte: from, lt: to },
-          ...(tipo ? { tipo_practica: tipo } : {}),
+      this.prisma.encuestaEstudiante.count({ where: whereEncuestas }),
+      this.prisma.encuestaColaborador.count({ where: whereEncuestas }),
+    ]);
+
+    const [encEst, encCol] = await Promise.all([
+      this.prisma.encuestaEstudiante.findMany({
+        where: whereEncuestas,
+        select: {
+          id: true,
+          respuestas: {
+            select: { alternativa: { select: { descripcion: true } } },
+          },
         },
       }),
-      this.prisma.encuestaColaborador.count({
-        where: {
-          fecha: { gte: from, lt: to },
-          ...(tipo ? { tipo_practica: tipo } : {}),
+      this.prisma.encuestaColaborador.findMany({
+        where: whereEncuestas,
+        select: {
+          id: true,
+          respuestas: {
+            select: { alternativa: { select: { descripcion: true } } },
+          },
         },
       }),
     ]);
 
-    // -------------------------
-    // SATISFACCIÓN: SOLO ALTERNATIVAS (preguntas cerradas)
-    // -------------------------
-    const calcSatisfaccion = (puntajes: number[], max = 5) => {
-      const totalAlternativasRespondidas = puntajes.length;
+    const respuestasEst = encEst.flatMap(e => e.respuestas ?? []);
+    const respuestasCol = encCol.flatMap(e => e.respuestas ?? []);
 
-      const promedio =
-        totalAlternativasRespondidas > 0
-          ? puntajes.reduce((s, p) => s + p, 0) / totalAlternativasRespondidas
-          : 0;
+    const satEst = calcSatisfaccionFromRespuestas(respuestasEst);
+    const satCol = calcSatisfaccionFromRespuestas(respuestasCol);
 
-      const porcentaje =
-        totalAlternativasRespondidas > 0 ? (promedio / max) * 100 : 0;
-
-      return {
-        totalAlternativasRespondidas,
-        promedioPuntaje: Number(promedio.toFixed(2)),
-        porcentajeSatisfaccion: Number(porcentaje.toFixed(1)),
-      };
-    };
-
-    // --------- RESPUESTAS (ALTERNATIVAS) ESTUDIANTES ----------
-    const respuestasEst = await this.prisma.respuestaSeleccionada.findMany({
-      where: {
-        alternativaId: { not: null },
-        alternativa: { puntaje: { gt: 0 } },
-        encuestaEstudiante: {
-          fecha: { gte: from, lt: to },
-          ...(tipo ? { tipo_practica: tipo } : {}),
-        },
-      },
-      select: { alternativa: { select: { puntaje: true } } },
-    });
-
-    const puntajesEst = respuestasEst.map(r => r.alternativa!.puntaje);
-
-    // --------- RESPUESTAS (ALTERNATIVAS) COLABORADORES ----------
-    const respuestasCol = await this.prisma.respuestaSeleccionada.findMany({
-      where: {
-        alternativaId: { not: null },
-        alternativa: { puntaje: { gt: 0 } },
-        encuestaColaborador: {
-          fecha: { gte: from, lt: to },
-          ...(tipo ? { tipo_practica: tipo } : {}),
-        },
-      },
-      select: { alternativa: { select: { puntaje: true } } },
-    });
-
-    const puntajesCol = respuestasCol.map(r => r.alternativa!.puntaje);
-
-    const MAX_PUNTAJE = 5;
-
-    // -------------------------
-    // RESPUESTA FINAL
-    // -------------------------
     return {
       anio,
       semestre,
@@ -559,21 +531,29 @@ export class ReportesService {
       practicas: {
         totalPracticas,
         estudiantesUnicos,
+        colaboradoresUnicos, // ✅ ahora sí definido
         aprobadas,
         reprobadas,
         enCurso,
         porcentajes,
-        porcentajeAprobacionEvaluadas,
       },
 
       encuestasEstudiantes: {
-        totalEncuestas: totalEncuestasEstudiantes, // ✅ esto es lo que tú llamas “cantidad de respuestas”
-        ...calcSatisfaccion(puntajesEst, MAX_PUNTAJE),
+        totalEncuestas: totalEncuestasEstudiantes,
+        totalAlternativasRespondidas: satEst.totalAlternativasRespondidas,
+        porcentajeSatisfaccion: satEst.porcentajeSatisfaccion,
+        totalScore: satEst.totalScore,
+        totalMaxScore: satEst.totalMaxScore,
+        totalExcluidas: satEst.totalExcluidas,
       },
 
       encuestasColaboradores: {
-        totalEncuestas: totalEncuestasColaboradores, // ✅ idem
-        ...calcSatisfaccion(puntajesCol, MAX_PUNTAJE),
+        totalEncuestas: totalEncuestasColaboradores,
+        totalAlternativasRespondidas: satCol.totalAlternativasRespondidas,
+        porcentajeSatisfaccion: satCol.porcentajeSatisfaccion,
+        totalScore: satCol.totalScore,
+        totalMaxScore: satCol.totalMaxScore,
+        totalExcluidas: satCol.totalExcluidas,
       },
 
       generatedAt: new Date().toISOString(),
