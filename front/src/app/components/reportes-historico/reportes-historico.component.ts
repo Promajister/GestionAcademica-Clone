@@ -204,13 +204,34 @@ export class ReportesHistoricoComponent {
 
   centrosToText(row: any): string {
     if (!row?.centrosPorTipo?.length) return '—';
-    return row.centrosPorTipo.map((x: any) => `${x.tipo}: ${x.total}`).join(' • ');
+
+    return row.centrosPorTipo
+      .map((x: any) => `${this.prettyTipoCentro(x.tipo)}: ${x.total}`)
+      .join(' • ');
   }
+
 
   listToText(list: string[]): string {
     if (!list?.length) return '—';
     return list.join(', ');
   }
+
+  private prettyTipoCentro(tipo: any): string {
+  const t = String(tipo ?? '').trim();
+
+  const map: Record<string, string> = {
+    PARTICULAR: 'Particular',
+    PARTICULAR_SUBVENCIONADO: 'Particular Subvencionado',
+    SLEP: 'SLEP',
+    NO_CONVENCIONAL: 'No convencional',
+    // por si viene con espacios o distinto formato:
+    'PARTICULAR SUBVENCIONADO': 'Particular Subvencionado',
+    'NO CONVENCIONAL': 'No convencional',
+  };
+
+  return map[t] ?? t; // fallback por si aparece uno nuevo
+}
+
 
   // ==========================
   // PDF helpers (estilo Estudiantes)

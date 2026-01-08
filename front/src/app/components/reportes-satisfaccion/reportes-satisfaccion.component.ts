@@ -291,7 +291,6 @@ export class ReportesSatisfaccionComponent {
       ['Reprobadas', `${this.data.practicas.reprobadas} (${this.data.practicas.porcentajes.reprobadas}%)`],
       ['En curso', `${this.data.practicas.enCurso} (${this.data.practicas.porcentajes.enCurso}%)`],
 
-      ['Colaboradores', String(this.data.practicas.colaboradoresUnicos)],
 
       ['Encuestas Estudiantes (registradas)', safe(data.encuestasEstudiantes.totalEncuestas)],
       ['Alternativas respondidas (Estudiantes)', safe(data.encuestasEstudiantes.totalAlternativasRespondidas)],
