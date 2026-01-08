@@ -253,4 +253,35 @@ export class PracticasService {
       data: updated,
     };
   }
+
+  async updateNotaFinal(id: number, notaFinal: number) {
+    const practica = await this.prisma.practica.findUnique({
+      where: { id },
+    });
+
+    if (!practica) {
+      throw new NotFoundException('Prǭctica no encontrada');
+    }
+
+    const estadoFinal =
+      notaFinal >= 4 ? EstadoPractica.APROBADO : EstadoPractica.REPROBADO;
+
+    const updated = await this.prisma.practica.update({
+      where: { id },
+      data: { nota_final: notaFinal, estado: estadoFinal as any },
+      include: {
+        estudiante: true,
+        centro: true,
+        practicaColaboradores: { include: { colaborador: true } },
+        practicaTutores: { include: { tutor: true } },
+      },
+    });
+
+    this.notifyChange('updated', updated);
+
+    return {
+      message: 'Nota final de la prǭctica actualizada exitosamente.',
+      data: updated,
+    };
+  }
 }

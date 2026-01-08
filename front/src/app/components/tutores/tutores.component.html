@@ -148,11 +148,12 @@
               mat-flat-button
               color="primary"
               class="SubmitBtn"
-              (click)="actualizarTutor()"
+              (click)="estaEditando ? actualizarTutor() : agregarTutor()"
               [disabled]="formularioTutor.invalid">
-              <mat-icon>save</mat-icon>
-              Guardar cambios
+              <mat-icon>{{ estaEditando ? 'save' : 'person_add' }}</mat-icon>
+              {{ estaEditando ? 'Guardar cambios' : 'Agregar tutor' }}
             </button>
+
 
           </div>
         </mat-card-content>
@@ -257,14 +258,19 @@
     </div>
   </mat-card>
 
-  @if (!cargando && totalItems === 0) {
-    <mat-card class="Elev Empty">
-      <mat-card-content class="Muted EmptyContent">
-        <mat-icon>group_off</mat-icon>
-        <p>No se encontraron tutores con los filtros seleccionados.</p>
-      </mat-card-content>
-    </mat-card>
-  }
+  <!-- EMPTY (igual a Centros) -->
+<mat-card *ngIf="!cargando && totalItems === 0" class="elev empty-card">
+  <mat-card-content class="empty-content">
+    <div class="empty-icon">
+      <mat-icon>group_off</mat-icon>
+    </div>
+    <div>
+      <div class="empty-title">Sin resultados</div>
+      <div class="muted">No se encontraron tutores con los filtros seleccionados.</div>
+    </div>
+  </mat-card-content>
+</mat-card>
+
 
   <!-- MODAL DETALLES (lo dejas tal cual lo tenías) -->
   @if (tutorSeleccionado) {

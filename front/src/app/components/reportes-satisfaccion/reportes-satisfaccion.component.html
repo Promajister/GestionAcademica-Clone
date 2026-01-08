@@ -1,15 +1,12 @@
+<div class="satisfaccion container section">
 
-
-<div class="container section satisfaccion">
-
-  <!-- HEADER -->
-  <div class="header">
-    <button mat-stroked-button color="primary" routerLink="/reportes">
+  <div class="topbar">
+    <button mat-stroked-button color="primary" routerLink="/reportes" class="btn-back">
       <mat-icon>arrow_back</mat-icon>
       Volver a Reportes
     </button>
 
-    <div class="headline">
+    <div class="titles">
       <h1>Reportes de Satisfacción</h1>
       <p class="muted">
         Filtra por año, semestre y tipo de práctica para obtener el resumen de satisfacción.
@@ -17,21 +14,54 @@
     </div>
 
     <div class="spacer"></div>
+
+    <!-- acciones rápidas (siempre visibles) -->
+    <div class="top-actions">
+      <button
+        mat-stroked-button
+        color="primary"
+        class="btn-pill"
+        (click)="exportarPDF()"
+        [disabled]="!canExport || loading">
+        <mat-icon>picture_as_pdf</mat-icon>
+        Exportar PDF
+      </button>
+
+      <button
+        mat-stroked-button
+        color="accent"
+        class="btn-pill"
+        (click)="exportarExcel()"
+        [disabled]="!canExport || loading">
+        <mat-icon>grid_on</mat-icon>
+        Exportar Excel
+      </button>
+    </div>
   </div>
 
   <!-- FILTROS -->
-  <mat-card class="elev" style="margin-top: 12px;">
+  <mat-card class="card elev">
     <mat-card-content>
 
-      <div class="filters">
+      <form class="filters" (ngSubmit)="buscar()">
+
         <mat-form-field appearance="outline">
           <mat-label>Año</mat-label>
-          <input matInput type="number" [(ngModel)]="anio" />
+          <input
+            matInput
+            type="number"
+            name="anio"
+            [(ngModel)]="anio"
+            (ngModelChange)="onFiltersChanged()" />
+          <mat-hint>Ej: 2026</mat-hint>
         </mat-form-field>
 
         <mat-form-field appearance="outline">
           <mat-label>Semestre</mat-label>
-          <mat-select [(ngModel)]="semestre">
+          <mat-select
+            name="semestre"
+            [(ngModel)]="semestre"
+            (ngModelChange)="onFiltersChanged()">
             <mat-option [value]="1">1</mat-option>
             <mat-option [value]="2">2</mat-option>
           </mat-select>
@@ -39,7 +69,10 @@
 
         <mat-form-field appearance="outline" class="ff-lg">
           <mat-label>Tipo de práctica</mat-label>
-          <mat-select [(ngModel)]="tipo">
+          <mat-select
+            name="tipo"
+            [(ngModel)]="tipo"
+            (ngModelChange)="onFiltersChanged()">
             <mat-option [value]="null">Todas</mat-option>
             <mat-option *ngFor="let t of tiposPractica" [value]="t.value">
               {{ t.label }}
@@ -47,32 +80,39 @@
           </mat-select>
         </mat-form-field>
 
-        <button mat-raised-button color="primary" (click)="buscar()" [disabled]="loading">
+        <button mat-raised-button color="primary" class="btn-search" type="submit" [disabled]="loading">
           <mat-icon>search</mat-icon>
           Buscar
         </button>
-      </div>
+      </form>
 
-      <!-- ACCIONES -->
-      <div class="actions" *ngIf="data">
-        <button mat-stroked-button color="primary" (click)="exportarPDF()" [disabled]="loading">
-          <mat-icon>picture_as_pdf</mat-icon>
-          Exportar PDF
-        </button>
+      <!-- resumen / estado -->
+      <div class="meta" *ngIf="hasSearched">
+        <span class="pill">
+          <mat-icon>event</mat-icon>
+          {{ anio }} · S{{ semestre }}
+        </span>
 
-        <button mat-stroked-button color="accent" (click)="exportarExcel()" [disabled]="loading">
-          <mat-icon>grid_on</mat-icon>
-          Exportar Excel
-        </button>
+        <span class="pill" *ngIf="tipo; else tipoTodas">
+          <mat-icon>school</mat-icon>
+          {{ tipo }}
+        </span>
+        <ng-template #tipoTodas>
+          <span class="pill">
+            <mat-icon>school</mat-icon>
+            Tipo: Todas
+          </span>
+        </ng-template>
       </div>
 
       <!-- LOADING -->
-      <div class="center" *ngIf="loading" style="margin-top: 12px;">
-        <mat-spinner diameter="32"></mat-spinner>
+      <div class="state" *ngIf="loading">
+        <mat-spinner diameter="28"></mat-spinner>
+        <span class="muted">Cargando reporte...</span>
       </div>
 
       <!-- ERROR -->
-      <p class="muted" *ngIf="!loading && error" style="margin-top: 12px;">
+      <p class="muted error" *ngIf="!loading && error">
         {{ error }}
       </p>
 
@@ -80,14 +120,15 @@
   </mat-card>
 
   <!-- DATA -->
-  <div *ngIf="data" class="grid" style="margin-top: 12px;">
+  <div *ngIf="data" class="grid">
 
-    <mat-card class="elev">
+    <!-- Resumen -->
+    <mat-card class="card elev">
       <mat-card-content>
         <div class="section-title">Resumen</div>
-        <div class="meta">
+        <div class="sub-meta muted">
           Año {{ data.anio }} · Semestre {{ data.semestre }} ·
-          <span class="pill">{{ data.tipo ?? 'Todas' }}</span>
+          <span class="pill pill-soft">{{ data.tipo ?? 'Todas' }}</span>
         </div>
 
         <div class="kpis">
@@ -97,26 +138,27 @@
           </div>
 
           <div class="kpi">
-            <div class="kpi-label">Estudiantes únicos</div>
+            <div class="kpi-label">Estudiantes</div>
             <div class="kpi-value">{{ data.practicas.estudiantesUnicos }}</div>
           </div>
 
           <div class="kpi accent">
-            <div class="kpi-label">% Aprobación (evaluadas)</div>
-            <div class="kpi-value">{{ data.practicas.porcentajeAprobacionEvaluadas }}%</div>
+            <div class="kpi-label">Colaboradores</div>
+            <div class="kpi-value">{{ data.practicas.colaboradoresUnicos }}</div>
           </div>
         </div>
       </mat-card-content>
     </mat-card>
 
-    <mat-card class="elev">
+    <!-- Estado prácticas -->
+    <mat-card class="card elev">
       <mat-card-content>
         <div class="section-title">Estado de prácticas</div>
 
         <div class="rows">
           <div class="row">
             <div class="row-left">
-              <mat-icon>check_circle</mat-icon>
+              <span class="ico ok"><mat-icon>check_circle</mat-icon></span>
               <span>Aprobadas</span>
             </div>
             <div class="row-right">
@@ -127,7 +169,7 @@
 
           <div class="row">
             <div class="row-left">
-              <mat-icon>cancel</mat-icon>
+              <span class="ico bad"><mat-icon>cancel</mat-icon></span>
               <span>Reprobadas</span>
             </div>
             <div class="row-right">
@@ -138,7 +180,7 @@
 
           <div class="row">
             <div class="row-left">
-              <mat-icon>hourglass_top</mat-icon>
+              <span class="ico warn"><mat-icon>hourglass_top</mat-icon></span>
               <span>En curso</span>
             </div>
             <div class="row-right">
@@ -150,11 +192,12 @@
       </mat-card-content>
     </mat-card>
 
-    <mat-card class="elev">
+    <!-- Encuestas Estudiantes -->
+    <mat-card class="card elev">
       <mat-card-content>
         <div class="section-title">Encuestas · Estudiantes</div>
 
-        <div class="kpis two">
+        <div class="kpis three">
           <div class="kpi">
             <div class="kpi-label">Encuestas</div>
             <div class="kpi-value">{{ data.encuestasEstudiantes.totalEncuestas }}</div>
@@ -173,11 +216,12 @@
       </mat-card-content>
     </mat-card>
 
-    <mat-card class="elev">
+    <!-- Encuestas Colaboradores -->
+    <mat-card class="card elev">
       <mat-card-content>
         <div class="section-title">Encuestas · Colaboradores</div>
 
-        <div class="kpis two">
+        <div class="kpis three">
           <div class="kpi">
             <div class="kpi-label">Encuestas</div>
             <div class="kpi-value">{{ data.encuestasColaboradores.totalEncuestas }}</div>
@@ -197,4 +241,16 @@
     </mat-card>
 
   </div>
+
+  <!-- EMPTY STATE: solo después de buscar Y sin cambios pendientes -->
+  <mat-card class="card elev empty"
+    *ngIf="hasSearched && !loading && !error && !data && !filtersDirty">
+    <mat-card-content class="center-col">
+      <mat-icon>info</mat-icon>
+      <div class="empty-title">Sin resultados</div>
+      <div class="muted">Prueba cambiando el año, semestre o tipo de práctica.</div>
+    </mat-card-content>
+  </mat-card>
+
 </div>
+

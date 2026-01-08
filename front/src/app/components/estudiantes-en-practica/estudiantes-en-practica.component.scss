@@ -360,6 +360,7 @@
 .KV--full{ grid-column: 1 / -1; }
 .K{ font-size: 12px; color: #64748b; font-weight: 700; margin-bottom: 2px; }
 .V{ font-size: 14px; color:#0f172a; font-weight: 700; word-break: break-word; }
+.NotaFinalField{ width: 100%; }
 
 .PeopleList{ display:flex; flex-direction: column; gap: 10px; }
 .PersonRow{ background:#fff; border:1px solid #e5e7eb; border-radius: 12px; padding: 12px 14px; }
@@ -533,3 +534,33 @@
   font-size: 24px !important;
 }
 
+/* =========================
+   EMPTY (unificado)
+   ========================= */
+.empty-card{
+  margin-top: 12px;
+  border-radius: 18px;
+}
+
+.empty-content{
+  display:flex;
+  align-items:center;
+  gap: 12px;
+  padding: 18px 16px !important;
+}
+
+.empty-icon{
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display:grid;
+  place-items:center;
+  background: rgba(37,99,235,.08);
+  border: 1px solid rgba(37,99,235,.20);
+  color: #2563eb;
+}
+
+.empty-title{
+  font-weight: 900;
+  color:#0f172a;
+}

@@ -4,6 +4,7 @@ import { CreatePracticaDto } from './dto/crear-practica.dto';
 import { ConsultasPracticasDto } from './dto/consultar-practicas-dto';
 import { ConsultasJefaturaDto } from './dto/consultar-jefatura.dto';
 import { ActualizarEstadoDto } from './dto/actualizar-estado.dto';
+import { ActualizarNotaFinalDto } from './dto/actualizar-nota-final.dto';
 import { Sse } from '@nestjs/common';
 import { Observable, map } from 'rxjs';
 import { JwtCookieAuthGuard } from '../auth/guards/jwt-cookie-auth.guard';
@@ -44,6 +45,16 @@ export class PracticasController {
     @Body() dto: ActualizarEstadoDto,
   ) {
     return this.service.updateEstado(id, dto.estado);
+  }
+
+  @Patch(':id/nota-final')
+  @Roles('jefatura')
+  @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+  async updateNotaFinal(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: ActualizarNotaFinalDto,
+  ) {
+    return this.service.updateNotaFinal(id, dto.nota_final);
   }
   
   @Get(':id')

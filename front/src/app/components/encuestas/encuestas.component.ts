@@ -274,22 +274,22 @@ downloadEstadisticasColaboradoresExcel(): void {
   ];
 
   opcionesSiNo = [
-    { value: 'SI', label: 'Si' },
+    { value: 'SI', label: 'Sí' },
     { value: 'NO', label: 'No' },
   ];
 
   opcionesNormativas = [
-    { value: 'SI', label: 'Si' },
+    { value: 'SI', label: 'Sí' },
     { value: 'NO', label: 'No' },
-    { value: 'NS', label: 'No existe/no sabe' },
+    { value: 'NS', label: 'No existe / no sabe' },
   ];
 
   opcionesParticipacion = [
-    { value: 'A_P', label: 'Asisti y pude participar' },
-    { value: 'A_N', label: 'Asisti, pero no intervine' },
-    { value: 'R_NA', label: 'Se realizo, pero no asisti' },
-    { value: 'R_NI', label: 'Se realizo, pero no fui invitado' },
-    { value: 'NR', label: 'No se realizo' },
+    { value: 'A_P', label: 'Asistí y pude participar' },
+    { value: 'A_N', label: 'Asistí, pero no intervine' },
+    { value: 'R_NA', label: 'Se realizó, pero no asistí' },
+    { value: 'R_NI', label: 'Se realizó, pero no fui invitado' },
+    { value: 'NR', label: 'No se realizó' },
   ];
 
   tiposEncuesta = [
@@ -481,17 +481,17 @@ downloadEstadisticasColaboradoresExcel(): void {
   };
 
   private siNoTexto: Record<string, string> = {
-    SI: 'Si',
+    SI: 'Sí',
     NO: 'No',
     NS: 'No existe / no sabe',
   };
 
   private participacionTexto: Record<string, string> = {
-    A_P: 'Asisti y pude participar',
-    A_N: 'Asisti, pero no intervine',
-    R_NA: 'Se realizo, pero no asisti',
-    R_NI: 'Se realizo, pero no fui invitado',
-    NR: 'No se realizo',
+    A_P: 'Asistí y pude participar',
+    A_N: 'Asistí, pero no intervine',
+    R_NA: 'Se realizó, pero no asistí',
+    R_NI: 'Se realizó, pero no fui invitado',
+    NR: 'No se realizó',
   };
 
   private columnasEscala5 = [

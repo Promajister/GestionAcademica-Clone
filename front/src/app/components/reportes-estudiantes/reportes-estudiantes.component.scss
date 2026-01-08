@@ -1,113 +1,299 @@
 .re-students {
-  .muted { opacity: .8; }
-  .error { color: #b42318; opacity: 1; }
-  .spacer { flex: 1; }
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 18px 18px 26px;
 
-  .topbar {
-    display: flex;
-    align-items: flex-start;
-    gap: 14px;
+  .muted { opacity: .82; }
+  .error { color: #b42318; opacity: 1; }
+
+  // ===== HERO (igual que los otros) =====
+  .hero {
+    position: relative;
+    border-radius: 18px;
+    overflow: hidden;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    background: #fff;
     margin-bottom: 12px;
 
-    .btn-back { border-radius: 999px; }
+    &__bg {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(900px 260px at 0% 0%, rgba(30, 64, 175, 0.14), transparent 55%),
+        radial-gradient(700px 240px at 100% 0%, rgba(99, 102, 241, 0.10), transparent 55%),
+        linear-gradient(180deg, rgba(248,250,252,.9), rgba(248,250,252,.0));
+      pointer-events: none;
+    }
 
-    .titles {
+    &__content {
+      position: relative;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 16px 16px;
+    }
+
+    &__left {
+      display: flex;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    &__icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      background: rgba(30, 64, 175, 0.10);
+      border: 1px solid rgba(30, 64, 175, 0.18);
+
+      mat-icon { color: rgb(30, 64, 175); }
+    }
+
+    .eyebrow {
+      margin: 0 0 6px;
+      font-size: 12px;
+      letter-spacing: .2px;
+      opacity: .8;
+    }
+
+    &__titles {
+      min-width: 0;
+
       h1 {
         margin: 0;
         font-size: 26px;
-        font-weight: 800;
+        font-weight: 900;
         letter-spacing: -0.3px;
       }
+
       p {
         margin: 6px 0 0;
         font-size: 13px;
       }
     }
-  }
 
-  .bulkbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin: 6px 0 14px;
-
-    .bulk-left {
+    &__chips {
+      margin-top: 10px;
       display: flex;
-      align-items: center;
       gap: 10px;
       flex-wrap: wrap;
     }
 
-    .btn-pill {
-      border-radius: 999px;
-      padding: 0 14px;
-    }
-
-    .btn-link {
-      border-radius: 999px;
-    }
-
-    .exporting { margin-left: 6px; }
-  }
-
-  .card {
-    border-radius: 14px;
-  }
-
-  .search-card {
-    .search-row {
-      display: flex;
+    .chip {
+      display: inline-flex;
       align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
+      gap: 8px;
+      padding: 7px 11px;
+      border-radius: 999px;
+      border: 1px solid rgba(15, 23, 42, 0.12);
+      background: rgba(248, 250, 252, 0.92);
+      font-size: 12px;
 
-      .search-field {
-        min-width: 320px;
-        flex: 1;
+      mat-icon {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+        opacity: .9;
       }
+    }
+
+    .chip-warn {
+      border-color: rgba(234, 179, 8, 0.30);
+      background: rgba(234, 179, 8, 0.10);
+    }
+
+    &__actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+  }
+
+  // ===== Cards =====
+  .card {
+    border-radius: 16px;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+  }
+
+  // ===== Toolbar (export + search) =====
+  // ===== Toolbar (export + search) =====
+.header-card {
+  margin-top: 10px;
+
+  mat-card-content {
+    padding: 12px 12px;
+  }
+
+  .toolbar {
+    display: grid;
+    grid-template-columns: 1.2fr 1px 1fr;
+    gap: 12px;
+    align-items: center;
+
+    padding: 10px 12px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid rgba(15, 23, 42, 0.06);
+  }
+
+  .toolbar__divider {
+    height: 44px;
+    background: rgba(15, 23, 42, 0.08);
+    border-radius: 999px;
+    justify-self: center;
+  }
+
+  .toolbar__left {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  .toolbar__meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    flex-wrap: wrap;
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      opacity: .85;
+    }
+
+    .dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.25);
+    }
+  }
+
+  .toolbar__actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .btn-pill {
+    border-radius: 999px;
+    padding: 0 14px;
+    height: 38px;
+  }
+
+  .btn-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 999px;
+    border: 1px solid rgba(15, 23, 42, 0.10);
+  }
+
+  .toolbar__right {
+    display: grid;
+    grid-template-columns: 22px 1fr auto;
+    gap: 10px;
+    align-items: center;
+    min-width: 0;
+
+    .search-field {
+      width: 100%;
+      min-width: 240px;
+    }
+
+    .counter {
+      white-space: nowrap;
+    }
+  }
+
+  @media (max-width: 860px) {
+    .toolbar {
+      grid-template-columns: 1fr;
+    }
+
+    .toolbar__divider {
+      display: none;
+    }
+
+    .toolbar__left {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .toolbar__actions {
+      justify-content: flex-start;
+    }
+
+    .toolbar__right {
+      grid-template-columns: 22px 1fr;
 
       .counter {
-        white-space: nowrap;
+        grid-column: 1 / -1;
       }
     }
   }
+}
 
+
+  // ===== Lista =====
   .list-card {
     margin-top: 12px;
+
+    mat-card-content {
+      padding-top: 12px;
+    }
 
     .list-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 4px 2px 10px;
+      padding: 4px 2px 12px;
     }
 
     .rows {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
     }
 
     .row {
       display: grid;
       grid-template-columns: 34px 1fr auto;
       align-items: center;
-      gap: 10px;
-      padding: 10px 12px;
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.65);
+      gap: 12px;
+      padding: 12px 12px;
+      border-radius: 14px;
+
+      background: rgba(255, 255, 255, 0.78);
       border: 1px solid rgba(15, 23, 42, 0.08);
+      box-shadow: 0 1px 0 rgba(2, 6, 23, 0.02);
+
+      transition: transform .08s ease, background .12s ease, border-color .12s ease;
 
       &:hover {
         border-color: rgba(15, 23, 42, 0.16);
-        background: rgba(255, 255, 255, 0.9);
+        background: rgba(255, 255, 255, 0.95);
+        transform: translateY(-1px);
+      }
+
+      &.row-selected {
+        border-color: rgba(30, 64, 175, 0.25);
+        background: rgba(30, 64, 175, 0.06);
       }
 
       .row-main {
         min-width: 0;
 
         .row-name {
-          font-weight: 800;
+          font-weight: 900;
           letter-spacing: .1px;
           white-space: nowrap;
           overflow: hidden;
@@ -116,7 +302,7 @@
 
         .row-sub {
           font-size: 12px;
-          margin-top: 2px;
+          margin-top: 3px;
         }
       }
 
@@ -139,168 +325,38 @@
     }
 
     .paginator-wrap {
-      margin-top: 8px;
+      margin-top: 10px;
       border-top: 1px solid rgba(15, 23, 42, 0.08);
-      padding-top: 6px;
+      padding-top: 8px;
     }
   }
 }
 
-/* =========================
-   MODAL (overlay real)
-   ========================= */
-.DetailsDialog {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-
-  display: grid;
-  place-items: center;
-  padding: 18px;
+/* ===== DIALOG =====
+   Recomendación: en vez de fixed + overlay custom, usa MatDialog y define:
+   dialogRef = this.dialog.open(Detalle..., { panelClass: 'ga-dialog', backdropClass: 'ga-backdrop' })
+   Así queda igual a todos.
+*/
+.ga-backdrop {
+  background: rgba(2, 6, 23, 0.55) !important;
+  backdrop-filter: blur(3px);
 }
 
-.DialogOverlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(2, 6, 23, 0.55);
-  backdrop-filter: blur(2px);
-}
-
-.DialogContent {
-  position: relative;
-  width: min(980px, calc(100vw - 24px));
-  max-height: calc(100vh - 24px);
+.ga-dialog .mat-mdc-dialog-container {
+  border-radius: 18px;
   overflow: hidden;
-
-  background: #fff;
-  border-radius: 16px;
   box-shadow: 0 24px 60px rgba(2, 6, 23, 0.35);
   border: 1px solid rgba(15, 23, 42, 0.12);
-
-  display: flex;
-  flex-direction: column;
 }
 
-.DialogHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-
-  padding: 14px 14px 10px;
-  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
-
-  .DialogHeaderLeft {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    min-width: 0;
-  }
-
-  .DialogAvatar {
-    width: 42px;
-    height: 42px;
-    border-radius: 12px;
-    display: grid;
-    place-items: center;
-
-    background: rgba(30, 64, 175, 0.10);
-    border: 1px solid rgba(30, 64, 175, 0.20);
-
-    mat-icon { color: rgb(30, 64, 175); }
-  }
-
-  .DialogTitles {
-    min-width: 0;
-    h2 {
-      margin: 0;
-      font-size: 18px;
-      font-weight: 900;
-      letter-spacing: -0.2px;
-    }
-
-    .DialogSubtitle {
-      margin-top: 4px;
-      font-size: 13px;
-      opacity: .85;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: min(700px, 70vw);
-    }
-  }
-
-  .CloseBtn { border-radius: 999px; }
+:host ::ng-deep .ga-backdrop {
+  background: rgba(2, 6, 23, 0.55) !important;
+  backdrop-filter: blur(3px);
 }
 
-.DialogBody {
-  padding: 14px;
-  overflow: auto;
-
-  .state {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 0;
-  }
-
-  .chips {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-bottom: 10px;
-  }
-
-  .chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 10px;
-    border-radius: 999px;
-    border: 1px solid rgba(15, 23, 42, 0.12);
-    background: rgba(248, 250, 252, 0.9);
-    font-size: 12px;
-
-    mat-icon {
-      font-size: 18px;
-      width: 18px;
-      height: 18px;
-      opacity: .9;
-    }
-  }
-
-  .chip-primary {
-    border-color: rgba(30, 64, 175, 0.25);
-    background: rgba(30, 64, 175, 0.08);
-  }
-
-  .table-wrap {
-    border: 1px solid rgba(15, 23, 42, 0.10);
-    border-radius: 12px;
-    padding: 10px;
-    background: rgba(255, 255, 255, 0.9);
-  }
-
-  .details-table {
-    width: 100%;
-    border-radius: 10px;
-    overflow: hidden;
-
-    th {
-      font-weight: 800;
-      white-space: nowrap;
-    }
-
-    td, th {
-      padding: 10px 10px;
-    }
-  }
-}
-
-.DialogActions {
-  padding: 12px 14px;
-  border-top: 1px solid rgba(15, 23, 42, 0.08);
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
+:host ::ng-deep .ga-dialog .mat-mdc-dialog-container {
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(2, 6, 23, 0.35);
+  border: 1px solid rgba(15, 23, 42, 0.12);
 }

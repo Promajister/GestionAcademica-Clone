@@ -1,67 +1,105 @@
 <div class="re-students container section">
 
-  <!-- Header -->
-  <div class="topbar">
-    <button mat-stroked-button color="primary" routerLink="/reportes" class="btn-back">
-      <mat-icon>arrow_back</mat-icon>
-      Volver
-    </button>
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero__bg"></div>
 
-    <div class="titles">
-      <h1>Reporte de estudiantes</h1>
-      <p class="muted">Listado paginado con búsqueda y exportación múltiple</p>
-    </div>
+    <div class="hero__content">
+      <div class="hero__left">
+        <div class="hero__icon">
+          <mat-icon>assignment</mat-icon>
+        </div>
 
-    <div class="spacer"></div>
-  </div>
+        <div class="hero__titles">
+          <p class="eyebrow">Reportes · Estudiantes</p>
+          <h1>Reporte de estudiantes</h1>
+          <p class="muted">Listado paginado con búsqueda y exportación múltiple</p>
 
-  <!-- Actions (FUERA del modal) -->
-  <div class="bulkbar">
-    <div class="bulk-left">
-      <span class="muted">
-        <strong>{{ selectedCount }}</strong> seleccionado(s)
-      </span>
+          <div class="hero__chips">
+            <span class="chip">
+              <mat-icon>layers</mat-icon>
+              <span>Total: {{ totalItems || 0 }}</span>
+            </span>
 
-      <button
-        mat-stroked-button
-        color="primary"
-        class="btn-pill"
-        (click)="exportarSeleccionPDF()"
-        [disabled]="!selectedCount || exporting">
-        <mat-icon>picture_as_pdf</mat-icon>
-        PDF
-      </button>
+            <span class="chip" *ngIf="selectedCount">
+              <mat-icon>check_circle</mat-icon>
+              <span>Seleccionados: {{ selectedCount }}</span>
+            </span>
 
-      <button
-        mat-stroked-button
-        color="accent"
-        class="btn-pill"
-        (click)="exportarSeleccionExcel()"
-        [disabled]="!selectedCount || exporting">
-        <mat-icon>grid_on</mat-icon>
-        Excel
-      </button>
+            <span class="chip chip-warn" *ngIf="exporting">
+              <mat-icon>hourglass_top</mat-icon>
+              <span>Exportando…</span>
+            </span>
+          </div>
+        </div>
+      </div>
 
-      <button mat-button class="btn-link" (click)="limpiarSeleccion()" [disabled]="!selectedCount || exporting">
-        Limpiar
-      </button>
-
-      <span class="muted exporting" *ngIf="exporting">
-        Exportando...
-      </span>
-
-      <span class="muted error" *ngIf="exportError">
-        {{ exportError }}
-      </span>
+      <div class="hero__actions">
+        <button mat-stroked-button color="primary" routerLink="/reportes" class="btn-pill">
+          <mat-icon>arrow_back</mat-icon>
+          Volver
+        </button>
+      </div>
     </div>
   </div>
 
-  <!-- Search -->
-  <mat-card class="card elev search-card">
-    <mat-card-content class="search-row">
+  <!-- TOOLBAR -->
+  <mat-card class="card elev header-card">
+  <mat-card-content class="toolbar">
+
+    <!-- Acciones -->
+    <div class="toolbar__left">
+      <div class="toolbar__meta">
+        <mat-icon class="muted">checklist</mat-icon>
+        <span class="muted">
+          <strong>{{ selectedCount }}</strong> seleccionado(s)
+        </span>
+
+        <span class="dot" *ngIf="selectedCount"></span>
+
+        <span class="muted exporting" *ngIf="exporting">Exportando…</span>
+        <span class="muted error" *ngIf="exportError">{{ exportError }}</span>
+      </div>
+
+      <div class="toolbar__actions">
+        <button
+          mat-stroked-button
+          color="primary"
+          class="btn-pill"
+          (click)="exportarSeleccionPDF()"
+          [disabled]="!selectedCount || exporting">
+          <mat-icon>picture_as_pdf</mat-icon>
+          PDF
+        </button>
+
+        <button
+          mat-stroked-button
+          color="accent"
+          class="btn-pill"
+          (click)="exportarSeleccionExcel()"
+          [disabled]="!selectedCount || exporting">
+          <mat-icon>grid_on</mat-icon>
+          Excel
+        </button>
+
+        <button
+          mat-icon-button
+          class="btn-icon"
+          (click)="limpiarSeleccion()"
+          [disabled]="!selectedCount || exporting"
+          matTooltip="Limpiar selección">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <div class="toolbar__divider"></div>
+
+    <!-- Buscar -->
+    <div class="toolbar__right">
       <mat-icon class="muted">search</mat-icon>
 
-      <mat-form-field appearance="outline" class="search-field">
+      <mat-form-field appearance="outline" class="search-field" floatLabel="always">
         <mat-label>Buscar</mat-label>
         <input
           matInput
@@ -70,11 +108,14 @@
           placeholder="Nombre, RUT, plan, centro, supervisor..." />
       </mat-form-field>
 
-      <div class="muted counter">
+      <div class="counter muted">
         <span *ngIf="!cargandoLista">{{ totalItems }} resultado(s)</span>
       </div>
-    </mat-card-content>
-  </mat-card>
+    </div>
+
+  </mat-card-content>
+</mat-card>
+
 
   <!-- List -->
   <mat-card class="card elev list-card">
@@ -99,7 +140,9 @@
       </div>
 
       <div *ngIf="!cargandoLista && !errorLista && totalItems > 0" class="rows">
-        <div class="row" *ngFor="let e of estudiantes; trackBy: trackByRut">
+        <div class="row"
+            *ngFor="let e of estudiantes; trackBy: trackByRut"
+            [class.row-selected]="isSelected(e.rut)">
           <mat-checkbox
             class="row-check"
             [checked]="isSelected(e.rut)"
@@ -136,112 +179,5 @@
 
     </mat-card-content>
   </mat-card>
-
-  <!-- MODAL DETALLE -->
-  @if (mostrarDetalles) {
-    <div class="DetailsDialog" (keydown.escape)="cerrarDetalles()">
-      <div class="DialogOverlay" (click)="cerrarDetalles()"></div>
-
-      <div class="DialogContent" role="dialog" aria-modal="true" aria-label="Detalle del estudiante">
-        <div class="DialogHeader">
-          <div class="DialogHeaderLeft">
-            <div class="DialogAvatar">
-              <mat-icon>person</mat-icon>
-            </div>
-
-            <div class="DialogTitles">
-              <h2>Detalle del estudiante</h2>
-              <div class="DialogSubtitle">
-                {{ estudianteSeleccionado?.nombre || 'Cargando...' }}
-              </div>
-            </div>
-          </div>
-
-          <button mat-icon-button (click)="cerrarDetalles()" class="CloseBtn" aria-label="Cerrar">
-            <mat-icon>close</mat-icon>
-          </button>
-        </div>
-
-        <div class="DialogBody">
-          @if (loadingDetalle) {
-            <div class="state">
-              <mat-spinner diameter="28"></mat-spinner>
-              <span class="muted">Cargando detalle...</span>
-            </div>
-          } @else if (errorDetalle) {
-            <p class="muted error">{{ errorDetalle }}</p>
-          } @else if (estudianteSeleccionado) {
-
-            <div class="chips">
-              <span class="chip chip-primary">
-                <mat-icon>badge</mat-icon>
-                <span>{{ estudianteSeleccionado.rut }}</span>
-              </span>
-
-              @if (estudianteSeleccionado.plan) {
-                <span class="chip">
-                  <mat-icon>school</mat-icon>
-                  <span>{{ estudianteSeleccionado.plan }}</span>
-                </span>
-              }
-            </div>
-
-            <div class="table-wrap">
-              <table mat-table [dataSource]="estudianteSeleccionado.practicas" class="mat-elevation-z0 details-table">
-
-                <ng-container matColumnDef="tipo">
-                  <th mat-header-cell *matHeaderCellDef>Tipo</th>
-                  <td mat-cell *matCellDef="let p">{{ p.tipo || '—' }}</td>
-                </ng-container>
-
-                <ng-container matColumnDef="estado">
-                  <th mat-header-cell *matHeaderCellDef>Estado</th>
-                  <td mat-cell *matCellDef="let p">{{ p.estado }}</td>
-                </ng-container>
-
-                <ng-container matColumnDef="semestre">
-                  <th mat-header-cell *matHeaderCellDef>Periodo</th>
-                  <td mat-cell *matCellDef="let p">{{ formatPeriodo(p) }}</td>
-                </ng-container>
-
-                <ng-container matColumnDef="centro">
-                  <th mat-header-cell *matHeaderCellDef>Centro</th>
-                  <td mat-cell *matCellDef="let p">{{ p.centro || '—' }}</td>
-                </ng-container>
-
-                <ng-container matColumnDef="tutores">
-                  <th mat-header-cell *matHeaderCellDef>Supervisores</th>
-                  <td mat-cell *matCellDef="let p">
-                    {{ p.tutores?.length ? p.tutores.join(', ') : '—' }}
-                  </td>
-                </ng-container>
-
-                <ng-container matColumnDef="inicio">
-                  <th mat-header-cell *matHeaderCellDef>Inicio</th>
-                  <td mat-cell *matCellDef="let p">{{ formatDate(p.fechaInicio) }}</td>
-                </ng-container>
-
-                <ng-container matColumnDef="termino">
-                  <th mat-header-cell *matHeaderCellDef>Término</th>
-                  <td mat-cell *matCellDef="let p">{{ formatDate(p.fechaTermino) }}</td>
-                </ng-container>
-
-                <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-                <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
-              </table>
-
-              <p class="muted" *ngIf="!estudianteSeleccionado.practicas?.length" style="margin-top:12px;">
-                El estudiante no registra prácticas.
-              </p>
-            </div>
-          }
-        </div>
-
-        <div class="DialogActions">
-          <button mat-stroked-button (click)="cerrarDetalles()">Cerrar</button>
-        </div>
-      </div>
-    </div>
-  }
 
 </div>

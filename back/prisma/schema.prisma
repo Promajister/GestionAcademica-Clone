@@ -66,6 +66,7 @@ model Estudiante {
 model Practica {
   id            Int             @id @default(autoincrement())
   estado        EstadoPractica
+  nota_final    Float?
   fecha_inicio  DateTime
   fecha_termino DateTime?
   tipo          String?
