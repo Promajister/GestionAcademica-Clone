@@ -274,19 +274,19 @@ downloadEstadisticasColaboradoresExcel(): void {
   ];
 
   opcionesSiNo = [
-    { value: 'SI', label: 'SÍ' },
+    { value: 'SI', label: 'Sí' },
     { value: 'NO', label: 'No' },
   ];
 
   opcionesNormativas = [
-    { value: 'SI', label: 'SÍ' },
+    { value: 'SI', label: 'Sí' },
     { value: 'NO', label: 'No' },
     { value: 'NS', label: 'No existe / no sabe' },
   ];
 
   opcionesParticipacion = [
-    { value: 'A_P', label: 'AsistÍ y pude participar' },
-    { value: 'A_N', label: 'AsistÍ, pero no intervine' },
+    { value: 'A_P', label: 'Asistí y pude participar' },
+    { value: 'A_N', label: 'Asistí, pero no intervine' },
     { value: 'R_NA', label: 'Se realizó, pero no asistí' },
     { value: 'R_NI', label: 'Se realizó, pero no fui invitado' },
     { value: 'NR', label: 'No se realizó' },

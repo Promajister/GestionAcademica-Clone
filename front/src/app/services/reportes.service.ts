@@ -1,9 +1,8 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../environments/environment';
 
-const API = `${environment.apiUrl}/reportes`;
+const API = 'http://localhost:3000/api/reportes';
 
 export type EstadoPractica = 'EN_CURSO' | 'APROBADO' | 'REPROBADO';
 
@@ -47,6 +46,7 @@ export interface ReporteSatisfaccion {
   practicas: {
     totalPracticas: number;
     estudiantesUnicos: number;
+    colaboradoresUnicos: number;
     aprobadas: number;
     reprobadas: number;
     enCurso: number;
@@ -55,7 +55,6 @@ export interface ReporteSatisfaccion {
       reprobadas: number;
       enCurso: number;
     };
-    porcentajeAprobacionEvaluadas: number;
   };
 
   encuestasEstudiantes: {
@@ -209,3 +208,4 @@ export class ReportesService {
 
 
 }
+
