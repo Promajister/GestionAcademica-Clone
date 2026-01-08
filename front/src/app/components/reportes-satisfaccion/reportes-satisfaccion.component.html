@@ -1,5 +1,6 @@
 <div class="satisfaccion container section">
 
+  <!-- TOPBAR -->
   <div class="topbar">
     <button mat-stroked-button color="primary" routerLink="/reportes" class="btn-back">
       <mat-icon>arrow_back</mat-icon>
@@ -103,6 +104,11 @@
             Tipo: Todas
           </span>
         </ng-template>
+
+        <span class="pill right" *ngIf="!loading">
+          <mat-icon>analytics</mat-icon>
+          {{ data ? 'Datos cargados' : 'Sin datos' }}
+        </span>
       </div>
 
       <!-- LOADING -->
@@ -133,18 +139,18 @@
 
         <div class="kpis">
           <div class="kpi">
-            <div class="kpi-label">Prácticas Encuestadas</div>
+            <div class="kpi-label">Prácticas</div>
             <div class="kpi-value">{{ data.practicas.totalPracticas }}</div>
           </div>
 
           <div class="kpi">
-            <div class="kpi-label">Estudiantes Encuestados</div>
+            <div class="kpi-label">Estudiantes únicos</div>
             <div class="kpi-value">{{ data.practicas.estudiantesUnicos }}</div>
           </div>
 
           <div class="kpi accent">
-            <div class="kpi-label">Colaboradores Encuestados</div>
-            <div class="kpi-value">{{ data.practicas.colaboradoresUnicos }}</div>
+            <div class="kpi-label">% Aprobación (evaluadas)</div>
+            <div class="kpi-value">{{ data.practicas.porcentajeAprobacionEvaluadas }}%</div>
           </div>
         </div>
       </mat-card-content>

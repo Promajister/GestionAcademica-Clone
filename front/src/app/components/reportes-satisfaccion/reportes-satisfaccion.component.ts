@@ -282,8 +282,6 @@ export class ReportesSatisfaccionComponent {
     doc.setLineWidth(1);
     doc.line(margin, y, margin + 260, y);
     y += 14;
-    
-      ['Colaboradores', String(this.data.practicas.colaboradoresUnicos)],
 
     const rows: [string, string][] = [
       ['Prácticas (total)', safe(data.practicas.totalPracticas)],
@@ -365,7 +363,7 @@ export class ReportesSatisfaccionComponent {
       { Indicador: 'En curso', Valor: this.data.practicas.enCurso },
       { Indicador: '% En curso', Valor: this.data.practicas.porcentajes.enCurso },
 
-      { Indicador: 'Colaboradores', Valor: this.data.practicas.colaboradoresUnicos },
+      { Indicador: '% aprobación (solo evaluadas)', Valor: this.data.practicas.porcentajeAprobacionEvaluadas },
 
       { Indicador: 'Encuestas Estudiantes (registradas)', Valor: this.data.encuestasEstudiantes.totalEncuestas },
       { Indicador: 'Alternativas respondidas (Estudiantes)', Valor: this.data.encuestasEstudiantes.totalAlternativasRespondidas },
