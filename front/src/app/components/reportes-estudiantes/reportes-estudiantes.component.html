@@ -1,28 +1,67 @@
 <div class="re-students container section">
 
-  <!-- Header -->
-  <div class="topbar">
-    <button mat-stroked-button color="primary" routerLink="/reportes" class="btn-back">
-      <mat-icon>arrow_back</mat-icon>
-      Volver
-    </button>
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero__bg"></div>
 
-    <div class="titles">
-      <h1>Reporte de estudiantes</h1>
-      <p class="muted">Listado paginado con búsqueda y exportación múltiple</p>
+    <div class="hero__content">
+      <div class="hero__left">
+        <div class="hero__icon">
+          <mat-icon>assignment</mat-icon>
+        </div>
+
+        <div class="hero__titles">
+          <p class="eyebrow">Reportes · Estudiantes</p>
+          <h1>Reporte de estudiantes</h1>
+          <p class="muted">Listado paginado con búsqueda y exportación múltiple</p>
+
+          <div class="hero__chips">
+            <span class="chip">
+              <mat-icon>layers</mat-icon>
+              <span>Total: {{ totalItems || 0 }}</span>
+            </span>
+
+            <span class="chip" *ngIf="selectedCount">
+              <mat-icon>check_circle</mat-icon>
+              <span>Seleccionados: {{ selectedCount }}</span>
+            </span>
+
+            <span class="chip chip-warn" *ngIf="exporting">
+              <mat-icon>hourglass_top</mat-icon>
+              <span>Exportando…</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero__actions">
+        <button mat-stroked-button color="primary" routerLink="/reportes" class="btn-pill">
+          <mat-icon>arrow_back</mat-icon>
+          Volver
+        </button>
+      </div>
     </div>
-
-    <div class="spacer"></div>
   </div>
 
-  <!-- Header actions -->
+  <!-- TOOLBAR -->
   <mat-card class="card elev header-card">
-    <mat-card-content class="header-actions">
-      <div class="bulk-left">
+  <mat-card-content class="toolbar">
+
+    <!-- Acciones -->
+    <div class="toolbar__left">
+      <div class="toolbar__meta">
+        <mat-icon class="muted">checklist</mat-icon>
         <span class="muted">
           <strong>{{ selectedCount }}</strong> seleccionado(s)
         </span>
 
+        <span class="dot" *ngIf="selectedCount"></span>
+
+        <span class="muted exporting" *ngIf="exporting">Exportando…</span>
+        <span class="muted error" *ngIf="exportError">{{ exportError }}</span>
+      </div>
+
+      <div class="toolbar__actions">
         <button
           mat-stroked-button
           color="primary"
@@ -43,32 +82,40 @@
           Excel
         </button>
 
-        <button mat-button class="btn-link" (click)="limpiarSeleccion()" [disabled]="!selectedCount || exporting">
-          Limpiar
+        <button
+          mat-icon-button
+          class="btn-icon"
+          (click)="limpiarSeleccion()"
+          [disabled]="!selectedCount || exporting"
+          matTooltip="Limpiar selección">
+          <mat-icon>close</mat-icon>
         </button>
-
-        <span class="muted exporting" *ngIf="exporting">Exportando...</span>
-        <span class="muted error" *ngIf="exportError">{{ exportError }}</span>
       </div>
+    </div>
 
-      <div class="search-right">
-        <mat-icon class="muted">search</mat-icon>
+    <div class="toolbar__divider"></div>
 
-        <mat-form-field appearance="outline" class="search-field" floatLabel="always">
-          <mat-label>Buscar</mat-label>
-          <input
-            matInput
-            [(ngModel)]="terminoBusqueda"
-            (ngModelChange)="onFiltersChange()"
-            placeholder="Nombre, RUT, plan, centro, supervisor..." />
-        </mat-form-field>
+    <!-- Buscar -->
+    <div class="toolbar__right">
+      <mat-icon class="muted">search</mat-icon>
 
-        <div class="muted counter">
-          <span *ngIf="!cargandoLista">{{ totalItems }} resultado(s)</span>
-        </div>
+      <mat-form-field appearance="outline" class="search-field" floatLabel="always">
+        <mat-label>Buscar</mat-label>
+        <input
+          matInput
+          [(ngModel)]="terminoBusqueda"
+          (ngModelChange)="onFiltersChange()"
+          placeholder="Nombre, RUT, plan, centro, supervisor..." />
+      </mat-form-field>
+
+      <div class="counter muted">
+        <span *ngIf="!cargandoLista">{{ totalItems }} resultado(s)</span>
       </div>
-    </mat-card-content>
-  </mat-card>
+    </div>
+
+  </mat-card-content>
+</mat-card>
+
 
   <!-- List -->
   <mat-card class="card elev list-card">

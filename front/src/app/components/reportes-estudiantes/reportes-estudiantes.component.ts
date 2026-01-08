@@ -172,6 +172,8 @@ export class ReportesEstudianteComponent {
       width: '1000px',
       maxWidth: '95vw',
       autoFocus: false,
+      panelClass: 'ga-dialog',
+      backdropClass: 'ga-backdrop',
       data: {
         loading: true,
         estudiante: null,
