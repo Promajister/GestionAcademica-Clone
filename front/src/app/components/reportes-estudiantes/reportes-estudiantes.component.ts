@@ -27,7 +27,7 @@ import {
 } from '../../services/reportes.service';
 
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import autoTable, { type RowInput, type CellDef } from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 
@@ -55,7 +55,6 @@ export class ReportesEstudianteComponent {
   private reportesService = inject(ReportesService);
   private dialog = inject(MatDialog);
 
-  // ===== listado server-side =====
   terminoBusqueda = '';
   private search$ = new Subject<string>();
 
@@ -64,12 +63,11 @@ export class ReportesEstudianteComponent {
 
   estudiantes: EstudianteIndexItem[] = [];
 
-  pageIndex = 0; // UI 0-based
+  pageIndex = 0;
   pageSize = 10;
   totalItems = 0;
   readonly pageSizeOptions = [5, 10, 20, 50];
 
-  // ===== selección (checklist) =====
   private selectedRuts = new Set<string>();
   get selectedCount(): number {
     return this.selectedRuts.size;
@@ -80,7 +78,6 @@ export class ReportesEstudianteComponent {
 
   displayedColumns = ['tipo', 'estado', 'semestre', 'centro', 'tutores', 'inicio', 'termino'];
 
-  // ===== export =====
   exporting = false;
   exportError: string | null = null;
 
@@ -95,7 +92,6 @@ export class ReportesEstudianteComponent {
     this.cargarListado('');
   }
 
-  // -------- listado ----------
   onFiltersChange() {
     this.search$.next(this.terminoBusqueda);
   }
@@ -113,7 +109,7 @@ export class ReportesEstudianteComponent {
     this.reportesService
       .listarEstudiantes({
         search: term?.trim() || undefined,
-        page: this.pageIndex + 1, // backend 1-based
+        page: this.pageIndex + 1,
         limit: this.pageSize,
         orderBy: 'nombre',
         orderDir: 'asc',
@@ -139,7 +135,6 @@ export class ReportesEstudianteComponent {
     return e.rut;
   }
 
-  // -------- checklist ----------
   toggleOne(rut: string, checked: boolean) {
     if (checked) this.selectedRuts.add(rut);
     else this.selectedRuts.delete(rut);
@@ -206,12 +201,42 @@ export class ReportesEstudianteComponent {
   }
 
   formatPeriodo(p: any): string {
-    const s = p?.semestre ?? '—';
-    const a = p?.anio ?? '';
-    return `${s}° ${a}`.trim();
+    const s = p?.semestre ?? null;
+    const a = p?.anio ?? null;
+
+    if (!s && !a) return '—';
+
+    const semestreTxt = s ? `${s}° semestre` : '—';
+    const anioTxt = a ? String(a) : '';
+
+    return anioTxt ? `${semestreTxt} ${anioTxt}` : semestreTxt;
   }
 
-  // -------- export helpers ----------
+  private formatPeriodoLinea(p: any): string {
+    const periodo = this.formatPeriodo(p);
+    const ini = this.formatDate(p?.fechaInicio ?? p?.fecha_inicio ?? null);
+    const fin = this.formatDate(p?.fechaTermino ?? p?.fecha_termino ?? null);
+
+    const hasIni = ini && ini !== '—';
+    const hasFin = fin && fin !== '—';
+
+    if (!hasIni && !hasFin) return `Periodo: ${periodo}`;
+    if (hasIni && !hasFin) return `Periodo: ${periodo}, desde ${ini}`;
+    if (!hasIni && hasFin) return `Periodo: ${periodo}, hasta ${fin}`;
+    return `Periodo: ${periodo}, desde ${ini} hasta ${fin}`;
+  }
+
+  private formatSupervisor(p: any): string {
+    const t = p?.tutores ?? p?.supervisores ?? p?.supervisor ?? null;
+    if (Array.isArray(t)) return t.length ? String(t[0]) : '—';
+    return t ? String(t) : '—';
+  }
+
+  private formatTipo(value: any): string {
+    const s = value ? String(value) : '—';
+    return s.replace(/\s+/g, ' ').trim();
+  }
+
   private getSelectedRuts(): string[] {
     return Array.from(this.selectedRuts.values());
   }
@@ -232,9 +257,6 @@ export class ReportesEstudianteComponent {
     );
   }
 
-  // ==========================
-  // PDF helpers
-  // ==========================
   private async loadImageAsDataURLSafe(path: string): Promise<string | null> {
     try {
       const res = await fetch(path);
@@ -322,9 +344,25 @@ export class ReportesEstudianteComponent {
     doc.text(`Página ${page} / ${totalPages}`, pageWidth - margin, pageHeight - 18, { align: 'right' as any });
   }
 
-  // ==========================
-  // PDF export
-  // ==========================
+  private buildStudentHead(est: any): RowInput[] {
+    const safe = (v: any) => (v === null || v === undefined || v === '' ? '—' : String(v));
+
+    const title = safe(est?.nombre);
+    const sub = `RUT: ${safe(est?.rut)}  •  Plan: ${safe(est?.plan)}`;
+
+    const rowTitle: RowInput = [
+      { content: title, colSpan: 5, styles: { fontStyle: 'bold' as any } } as CellDef,
+    ];
+
+    const rowSub: RowInput = [
+      { content: sub, colSpan: 5, styles: { fontStyle: 'normal' as any } } as CellDef,
+    ];
+
+    const rowCols: RowInput = ['N°', 'Tipo', 'Estado', 'Supervisor', 'Centro Educativo'];
+
+    return [rowTitle, rowSub, rowCols];
+  }
+
   exportarSeleccionPDF() {
     if (!this.selectedCount || this.exporting) return;
 
@@ -358,13 +396,15 @@ export class ReportesEstudianteComponent {
             const contentW = pageWidth - margin * 2;
 
             const colors = {
-              text: [17, 24, 39] as [number, number, number],
-              muted: [100, 116, 139] as [number, number, number],
+              text: [0, 0, 0] as [number, number, number],
               line: [229, 231, 235] as [number, number, number],
               border: [209, 213, 219] as [number, number, number],
               tableHead: [241, 245, 249] as [number, number, number],
+              zebra: [248, 250, 252] as [number, number, number],
+              studentBar: [248, 250, 252] as [number, number, number],
             };
 
+            const safe = (v: any) => (v === null || v === undefined || v === '' ? '—' : String(v));
             const generatedText = `Generado: ${new Date().toLocaleString('es-CL')}`;
 
             const headerData = {
@@ -379,123 +419,132 @@ export class ReportesEstudianteComponent {
 
             let y = top;
 
-            const ensureSpace = (needed: number) => {
-              if (y + needed <= pageHeight - bottom) return;
+            const newPageIfLow = (minRemaining: number) => {
+              if (y <= pageHeight - bottom - minRemaining) return;
               doc.addPage();
               this.drawPdfHeader(doc, headerData);
               y = top;
             };
 
-            const safe = (v: any) => (v === null || v === undefined || v === '' ? '—' : String(v));
-
-            const sectionTitle = (text: string) => {
-              y += 10;
-              ensureSpace(60);
-
-              doc.setFont('helvetica', 'bold');
-              doc.setFontSize(11);
-              doc.setTextColor(...colors.text);
-              doc.text(text.toUpperCase(), margin, y);
-
-              y += 8;
-              doc.setDrawColor(...colors.line);
-              doc.setLineWidth(1);
-              doc.line(margin, y, margin + 260, y);
-
-              y += 14;
-            };
+            const wN = 30;
+            const wTipo = 165;
+            const wEstado = 90;
+            const wSupervisor = 120;
+            const wCentro = contentW - (wN + wTipo + wEstado + wSupervisor);
 
             for (let idx = 0; idx < estudiantes.length; idx++) {
               const est: any = estudiantes[idx];
+              const practicas = est?.practicas ?? [];
 
-              // ===== Bloque estudiante (para que NO se mezcle visualmente) =====
-              ensureSpace(140);
+              newPageIfLow(160);
 
-              doc.setDrawColor(...colors.border);
-              doc.setFillColor(248, 250, 252);
-              (doc as any).roundedRect(margin, y - 6, contentW, 60, 12, 12, 'FD');
+              const head = this.buildStudentHead(est);
 
-              doc.setFont('helvetica', 'bold');
-              doc.setFontSize(12);
-              doc.setTextColor(...colors.text);
-              doc.text(safe(est.nombre), margin + 14, y + 16);
+              const body: RowInput[] =
+                practicas.length === 0
+                  ? [[{ content: 'Sin prácticas registradas.', colSpan: 5 } as CellDef]]
+                  : practicas.flatMap((p: any, i: number) => {
+                      const filaPrincipal: RowInput = [
+                        String(i + 1),
+                        this.formatTipo(p?.tipo),
+                        safe(p?.estado),
+                        this.formatSupervisor(p),
+                        safe(p?.centro),
+                      ];
 
-              doc.setFont('helvetica', 'normal');
-              doc.setFontSize(10);
-              doc.setTextColor(...colors.muted);
-              doc.text(`RUT: ${safe(est.rut)}  •  Plan: ${safe(est.plan)}`, margin + 14, y + 34);
+                      const filaPeriodo: RowInput = [
+                        '',
+                        {
+                          content: this.formatPeriodoLinea(p),
+                          colSpan: 4,
+                          styles: { fontStyle: 'normal' as any, textColor: colors.text as any } as any,
+                        } as CellDef,
+                      ];
 
-              y += 76;
+                      return [filaPrincipal, filaPeriodo];
+                    });
 
-              sectionTitle('Historial de prácticas');
+              autoTable(doc, {
+                startY: y,
+                head,
+                body,
+                showHead: 'everyPage',
+                margin: { left: margin, right: margin, top, bottom },
+                tableWidth: contentW,
+                styles: {
+                  font: 'helvetica',
+                  fontSize: 9,
+                  cellPadding: { top: 4, right: 6, bottom: 4, left: 6 },
+                  textColor: colors.text as any,
+                  lineColor: colors.line as any,
+                  lineWidth: 0.8,
+                  overflow: 'linebreak',
+                  valign: 'top',
+                },
+                headStyles: {
+                  fillColor: colors.tableHead as any,
+                  textColor: colors.text as any,
+                  fontStyle: 'bold',
+                  lineColor: colors.border as any,
+                  lineWidth: 1,
+                },
+                alternateRowStyles: { fillColor: colors.zebra as any },
+                columnStyles: {
+                  0: { cellWidth: wN, halign: 'center' },
+                  1: { cellWidth: wTipo },
+                  2: { cellWidth: wEstado },
+                  3: { cellWidth: wSupervisor },
+                  4: { cellWidth: wCentro },
+                },
+                didParseCell: (data) => {
+                  if (data.section === 'head') {
+                    if (data.row.index === 0) {
+                      data.cell.styles.fillColor = colors.studentBar as any;
+                      data.cell.styles.textColor = colors.text as any;
+                      data.cell.styles.fontSize = 11 as any;
+                      data.cell.styles.fontStyle = 'bold' as any;
+                      data.cell.styles.lineColor = colors.border as any;
+                      data.cell.styles.lineWidth = 1 as any;
+                    }
+                    if (data.row.index === 1) {
+                      data.cell.styles.fillColor = colors.studentBar as any;
+                      data.cell.styles.textColor = colors.text as any;
+                      data.cell.styles.fontSize = 9 as any;
+                      data.cell.styles.fontStyle = 'normal' as any;
+                      data.cell.styles.lineColor = colors.border as any;
+                      data.cell.styles.lineWidth = 1 as any;
+                    }
+                    if (data.row.index === 2) {
+                      data.cell.styles.fillColor = colors.tableHead as any;
+                      data.cell.styles.textColor = colors.text as any;
+                      data.cell.styles.fontSize = 9 as any;
+                      data.cell.styles.fontStyle = 'bold' as any;
+                      data.cell.styles.lineColor = colors.border as any;
+                      data.cell.styles.lineWidth = 1 as any;
+                    }
+                  }
 
-              const practicas = est.practicas ?? [];
+                  if (data.section === 'body') {
+                    if (practicas.length > 0 && data.row.index % 2 === 1) {
+                      data.cell.styles.fillColor = colors.zebra as any;
+                      data.cell.styles.fontSize = 9 as any;
+                      data.cell.styles.textColor = colors.text as any;
+                      data.cell.styles.lineWidth = 0.5 as any;
+                    }
 
-              if (!practicas.length) {
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(10);
-                doc.setTextColor(...colors.muted);
-                doc.text('Sin prácticas registradas.', margin, y);
-                y += 14;
-              } else {
-                const cols = [
-                  { label: 'N°', w: 34 },
-                  { label: 'Tipo', w: 170 },
-                  { label: 'Estado', w: 82 },
-                  { label: 'Periodo', w: 86 },
-                  { label: 'Centro', w: contentW - (34 + 170 + 82 + 86) },
-                ];
+                    if (practicas.length > 0 && data.row.index % 2 === 1 && data.column.index === 0) {
+                      data.cell.text = [''];
+                    }
+                  }
 
-                autoTable(doc, {
-                  startY: y,
-                  head: [[cols[0].label, cols[1].label, cols[2].label, cols[3].label, cols[4].label]],
-                  body: practicas.map((p: any, i: number) => [
-                    String(i + 1),
-                    safe(p.tipo),
-                    safe(p.estado),
-                    this.formatPeriodo(p),
-                    safe(p.centro),
-                  ]),
-                  margin: { left: margin, right: margin, top, bottom },
-                  styles: {
-                    font: 'helvetica',
-                    fontSize: 9,
-                    cellPadding: 6,
-                    textColor: colors.text as any,
-                    lineColor: colors.line as any,
-                    lineWidth: 0.8,
-                    overflow: 'linebreak',
-                  },
-                  headStyles: {
-                    fillColor: colors.tableHead as any,
-                    textColor: colors.text as any,
-                    fontStyle: 'bold',
-                    lineColor: colors.border as any,
-                    lineWidth: 1,
-                  },
-                  alternateRowStyles: { fillColor: [248, 250, 252] as any },
-                  columnStyles: {
-                    0: { cellWidth: cols[0].w, halign: 'center' },
-                    1: { cellWidth: cols[1].w },
-                    2: { cellWidth: cols[2].w },
-                    3: { cellWidth: cols[3].w },
-                    4: { cellWidth: cols[4].w },
-                  },
-                  tableWidth: contentW,
-                });
+                  if (data.section === 'body' && practicas.length === 0) {
+                    data.cell.styles.textColor = colors.text as any;
+                    data.cell.styles.halign = 'left' as any;
+                  }
+                },
+              });
 
-                // @ts-ignore
-                y = doc.lastAutoTable.finalY + 14;
-              }
-
-              // Separador entre estudiantes (más claro)
-              if (idx < estudiantes.length - 1) {
-                ensureSpace(28);
-                doc.setDrawColor(...colors.line);
-                doc.setLineWidth(1);
-                doc.line(margin, y, pageWidth - margin, y);
-                y += 16;
-              }
+              y = ((doc as any).lastAutoTable?.finalY ?? y) + 18;
             }
 
             const totalPages = (doc as any).getNumberOfPages();
@@ -516,9 +565,6 @@ export class ReportesEstudianteComponent {
       });
   }
 
-  // ==========================
-  // Excel export (recuperado)
-  // ==========================
   exportarSeleccionExcel() {
     if (!this.selectedCount || this.exporting) return;
 
@@ -549,7 +595,7 @@ export class ReportesEstudianteComponent {
                   Estado: '',
                   Periodo: '',
                   Centro: '',
-                  Supervisores: '',
+                  Supervisor: '',
                   Inicio: '',
                   Termino: '',
                 });
@@ -565,7 +611,7 @@ export class ReportesEstudianteComponent {
                   Estado: p.estado ?? '',
                   Periodo: this.formatPeriodo(p),
                   Centro: p.centro ?? '',
-                  Supervisores: Array.isArray(p.tutores) ? p.tutores.join(', ') : (p.tutores ?? ''),
+                  Supervisor: this.formatSupervisor(p),
                   Inicio: this.formatDate(p.fechaInicio ?? p.fecha_inicio ?? null),
                   Termino: this.formatDate(p.fechaTermino ?? p.fecha_termino ?? null),
                 });
@@ -575,16 +621,16 @@ export class ReportesEstudianteComponent {
             const worksheet = XLSX.utils.json_to_sheet(rows);
 
             worksheet['!cols'] = [
-              { wch: 34 }, // Estudiante
-              { wch: 14 }, // RUT
-              { wch: 16 }, // Plan
-              { wch: 28 }, // Tipo
-              { wch: 14 }, // Estado
-              { wch: 12 }, // Periodo
-              { wch: 28 }, // Centro
-              { wch: 28 }, // Supervisores
-              { wch: 12 }, // Inicio
-              { wch: 12 }, // Termino
+              { wch: 34 },
+              { wch: 14 },
+              { wch: 16 },
+              { wch: 28 },
+              { wch: 14 },
+              { wch: 22 },
+              { wch: 28 },
+              { wch: 22 },
+              { wch: 12 },
+              { wch: 12 },
             ];
 
             const workbook = XLSX.utils.book_new();
