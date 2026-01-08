@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
+import {AbstractControl,FormBuilder,FormGroup,ReactiveFormsModule,ValidationErrors,Validators} from '@angular/forms';
+
+import { MatOptionModule } from '@angular/material/core';
 import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -18,6 +20,15 @@ type FinRow = { tipo: string; monto: number };
 type CentroCostoRow = { tipo: string };
 type InstRow = { tipo: string; nombre: string };
 
+type EstudianteRow = { rut?: string; nombre?: string };
+
+type TipoActividad =
+  | 'FERIA_VOCACIONAL'
+  | 'JORNADA_PEDAGOGICA'
+  | 'TALLER_REMEDIAL'
+  | 'CONGRESO_ACADEMICO'
+  | 'ALTERNANCIA_PEDAGOGICA'
+  | 'SALIDA_A_TERRENO';
 
 @Component({
   selector: 'app-actividades-pm',
@@ -34,33 +45,34 @@ type InstRow = { tipo: string; nombre: string };
     MatIconModule,
     MatTabsModule,
     MatTableModule,
+    MatOptionModule,
   ],
   templateUrl: './actividades-pm.component.html',
-  styleUrls: ['./actividades-pm.component.scss']
+  styleUrls: ['./actividades-pm.component.scss'],
 })
 export class ActividadesPmComponent implements OnInit {
   form!: FormGroup;
 
-  // tablas (como en el sistema de las fotos)
   unidades: UnidadRow[] = [];
   responsables: ResponsableRow[] = [];
   equipoTrabajo: EquipoRow[] = [];
-  equipoFiltrado: EquipoRow[] = [];
   financiamientos: FinRow[] = [];
   centrosCosto: CentroCostoRow[] = [];
   instituciones: InstRow[] = [];
 
-  // columnas
+  estudiantesFeria: EstudianteRow[] = [];
+  estudiantesSalida: EstudianteRow[] = [];
+
   unidadCols = ['n', 'cod', 'unidad', 'accion'];
   responsableCols = ['n', 'rut', 'nombre', 'tipo', 'accion'];
   equipoCols = ['n', 'rut', 'nombre', 'tipo', 'accion'];
   finCols = ['n', 'tipo', 'monto', 'accion'];
   ccCols = ['n', 'tipo', 'accion'];
   instCols = ['n', 'tipo', 'nombre', 'accion'];
+  estudianteCols = ['n', 'rut', 'nombre', 'accion'];
 
-  // catálogos (ajústalos según tu backend real)
   tiposResponsable = ['INTERNO', 'EXTERNO'];
-  tiposVinculacion = ['VcM (Bidireccionales)', 'VcM (Unidireccionales)','Extencion' , 'Otro'];
+  tiposVinculacion = ['VcM (Bidireccionales)', 'VcM (Unidireccionales)', 'Extencion', 'Otro'];
   areasVinculacion = ['Educación', 'Salud', 'Cultura', 'Territorio', 'Investigación', 'Otro'];
   areasImpacto = ['SELECCIONE', 'Educación', 'Social', 'Productivo', 'Territorial', 'Otro'];
   sedes = ['CASA MATRIZ ARICA', 'SEDE IQUIQUE'];
@@ -74,16 +86,16 @@ export class ActividadesPmComponent implements OnInit {
     'ESTUDIANTES (UTA)',
     'EXALUMNOS',
     'FUNCIONARIOS DE GESTIÓN (UTA)',
-    'OTROS (EXTERNOS)'
+    'OTROS (EXTERNOS)',
   ];
 
   institucionesCatalogo = [
-  'PACE',
-  'PROPEDÉUTICO',
-  'INSTITUCIÓN EXTERNA',
-  'INSTITUCIÓN INTERNA',
-  'CENTROS EDUCATIVOS',
-];
+    'PACE',
+    'PROPEDÉUTICO',
+    'INSTITUCIÓN EXTERNA',
+    'INSTITUCIÓN INTERNA',
+    'CENTROS EDUCATIVOS',
+  ];
 
   difusionCatalogo = [
     'SELECCIONE',
@@ -92,7 +104,7 @@ export class ActividadesPmComponent implements OnInit {
     'PRENSA ESCRITA',
     'RADIO',
     'TELEVISIÓN',
-    'VÍA PÚBLICA'
+    'VÍA PÚBLICA',
   ];
 
   participantesColumnas = [
@@ -101,11 +113,19 @@ export class ActividadesPmComponent implements OnInit {
     'ESTUDIANTES (UTA)',
     'FUNCIONARIOS DE GESTIÓN (UTA)',
     'EXALUMNOS',
-    'OTROS (EXTERNOS)'
+    'OTROS (EXTERNOS)',
   ];
 
   medidasImpacto = ['ENCUESTA'];
 
+  tipoActividadCatalogo: { value: TipoActividad; label: string }[] = [
+    { value: 'FERIA_VOCACIONAL', label: 'Feria Vocacional' },
+    { value: 'JORNADA_PEDAGOGICA', label: 'Jornada Pedagógica' },
+    { value: 'TALLER_REMEDIAL', label: 'Taller Remedial' },
+    { value: 'CONGRESO_ACADEMICO', label: 'Congreso Académico' },
+    { value: 'ALTERNANCIA_PEDAGOGICA', label: 'Alternancia Pedagógica' },
+    { value: 'SALIDA_A_TERRENO', label: 'Salida a Terreno' },
+  ];
 
   asistenciaFile: File | null = null;
   documentosFile: File | null = null;
@@ -114,7 +134,6 @@ export class ActividadesPmComponent implements OnInit {
   asistenciaFileName = '';
   documentosFileName = '';
   fotosFileName = '';
-
 
   constructor(private fb: FormBuilder) {}
 
@@ -127,7 +146,6 @@ export class ActividadesPmComponent implements OnInit {
         responsableNombre: [''],
         responsableTipo: ['INTERNO'],
 
-        // campos de la actividad
         nombre: ['', [Validators.required, Validators.maxLength(200)]],
         objetivo: ['', [Validators.required, Validators.maxLength(400)]],
         descripcion: ['', [Validators.required, Validators.maxLength(1000)]],
@@ -142,14 +160,49 @@ export class ActividadesPmComponent implements OnInit {
         ingresos: [0, [Validators.min(0)]],
         proyectoAsociado: ['SELECCIONE'],
         resultados: ['', [Validators.maxLength(1000)]],
+
+        tipoActividad: [null, Validators.required],
+
+        feriaInstitucionVisitada: [''],
+        feriaEstRut: [''],
+        feriaEstNombre: [''],
+
+        jornadaTemaCentral: [''],
+        jornadaTalleres: [''],
+        jornadaResponsableTaller: [''],
+        jornadaNumAsistentes: [null],
+        jornadaSatisfaccion: [null],
+
+        tallerAsignatura: [''],
+        tallerCompetencia: [''],
+        tallerNombreEstudiantesBeneficiados: [''],
+
+        congresoNombreEvento: [''],
+        congresoPonenciaPresentada: [''],
+        congresoRelator: [''],
+        congresoNumAsistentes: [null],
+        congresoSatisfaccion: [null],
+
+        alternanciaColegioAsociado: [''],
+        alternanciaDocenteColaborador: [''],
+        alternanciaAsignatura: [''],
+        alternanciaCurso: [''],
+        alternanciaDocenteAsignatura: [''],
+        alternanciaEstudiantesParticipantes: [''],
+        alternanciaNombreActividad: [''],
+
+        salidaObjetivoPedagogico: [''],
+        salidaAsignaturaVinculada: [''],
+        salidaProfesorResponsable: [''],
+        salidaEstRut: [''],
+        salidaEstNombre: [''],
       }),
 
       equipoTrabajo: this.fb.group({
         rut: ['', [Validators.required, this.rutValidator()]],
         nombre: ['', [Validators.required, Validators.maxLength(120)]],
-        tipo: ['', Validators.required], // aquí irá DIRECTIVOS, DOCENTES, etc.
+        tipo: ['', Validators.required],
       }),
-
 
       evidencias: this.fb.group({
         listaAsistenciaRef: [''],
@@ -158,7 +211,6 @@ export class ActividadesPmComponent implements OnInit {
         enlaceNoticia: [''],
         observaciones: [''],
       }),
-
 
       financiamiento: this.fb.group({
         finTipo: [''],
@@ -169,17 +221,13 @@ export class ActividadesPmComponent implements OnInit {
       participantes: this.fb.group({
         instTipo: ['PACE', Validators.required],
         instNombre: ['', [Validators.required, Validators.maxLength(150)]],
-
-        // matriz
         ...this.buildParticipantesControls(),
       }),
-
 
       impacto: this.fb.group({
         medidaImpacto: ['ENCUESTA', Validators.required],
         indicadorImpacto: ['', Validators.required],
       }),
-
 
       difusion: this.fb.group({
         difusionEquipo: ['SELECCIONE', Validators.required],
@@ -187,26 +235,27 @@ export class ActividadesPmComponent implements OnInit {
       }),
     });
 
-
     this.fProy('tipoVinculacion').valueChanges.subscribe((v: string) => {
-  const otroCtrl = this.fProy('tipoVinculacionOtro');
+      const otroCtrl = this.fProy('tipoVinculacionOtro');
+      if (v === 'Otro') {
+        otroCtrl.enable({ emitEvent: false });
+        otroCtrl.setValidators([Validators.required, Validators.maxLength(100)]);
+      } else {
+        otroCtrl.reset('', { emitEvent: false });
+        otroCtrl.clearValidators();
+        otroCtrl.disable({ emitEvent: false });
+      }
+      otroCtrl.updateValueAndValidity({ emitEvent: false });
+    });
 
-  if (v === 'Otro') {
-    otroCtrl.enable({ emitEvent: false });
-    otroCtrl.setValidators([Validators.required, Validators.maxLength(100)]);
-  } else {
-    otroCtrl.reset('', { emitEvent: false });
-    otroCtrl.clearValidators();
-    otroCtrl.disable({ emitEvent: false });
+    this.fProy('tipoActividad').valueChanges.subscribe((t: TipoActividad) => {
+      this.aplicarValidadoresTipoActividad(t);
+    });
+
+    const initial = this.fProy('tipoActividad').value as TipoActividad;
+    this.aplicarValidadoresTipoActividad(initial);
   }
 
-  otroCtrl.updateValueAndValidity({ emitEvent: false });
-});
-
-
-  }
-
-  // helpers
   fProy(name: string) {
     return (this.form.get('proyecto') as FormGroup).get(name)!;
   }
@@ -215,36 +264,120 @@ export class ActividadesPmComponent implements OnInit {
     return (this.form.get('impacto') as FormGroup).get(name)!;
   }
 
-  // =========================
-  // Unidad
-  // =========================
+  fEq(name: string) {
+    return (this.form.get('equipoTrabajo') as FormGroup).get(name)!;
+  }
+
+  private aplicarValidadoresTipoActividad(t?: TipoActividad | null) {
+    const allSpecific = [
+      'feriaInstitucionVisitada',
+
+      'jornadaTemaCentral',
+      'jornadaTalleres',
+      'jornadaResponsableTaller',
+      'jornadaNumAsistentes',
+      'jornadaSatisfaccion',
+
+      'tallerAsignatura',
+      'tallerCompetencia',
+      'tallerNombreEstudiantesBeneficiados',
+
+      'congresoNombreEvento',
+      'congresoPonenciaPresentada',
+      'congresoRelator',
+      'congresoNumAsistentes',
+      'congresoSatisfaccion',
+
+      'alternanciaColegioAsociado',
+      'alternanciaDocenteColaborador',
+      'alternanciaAsignatura',
+      'alternanciaCurso',
+      'alternanciaDocenteAsignatura',
+      'alternanciaEstudiantesParticipantes',
+      'alternanciaNombreActividad',
+
+      'salidaObjetivoPedagogico',
+      'salidaAsignaturaVinculada',
+      'salidaProfesorResponsable',
+    ];
+
+    for (const k of allSpecific) {
+      const c = this.fProy(k);
+      c.clearValidators();
+      c.updateValueAndValidity({ emitEvent: false });
+    }
+
+    if (!t) return;
+
+    const reqText = (k: string, max = 250) => this.setReq(k, [Validators.required, Validators.maxLength(max)]);
+    const reqNum = (k: string) => this.setReq(k, [Validators.required, Validators.min(0)]);
+
+    if (t === 'FERIA_VOCACIONAL') {
+      reqText('feriaInstitucionVisitada', 200);
+    }
+
+    if (t === 'JORNADA_PEDAGOGICA') {
+      reqText('jornadaTemaCentral', 250);
+      reqText('jornadaTalleres', 250);
+      reqText('jornadaResponsableTaller', 200);
+      reqNum('jornadaNumAsistentes');
+      reqNum('jornadaSatisfaccion');
+    }
+
+    if (t === 'TALLER_REMEDIAL') {
+      reqText('tallerAsignatura', 200);
+      reqText('tallerCompetencia', 250);
+      reqText('tallerNombreEstudiantesBeneficiados', 250);
+    }
+
+    if (t === 'CONGRESO_ACADEMICO') {
+      reqText('congresoNombreEvento', 250);
+      reqText('congresoPonenciaPresentada', 250);
+      reqText('congresoRelator', 200);
+      reqNum('congresoNumAsistentes');
+      reqNum('congresoSatisfaccion');
+    }
+
+    if (t === 'ALTERNANCIA_PEDAGOGICA') {
+      reqText('alternanciaColegioAsociado', 250);
+      reqText('alternanciaDocenteColaborador', 200);
+      reqText('alternanciaAsignatura', 200);
+      reqText('alternanciaCurso', 80);
+      reqText('alternanciaDocenteAsignatura', 200);
+      reqText('alternanciaEstudiantesParticipantes', 250);
+      reqText('alternanciaNombreActividad', 250);
+    }
+
+    if (t === 'SALIDA_A_TERRENO') {
+      reqText('salidaObjetivoPedagogico', 300);
+      reqText('salidaAsignaturaVinculada', 200);
+      reqText('salidaProfesorResponsable', 200);
+    }
+  }
+
+  private setReq(key: string, validators: any[]) {
+    const c = this.fProy(key);
+    c.setValidators(validators);
+    c.updateValueAndValidity({ emitEvent: false });
+  }
+
   addUnidad(): void {
     const cod = String(this.fProy('unidadCod').value ?? '').trim();
     const unidad = String(this.fProy('unidadNombre').value ?? '').trim();
-
     if (!cod || !unidad) return;
 
-    // evitar duplicados por código (opcional)
-    const exists = this.unidades.some(u => u.cod.toLowerCase() === cod.toLowerCase());
-    if (exists) {
-      console.warn('El código de unidad ya existe.');
-      return;
-    }
+    const exists = this.unidades.some((u) => u.cod.toLowerCase() === cod.toLowerCase());
+    if (exists) return;
 
     this.unidades = [...this.unidades, { cod, unidad }];
-
     this.fProy('unidadCod').setValue('');
     this.fProy('unidadNombre').setValue('');
   }
 
-
   removeUnidad(row: UnidadRow): void {
-    this.unidades = this.unidades.filter(x => x !== row);
+    this.unidades = this.unidades.filter((x) => x !== row);
   }
 
-  // =========================
-  // Responsable
-  // =========================
   addResponsable(): void {
     const rut = String(this.fProy('responsableRut').value ?? '').trim();
     const nombre = String(this.fProy('responsableNombre').value ?? '').trim();
@@ -260,30 +393,9 @@ export class ActividadesPmComponent implements OnInit {
   }
 
   removeResponsable(row: ResponsableRow): void {
-    this.responsables = this.responsables.filter(x => x !== row);
+    this.responsables = this.responsables.filter((x) => x !== row);
   }
 
-  // =========================
-  // Equipo de trabajo (filtro)
-  // =========================
-  aplicarFiltroEquipo(): void {
-    const filtro = String(this.form.get('equipoTrabajo.equipoFiltro')?.value ?? 'TODOS');
-
-    if (filtro === 'TODOS') {
-      this.equipoFiltrado = [...this.equipoTrabajo];
-      return;
-    }
-    if (filtro === 'SELECCIONE') {
-      this.equipoFiltrado = [];
-      return;
-    }
-    this.equipoFiltrado = this.equipoTrabajo.filter(x => x.tipo === filtro);
-  }
-
-
-  fEq(name: string) {
-  return (this.form.get('equipoTrabajo') as FormGroup).get(name)!;
-}
 
   addEquipo(): void {
     const g = this.form.get('equipoTrabajo') as FormGroup;
@@ -302,67 +414,115 @@ export class ActividadesPmComponent implements OnInit {
     }
 
     rut = this.formatRut(rut);
-
-    // evitar duplicados por RUT (opcional)
-    const exists = this.equipoTrabajo.some(x => x.rut.toLowerCase() === rut.toLowerCase());
-    if (exists) {
-      console.warn('Este RUT ya está agregado.');
-      return;
-    }
+    const exists = this.equipoTrabajo.some((x) => x.rut.toLowerCase() === rut.toLowerCase());
+    if (exists) return;
 
     this.equipoTrabajo = [...this.equipoTrabajo, { rut, nombre, tipo }];
-
     g.reset({ rut: '', nombre: '', tipo: '' });
     g.markAsPristine();
     g.markAsUntouched();
   }
 
   removeEquipo(row: EquipoRow): void {
-    this.equipoTrabajo = this.equipoTrabajo.filter(x => x !== row);
+    this.equipoTrabajo = this.equipoTrabajo.filter((x) => x !== row);
   }
 
-onRutInputEquipo(ev: Event): void {
+  onRutInputEquipo(ev: Event): void {
+    const input = ev.target as HTMLInputElement;
+    const formatted = this.formatRut(input.value);
+    this.fEq('rut').setValue(formatted, { emitEvent: false });
+  }
+
+  onRutInputResponsable(ev: Event): void {
   const input = ev.target as HTMLInputElement;
   const formatted = this.formatRut(input.value);
-  this.fEq('rut').setValue(formatted, { emitEvent: false });
+  this.fProy('responsableRut').setValue(formatted, { emitEvent: false });
 }
 
-private formatRut(value: string): string {
-  // deja solo 0-9 y K
-  const clean = value.toUpperCase().replace(/[^0-9K]/g, '');
-  if (clean.length < 2) return clean;
+  onRutInputFeria(ev: Event): void {
+    const input = ev.target as HTMLInputElement;
+    const formatted = this.formatRut(input.value);
+    this.fProy('feriaEstRut').setValue(formatted, { emitEvent: false });
+  }
 
-  const body = clean.slice(0, -1);
-  const dv = clean.slice(-1);
+  onRutInputSalida(ev: Event): void {
+    const input = ev.target as HTMLInputElement;
+    const formatted = this.formatRut(input.value);
+    this.fProy('salidaEstRut').setValue(formatted, { emitEvent: false });
+  }
 
-  // puntos cada 3 desde el final
-  const withDots = body.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  addEstudianteFeria(): void {
+    const rutRaw = String(this.fProy('feriaEstRut').value ?? '').trim();
+    const nombre = String(this.fProy('feriaEstNombre').value ?? '').trim();
 
-  return `${withDots}-${dv}`;
-}
+    if (!rutRaw && !nombre) return;
 
-private rutValidator() {
-  return (control: AbstractControl): ValidationErrors | null => {
-    const v = String(control.value ?? '').trim();
-    if (!v) return null;
+    const rut = rutRaw ? this.formatRut(rutRaw) : '';
+    if (rut && !this.isRutFormatOk(rut)) return;
 
-    // Formato esperado: 12.345.678-9 o 12.345.678-K
-    const okFormat = /^\d{1,2}(\.\d{3}){2}-[0-9K]$/i.test(v);
-    if (!okFormat) return { rut: true };
+    const exists = rut ? this.estudiantesFeria.some((x) => (x.rut ?? '').toLowerCase() === rut.toLowerCase()) : false;
+    if (exists) return;
 
-    // (Opcional) aquí podrías validar DV real si quieres
-    return null;
-  };
-}
+    this.estudiantesFeria = [...this.estudiantesFeria, { rut: rut || undefined, nombre: nombre || undefined }];
 
-  // =========================
-  // Financiamiento
-  // =========================
+    this.fProy('feriaEstRut').setValue('');
+    this.fProy('feriaEstNombre').setValue('');
+  }
+
+  removeEstudianteFeria(row: EstudianteRow): void {
+    this.estudiantesFeria = this.estudiantesFeria.filter((x) => x !== row);
+  }
+
+  addEstudianteSalida(): void {
+    const rutRaw = String(this.fProy('salidaEstRut').value ?? '').trim();
+    const nombre = String(this.fProy('salidaEstNombre').value ?? '').trim();
+
+    if (!rutRaw && !nombre) return;
+
+    const rut = rutRaw ? this.formatRut(rutRaw) : '';
+    if (rut && !this.isRutFormatOk(rut)) return;
+
+    const exists = rut ? this.estudiantesSalida.some((x) => (x.rut ?? '').toLowerCase() === rut.toLowerCase()) : false;
+    if (exists) return;
+
+    this.estudiantesSalida = [...this.estudiantesSalida, { rut: rut || undefined, nombre: nombre || undefined }];
+
+    this.fProy('salidaEstRut').setValue('');
+    this.fProy('salidaEstNombre').setValue('');
+  }
+
+  removeEstudianteSalida(row: EstudianteRow): void {
+    this.estudiantesSalida = this.estudiantesSalida.filter((x) => x !== row);
+  }
+
+  private isRutFormatOk(v: string): boolean {
+    return /^\d{1,2}(\.\d{3}){2}-[0-9K]$/i.test(v);
+  }
+
+  private formatRut(value: string): string {
+    const clean = value.toUpperCase().replace(/[^0-9K]/g, '');
+    if (clean.length < 2) return clean;
+
+    const body = clean.slice(0, -1);
+    const dv = clean.slice(-1);
+    const withDots = body.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    return `${withDots}-${dv}`;
+  }
+
+  private rutValidator() {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const v = String(control.value ?? '').trim();
+      if (!v) return null;
+      const okFormat = /^\d{1,2}(\.\d{3}){2}-[0-9K]$/i.test(v);
+      if (!okFormat) return { rut: true };
+      return null;
+    };
+  }
+
   addFinanciamiento(): void {
     const g = this.form.get('financiamiento') as FormGroup;
     const tipo = String(g.get('finTipo')?.value ?? '').trim();
     const monto = Number(g.get('finMonto')?.value ?? 0);
-
     if (!tipo) return;
 
     this.financiamientos = [...this.financiamientos, { tipo, monto: isNaN(monto) ? 0 : monto }];
@@ -371,84 +531,68 @@ private rutValidator() {
   }
 
   removeFin(row: FinRow): void {
-    this.financiamientos = this.financiamientos.filter(x => x !== row);
+    this.financiamientos = this.financiamientos.filter((x) => x !== row);
   }
 
   addCentroCosto(): void {
     const g = this.form.get('financiamiento') as FormGroup;
     const tipo = String(g.get('ccTipo')?.value ?? '').trim();
-
     if (!tipo) {
       g.get('ccTipo')?.markAsTouched();
       return;
     }
-
     this.centrosCosto = [...this.centrosCosto, { tipo }];
-
     g.get('ccTipo')?.setValue('');
   }
 
+  removeCC(row: CentroCostoRow): void {
+    this.centrosCosto = this.centrosCosto.filter((x) => x !== row);
+  }
 
   onFileSelected(event: Event, tipo: 'asistencia' | 'documentos' | 'fotos'): void {
-  const input = event.target as HTMLInputElement;
-  const file = input.files?.[0];
-  if (!file) return;
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
 
-  // Validaciones rápidas (ajusta si quieres)
-  const maxMb = 10;
-  const sizeOk = file.size <= maxMb * 1024 * 1024;
+    const maxMb = 10;
+    const sizeOk = file.size <= maxMb * 1024 * 1024;
 
-  const ext = (file.name.split('.').pop() ?? '').toLowerCase();
-  const allow = {
-    asistencia: ['pdf', 'xls', 'xlsx'],
-    documentos: ['pdf', 'xls', 'xlsx'],
-    fotos: ['jpg', 'jpeg', 'png'],
-  }[tipo];
+    const ext = (file.name.split('.').pop() ?? '').toLowerCase();
+    const allow = {
+      asistencia: ['pdf', 'xls', 'xlsx'],
+      documentos: ['pdf', 'xls', 'xlsx'],
+      fotos: ['jpg', 'jpeg', 'png'],
+    }[tipo];
 
-  if (!allow.includes(ext) || !sizeOk) {
-    // si quieres, aquí puedes mostrar snackBar
-    console.warn(`Archivo inválido. Permitidos: ${allow.join(', ')}. Máx: ${maxMb}MB`);
-    input.value = '';
-    return;
+    if (!allow.includes(ext) || !sizeOk) {
+      input.value = '';
+      return;
+    }
+
+    if (tipo === 'asistencia') {
+      this.asistenciaFile = file;
+      this.asistenciaFileName = file.name;
+    } else if (tipo === 'documentos') {
+      this.documentosFile = file;
+      this.documentosFileName = file.name;
+    } else {
+      this.fotosFile = file;
+      this.fotosFileName = file.name;
+    }
   }
-
-  if (tipo === 'asistencia') {
-    this.asistenciaFile = file;
-    this.asistenciaFileName = file.name;
-  } else if (tipo === 'documentos') {
-    this.documentosFile = file;
-    this.documentosFileName = file.name;
-  } else {
-    this.fotosFile = file;
-    this.fotosFileName = file.name;
-  }
-}
-
-
-  removeCC(row: CentroCostoRow): void {
-    this.centrosCosto = this.centrosCosto.filter(x => x !== row);
-  }
-
-  // =========================
-  // Difusión
-  // =========================
 
   private urlOptionalValidator() {
-  return (control: AbstractControl): ValidationErrors | null => {
-    const v = String(control.value ?? '').trim();
-    if (!v) return null; // opcional
-    const ok = /^https?:\/\/.+/i.test(v);
-    return ok ? null : { url: true };
-  };
-}
+    return (control: AbstractControl): ValidationErrors | null => {
+      const v = String(control.value ?? '').trim();
+      if (!v) return null;
+      const ok = /^https?:\/\/.+/i.test(v);
+      return ok ? null : { url: true };
+    };
+  }
 
-  // =========================
-  // Participantes (matriz)
-  // =========================
   private buildParticipantesControls(): Record<string, any> {
     const obj: Record<string, any> = {};
     const tipos = ['ASISTENTE', 'EXPOSITOR'];
-
     for (const t of tipos) {
       for (const col of this.participantesColumnas) {
         obj[this.key(t, col)] = [0, [Validators.min(0)]];
@@ -458,22 +602,16 @@ private rutValidator() {
   }
 
   key(tipo: string, col: string): string {
-    // clave segura para formControlName
     return `${tipo}__${col}`.replace(/\s+/g, '_').replace(/[()]/g, '');
   }
 
   grabarParticipantes(): void {
-    // aquí normalmente llamas al backend
     const g = this.form.get('participantes') as FormGroup;
     console.log('Participantes (matriz):', g.value);
   }
 
-  // =========================
-  // Instituciones
-  // =========================
   addInstitucion(): void {
     const g = this.form.get('participantes') as FormGroup;
-
     const tipo = String(g.get('instTipo')?.value ?? '').trim();
     const nombre = String(g.get('instNombre')?.value ?? '').trim();
 
@@ -483,92 +621,73 @@ private rutValidator() {
     }
 
     this.instituciones = [...this.instituciones, { tipo, nombre }];
-
     g.get('instNombre')?.setValue('');
     g.get('instNombre')?.markAsPristine();
     g.get('instNombre')?.markAsUntouched();
   }
 
-
   removeInstitucion(row: InstRow): void {
-    this.instituciones = this.instituciones.filter(x => x !== row);
+    this.instituciones = this.instituciones.filter((x) => x !== row);
   }
 
-  // =========================
-  // Impacto
-  // =========================
-  buscarResponsableImpacto(): void {
-    // simulado (con backend: buscar por texto)
-    const q = String(this.form.get('impacto.impactoResponsableSearch')?.value ?? '').trim();
-    console.log('Buscar responsable impacto:', q);
-  }
-
-  // =========================
-  // Guardar general
-  // =========================
   guardar(): void {
+    if (this.unidades.length === 0) {
+      this.form.markAllAsTouched();
+      return;
+    }
+    if (this.responsables.length === 0) {
+      this.form.markAllAsTouched();
+      return;
+    }
+    if (this.equipoTrabajo.length === 0) {
+      this.form.markAllAsTouched();
+      return;
+    }
 
-  // 1️Debe existir al menos 1 unidad
-  if (this.unidades.length === 0) {
-    this.form.markAllAsTouched();
-    console.warn('Falta Unidad.');
-    return;
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+
+    const payload = {
+      ...this.form.value,
+      unidades: this.unidades,
+      responsables: this.responsables,
+      equipoTrabajo: this.equipoTrabajo,
+      financiamientos: this.financiamientos,
+      centrosCosto: this.centrosCosto,
+      instituciones: this.instituciones,
+      estudiantesFeria: this.estudiantesFeria,
+      estudiantesSalida: this.estudiantesSalida,
+      evidenciasFiles: {
+        asistencia: this.asistenciaFile,
+        documentos: this.documentosFile,
+        fotos: this.fotosFile,
+      },
+    };
+
+    console.log('GRABAR (payload):', payload);
   }
-
-  // 2️Debe existir al menos 1 responsable
-  if (this.responsables.length === 0) {
-    this.form.markAllAsTouched();
-    console.warn('Falta Responsable.');
-    return;
-  }
-
-  // 3️Debe existir al menos 1 integrante del equipo de trabajo
-  if (this.equipoTrabajo.length === 0) {
-    this.form.markAllAsTouched();
-    console.warn('Falta Equipo de trabajo.');
-    return;
-  }
-
-  // Validación general del formulario
-  if (this.form.invalid) {
-    this.form.markAllAsTouched();
-    return;
-  }
-
-  // Construcción del payload
-  const payload = {
-    ...this.form.value,
-    unidades: this.unidades,
-    responsables: this.responsables,
-    equipoTrabajo: this.equipoTrabajo,
-    financiamientos: this.financiamientos,
-    centrosCosto: this.centrosCosto,
-    instituciones: this.instituciones,
-    evidenciasFiles: {
-      asistencia: this.asistenciaFile,
-      documentos: this.documentosFile,
-      fotos: this.fotosFile,
-    },
-  };
-
-  console.log('GRABAR (payload):', payload);
-}
-
 
   limpiar(): void {
     this.unidades = [];
     this.responsables = [];
+    this.equipoTrabajo = [];
     this.financiamientos = [];
     this.centrosCosto = [];
     this.instituciones = [];
-    this.asistenciaFile = null; this.asistenciaFileName = '';
-    this.documentosFile = null; this.documentosFileName = '';
-    this.fotosFile = null; this.fotosFileName = '';
+    this.estudiantesFeria = [];
+    this.estudiantesSalida = [];
 
+    this.asistenciaFile = null;
+    this.asistenciaFileName = '';
+    this.documentosFile = null;
+    this.documentosFileName = '';
+    this.fotosFile = null;
+    this.fotosFileName = '';
 
-    // vuelve a setear matriz participantes a 0
     const part = this.form.get('participantes') as FormGroup;
-    Object.keys(part.controls).forEach(k => {
+    Object.keys(part.controls).forEach((k) => {
       if (k.includes('ASISTENTE__') || k.includes('EXPOSITOR__')) part.get(k)?.setValue(0);
     });
 
@@ -593,8 +712,42 @@ private rutValidator() {
         ingresos: 0,
         proyectoAsociado: 'SELECCIONE',
         resultados: '',
-      },
+        tipoActividad: null,
 
+        feriaInstitucionVisitada: '',
+        feriaEstRut: '',
+        feriaEstNombre: '',
+
+        jornadaTemaCentral: '',
+        jornadaTalleres: '',
+        jornadaResponsableTaller: '',
+        jornadaNumAsistentes: null,
+        jornadaSatisfaccion: null,
+
+        tallerAsignatura: '',
+        tallerCompetencia: '',
+        tallerNombreEstudiantesBeneficiados: '',
+
+        congresoNombreEvento: '',
+        congresoPonenciaPresentada: '',
+        congresoRelator: '',
+        congresoNumAsistentes: null,
+        congresoSatisfaccion: null,
+
+        alternanciaColegioAsociado: '',
+        alternanciaDocenteColaborador: '',
+        alternanciaAsignatura: '',
+        alternanciaCurso: '',
+        alternanciaDocenteAsignatura: '',
+        alternanciaEstudiantesParticipantes: '',
+        alternanciaNombreActividad: '',
+
+        salidaObjetivoPedagogico: '',
+        salidaAsignaturaVinculada: '',
+        salidaProfesorResponsable: '',
+        salidaEstRut: '',
+        salidaEstNombre: '',
+      },
       evidencias: {
         listaAsistenciaRef: '',
         documentosRef: '',
@@ -602,16 +755,13 @@ private rutValidator() {
         enlaceNoticia: '',
         observaciones: '',
       },
-
-
       equipoTrabajo: { rut: '', nombre: '', tipo: '' },
-      financiamiento: { finTipo: '', finMonto: 0, ccTipo: ''},
-      difusion: { difusionEquipo: 'TODOS', difusionUrl: '' },
-      participantes: { instTipo: 'CONVENIO', instNombre: '' },
-      impacto: { medidaImpacto: 'ENCUESTA', indicadorImpacto: ''}
+      financiamiento: { finTipo: '', finMonto: 0, ccTipo: '' },
+      difusion: { difusionEquipo: 'SELECCIONE', difusionUrl: '' },
+      participantes: { instTipo: 'PACE', instNombre: '' },
+      impacto: { medidaImpacto: 'ENCUESTA', indicadorImpacto: '' },
     });
 
-    this.aplicarFiltroEquipo();
     this.form.markAsPristine();
     this.form.markAsUntouched();
   }
