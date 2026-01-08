@@ -33,7 +33,6 @@ export class ReportesController {
     return this.reportes.getReporteEstudiante(rut);
   }
 
-  // ✅ NUEVO: listado paginado server-side + búsqueda unificada
   @Get('estudiantes')
   listarEstudiantes(
     @Query('search') search?: string,
@@ -51,7 +50,6 @@ export class ReportesController {
     });
   }
 
-  // ⛔ lo dejamos por compatibilidad si lo usas en otra vista
   @Get('estudiantes/buscar')
   buscar(@Query('nombre') nombre: string) {
     return this.reportes.buscarEstudiantes(nombre);

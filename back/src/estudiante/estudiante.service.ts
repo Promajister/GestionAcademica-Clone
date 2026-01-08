@@ -12,10 +12,6 @@ import { Workbook } from 'exceljs';
 @Injectable()
 export class EstudianteService {
   constructor(private prisma: PrismaService) {}
-
-  /* ============================
-     LISTADO
-  ============================ */
   async findAll(q: QueryEstudianteDto) {
     const nombreTerm = q.nombre?.trim();
     const rutRaw = q.rut?.trim();
