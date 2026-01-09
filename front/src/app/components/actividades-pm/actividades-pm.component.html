@@ -23,8 +23,6 @@
           class="btn-cta"
           type="button"
           (click)="guardar()"
-          [disabled]="form.invalid || unidades.length===0 || responsables.length===0 || equipoTrabajo.length===0"
-
         >
           <mat-icon>save</mat-icon>
           Grabar
@@ -65,7 +63,7 @@
     <mat-card-content class="FormContent">
       <form [formGroup]="form">
 
-        <mat-tab-group class="Tabs" animationDuration="200ms">
+        <mat-tab-group class="Tabs" animationDuration="200ms" [(selectedIndex)]="selectedTabIndex">
           <!-- =======================
                TAB: PROYECTO
                ======================= -->
@@ -75,10 +73,10 @@
               Proyecto
             </ng-template>
 
-            <div class="TabBody" formGroupName="proyecto">
+            <div class="TabBody" formGroupName="proyecto" data-tab="0">
 
               <!-- SECTION: RESPONSABLE -->
-              <div class="SectionHead">
+              <div class="SectionHead" id="sec-responsables">
                 <mat-icon>person</mat-icon>
                 <h3>Responsable *</h3>
               </div>
@@ -490,8 +488,8 @@
     Unidad
   </ng-template>
 
-  <div class="TabBody" formGroupName="proyecto">
-    <div class="SectionHead">
+  <div class="TabBody" formGroupName="proyecto" data-tab="1">
+    <div class="SectionHead" id="sec-unidades">
       <mat-icon>apartment</mat-icon>
       <h3>Unidad *</h3>
     </div>
@@ -566,7 +564,7 @@
               Equipo Trabajo
             </ng-template>
 
-            <div class="TabBody" formGroupName="equipoTrabajo">
+            <div class="TabBody" formGroupName="equipoTrabajo" data-tab="2">
               <div class="SectionHead">
                 <mat-icon>groups</mat-icon>
                 <h3>Equipo de Trabajo</h3>
@@ -668,7 +666,7 @@
               Financiamiento
             </ng-template>
 
-            <div class="TabBody" formGroupName="financiamiento">
+            <div class="TabBody" formGroupName="financiamiento" data-tab="3">
 
               <div class="SectionHead">
                 <mat-icon>payments</mat-icon>
@@ -762,8 +760,8 @@
                 Difusión
               </ng-template>
 
-              <div class="TabBody" formGroupName="difusion">
-                <div class="SectionHead">
+              <div class="TabBody" formGroupName="difusion" data-tab="4">
+                <div class="SectionHead" id="sec-equipo">
                   <mat-icon>campaign</mat-icon>
                   <h3>Difusión Actividad</h3>
                 </div>
@@ -854,7 +852,7 @@
               Participantes
             </ng-template>
 
-            <div class="TabBody" formGroupName="participantes">
+            <div class="TabBody" formGroupName="participantes" data-tab="5">
               <div class="SectionHead">
                 <mat-icon>grid_on</mat-icon>
                 <h3>Participantes</h3>
@@ -984,7 +982,7 @@
               Evaluación de Impacto
             </ng-template>
 
-            <div class="TabBody" formGroupName="impacto">
+            <div class="TabBody" formGroupName="impacto" data-tab="6">
               <div class="SectionHead">
                 <mat-icon>analytics</mat-icon>
                 <h3>Evaluación de Impacto</h3>
@@ -1016,7 +1014,7 @@
           Evidencias
         </ng-template>
 
-        <div class="TabBody" formGroupName="evidencias">
+        <div class="TabBody" formGroupName="evidencias" data-tab="7">
 
         <div class="SectionHead">
           <mat-icon>verified</mat-icon>
@@ -1181,8 +1179,7 @@
             Limpiar
           </button>
 
-          <button mat-flat-button color="primary" class="SubmitBtn" type="button" (click)="guardar()" [disabled]="form.invalid || unidades.length===0 || responsables.length===0 || equipoTrabajo.length===0"
->
+          <button mat-flat-button color="primary" class="SubmitBtn" type="button" (click)="guardar()">
             <mat-icon>save</mat-icon>
             Grabar
           </button>

@@ -9,15 +9,21 @@ export interface EvidenciasFiles {
   fotos?: File | null;
 }
 
-export interface GuardarActividadPmRequest {
+export interface DifusionItem {
+  medio: string;
+  url?: string;
+}
 
+export interface GuardarActividadPmRequest {
   payload: any;
   unidades: any[];
   responsables: any[];
+  equipoTrabajo: any[];
   financiamientos: any[];
   centrosCosto: any[];
-  difusiones: string[];
+  difusiones: DifusionItem[];
   instituciones: any[];
+  estudiantes?: any[];
   files?: EvidenciasFiles;
 }
 
@@ -76,10 +82,12 @@ export class ActividadesPmService {
       ...req.payload,
       unidades: req.unidades,
       responsables: req.responsables,
+      equipoTrabajo: req.equipoTrabajo,
       financiamientos: req.financiamientos,
       centrosCosto: req.centrosCosto,
       difusiones: req.difusiones,
       instituciones: req.instituciones,
+      estudiantes: req.estudiantes ?? [],
     };
 
     fd.append('data', JSON.stringify(data));

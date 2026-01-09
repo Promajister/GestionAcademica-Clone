@@ -456,4 +456,199 @@ model Observacion {
 
   @@map("observacion")
 }
+model ActividadVinculacion {
+  id Int @id @default(autoincrement())
 
+  // tipo de actividad (controlado por front)
+  tipoActividad String // "Feria Vocacional" | "Jornada Pedagogica" | "Taller Remedial" | "Congreso Academico" | "Alternancia Pedagogica" | "Salida a Terreno"
+
+  nombre      String
+  objetivo    String
+  descripcion String
+
+  tipoVinculacion String
+  areaVinculacion String
+  areaImpacto     String
+  sede            String
+
+  fechaInicio  DateTime
+  fechaTermino DateTime
+
+  lugar    String?
+  ingresos Int @default(0)
+
+  proyecto   String?
+  resultados String?
+
+  // difusion (1:1 embebida)
+  medioDifusion String?
+  urlDifusion   String?
+
+  // evidencias (texto)
+  enlaceNoticia String?
+  observaciones String?
+
+  // Campos condicionales segun tipoActividad
+
+  // Feria Vocacional
+  institucionVisitada String?
+
+  // Jornada Pedagogica
+  temaCentral       String?
+  talleres          String?
+  responsableTaller String?
+
+  // Taller Remedial
+  asignaturaRemedial            String?
+  competenciaAReforzar          String?
+  numeroEstudiantesBeneficiados Int?
+
+  // Congreso Academico
+  nombreEvento       String?
+  ponenciaPresentada String?
+  relator            String?
+
+  // Alternancia Pedagogica
+  colegioAsociado            String?
+  docenteColaborador         String?
+  asignaturaAlternancia      String?
+  curso                      String?
+  docenteAsignatura          String?
+  nombreActividadAlternancia String?
+
+  // Salida a Terreno
+  objetivoPedagogico  String?
+  asignaturaVinculada String?
+  profesorResponsable String?
+
+  creadoEn    DateTime @default(now())
+  actualizado DateTime @updatedAt
+
+  // relaciones 1:N
+  unidades              UnidadVinculacion[]
+  responsables          ResponsableVinculacion[]
+  equiposTrabajo        EquipoTrabajoVinculacion[]
+  financiamientos       FinanciamientoVinculacion[]
+  centrosCosto          CentroCostoVinculacion[]
+  matricesParticipantes MatrizParticipantesVinculacion[]
+  instituciones         InstitucionVinculacion[]
+  archivosEvidencia     ArchivoEvidenciaVinculacion[]
+  estudiantes           EstudianteActividadVinculacion[]
+
+  @@map("actividad_vinculacion")
+}
+
+model UnidadVinculacion {
+  id     Int    @id @default(autoincrement())
+  codigo String
+  nombre String
+
+  actividadVinculacionId Int
+  actividadVinculacion   ActividadVinculacion @relation(fields: [actividadVinculacionId], references: [id], onDelete: Cascade)
+
+  @@map("actividad_vinculacion_unidad")
+}
+
+model ResponsableVinculacion {
+  id     Int    @id @default(autoincrement())
+  rut    String
+  nombre String
+  tipo   String // INTERNO | EXTERNO
+
+  actividadVinculacionId Int
+  actividadVinculacion   ActividadVinculacion @relation(fields: [actividadVinculacionId], references: [id], onDelete: Cascade)
+
+  @@map("actividad_vinculacion_responsable")
+}
+
+model EquipoTrabajoVinculacion {
+  id     Int    @id @default(autoincrement())
+  rut    String
+  nombre String
+  equipo String
+
+  actividadVinculacionId Int
+  actividadVinculacion   ActividadVinculacion @relation(fields: [actividadVinculacionId], references: [id], onDelete: Cascade)
+
+  @@map("actividad_vinculacion_equipo_trabajo")
+}
+
+model FinanciamientoVinculacion {
+  id        Int    @id @default(autoincrement())
+  categoria String
+  tipo      String
+  monto     Int
+
+  actividadVinculacionId Int
+  actividadVinculacion   ActividadVinculacion @relation(fields: [actividadVinculacionId], references: [id], onDelete: Cascade)
+
+  @@map("actividad_vinculacion_financiamiento")
+}
+
+model CentroCostoVinculacion {
+  id     Int    @id @default(autoincrement())
+  nombre String
+
+  actividadVinculacionId Int
+  actividadVinculacion   ActividadVinculacion @relation(fields: [actividadVinculacionId], references: [id], onDelete: Cascade)
+
+  @@map("actividad_vinculacion_centro_costo")
+}
+
+model MatrizParticipantesVinculacion {
+  id Int @id @default(autoincrement())
+
+  tipoParticipante String // ASISTENTE | EXPOSITOR
+
+  directivosUta          Int @default(0)
+  docentesUta            Int @default(0)
+  estudiantesUta         Int @default(0)
+  funcionariosGestionUta Int @default(0)
+  exalumnos              Int @default(0)
+  otrosExternos          Int @default(0)
+
+  actividadVinculacionId Int
+  actividadVinculacion   ActividadVinculacion @relation(fields: [actividadVinculacionId], references: [id], onDelete: Cascade)
+
+  @@unique([actividadVinculacionId, tipoParticipante])
+
+  @@map("actividad_vinculacion_matriz_participantes")
+}
+
+model InstitucionVinculacion {
+  id     Int    @id @default(autoincrement())
+  tipo   String
+  nombre String
+
+  actividadVinculacionId Int
+  actividadVinculacion   ActividadVinculacion @relation(fields: [actividadVinculacionId], references: [id], onDelete: Cascade)
+
+  @@map("actividad_vinculacion_institucion")
+}
+
+model ArchivoEvidenciaVinculacion {
+  id Int @id @default(autoincrement())
+
+  actividadVinculacionId Int
+  actividadVinculacion   ActividadVinculacion @relation(fields: [actividadVinculacionId], references: [id], onDelete: Cascade)
+
+  tipo   String  // LISTA_ASISTENCIA | DOCUMENTO | FOTOGRAFIA
+  url    String  // ruta/url del archivo en tu servidor
+  nombre String? // opcional para mostrar
+
+  creadoEn DateTime @default(now())
+
+  @@map("actividad_vinculacion_archivo_evidencia")
+}
+
+model EstudianteActividadVinculacion {
+  id Int @id @default(autoincrement())
+
+  rut    String
+  nombre String
+
+  actividadVinculacionId Int
+  actividadVinculacion   ActividadVinculacion @relation(fields: [actividadVinculacionId], references: [id], onDelete: Cascade)
+
+  @@map("actividad_vinculacion_estudiante")
+}

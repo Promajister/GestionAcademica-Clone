@@ -12,6 +12,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatTableModule } from '@angular/material/table';
+import { ActividadesPmService } from '../../services/actividades-pm.service';
 
 type UnidadRow = { cod: string; unidad: string };
 type ResponsableRow = { rut: string; nombre: string; tipo: string };
@@ -53,6 +54,7 @@ type TipoActividad =
 })
 export class ActividadesPmComponent implements OnInit {
   form!: FormGroup;
+  selectedTabIndex = 0;
 
   unidades: UnidadRow[] = [];
   responsables: ResponsableRow[] = [];
@@ -133,7 +135,7 @@ export class ActividadesPmComponent implements OnInit {
   documentosFileName = '';
   fotosFileName = '';
 
-  constructor(private fb: FormBuilder) {}
+  constructor(private fb: FormBuilder, private actividadesPmService: ActividadesPmService) {}
 
   ngOnInit(): void {
     this.form = this.fb.group({
@@ -252,6 +254,8 @@ export class ActividadesPmComponent implements OnInit {
 
     const initial = this.fProy('tipoActividad').value as TipoActividad;
     this.aplicarValidadoresTipoActividad(initial);
+    this.updateEquipoValidators();
+    this.updateInstitucionValidators();
   }
 
   fProy(name: string) {
@@ -419,10 +423,12 @@ export class ActividadesPmComponent implements OnInit {
     g.reset({ rut: '', nombre: '', tipo: '' });
     g.markAsPristine();
     g.markAsUntouched();
+    this.updateEquipoValidators();
   }
 
   removeEquipo(row: EquipoRow): void {
     this.equipoTrabajo = this.equipoTrabajo.filter((x) => x !== row);
+    this.updateEquipoValidators();
   }
 
   onRutInputEquipo(ev: Event): void {
@@ -632,10 +638,12 @@ export class ActividadesPmComponent implements OnInit {
     g.get('instNombre')?.setValue('');
     g.get('instNombre')?.markAsPristine();
     g.get('instNombre')?.markAsUntouched();
+    this.updateInstitucionValidators();
   }
 
   removeInstitucion(row: InstRow): void {
     this.instituciones = this.instituciones.filter((x) => x !== row);
+    this.updateInstitucionValidators();
   }
 
   editResponsable(row: ResponsableRow): void {
@@ -711,40 +719,86 @@ export class ActividadesPmComponent implements OnInit {
   guardar(): void {
     if (this.unidades.length === 0) {
       this.form.markAllAsTouched();
+      this.goToSection('sec-unidades', 0);
       return;
     }
     if (this.responsables.length === 0) {
       this.form.markAllAsTouched();
+      this.goToSection('sec-responsables', 0);
       return;
     }
     if (this.equipoTrabajo.length === 0) {
       this.form.markAllAsTouched();
+      this.goToSection('sec-equipo', 2);
       return;
     }
 
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.focusFirstInvalid();
       return;
     }
 
-    const payload = {
-      ...this.form.value,
+    const estudiantes = [...this.estudiantesFeria, ...this.estudiantesSalida];
+
+    const request = {
+      payload: {
+        proyecto: this.form.value.proyecto,
+        evidencias: this.form.value.evidencias,
+        participantes: this.form.value.participantes,
+        impacto: this.form.value.impacto,
+        difusion: this.form.value.difusion,
+      },
       unidades: this.unidades,
       responsables: this.responsables,
       equipoTrabajo: this.equipoTrabajo,
       financiamientos: this.financiamientos,
       centrosCosto: this.centrosCosto,
+      difusiones: this.difusiones,
       instituciones: this.instituciones,
-      estudiantesFeria: this.estudiantesFeria,
-      estudiantesSalida: this.estudiantesSalida,
-      evidenciasFiles: {
+      estudiantes,
+      files: {
         asistencia: this.asistenciaFile,
         documentos: this.documentosFile,
         fotos: this.fotosFile,
       },
     };
 
-    console.log('GRABAR (payload):', payload);
+    this.actividadesPmService.crear(request).subscribe({
+      next: () => {
+        this.limpiar();
+      },
+      error: (err) => {
+        console.error('Error guardando actividad', err);
+      },
+    });
+  }
+
+  private goToSection(id: string, tabIndex: number) {
+    this.selectedTabIndex = tabIndex;
+    setTimeout(() => {
+      const target = document.getElementById(id);
+      if (!target) return;
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 0);
+  }
+
+  private focusFirstInvalid() {
+    const selector =
+      'form .ng-invalid[formcontrolname], form .ng-invalid input, form .ng-invalid select, form .ng-invalid textarea';
+    const invalid = document.querySelector(selector) as HTMLElement | null;
+    if (!invalid) return;
+
+    const tabBody = invalid.closest('[data-tab]') as HTMLElement | null;
+    if (tabBody) {
+      const idx = Number(tabBody.getAttribute('data-tab'));
+      if (!Number.isNaN(idx)) this.selectedTabIndex = idx;
+    }
+
+    setTimeout(() => {
+      invalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (typeof invalid.focus === 'function') invalid.focus();
+    }, 0);
   }
 
   limpiar(): void {
@@ -841,5 +895,40 @@ export class ActividadesPmComponent implements OnInit {
 
     this.form.markAsPristine();
     this.form.markAsUntouched();
+    this.updateEquipoValidators();
+    this.updateInstitucionValidators();
+  }
+
+  private updateEquipoValidators() {
+    const g = this.form?.get('equipoTrabajo') as FormGroup | null;
+    if (!g) return;
+
+    const require = this.equipoTrabajo.length === 0;
+    const rutCtrl = g.get('rut');
+    const nombreCtrl = g.get('nombre');
+    const tipoCtrl = g.get('tipo');
+
+    rutCtrl?.setValidators(require ? [Validators.required, this.rutValidator()] : [this.rutValidator()]);
+    nombreCtrl?.setValidators(require ? [Validators.required, Validators.maxLength(120)] : [Validators.maxLength(120)]);
+    tipoCtrl?.setValidators(require ? [Validators.required] : []);
+
+    rutCtrl?.updateValueAndValidity({ emitEvent: false });
+    nombreCtrl?.updateValueAndValidity({ emitEvent: false });
+    tipoCtrl?.updateValueAndValidity({ emitEvent: false });
+  }
+
+  private updateInstitucionValidators() {
+    const g = this.form?.get('participantes') as FormGroup | null;
+    if (!g) return;
+
+    const require = this.instituciones.length === 0;
+    const tipoCtrl = g.get('instTipo');
+    const nombreCtrl = g.get('instNombre');
+
+    tipoCtrl?.setValidators(require ? [Validators.required] : []);
+    nombreCtrl?.setValidators(require ? [Validators.required, Validators.maxLength(150)] : [Validators.maxLength(150)]);
+
+    tipoCtrl?.updateValueAndValidity({ emitEvent: false });
+    nombreCtrl?.updateValueAndValidity({ emitEvent: false });
   }
 }
