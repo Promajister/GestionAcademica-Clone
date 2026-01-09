@@ -77,199 +77,86 @@
 
             <div class="TabBody" formGroupName="proyecto">
 
-              
-              <div class="SectionDivider"></div>
+              <!-- SECTION: RESPONSABLE -->
+              <div class="SectionHead">
+                <mat-icon>person</mat-icon>
+                <h3>Responsable *</h3>
+              </div>
 
+              <div class="InlineBar">
+                <mat-form-field appearance="outline" class="InlineField">
+                  <mat-label>RUT</mat-label>
+                  <input matInput formControlName="responsableRut" placeholder="12.345.678-9" (input)="onRutInputResponsable($event)" />
+                </mat-form-field>
 
-                <div class="SectionHead">
-                  <mat-icon>event</mat-icon>
-                  <h3>Tipo de actividad *</h3>
+                <mat-form-field appearance="outline" class="InlineField">
+                  <mat-label>Nombre</mat-label>
+                  <input matInput formControlName="responsableNombre" placeholder="Nombre completo" />
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="InlineField small">
+                  <mat-label>Tipo</mat-label>
+                  <mat-select formControlName="responsableTipo">
+                    <mat-option *ngFor="let t of tiposResponsable" [value]="t">{{ t }}</mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <button mat-stroked-button type="button" (click)="addResponsable()" class="AlignBtn">
+                  <mat-icon>add</mat-icon>
+                  Agregar
+                </button>
+              </div>
+
+              <div class="TableCard">
+                <table mat-table [dataSource]="responsables" class="mat-elevation-z0 SimpleTable">
+                  <ng-container matColumnDef="n">
+                    <th mat-header-cell *matHeaderCellDef>#</th>
+                    <td mat-cell *matCellDef="let row; let i = index">{{ i + 1 }}</td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="rut">
+                    <th mat-header-cell *matHeaderCellDef>R.U.T.</th>
+                    <td mat-cell *matCellDef="let row">{{ row.rut }}</td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="nombre">
+                    <th mat-header-cell *matHeaderCellDef>Nombre</th>
+                    <td mat-cell *matCellDef="let row">{{ row.nombre }}</td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="tipo">
+                    <th mat-header-cell *matHeaderCellDef>Tipo Responsable</th>
+                    <td mat-cell *matCellDef="let row">{{ row.tipo }}</td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="accion">
+                    <th mat-header-cell *matHeaderCellDef class="col-actions">Acción</th>
+                    <td mat-cell *matCellDef="let row" class="col-actions">
+                      <button mat-icon-button color="primary" type="button" (click)="editResponsable(row)" matTooltip="Editar">
+                        <mat-icon>edit</mat-icon>
+                      </button>
+                      <button mat-icon-button color="warn" type="button" (click)="removeResponsable(row)" matTooltip="Eliminar">
+                        <mat-icon>close</mat-icon>
+                      </button>
+                    </td>
+                  </ng-container>
+
+                  <tr mat-header-row *matHeaderRowDef="responsableCols"></tr>
+                  <tr mat-row *matRowDef="let row; columns: responsableCols;"></tr>
+                </table>
+
+                <div class="EmptyState" *ngIf="responsables.length === 0">
+                  <mat-icon>info</mat-icon>
+                  <span>No hay responsables agregados.</span>
                 </div>
-
-                <div class="FormRow">
-                  <mat-form-field appearance="outline" class="FormField FullWidth">
-                    <mat-label>Tipo de actividad</mat-label>
-                    <mat-select formControlName="tipoActividad">
-                      <mat-option *ngFor="let t of tipoActividadCatalogo" [value]="t.value">
-                        {{ t.label }}
-                      </mat-option>
-                    </mat-select>
-                    <mat-error *ngIf="fProy('tipoActividad').touched && fProy('tipoActividad').invalid">Obligatorio</mat-error>
-                  </mat-form-field>
-                </div>
-
-                
-
-                <!-- FERIA VOCACIONAL -->
-                <div *ngIf="fProy('tipoActividad').value === 'FERIA_VOCACIONAL'">
-                  <div class="FormRow">
-                    <mat-form-field appearance="outline" class="FormField">
-                      <mat-label>Institución visitada *</mat-label>
-                      <input matInput formControlName="feriaInstitucionVisitada" maxlength="200" />
-                      <mat-error *ngIf="fProy('feriaInstitucionVisitada').touched && fProy('feriaInstitucionVisitada').invalid">Obligatorio</mat-error>
-                    </mat-form-field>
-                  </div>
-
-                  <div class="SectionDivider"></div>
-
-                  <div class="SectionHead">
-                    <mat-icon>group</mat-icon>
-                    <h3>Estudiantes (opcional)</h3>
-                  </div>
-
-                  <div class="InlineBar">
-                    <mat-form-field appearance="outline" class="InlineField">
-                      <mat-label>RUT</mat-label>
-                      <input matInput formControlName="feriaEstRut" placeholder="12.345.678-9" (input)="onRutInputFeria($event)" />
-                    </mat-form-field>
-
-                    <mat-form-field appearance="outline" class="InlineField">
-                      <mat-label>Nombre</mat-label>
-                      <input matInput formControlName="feriaEstNombre" placeholder="Nombre completo" maxlength="150" />
-                    </mat-form-field>
-
-                    <button mat-stroked-button type="button" (click)="addEstudianteFeria()">
-                      <mat-icon>add</mat-icon>
-                      Agregar
-                    </button>
-                  </div>
-
-                  <div class="TableCard">
-                    <table mat-table [dataSource]="estudiantesFeria" class="mat-elevation-z0 SimpleTable">
-                      <ng-container matColumnDef="n">
-                        <th mat-header-cell *matHeaderCellDef>#</th>
-                        <td mat-cell *matCellDef="let row; let i = index">{{ i + 1 }}</td>
-                      </ng-container>
-
-                      <ng-container matColumnDef="rut">
-                        <th mat-header-cell *matHeaderCellDef>R.U.T.</th>
-                        <td mat-cell *matCellDef="let row">{{ row.rut || '-' }}</td>
-                      </ng-container>
-
-                      <ng-container matColumnDef="nombre">
-                        <th mat-header-cell *matHeaderCellDef>Nombre</th>
-                        <td mat-cell *matCellDef="let row">{{ row.nombre || '-' }}</td>
-                      </ng-container>
-
-                      <ng-container matColumnDef="accion">
-                        <th mat-header-cell *matHeaderCellDef class="col-actions">Acción</th>
-                        <td mat-cell *matCellDef="let row" class="col-actions">
-                          <button mat-icon-button color="warn" type="button" (click)="removeEstudianteFeria(row)">
-                            <mat-icon>close</mat-icon>
-                          </button>
-                        </td>
-                      </ng-container>
-
-                      <tr mat-header-row *matHeaderRowDef="estudianteCols"></tr>
-                      <tr mat-row *matRowDef="let row; columns: estudianteCols;"></tr>
-                    </table>
-
-                    <div class="EmptyState" *ngIf="estudiantesFeria.length === 0">
-                      <mat-icon>info</mat-icon>
-                      <span>No hay estudiantes agregados.</span>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- SALIDA A TERRENO -->
-<div *ngIf="fProy('tipoActividad').value === 'SALIDA_A_TERRENO'">
-
-  <div class="FormRow">
-    <mat-form-field appearance="outline" class="FormField">
-      <mat-label>Objetivo pedagógico *</mat-label>
-      <input matInput formControlName="salidaObjetivoPedagogico" maxlength="300" />
-      <mat-error *ngIf="fProy('salidaObjetivoPedagogico').touched && fProy('salidaObjetivoPedagogico').invalid">
-        Obligatorio
-      </mat-error>
-    </mat-form-field>
-
-    <mat-form-field appearance="outline" class="FormField">
-      <mat-label>Asignatura vinculada *</mat-label>
-      <input matInput formControlName="salidaAsignaturaVinculada" maxlength="200" />
-      <mat-error *ngIf="fProy('salidaAsignaturaVinculada').touched && fProy('salidaAsignaturaVinculada').invalid">
-        Obligatorio
-      </mat-error>
-    </mat-form-field>
-  </div>
-
-  <div class="FormRow">
-    <mat-form-field appearance="outline" class="FormField">
-      <mat-label>Profesor responsable *</mat-label>
-      <input matInput formControlName="salidaProfesorResponsable" maxlength="200" />
-      <mat-error *ngIf="fProy('salidaProfesorResponsable').touched && fProy('salidaProfesorResponsable').invalid">
-        Obligatorio
-      </mat-error>
-    </mat-form-field>
-  </div>
-
-  <div class="SectionDivider"></div>
-
-  <div class="SectionHead">
-    <mat-icon>group</mat-icon>
-    <h3>Estudiantes (opcional)</h3>
-  </div>
-
-  <div class="InlineBar">
-    <mat-form-field appearance="outline" class="InlineField">
-      <mat-label>RUT</mat-label>
-      <input matInput formControlName="salidaEstRut" placeholder="12.345.678-9" (input)="onRutInputSalida($event)" />
-    </mat-form-field>
-
-    <mat-form-field appearance="outline" class="InlineField">
-      <mat-label>Nombre</mat-label>
-      <input matInput formControlName="salidaEstNombre" placeholder="Nombre completo" maxlength="150" />
-    </mat-form-field>
-
-    <button mat-stroked-button type="button" (click)="addEstudianteSalida()">
-      <mat-icon>add</mat-icon>
-      Agregar
-    </button>
-  </div>
-
-  <div class="TableCard">
-    <table mat-table [dataSource]="estudiantesSalida" class="mat-elevation-z0 SimpleTable">
-      <ng-container matColumnDef="n">
-        <th mat-header-cell *matHeaderCellDef>#</th>
-        <td mat-cell *matCellDef="let row; let i = index">{{ i + 1 }}</td>
-      </ng-container>
-
-      <ng-container matColumnDef="rut">
-        <th mat-header-cell *matHeaderCellDef>R.U.T.</th>
-        <td mat-cell *matCellDef="let row">{{ row.rut || '-' }}</td>
-      </ng-container>
-
-      <ng-container matColumnDef="nombre">
-        <th mat-header-cell *matHeaderCellDef>Nombre</th>
-        <td mat-cell *matCellDef="let row">{{ row.nombre || '-' }}</td>
-      </ng-container>
-
-      <ng-container matColumnDef="accion">
-        <th mat-header-cell *matHeaderCellDef class="col-actions">Acción</th>
-        <td mat-cell *matCellDef="let row" class="col-actions">
-          <button mat-icon-button color="warn" type="button" (click)="removeEstudianteSalida(row)">
-            <mat-icon>close</mat-icon>
-          </button>
-        </td>
-      </ng-container>
-
-      <tr mat-header-row *matHeaderRowDef="estudianteCols"></tr>
-      <tr mat-row *matRowDef="let row; columns: estudianteCols;"></tr>
-    </table>
-
-    <div class="EmptyState" *ngIf="estudiantesSalida.length === 0">
-      <mat-icon>info</mat-icon>
-      <span>No hay estudiantes agregados.</span>
-    </div>
-  </div>
-</div>
-
-
+              </div>
 
               <div class="SectionDivider"></div>
 
+              <!-- SECTION: INFORMACIÓN GENERAL -->
               <div class="SectionHead">
                 <mat-icon>edit_note</mat-icon>
-                <h3>Datos de la actividad</h3>
+                <h3>Información General</h3>
               </div>
 
               <div class="FormRow">
@@ -299,27 +186,201 @@
                 </mat-form-field>
               </div>
 
+              <div class="SectionDivider"></div>
+
+              <!-- SECTION: TIPO DE ACTIVIDAD -->
+              <div class="SectionHead">
+                <mat-icon>event</mat-icon>
+                <h3>Tipo de Actividad *</h3>
+              </div>
+
+              <div class="FormRow">
+                <mat-form-field appearance="outline" class="FormField FullWidth">
+                  <mat-label>Tipo de actividad</mat-label>
+                  <mat-select formControlName="tipoActividad">
+                    <mat-option *ngFor="let t of tipoActividadCatalogo" [value]="t.value">
+                      {{ t.label }}
+                    </mat-option>
+                  </mat-select>
+                  <mat-error *ngIf="fProy('tipoActividad').touched && fProy('tipoActividad').invalid">Obligatorio</mat-error>
+                </mat-form-field>
+              </div>
+
+              <!-- FERIA VOCACIONAL -->
+              <div *ngIf="fProy('tipoActividad').value === 'FERIA_VOCACIONAL'">
+                <div class="FormRow">
+                  <mat-form-field appearance="outline" class="FormField FullWidth">
+                    <mat-label>Institución visitada *</mat-label>
+                    <input matInput formControlName="feriaInstitucionVisitada" maxlength="200" />
+                    <mat-error *ngIf="fProy('feriaInstitucionVisitada').touched && fProy('feriaInstitucionVisitada').invalid">Obligatorio</mat-error>
+                  </mat-form-field>
+                </div>
+              </div>
+
+              <!-- JORNADA PEDAGÓGICA -->
+              <div *ngIf="fProy('tipoActividad').value === 'JORNADA_PEDAGOGICA'">
+                <div class="FormRow">
+                  <mat-form-field appearance="outline" class="FormField FullWidth">
+                    <mat-label>Tema central *</mat-label>
+                    <input matInput formControlName="jornadaTemaCentral" maxlength="300" />
+                    <mat-error *ngIf="fProy('jornadaTemaCentral').touched && fProy('jornadaTemaCentral').invalid">Obligatorio</mat-error>
+                  </mat-form-field>
+                </div>
+
+                <div class="FormRow">
+                  <mat-form-field appearance="outline" class="FormField FullWidth">
+                    <mat-label>Talleres *</mat-label>
+                    <input matInput formControlName="jornadaTalleres" maxlength="300" />
+                    <mat-error *ngIf="fProy('jornadaTalleres').touched && fProy('jornadaTalleres').invalid">Obligatorio</mat-error>
+                  </mat-form-field>
+                </div>
+
+                <div class="FormRow">
+                  <mat-form-field appearance="outline" class="FormField FullWidth">
+                    <mat-label>Responsable de taller *</mat-label>
+                    <input matInput formControlName="jornadaResponsableTaller" maxlength="200" />
+                    <mat-error *ngIf="fProy('jornadaResponsableTaller').touched && fProy('jornadaResponsableTaller').invalid">Obligatorio</mat-error>
+                  </mat-form-field>
+                </div>
+              </div>
+
+              <!-- TALLER REMEDIAL -->
+              <div *ngIf="fProy('tipoActividad').value === 'TALLER_REMEDIAL'">
+                <div class="FormRow">
+                  <mat-form-field appearance="outline" class="FormField">
+                    <mat-label>Asignatura *</mat-label>
+                    <input matInput formControlName="tallerAsignatura" maxlength="200" />
+                    <mat-error *ngIf="fProy('tallerAsignatura').touched && fProy('tallerAsignatura').invalid">Obligatorio</mat-error>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="FormField">
+                    <mat-label>Competencia a reforzar *</mat-label>
+                    <input matInput formControlName="tallerCompetencia" maxlength="300" />
+                    <mat-error *ngIf="fProy('tallerCompetencia').touched && fProy('tallerCompetencia').invalid">Obligatorio</mat-error>
+                  </mat-form-field>
+                </div>
+
+                <div class="FormRow">
+                  <mat-form-field appearance="outline" class="FormField">
+                    <mat-label>Nº de estudiantes beneficiados *</mat-label>
+                    <input matInput type="number" formControlName="tallerNombreEstudiantesBeneficiados" min="0" />
+                    <mat-error *ngIf="fProy('tallerNombreEstudiantesBeneficiados').touched && fProy('tallerNombreEstudiantesBeneficiados').invalid">Obligatorio</mat-error>
+                  </mat-form-field>
+
+                  <div class="FormField"></div>
+                </div>
+              </div>
+
+              <!-- CONGRESO ACADÉMICO -->
+              <div *ngIf="fProy('tipoActividad').value === 'CONGRESO_ACADEMICO'">
+                <div class="FormRow">
+                  <mat-form-field appearance="outline" class="FormField FullWidth">
+                    <mat-label>Nombre del evento *</mat-label>
+                    <input matInput formControlName="congresoNombreEvento" maxlength="300" />
+                    <mat-error *ngIf="fProy('congresoNombreEvento').touched && fProy('congresoNombreEvento').invalid">Obligatorio</mat-error>
+                  </mat-form-field>
+                </div>
+
+                <div class="FormRow">
+                  <mat-form-field appearance="outline" class="FormField">
+                    <mat-label>Ponencia presentada *</mat-label>
+                    <input matInput formControlName="congresoPonenciaPresentada" maxlength="300" />
+                    <mat-error *ngIf="fProy('congresoPonenciaPresentada').touched && fProy('congresoPonenciaPresentada').invalid">Obligatorio</mat-error>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="FormField">
+                    <mat-label>Relator *</mat-label>
+                    <input matInput formControlName="congresoRelator" maxlength="200" />
+                    <mat-error *ngIf="fProy('congresoRelator').touched && fProy('congresoRelator').invalid">Obligatorio</mat-error>
+                  </mat-form-field>
+                </div>
+              </div>
+
+              <!-- ALTERNANCIA PEDAGÓGICA -->
+              <div *ngIf="fProy('tipoActividad').value === 'ALTERNANCIA_PEDAGOGICA'">
+                <div class="FormRow">
+                  <mat-form-field appearance="outline" class="FormField">
+                    <mat-label>Colegio asociado *</mat-label>
+                    <input matInput formControlName="alternanciaColegioAsociado" maxlength="300" />
+                    <mat-error *ngIf="fProy('alternanciaColegioAsociado').touched && fProy('alternanciaColegioAsociado').invalid">Obligatorio</mat-error>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="FormField">
+                    <mat-label>Docente colaborador *</mat-label>
+                    <input matInput formControlName="alternanciaDocenteColaborador" maxlength="200" />
+                    <mat-error *ngIf="fProy('alternanciaDocenteColaborador').touched && fProy('alternanciaDocenteColaborador').invalid">Obligatorio</mat-error>
+                  </mat-form-field>
+                </div>
+
+                <div class="FormRow">
+                  <mat-form-field appearance="outline" class="FormField">
+                    <mat-label>Asignatura *</mat-label>
+                    <input matInput formControlName="alternanciaAsignatura" maxlength="200" />
+                    <mat-error *ngIf="fProy('alternanciaAsignatura').touched && fProy('alternanciaAsignatura').invalid">Obligatorio</mat-error>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="FormField">
+                    <mat-label>Curso *</mat-label>
+                    <input matInput formControlName="alternanciaCurso" maxlength="100" />
+                    <mat-error *ngIf="fProy('alternanciaCurso').touched && fProy('alternanciaCurso').invalid">Obligatorio</mat-error>
+                  </mat-form-field>
+                </div>
+
+                <div class="FormRow">
+                  <mat-form-field appearance="outline" class="FormField">
+                    <mat-label>Docente asignatura *</mat-label>
+                    <input matInput formControlName="alternanciaDocenteAsignatura" maxlength="200" />
+                    <mat-error *ngIf="fProy('alternanciaDocenteAsignatura').touched && fProy('alternanciaDocenteAsignatura').invalid">Obligatorio</mat-error>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="FormField">
+                    <mat-label>Nombre actividad *</mat-label>
+                    <input matInput formControlName="alternanciaNombreActividad" maxlength="300" />
+                    <mat-error *ngIf="fProy('alternanciaNombreActividad').touched && fProy('alternanciaNombreActividad').invalid">Obligatorio</mat-error>
+                  </mat-form-field>
+                </div>
+              </div>
+
+              <!-- SALIDA A TERRENO -->
+              <div *ngIf="fProy('tipoActividad').value === 'SALIDA_A_TERRENO'">
+                <div class="FormRow">
+                  <mat-form-field appearance="outline" class="FormField">
+                    <mat-label>Objetivo pedagógico *</mat-label>
+                    <input matInput formControlName="salidaObjetivoPedagogico" maxlength="300" />
+                    <mat-error *ngIf="fProy('salidaObjetivoPedagogico').touched && fProy('salidaObjetivoPedagogico').invalid">Obligatorio</mat-error>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="FormField">
+                    <mat-label>Asignatura vinculada *</mat-label>
+                    <input matInput formControlName="salidaAsignaturaVinculada" maxlength="200" />
+                    <mat-error *ngIf="fProy('salidaAsignaturaVinculada').touched && fProy('salidaAsignaturaVinculada').invalid">Obligatorio</mat-error>
+                  </mat-form-field>
+                </div>
+
+                <div class="FormRow">
+                  <mat-form-field appearance="outline" class="FormField FullWidth">
+                    <mat-label>Profesor responsable *</mat-label>
+                    <input matInput formControlName="salidaProfesorResponsable" maxlength="200" />
+                    <mat-error *ngIf="fProy('salidaProfesorResponsable').touched && fProy('salidaProfesorResponsable').invalid">Obligatorio</mat-error>
+                  </mat-form-field>
+                </div>
+              </div>
+
+              <div class="SectionDivider"></div>
+
+              <!-- SECTION: INFORMACIÓN DE VINCULACIÓN -->
+              <div class="SectionHead">
+                <mat-icon>link</mat-icon>
+                <h3>Información de Vinculación</h3>
+              </div>
+
               <div class="FormRow">
                 <mat-form-field appearance="outline" class="FormField">
                   <mat-label>Tipo Vinculación *</mat-label>
                   <mat-select formControlName="tipoVinculacion">
                     <mat-option *ngFor="let o of tiposVinculacion" [value]="o">{{ o }}</mat-option>
                   </mat-select>
-                  <mat-error *ngIf="fProy('tipoVinculacion').touched && fProy('tipoVinculacion').invalid">
-                    Obligatorio
-                  </mat-error>
-                </mat-form-field>
-
-                <mat-form-field
-                  *ngIf="fProy('tipoVinculacion').value === 'Otro'"
-                  appearance="outline"
-                  class="FormField"
-                >
-                  <mat-label>Especifique tipo de vinculación *</mat-label>
-                  <input matInput formControlName="tipoVinculacionOtro" maxlength="100" />
-                  <mat-error *ngIf="fProy('tipoVinculacionOtro').touched && fProy('tipoVinculacionOtro').invalid">
-                    Debes especificar el tipo
-                  </mat-error>
+                  <mat-error *ngIf="fProy('tipoVinculacion').touched && fProy('tipoVinculacion').invalid">Obligatorio</mat-error>
                 </mat-form-field>
 
                 <mat-form-field appearance="outline" class="FormField">
@@ -327,12 +388,25 @@
                   <mat-select formControlName="areaVinculacion">
                     <mat-option *ngFor="let o of areasVinculacion" [value]="o">{{ o }}</mat-option>
                   </mat-select>
-                  <mat-error *ngIf="fProy('areaVinculacion').touched && fProy('areaVinculacion').invalid">
-                    Obligatorio
-                  </mat-error>
+                  <mat-error *ngIf="fProy('areaVinculacion').touched && fProy('areaVinculacion').invalid">Obligatorio</mat-error>
                 </mat-form-field>
               </div>
 
+              <div *ngIf="fProy('tipoVinculacion').value === 'Otro'" class="FormRow">
+                <mat-form-field appearance="outline" class="FormField FullWidth">
+                  <mat-label>Especifique tipo de vinculación *</mat-label>
+                  <input matInput formControlName="tipoVinculacionOtro" maxlength="100" />
+                  <mat-error *ngIf="fProy('tipoVinculacionOtro').touched && fProy('tipoVinculacionOtro').invalid">Debes especificar el tipo</mat-error>
+                </mat-form-field>
+              </div>
+
+              <div class="SectionDivider"></div>
+
+              <!-- SECTION: DATOS DE IMPACTO -->
+              <div class="SectionHead">
+                <mat-icon>trending_up</mat-icon>
+                <h3>Datos de Impacto</h3>
+              </div>
 
               <div class="FormRow">
                 <mat-form-field appearance="outline" class="FormField">
@@ -350,52 +424,59 @@
                   </mat-select>
                   <mat-error *ngIf="fProy('sede').touched && fProy('sede').invalid">Obligatorio</mat-error>
                 </mat-form-field>
-              </div>
+                </div>
 
-              <div class="FormRow">
-                <mat-form-field appearance="outline" class="FormField">
-                  <mat-label>Fecha Inicio *</mat-label>
-                  <input matInput type="date" formControlName="fechaInicio" />
-                  <mat-error *ngIf="fProy('fechaInicio').touched && fProy('fechaInicio').invalid">Obligatorio</mat-error>
-                </mat-form-field>
+                <div class="SectionDivider"></div>
 
-                <mat-form-field appearance="outline" class="FormField">
-                  <mat-label>Fecha Término *</mat-label>
-                  <input matInput type="date" formControlName="fechaTermino" />
-                  <mat-error *ngIf="fProy('fechaTermino').touched && fProy('fechaTermino').invalid">Obligatorio</mat-error>
-                </mat-form-field>
-              </div>
+                <!-- SECTION: PLANIFICACIÓN -->
+                <div class="SectionHead">
+                  <mat-icon>calendar_today</mat-icon>
+                  <h3>Planificación</h3>
+                </div>
 
-              <div class="FormRow">
-                <mat-form-field appearance="outline" class="FormField">
-                  <mat-label>Lugar</mat-label>
-                  <input matInput formControlName="lugar" />
-                </mat-form-field>
+                <div class="FormRow">
+                  <mat-form-field appearance="outline" class="FormField">
+                    <mat-label>Fecha Inicio *</mat-label>
+                    <input matInput type="date" formControlName="fechaInicio" />
+                    <mat-error *ngIf="fProy('fechaInicio').touched && fProy('fechaInicio').invalid">Obligatorio</mat-error>
+                  </mat-form-field>
 
-                <mat-form-field appearance="outline" class="FormField">
-                  <mat-label>Ingresos</mat-label>
-                  <input matInput type="number" formControlName="ingresos" />
-                </mat-form-field>
-              </div>
+                  <mat-form-field appearance="outline" class="FormField">
+                    <mat-label>Fecha Término *</mat-label>
+                    <input matInput type="date" formControlName="fechaTermino" />
+                    <mat-error *ngIf="fProy('fechaTermino').touched && fProy('fechaTermino').invalid">Obligatorio</mat-error>
+                  </mat-form-field>
+                </div>
 
-              <div class="FormRow">
-                <mat-form-field appearance="outline" class="FormField">
-                  <mat-label>Proyecto</mat-label>
-                  <mat-select formControlName="proyectoAsociado">
-                    <mat-option *ngFor="let o of proyectos" [value]="o">{{ o }}</mat-option>
-                  </mat-select>
-                </mat-form-field>
+                <div class="FormRow">
+                  <mat-form-field appearance="outline" class="FormField">
+                    <mat-label>Lugar</mat-label>
+                    <input matInput formControlName="lugar" />
+                  </mat-form-field>
 
-                <div class="FormField"></div>
-              </div>
+                  <mat-form-field appearance="outline" class="FormField">
+                    <mat-label>Proyecto</mat-label>
+                    <mat-select formControlName="proyectoAsociado">
+                      <mat-option *ngFor="let o of proyectos" [value]="o">{{ o }}</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                </div>
 
-              <div class="FormRow">
-                <mat-form-field appearance="outline" class="FormField FullWidth">
-                  <mat-label>Resultados</mat-label>
-                  <textarea matInput rows="4" formControlName="resultados" maxlength="1000"></textarea>
-                  <mat-hint>Máx 1000 caracteres</mat-hint>
-                </mat-form-field>
-              </div>
+                <div class="SectionDivider"></div>
+
+                <!-- SECTION: RESULTADOS -->
+                <div class="SectionHead">
+                  <mat-icon>assessment</mat-icon>
+                  <h3>Resultados</h3>
+                </div>
+
+                <div class="FormRow">
+                  <mat-form-field appearance="outline" class="FormField FullWidth">
+                    <mat-label>Resultados</mat-label>
+                    <textarea matInput rows="4" formControlName="resultados" maxlength="1000"></textarea>
+                    <mat-hint>Máx 1000 caracteres</mat-hint>
+                  </mat-form-field>
+                </div>
 
             </div>
           </mat-tab>
@@ -452,7 +533,10 @@
         <ng-container matColumnDef="accion">
           <th mat-header-cell *matHeaderCellDef class="col-actions">Acción</th>
           <td mat-cell *matCellDef="let row" class="col-actions">
-            <button mat-icon-button color="warn" type="button" (click)="removeUnidad(row)">
+            <button mat-icon-button color="primary" type="button" (click)="editUnidad(row)" matTooltip="Editar">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button mat-icon-button color="warn" type="button" (click)="removeUnidad(row)" matTooltip="Eliminar">
               <mat-icon>close</mat-icon>
             </button>
           </td>
@@ -470,87 +554,7 @@
   </div>
 </mat-tab>
 
-<!-- =======================
-     TAB: RESPONSABLE
-     ======================= -->
-<mat-tab>
-  <ng-template mat-tab-label>
-    <mat-icon class="TabIcon">person</mat-icon>
-    Responsable
-  </ng-template>
 
-  <div class="TabBody" formGroupName="proyecto">
-    <div class="SectionHead">
-      <mat-icon>person</mat-icon>
-      <h3>Responsable *</h3>
-    </div>
-
-    <div class="InlineBar">
-      <mat-form-field appearance="outline" class="InlineField">
-        <mat-label>RUT</mat-label>
-        <input matInput formControlName="responsableRut" placeholder="12.345.678-9" (input)="onRutInputResponsable($event)" />
-      </mat-form-field>
-
-      <mat-form-field appearance="outline" class="InlineField">
-        <mat-label>Nombre</mat-label>
-        <input matInput formControlName="responsableNombre" placeholder="Nombre completo" />
-      </mat-form-field>
-
-      <mat-form-field appearance="outline" class="InlineField small">
-        <mat-label>Tipo</mat-label>
-        <mat-select formControlName="responsableTipo">
-          <mat-option *ngFor="let t of tiposResponsable" [value]="t">{{ t }}</mat-option>
-        </mat-select>
-      </mat-form-field>
-
-      <button mat-stroked-button type="button" (click)="addResponsable()">
-        <mat-icon>add</mat-icon>
-        Agregar
-      </button>
-    </div>
-
-    <div class="TableCard">
-      <table mat-table [dataSource]="responsables" class="mat-elevation-z0 SimpleTable">
-        <ng-container matColumnDef="n">
-          <th mat-header-cell *matHeaderCellDef>#</th>
-          <td mat-cell *matCellDef="let row; let i = index">{{ i + 1 }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="rut">
-          <th mat-header-cell *matHeaderCellDef>R.U.T.</th>
-          <td mat-cell *matCellDef="let row">{{ row.rut }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="nombre">
-          <th mat-header-cell *matHeaderCellDef>Nombre</th>
-          <td mat-cell *matCellDef="let row">{{ row.nombre }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="tipo">
-          <th mat-header-cell *matHeaderCellDef>Tipo Responsable</th>
-          <td mat-cell *matCellDef="let row">{{ row.tipo }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="accion">
-          <th mat-header-cell *matHeaderCellDef class="col-actions">Acción</th>
-          <td mat-cell *matCellDef="let row" class="col-actions">
-            <button mat-icon-button color="warn" type="button" (click)="removeResponsable(row)">
-              <mat-icon>close</mat-icon>
-            </button>
-          </td>
-        </ng-container>
-
-        <tr mat-header-row *matHeaderRowDef="responsableCols"></tr>
-        <tr mat-row *matRowDef="let row; columns: responsableCols;"></tr>
-      </table>
-
-      <div class="EmptyState" *ngIf="responsables.length === 0">
-        <mat-icon>info</mat-icon>
-        <span>No hay responsables agregados.</span>
-      </div>
-    </div>
-  </div>
-</mat-tab>
 
 
           <!-- =======================
@@ -568,8 +572,8 @@
                 <h3>Equipo de Trabajo</h3>
               </div>
 
-              <div class="FormRow">
-                <mat-form-field appearance="outline" class="FormField">
+              <div class="InlineBar">
+                <mat-form-field appearance="outline" class="InlineField">
                   <mat-label>RUT *</mat-label>
                   <input
                     matInput
@@ -582,13 +586,13 @@
                   <mat-error *ngIf="fEq('rut').touched && fEq('rut').hasError('rut')">Formato inválido (ej: 21.073.336-1)</mat-error>
                 </mat-form-field>
 
-                <mat-form-field appearance="outline" class="FormField">
+                <mat-form-field appearance="outline" class="InlineField">
                   <mat-label>Nombre *</mat-label>
                   <input matInput formControlName="nombre" placeholder="Nombre completo" maxlength="120" />
                   <mat-error *ngIf="fEq('nombre').touched && fEq('nombre').invalid">Obligatorio</mat-error>
                 </mat-form-field>
 
-                <mat-form-field appearance="outline" class="FormField">
+                <mat-form-field appearance="outline" class="InlineField small">
                   <mat-label>Equipo *</mat-label>
                   <mat-select formControlName="tipo">
                     <mat-option
@@ -602,12 +606,10 @@
                   <mat-error *ngIf="fEq('tipo').touched && fEq('tipo').invalid">Obligatorio</mat-error>
                 </mat-form-field>
 
-                <div class="FormField" style="display:flex; align-items:center;">
-                  <button mat-stroked-button type="button" (click)="addEquipo()">
-                    <mat-icon>add</mat-icon>
-                    Agregar
-                  </button>
-                </div>
+                <button mat-stroked-button type="button" (click)="addEquipo()" class="AlignBtn">
+                  <mat-icon>add</mat-icon>
+                  Agregar
+                </button>
               </div>
 
               <div class="TableCard">
@@ -635,7 +637,10 @@
                   <ng-container matColumnDef="accion">
                     <th mat-header-cell *matHeaderCellDef class="col-actions">Acción</th>
                     <td mat-cell *matCellDef="let row" class="col-actions">
-                      <button mat-icon-button color="warn" type="button" (click)="removeEquipo(row)">
+                      <button mat-icon-button color="primary" type="button" (click)="editEquipo(row)" matTooltip="Editar">
+                        <mat-icon>edit</mat-icon>
+                      </button>
+                      <button mat-icon-button color="warn" type="button" (click)="removeEquipo(row)" matTooltip="Eliminar">
                         <mat-icon>close</mat-icon>
                       </button>
                     </td>
@@ -671,9 +676,21 @@
               </div>
 
               <div class="InlineBar">
+                <mat-form-field appearance="outline" class="InlineField small">
+                  <mat-label>Categoría</mat-label>
+                  <mat-select formControlName="finCategoria">
+                    <mat-option value="Externo">Externo</mat-option>
+                    <mat-option value="Interno">Interno</mat-option>
+                  </mat-select>
+                </mat-form-field>
+
                 <mat-form-field appearance="outline" class="InlineField">
-                  <mat-label>Tipo</mat-label>
-                  <input matInput formControlName="finTipo" placeholder="Ej: Aporte interno" />
+                  <mat-label>Tipo de financiamiento</mat-label>
+                  <mat-select formControlName="finTipoFinanciamiento">
+                    <mat-option value="Plan de mejora">Plan de mejora</mat-option>
+                    <mat-option value="Proyecto externo">Proyecto externo</mat-option>
+                    <mat-option value="Proyecto interno">Proyecto interno</mat-option>
+                  </mat-select>
                 </mat-form-field>
 
                 <mat-form-field appearance="outline" class="InlineField small">
@@ -694,9 +711,14 @@
                     <td mat-cell *matCellDef="let row; let i = index">{{ i + 1 }}</td>
                   </ng-container>
 
-                  <ng-container matColumnDef="tipo">
-                    <th mat-header-cell *matHeaderCellDef>Tipo</th>
-                    <td mat-cell *matCellDef="let row">{{ row.tipo }}</td>
+                  <ng-container matColumnDef="categoria">
+                    <th mat-header-cell *matHeaderCellDef>Categoría</th>
+                    <td mat-cell *matCellDef="let row">{{ row.categoria }}</td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="tipoFinanciamiento">
+                    <th mat-header-cell *matHeaderCellDef>Tipo de financiamiento</th>
+                    <td mat-cell *matCellDef="let row">{{ row.tipoFinanciamiento }}</td>
                   </ng-container>
 
                   <ng-container matColumnDef="monto">
@@ -707,7 +729,10 @@
                   <ng-container matColumnDef="accion">
                     <th mat-header-cell *matHeaderCellDef class="col-actions">Acción</th>
                     <td mat-cell *matCellDef="let row" class="col-actions">
-                      <button mat-icon-button color="warn" type="button" (click)="removeFin(row)">
+                      <button mat-icon-button color="primary" type="button" (click)="editFinanciamiento(row)" matTooltip="Editar">
+                        <mat-icon>edit</mat-icon>
+                      </button>
+                      <button mat-icon-button color="warn" type="button" (click)="removeFin(row)" matTooltip="Eliminar">
                         <mat-icon>close</mat-icon>
                       </button>
                     </td>
@@ -724,59 +749,6 @@
               </div>
 
               <div class="SectionDivider"></div>
-
-              <div class="SectionHead">
-                <mat-icon>account_tree</mat-icon>
-                <h3>Centro de Costo</h3>
-              </div>
-
-              <div class="InlineBar">
-                <mat-form-field appearance="outline" class="InlineField">
-                  <mat-label>Centro de Costo</mat-label>
-                  <input
-                    matInput
-                    formControlName="ccTipo"
-                    placeholder="Ej: PLAN DE MEJORA"
-                  />
-                </mat-form-field>
-
-                <button mat-stroked-button type="button" (click)="addCentroCosto()">
-                  <mat-icon>add</mat-icon>
-                  Agregar
-                </button>
-              </div>
-
-              <div class="TableCard">
-                <table mat-table [dataSource]="centrosCosto" class="mat-elevation-z0 SimpleTable">
-
-                  <ng-container matColumnDef="n">
-                    <th mat-header-cell *matHeaderCellDef>#</th>
-                    <td mat-cell *matCellDef="let row; let i = index">{{ i + 1 }}</td>
-                  </ng-container>
-
-                  <ng-container matColumnDef="tipo">
-                    <th mat-header-cell *matHeaderCellDef>Centro de Costo</th>
-                    <td mat-cell *matCellDef="let row">{{ row.tipo }}</td>
-                  </ng-container>
-
-                  <ng-container matColumnDef="accion">
-                    <th mat-header-cell *matHeaderCellDef class="col-actions">Acción</th>
-                    <td mat-cell *matCellDef="let row" class="col-actions">
-                      <button mat-icon-button color="warn" type="button" (click)="removeCC(row)">
-                        <mat-icon>close</mat-icon>
-                      </button>
-                    </td>
-                  </ng-container>
-
-                  <tr mat-header-row *matHeaderRowDef="ccCols"></tr>
-                  <tr mat-row *matRowDef="let row; columns: ccCols;"></tr>
-                </table>
-
-                <div class="EmptyState" *ngIf="centrosCosto.length === 0">
-                  <mat-icon>info</mat-icon>
-                  <span>No hay registro.</span>
-                </div>
-              </div>
 
             </div>
           </mat-tab>
@@ -796,21 +768,20 @@
                   <h3>Difusión Actividad</h3>
                 </div>
 
-                <div class="FormRow">
-                  <mat-form-field appearance="outline" class="FormField">
+                <div class="InlineBar">
+                  <mat-form-field appearance="outline" class="InlineField">
                     <mat-label>Medio de difusión *</mat-label>
                     <mat-select formControlName="difusionEquipo">
                       <mat-option *ngFor="let d of difusionCatalogo" [value]="d" [disabled]="d === 'SELECCIONE'">
                         {{ d }}
                       </mat-option>
                     </mat-select>
-
                     <mat-error *ngIf="form.get('difusion.difusionEquipo')?.touched && form.get('difusion.difusionEquipo')?.invalid">
                       Debes seleccionar una opción
                     </mat-error>
                   </mat-form-field>
 
-                  <mat-form-field appearance="outline" class="FormField">
+                  <mat-form-field appearance="outline" class="InlineField">
                     <mat-label>URL (opcional)</mat-label>
                     <input
                       matInput
@@ -822,17 +793,52 @@
                       URL inválida (debe empezar con http:// o https://)
                     </mat-error>
                   </mat-form-field>
+
+                  <button mat-stroked-button type="button" (click)="addDifusion()" class="AlignBtn">
+                    <mat-icon>add</mat-icon>
+                    Agregar
+                  </button>
                 </div>
 
                 <div class="TableCard">
-                  <div class="EmptyState">
+                  <table mat-table [dataSource]="difusiones" class="mat-elevation-z0 SimpleTable">
+                    <ng-container matColumnDef="n">
+                      <th mat-header-cell *matHeaderCellDef>#</th>
+                      <td mat-cell *matCellDef="let row; let i = index">{{ i + 1 }}</td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="medio">
+                      <th mat-header-cell *matHeaderCellDef>Medio de difusión</th>
+                      <td mat-cell *matCellDef="let row">{{ row.medio }}</td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="url">
+                      <th mat-header-cell *matHeaderCellDef>URL</th>
+                      <td mat-cell *matCellDef="let row">
+                        <a *ngIf="row.url" [href]="row.url" target="_blank">{{ row.url }}</a>
+                        <span *ngIf="!row.url">-</span>
+                      </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="accion">
+                      <th mat-header-cell *matHeaderCellDef class="col-actions">Acción</th>
+                      <td mat-cell *matCellDef="let row" class="col-actions">
+                        <button mat-icon-button color="primary" type="button" (click)="editDifusion(row)" matTooltip="Editar">
+                          <mat-icon>edit</mat-icon>
+                        </button>
+                        <button mat-icon-button color="warn" type="button" (click)="removeDifusion(row)" matTooltip="Eliminar">
+                          <mat-icon>close</mat-icon>
+                        </button>
+                      </td>
+                    </ng-container>
+
+                    <tr mat-header-row *matHeaderRowDef="difusionCols"></tr>
+                    <tr mat-row *matRowDef="let row; columns: difusionCols;"></tr>
+                  </table>
+
+                  <div class="EmptyState" *ngIf="difusiones.length === 0">
                     <mat-icon>info</mat-icon>
-                    <span>
-                      Seleccionado: <b>{{ form.get('difusion.difusionEquipo')?.value }}</b>
-                      <span *ngIf="form.get('difusion.difusionUrl')?.value">
-                        — URL: <b>{{ form.get('difusion.difusionUrl')?.value }}</b>
-                      </span>
-                    </span>
+                    <span>No hay medios de difusión agregados.</span>
                   </div>
                 </div>
               </div>
@@ -947,7 +953,10 @@
                   <ng-container matColumnDef="accion">
                     <th mat-header-cell *matHeaderCellDef class="col-actions">Acción</th>
                     <td mat-cell *matCellDef="let row" class="col-actions">
-                      <button mat-icon-button color="warn" type="button" (click)="removeInstitucion(row)">
+                      <button mat-icon-button color="primary" type="button" (click)="editInstitucion(row)" matTooltip="Editar">
+                        <mat-icon>edit</mat-icon>
+                      </button>
+                      <button mat-icon-button color="warn" type="button" (click)="removeInstitucion(row)" matTooltip="Eliminar">
                         <mat-icon>close</mat-icon>
                       </button>
                     </td>

@@ -16,9 +16,10 @@ import { MatTableModule } from '@angular/material/table';
 type UnidadRow = { cod: string; unidad: string };
 type ResponsableRow = { rut: string; nombre: string; tipo: string };
 type EquipoRow = { rut: string; nombre: string; tipo: string };
-type FinRow = { tipo: string; monto: number };
+type FinRow = { categoria: string; tipoFinanciamiento: string; monto: number };
 type CentroCostoRow = { tipo: string };
 type InstRow = { tipo: string; nombre: string };
+type DifusionRow = { medio: string; url: string };
 
 type EstudianteRow = { rut?: string; nombre?: string };
 
@@ -59,6 +60,7 @@ export class ActividadesPmComponent implements OnInit {
   financiamientos: FinRow[] = [];
   centrosCosto: CentroCostoRow[] = [];
   instituciones: InstRow[] = [];
+  difusiones: DifusionRow[] = [];
 
   estudiantesFeria: EstudianteRow[] = [];
   estudiantesSalida: EstudianteRow[] = [];
@@ -66,22 +68,20 @@ export class ActividadesPmComponent implements OnInit {
   unidadCols = ['n', 'cod', 'unidad', 'accion'];
   responsableCols = ['n', 'rut', 'nombre', 'tipo', 'accion'];
   equipoCols = ['n', 'rut', 'nombre', 'tipo', 'accion'];
-  finCols = ['n', 'tipo', 'monto', 'accion'];
+  finCols = ['n', 'categoria', 'tipoFinanciamiento', 'monto', 'accion'];
   ccCols = ['n', 'tipo', 'accion'];
   instCols = ['n', 'tipo', 'nombre', 'accion'];
+  difusionCols = ['n', 'medio', 'url', 'accion'];
   estudianteCols = ['n', 'rut', 'nombre', 'accion'];
 
-  tiposResponsable = ['INTERNO', 'EXTERNO'];
-  tiposVinculacion = ['VcM (Bidireccionales)', 'VcM (Unidireccionales)', 'Extension', 'Otro'];
-  areasVinculacion = ['Educación', 'Salud', 'Cultura', 'Territorio', 'Investigación', 'Otro'];
-  areasImpacto = ['SELECCIONE', 'Educación', 'Social', 'Productivo', 'Territorial', 'Otro'];
+  tiposResponsable = ['Académicos', 'Funcionarios', 'Jefe de carrera', 'Director de departamento', 'Externo'];
+  tiposVinculacion = ['Extensión (unidireccional)', 'VcM (bidireccional)'];
+  areasVinculacion = ['Docencia de pregrado', 'Comunidad educativa', 'Educación continua', 'Institucional y entidades externas', 'Integración cultural y desarrollo social', 'Investigación e innovación'];
+  areasImpacto = ['SELECCIONE', 'Desarrollo social y comunitario', 'Fortalecimiento educativo y formativo', 'Cultural y patrimonio', 'Educación regional'];
   sedes = ['CASA MATRIZ ARICA', 'SEDE IQUIQUE'];
   proyectos = ['SELECCIONE', 'PLAN DE MEJORA', 'PRACTICAS', 'OTRO'];
 
   equiposCatalogo = [
-    'SELECCIONE',
-    'TODOS',
-    'DIRECTIVOS (UTA)',
     'DOCENTES (UTA)',
     'ESTUDIANTES (UTA)',
     'EXALUMNOS',
@@ -104,7 +104,7 @@ export class ActividadesPmComponent implements OnInit {
     'PRENSA ESCRITA',
     'RADIO',
     'TELEVISIÓN',
-    'VÍA PÚBLICA',
+    'OTRO',
   ];
 
   participantesColumnas = [
@@ -144,7 +144,7 @@ export class ActividadesPmComponent implements OnInit {
         unidadCod: [''],
         unidadNombre: [''],
         responsableNombre: [''],
-        responsableTipo: ['INTERNO'],
+        responsableTipo: ['Académicos'],
 
         nombre: ['', [Validators.required, Validators.maxLength(200)]],
         objetivo: ['', [Validators.required, Validators.maxLength(400)]],
@@ -157,7 +157,6 @@ export class ActividadesPmComponent implements OnInit {
         fechaTermino: ['', Validators.required],
         sede: ['', Validators.required],
         lugar: [''],
-        ingresos: [0, [Validators.min(0)]],
         proyectoAsociado: ['SELECCIONE'],
         resultados: ['', [Validators.maxLength(1000)]],
 
@@ -213,7 +212,8 @@ export class ActividadesPmComponent implements OnInit {
       }),
 
       financiamiento: this.fb.group({
-        finTipo: [''],
+        finCategoria: [''],
+        finTipoFinanciamiento: [''],
         finMonto: [0],
         ccTipo: [''],
       }),
@@ -327,7 +327,7 @@ export class ActividadesPmComponent implements OnInit {
     if (t === 'TALLER_REMEDIAL') {
       reqText('tallerAsignatura', 200);
       reqText('tallerCompetencia', 250);
-      reqText('tallerNombreEstudiantesBeneficiados', 250);
+      reqNum('tallerNombreEstudiantesBeneficiados');
     }
 
     if (t === 'CONGRESO_ACADEMICO') {
@@ -381,7 +381,7 @@ export class ActividadesPmComponent implements OnInit {
   addResponsable(): void {
     const rut = String(this.fProy('responsableRut').value ?? '').trim();
     const nombre = String(this.fProy('responsableNombre').value ?? '').trim();
-    const tipo = String(this.fProy('responsableTipo').value ?? 'INTERNO');
+    const tipo = String(this.fProy('responsableTipo').value ?? 'Académicos');
 
     if (!rut || !nombre) return;
 
@@ -389,7 +389,7 @@ export class ActividadesPmComponent implements OnInit {
 
     this.fProy('responsableRut').setValue('');
     this.fProy('responsableNombre').setValue('');
-    this.fProy('responsableTipo').setValue('INTERNO');
+    this.fProy('responsableTipo').setValue('Académicos');
   }
 
   removeResponsable(row: ResponsableRow): void {
@@ -521,13 +521,23 @@ export class ActividadesPmComponent implements OnInit {
 
   addFinanciamiento(): void {
     const g = this.form.get('financiamiento') as FormGroup;
-    const tipo = String(g.get('finTipo')?.value ?? '').trim();
+    const categoria = g.get('finCategoria')?.value;
+    const tipoFinanciamiento = g.get('finTipoFinanciamiento')?.value;
     const monto = Number(g.get('finMonto')?.value ?? 0);
-    if (!tipo) return;
+    
+    console.log('Categoría:', categoria, 'Tipo de financiamiento:', tipoFinanciamiento, 'Monto:', monto);
+    
+    if (!categoria || !tipoFinanciamiento) {
+      alert('Por favor completa los campos Categoría y Tipo de financiamiento');
+      return;
+    }
 
-    this.financiamientos = [...this.financiamientos, { tipo, monto: isNaN(monto) ? 0 : monto }];
-    g.get('finTipo')?.setValue('');
+    this.financiamientos = [...this.financiamientos, { categoria, tipoFinanciamiento, monto: isNaN(monto) ? 0 : monto }];
+    g.get('finCategoria')?.setValue('');
+    g.get('finTipoFinanciamiento')?.setValue('');
     g.get('finMonto')?.setValue(0);
+    g.markAsPristine();
+    g.markAsUntouched();
   }
 
   removeFin(row: FinRow): void {
@@ -630,6 +640,76 @@ export class ActividadesPmComponent implements OnInit {
     this.instituciones = this.instituciones.filter((x) => x !== row);
   }
 
+  editResponsable(row: ResponsableRow): void {
+    this.fProy('responsableRut').setValue(row.rut);
+    this.fProy('responsableNombre').setValue(row.nombre);
+    this.fProy('responsableTipo').setValue(row.tipo);
+    this.removeResponsable(row);
+  }
+
+  editUnidad(row: UnidadRow): void {
+    this.fProy('unidadCod').setValue(row.cod);
+    this.fProy('unidadNombre').setValue(row.unidad);
+    this.removeUnidad(row);
+  }
+
+  editEquipo(row: EquipoRow): void {
+    const g = this.form.get('equipoTrabajo') as FormGroup;
+    g.get('rut')?.setValue(row.rut);
+    g.get('nombre')?.setValue(row.nombre);
+    g.get('tipo')?.setValue(row.tipo);
+    this.removeEquipo(row);
+  }
+
+  editFinanciamiento(row: FinRow): void {
+    const g = this.form.get('financiamiento') as FormGroup;
+    g.get('finCategoria')?.setValue(row.categoria);
+    g.get('finTipoFinanciamiento')?.setValue(row.tipoFinanciamiento);
+    g.get('finMonto')?.setValue(row.monto);
+    this.removeFin(row);
+  }
+
+  editCentroCosto(row: CentroCostoRow): void {
+    const g = this.form.get('financiamiento') as FormGroup;
+    g.get('ccTipo')?.setValue(row.tipo);
+    this.removeCC(row);
+  }
+
+  editInstitucion(row: InstRow): void {
+    const g = this.form.get('participantes') as FormGroup;
+    g.get('instTipo')?.setValue(row.tipo);
+    g.get('instNombre')?.setValue(row.nombre);
+    this.removeInstitucion(row);
+  }
+
+  addDifusion(): void {
+    const g = this.form.get('difusion') as FormGroup;
+    const medio = String(g.get('difusionEquipo')?.value ?? '').trim();
+    const url = String(g.get('difusionUrl')?.value ?? '').trim();
+
+    if (!medio) {
+      alert('Por favor selecciona un medio de difusión');
+      return;
+    }
+
+    this.difusiones = [...this.difusiones, { medio, url }];
+    g.get('difusionEquipo')?.setValue('SELECCIONE');
+    g.get('difusionUrl')?.setValue('');
+    g.markAsPristine();
+    g.markAsUntouched();
+  }
+
+  removeDifusion(row: DifusionRow): void {
+    this.difusiones = this.difusiones.filter((x) => x !== row);
+  }
+
+  editDifusion(row: DifusionRow): void {
+    const g = this.form.get('difusion') as FormGroup;
+    g.get('difusionEquipo')?.setValue(row.medio);
+    g.get('difusionUrl')?.setValue(row.url);
+    this.removeDifusion(row);
+  }
+
   guardar(): void {
     if (this.unidades.length === 0) {
       this.form.markAllAsTouched();
@@ -698,7 +778,7 @@ export class ActividadesPmComponent implements OnInit {
         responsableRut: '',
         responsableNombre: '',
         tipoVinculacionOtro: '',
-        responsableTipo: 'INTERNO',
+        responsableTipo: 'Académicos',
         nombre: '',
         objetivo: '',
         descripcion: '',
@@ -709,7 +789,6 @@ export class ActividadesPmComponent implements OnInit {
         fechaTermino: '',
         sede: '',
         lugar: '',
-        ingresos: 0,
         proyectoAsociado: 'SELECCIONE',
         resultados: '',
         tipoActividad: null,
@@ -726,7 +805,7 @@ export class ActividadesPmComponent implements OnInit {
 
         tallerAsignatura: '',
         tallerCompetencia: '',
-        tallerNombreEstudiantesBeneficiados: '',
+        tallerNombreEstudiantesBeneficiados: 0,
 
         congresoNombreEvento: '',
         congresoPonenciaPresentada: '',
@@ -756,7 +835,7 @@ export class ActividadesPmComponent implements OnInit {
         observaciones: '',
       },
       equipoTrabajo: { rut: '', nombre: '', tipo: '' },
-      financiamiento: { finTipo: '', finMonto: 0, ccTipo: '' },
+      financiamiento: { finCategoria: '', finTipoFinanciamiento: '', finMonto: 0 },
       difusion: { difusionEquipo: 'SELECCIONE', difusionUrl: '' },
       participantes: { instTipo: 'PACE', instNombre: '' },
       impacto: { medidaImpacto: 'ENCUESTA', indicadorImpacto: '' },
