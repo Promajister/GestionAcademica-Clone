@@ -72,7 +72,7 @@ export class ActividadesPmComponent implements OnInit {
   estudianteCols = ['n', 'rut', 'nombre', 'accion'];
 
   tiposResponsable = ['INTERNO', 'EXTERNO'];
-  tiposVinculacion = ['VcM (Bidireccionales)', 'VcM (Unidireccionales)', 'Extencion', 'Otro'];
+  tiposVinculacion = ['VcM (Bidireccionales)', 'VcM (Unidireccionales)', 'Extension', 'Otro'];
   areasVinculacion = ['Educación', 'Salud', 'Cultura', 'Territorio', 'Investigación', 'Otro'];
   areasImpacto = ['SELECCIONE', 'Educación', 'Social', 'Productivo', 'Territorial', 'Otro'];
   sedes = ['CASA MATRIZ ARICA', 'SEDE IQUIQUE'];
