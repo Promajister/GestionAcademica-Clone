@@ -90,8 +90,6 @@ export class ActividadesPmComponent implements OnInit {
   ];
 
   institucionesCatalogo = [
-    'PACE',
-    'PROPEDÉUTICO',
     'INSTITUCIÓN EXTERNA',
     'INSTITUCIÓN INTERNA',
     'CENTROS EDUCATIVOS',
@@ -219,7 +217,7 @@ export class ActividadesPmComponent implements OnInit {
       }),
 
       participantes: this.fb.group({
-        instTipo: ['PACE', Validators.required],
+        instTipo: ['INSTITUCIÓN EXTERNA', Validators.required],
         instNombre: ['', [Validators.required, Validators.maxLength(150)]],
         ...this.buildParticipantesControls(),
       }),
@@ -837,7 +835,7 @@ export class ActividadesPmComponent implements OnInit {
       equipoTrabajo: { rut: '', nombre: '', tipo: '' },
       financiamiento: { finCategoria: '', finTipoFinanciamiento: '', finMonto: 0 },
       difusion: { difusionEquipo: 'SELECCIONE', difusionUrl: '' },
-      participantes: { instTipo: 'PACE', instNombre: '' },
+      participantes: { instTipo: 'INSTITUCIÓN EXTERNA', instNombre: '' },
       impacto: { medidaImpacto: 'ENCUESTA', indicadorImpacto: '' },
     });
 
