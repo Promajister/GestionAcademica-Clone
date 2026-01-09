@@ -1,68 +1,176 @@
-/* Contenedor base */
-.container { max-width: 1120px; margin: 18px auto; padding: 0 16px; }
+/* =========================
+   Dashboard Reportes (UI PRO)
+   Solo estilos (no cambia funcionalidad)
+   ========================= */
+
+.container {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 18px 18px 26px;
+
+  background: linear-gradient(180deg, rgba(248, 250, 252, .92), rgba(248, 250, 252, 0));
+  border-radius: 18px;
+}
+
 .section { margin-top: 8px; }
 
-.center { display: grid; place-items: center; padding: 28px; }
+.center {
+  display: grid;
+  place-items: center;
+  padding: 28px;
+}
 
-.muted { color: #64748b; font-size: 13px; margin: 6px 0 0; }
+.muted {
+  opacity: .86;
+  color: #6b7280;
+  font-size: 13px;
+  margin: 6px 0 0;
+}
+
 .pad16 { padding: 16px !important; }
 
-/* Cards */
+/* =========================
+   Cards base (consistente)
+   ========================= */
 .elev {
-  border: 1px solid #e5e7eb;
   border-radius: 16px;
-  background: #fff;
-  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.06);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 10px 28px rgba(2, 6, 23, 0.06);
 }
+
 .card { overflow: hidden; }
-.card--error { border-color: #fecaca; }
 
-/* HEADER nuevo (dashboard) */
-.page-head{
-  display:flex;
-  align-items:flex-start;
-  justify-content:space-between;
-  gap:12px;
-  margin: 6px 0 14px;
-  padding: 14px 16px;
-  border: 1px solid #e5e7eb;
-  border-radius: 16px;
-  background:#fff;
-  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.06);
+.card--error {
+  border-color: rgba(239, 68, 68, 0.25);
+  background: rgba(255, 255, 255, 0.92);
 }
 
-.headline h1 { margin: 0; font-size: 22px; font-weight: 800; color:#0f172a; }
+/* =========================
+   Encabezado tipo "hero"
+   ========================= */
+.page-head {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
 
-.actions{
-  display:flex;
-  gap:8px;
-  flex-wrap:wrap;
-  justify-content:flex-end;
+  margin: 6px 0 12px;
+  padding: 16px 16px;
+
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: #fff;
+
+  /* bg suave como tus otros componentes */
+  background:
+    radial-gradient(900px 260px at 0% 0%, rgba(30, 64, 175, 0.14), transparent 55%),
+    radial-gradient(700px 240px at 100% 0%, rgba(99, 102, 241, 0.10), transparent 55%),
+    linear-gradient(180deg, rgba(248,250,252,.95), rgba(248,250,252,.0));
 }
 
-/* KPIs */
+.headline {
+  min-width: 0;
+
+  h1 {
+    margin: 0;
+    font-size: 26px;
+    font-weight: 900;
+    letter-spacing: -0.35px;
+    color: #0f172a;
+    line-height: 1.1;
+  }
+
+  p {
+    margin: 6px 0 0;
+    max-width: 760px;
+  }
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+
+  /* botones pill */
+  :host ::ng-deep .mat-mdc-button,
+  :host ::ng-deep .mat-mdc-outlined-button {
+    border-radius: 999px !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .page-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .actions {
+    justify-content: flex-start;
+  }
+}
+
+/* =========================
+   KPI Cards
+   ========================= */
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   gap: 12px;
-  margin: 12px 0 18px;
+  margin: 12px 0 14px;
 }
 
 .kpi {
-  text-align: center;
-  padding: 10px 0;
+  text-align: left;
+  padding: 0;
+
+  mat-card-content {
+    padding: 14px 14px;
+  }
+
+  /* efecto "tarjeta KPI" */
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 16px;
+
+  transition: transform .08s ease, border-color .12s ease, background .12s ease, box-shadow .12s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    border-color: rgba(15, 23, 42, 0.14);
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 14px 34px rgba(2, 6, 23, 0.08);
+  }
 }
 
-.kpi-value { font-size: 28px; font-weight: 800; line-height: 1.1; }
-.kpi-label { color: #64748b; font-size: 13px; margin-top: 4px; }
+.kpi-value {
+  font-size: 30px;
+  font-weight: 900;
+  letter-spacing: -0.4px;
+  line-height: 1.1;
+}
 
-/* Dividers */
+.kpi-label {
+  color: #64748b;
+  font-size: 12.5px;
+  margin-top: 6px;
+}
+
+/* =========================
+   Dividers
+   ========================= */
 .divider {
-  opacity: 0.45;
-  margin: 14px 0;
+  opacity: 0.5;
+  margin: 12px 0;
 }
 
-/* Charts */
+/* =========================
+   Charts
+   ========================= */
 .grid-charts {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -74,42 +182,67 @@
   .grid-charts { grid-template-columns: 1fr; }
 }
 
-.chart-card { padding: 0; }
-
-.card-head{
-  display:flex;
-  align-items:flex-start;
-  justify-content:space-between;
-  gap:12px;
-  padding: 14px 16px 0;
+.chart-card {
+  padding: 0;
+  border-radius: 16px;
+  overflow: hidden;
 }
 
-.card-title{
-  margin:0;
-  font-size:16px;
-  font-weight:800;
-  color:#0f172a;
+.card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+
+  background: rgba(248, 250, 252, 0.65);
 }
 
-.card-subtitle{
-  margin:6px 0 0;
-  font-size:12px;
-  color:#94a3b8;
+.card-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 900;
+  color: #0f172a;
+  letter-spacing: -0.15px;
 }
 
-.chart-content { padding-top: 10px; }
-
-.chart-wrap{
-  border-top: 1px solid #f1f5f9;
-  padding: 12px 12px 14px;
-  height: 340px; /* mantiene altura estable */
+.card-subtitle {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: #94a3b8;
 }
 
-.chart-wrap canvas{
+.chart-content {
+  padding: 0;
+}
+
+.chart-wrap {
+  padding: 12px 14px 14px;
+  height: 340px;
+}
+
+.chart-wrap canvas {
   max-height: 100% !important;
 }
 
-/* Grid2 */
+/* donut más limpio */
+.chart-wrap-sm {
+  display: grid;
+  place-items: center;
+  padding: 12px 14px 14px;
+  height: 260px;
+}
+
+.chart-wrap-sm canvas {
+  max-width: 240px !important;
+  max-height: 240px !important;
+}
+
+/* =========================
+   Grid2 placeholder
+   ========================= */
 .grid2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -120,15 +253,19 @@
   .grid2 { grid-template-columns: 1fr; }
 }
 
-/* Gráfico circular más pequeño y centrado */
-.chart-wrap-sm {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 220px; 
+/* =========================
+   Material tweaks (suaves)
+   ========================= */
+:host ::ng-deep .mat-mdc-card-content {
+  padding: 14px 14px;
 }
 
-.chart-wrap-sm canvas {
-  max-width: 220px !important;
-  max-height: 220px !important;
+:host ::ng-deep .mat-mdc-outlined-button {
+  height: 40px;
+  padding: 0 14px;
+}
+
+/* spinner centrado más estético */
+:host ::ng-deep .mat-mdc-progress-spinner {
+  margin: 6px auto;
 }
