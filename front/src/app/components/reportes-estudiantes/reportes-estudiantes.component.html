@@ -179,5 +179,101 @@
 
     </mat-card-content>
   </mat-card>
+  <!-- ===================== -->
+<!-- MODAL VER DETALLES (NO TOCAR ESTILO, como antes) -->
+<!-- ===================== -->
+@if (estudianteSeleccionado) {
+  <div class="DetailsDialog">
+    <div class="DialogOverlay" (click)="cerrarDetalles()"></div>
+
+    <div class="DialogContent DialogContent--details" role="dialog">
+      <div class="DialogHeader DialogHeader--details">
+        <div class="DialogHeaderLeft">
+          <div class="DialogAvatar">
+            <mat-icon>person</mat-icon>
+          </div>
+
+          <div class="DialogTitles">
+            <h2>Detalle del estudiante</h2>
+            <div class="DialogSubtitle">
+              {{ estudianteSeleccionado.nombre || '—' }}
+            </div>
+          </div>
+        </div>
+
+        <button mat-icon-button class="CloseBtn" (click)="cerrarDetalles()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <div class="DialogBody">
+        <div *ngIf="detallesLoading" class="center muted" style="padding: 32px">
+          Cargando información…
+        </div>
+
+        <div *ngIf="detallesError" class="center error" style="padding: 24px">
+          {{ detallesError }}
+        </div>
+
+        <ng-container *ngIf="!detallesLoading && !detallesError">
+          <div class="DetailsTop">
+            <span class="Chip">
+              <mat-icon>badge</mat-icon>
+              <span class="ChipText">{{ estudianteSeleccionado.rut }}</span>
+            </span>
+
+            <span class="Chip">
+              <mat-icon>school</mat-icon>
+              <span class="ChipText">
+                {{ practicasCount() }} práctica(s)
+              </span>
+            </span>
+          </div>
+
+          <div class="DetailsSection">
+            <div class="SectionHead">
+              <mat-icon>work</mat-icon>
+              <h3>Prácticas</h3>
+            </div>
+
+            <div class="table-wrap">
+              <table class="details-table">
+                <thead>
+                  <tr>
+                    <th>Tipo</th>
+                    <th>Estado</th>
+                    <th>Periodo</th>
+                    <th>Centro</th>
+                    <th>Supervisor</th>
+                    <th>Inicio</th>
+                    <th>Término</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let p of estudianteSeleccionado.practicas">
+                    <td>{{ p.tipo }}</td>
+                    <td>{{ p.estado }}</td>
+                    <td>{{ formatPeriodo(p) }}</td>
+                    <td>{{ p.centro }}</td>
+                    <td>{{ formatSupervisor(p) }}</td>
+                    <td>{{ formatDate(p.fechaInicio) }}</td>
+                    <td>{{ formatDate(p.fechaTermino) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+
+      <div class="DialogActions DialogActions--details">
+        <button mat-stroked-button (click)="cerrarDetalles()">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
 
 </div>

@@ -16,9 +16,6 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatTableModule } from '@angular/material/table';
-import { MatDialog } from '@angular/material/dialog';
-
-import { DetalleEstudianteDialogComponent } from './detalle-estudiante-dialog.component';
 
 import {
   ReportesService,
@@ -53,10 +50,14 @@ import { saveAs } from 'file-saver';
 })
 export class ReportesEstudianteComponent {
   private reportesService = inject(ReportesService);
-  private dialog = inject(MatDialog);
 
   terminoBusqueda = '';
   private search$ = new Subject<string>();
+
+  // ===== Modal detalles (inline, como antes) =====
+  estudianteSeleccionado: ReporteEstudiante | null = null;
+  detallesLoading = false;
+  detallesError: string | null = null;
 
   cargandoLista = false;
   errorLista: string | null = null;
@@ -142,12 +143,12 @@ export class ReportesEstudianteComponent {
 
   allSelectedOnPage(): boolean {
     if (!this.estudiantes?.length) return false;
-    return this.estudiantes.every(e => this.selectedRuts.has(e.rut));
+    return this.estudiantes.every((e) => this.selectedRuts.has(e.rut));
   }
 
   someSelectedOnPage(): boolean {
     if (!this.estudiantes?.length) return false;
-    const selected = this.estudiantes.filter(e => this.selectedRuts.has(e.rut)).length;
+    const selected = this.estudiantes.filter((e) => this.selectedRuts.has(e.rut)).length;
     return selected > 0 && selected < this.estudiantes.length;
   }
 
@@ -162,38 +163,46 @@ export class ReportesEstudianteComponent {
     this.selectedRuts.clear();
   }
 
+  // ===== Detalles (inline, como antes; sin MatDialog) =====
   verDetalles(rut: string) {
-    const dialogRef = this.dialog.open(DetalleEstudianteDialogComponent, {
-      width: '1000px',
-      maxWidth: '95vw',
-      autoFocus: false,
-      panelClass: 'ga-dialog',
-      backdropClass: 'ga-backdrop',
-      data: {
-        loading: true,
-        estudiante: null,
-        error: null
-      }
-    });
+  this.detallesError = null;
+  this.detallesLoading = true;
 
-    this.reportesService.getReporteEstudiante(rut).subscribe({
+  // abre el modal altiro (como antes)
+  this.estudianteSeleccionado = { rut } as any;
+
+  this.reportesService
+    .getReporteEstudiante(rut)
+    .pipe(finalize(() => (this.detallesLoading = false)))
+    .subscribe({
       next: (res) => {
-        dialogRef.componentInstance.data = {
-          loading: false,
-          estudiante: res,
-          error: null
-        };
+        this.estudianteSeleccionado = res ?? null;
+        if (!this.estudianteSeleccionado) {
+          this.detallesError = 'No se encontró información del estudiante.';
+        }
       },
       error: () => {
-        dialogRef.componentInstance.data = {
-          loading: false,
-          estudiante: null,
-          error: 'Error al cargar el estudiante'
-        };
-      }
+        this.detallesError = 'Error al cargar el estudiante';
+        // Mantén el modal abierto para mostrar el error:
+        // this.estudianteSeleccionado sigue siendo truthy si quieres ver el mensaje.
+        // Si lo pones null, se cierra y "no se ve nada".
+        this.estudianteSeleccionado = { rut } as any;
+      },
     });
+}
+
+
+  cerrarDetalles() {
+    this.estudianteSeleccionado = null;
+    this.detallesLoading = false;
+    this.detallesError = null;
   }
 
+  practicasCount(): number {
+    return (this.estudianteSeleccionado as any)?.practicas?.length ?? 0;
+  }
+
+  // ===== Helpers =====
   formatDate(value?: string | null): string {
     if (!value) return '—';
     const d = new Date(value);
@@ -226,7 +235,7 @@ export class ReportesEstudianteComponent {
     return `Periodo: ${periodo}, desde ${ini} hasta ${fin}`;
   }
 
-  private formatSupervisor(p: any): string {
+  formatSupervisor(p: any): string {
     const t = p?.tutores ?? p?.supervisores ?? p?.supervisor ?? null;
     if (Array.isArray(t)) return t.length ? String(t[0]) : '—';
     return t ? String(t) : '—';
@@ -252,9 +261,7 @@ export class ReportesEstudianteComponent {
           catchError(() => of(null))
         )
       )
-    ).pipe(
-      map((arr) => arr.filter((x): x is ReporteEstudiante => !!x))
-    );
+    ).pipe(map((arr) => arr.filter((x): x is ReporteEstudiante => !!x)));
   }
 
   private async loadImageAsDataURLSafe(path: string): Promise<string | null> {

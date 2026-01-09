@@ -1,126 +1,153 @@
-<div class="satisfaccion container section">
+<div class="re-sat container section">
 
-  <div class="topbar">
-    <button mat-stroked-button color="primary" routerLink="/reportes" class="btn-back">
-      <mat-icon>arrow_back</mat-icon>
-      Volver a Reportes
-    </button>
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero__bg"></div>
 
-    <div class="titles">
-      <h1>Reportes de Satisfacción</h1>
-      <p class="muted">
-        Filtra por año, semestre y tipo de práctica para obtener el resumen de satisfacción.
-      </p>
-    </div>
+    <div class="hero__content">
+      <div class="hero__left">
+        <div class="hero__icon">
+          <mat-icon>assignment_turned_in</mat-icon>
+        </div>
 
-    <div class="spacer"></div>
+        <div class="hero__titles">
+          <p class="eyebrow">Reportes · Satisfacción</p>
+          <h1>Reportes de Satisfacción</h1>
+          <p class="muted">
+            Filtra por año, semestre y tipo de práctica para obtener el resumen de satisfacción.
+          </p>
 
-    <!-- acciones rápidas (siempre visibles) -->
-    <div class="top-actions">
-      <button
-        mat-stroked-button
-        color="primary"
-        class="btn-pill"
-        (click)="exportarPDF()"
-        [disabled]="!canExport || loading">
-        <mat-icon>picture_as_pdf</mat-icon>
-        Exportar PDF
-      </button>
+          <div class="hero__chips" *ngIf="hasSearched">
+            <span class="chip">
+              <mat-icon>event</mat-icon>
+              <span>{{ anio }} · S{{ semestre }}</span>
+            </span>
 
-      <button
-        mat-stroked-button
-        color="accent"
-        class="btn-pill"
-        (click)="exportarExcel()"
-        [disabled]="!canExport || loading">
-        <mat-icon>grid_on</mat-icon>
-        Exportar Excel
-      </button>
+            <span class="chip" *ngIf="tipo; else tipoTodasHero">
+              <mat-icon>school</mat-icon>
+              <span>Tipo: {{ tipo }}</span>
+            </span>
+            <ng-template #tipoTodasHero>
+              <span class="chip">
+                <mat-icon>school</mat-icon>
+                <span>Tipo: Todas</span>
+              </span>
+            </ng-template>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero__actions">
+        <button mat-stroked-button color="primary" routerLink="/reportes" class="btn-pill">
+          <mat-icon>arrow_back</mat-icon>
+          Volver
+        </button>
+      </div>
     </div>
   </div>
 
-  <!-- FILTROS -->
-  <mat-card class="card elev">
-    <mat-card-content>
+  <!-- TOOLBAR / FILTROS -->
+  <mat-card class="card elev header-card">
+    <mat-card-content class="toolbar">
 
-      <form class="filters" (ngSubmit)="buscar()">
+      <!-- Izquierda: acciones export -->
+      <div class="toolbar__left">
+        <div class="toolbar__meta">
+          <mat-icon class="muted">tune</mat-icon>
+          <span class="muted"><strong>Filtros</strong></span>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Año</mat-label>
-          <input
-            matInput
-            type="number"
-            name="anio"
-            [(ngModel)]="anio"
-            (ngModelChange)="onFiltersChanged()" />
-          <mat-hint>Ej: 2026</mat-hint>
-        </mat-form-field>
+          <span class="dot" *ngIf="hasSearched"></span>
+          <span class="muted exporting" *ngIf="loading">Cargando…</span>
+          <span class="muted error" *ngIf="!loading && error">{{ error }}</span>
+        </div>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Semestre</mat-label>
-          <mat-select
-            name="semestre"
-            [(ngModel)]="semestre"
-            (ngModelChange)="onFiltersChanged()">
-            <mat-option [value]="1">1</mat-option>
-            <mat-option [value]="2">2</mat-option>
-          </mat-select>
-        </mat-form-field>
+        <div class="toolbar__actions">
+          <button
+            mat-stroked-button
+            color="primary"
+            class="btn-pill"
+            (click)="exportarPDF()"
+            [disabled]="!canExport || loading">
+            <mat-icon>picture_as_pdf</mat-icon>
+            PDF
+          </button>
 
-        <mat-form-field appearance="outline" class="ff-lg">
-          <mat-label>Tipo de práctica</mat-label>
-          <mat-select
-            name="tipo"
-            [(ngModel)]="tipo"
-            (ngModelChange)="onFiltersChanged()">
-            <mat-option [value]="null">Todas</mat-option>
-            <mat-option *ngFor="let t of tiposPractica" [value]="t.value">
-              {{ t.label }}
-            </mat-option>
-          </mat-select>
-        </mat-form-field>
-
-        <button mat-raised-button color="primary" class="btn-search" type="submit" [disabled]="loading">
-          <mat-icon>search</mat-icon>
-          Buscar
-        </button>
-      </form>
-
-      <!-- resumen / estado -->
-      <div class="meta" *ngIf="hasSearched">
-        <span class="pill">
-          <mat-icon>event</mat-icon>
-          {{ anio }} · S{{ semestre }}
-        </span>
-
-        <span class="pill" *ngIf="tipo; else tipoTodas">
-          <mat-icon>school</mat-icon>
-          {{ tipo }}
-        </span>
-        <ng-template #tipoTodas>
-          <span class="pill">
-            <mat-icon>school</mat-icon>
-            Tipo: Todas
-          </span>
-        </ng-template>
+          <button
+            mat-stroked-button
+            color="accent"
+            class="btn-pill"
+            (click)="exportarExcel()"
+            [disabled]="!canExport || loading">
+            <mat-icon>grid_on</mat-icon>
+            Excel
+          </button>
+        </div>
       </div>
 
-      <!-- LOADING -->
-      <div class="state" *ngIf="loading">
-        <mat-spinner diameter="28"></mat-spinner>
-        <span class="muted">Cargando reporte...</span>
-      </div>
+      <div class="toolbar__divider"></div>
 
-      <!-- ERROR -->
-      <p class="muted error" *ngIf="!loading && error">
-        {{ error }}
-      </p>
+      <!-- Derecha: formulario filtros -->
+      <div class="toolbar__right">
+        <form class="filters" (ngSubmit)="buscar()">
+
+          <mat-form-field appearance="outline" class="ff-sm">
+            <mat-label>Año</mat-label>
+            <input
+              matInput
+              type="number"
+              name="anio"
+              [(ngModel)]="anio"
+              (ngModelChange)="onFiltersChanged()" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="ff-sm">
+            <mat-label>Semestre</mat-label>
+            <mat-select
+              name="semestre"
+              [(ngModel)]="semestre"
+              (ngModelChange)="onFiltersChanged()">
+              <mat-option [value]="1">1</mat-option>
+              <mat-option [value]="2">2</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="ff-lg">
+            <mat-label>Tipo de práctica</mat-label>
+            <mat-select
+              name="tipo"
+              [(ngModel)]="tipo"
+              (ngModelChange)="onFiltersChanged()">
+              <mat-option [value]="null">Todas</mat-option>
+              <mat-option *ngFor="let t of tiposPractica" [value]="t.value">
+                {{ t.label }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <button
+            mat-raised-button
+            color="primary"
+            class="btn-search"
+            type="submit"
+            [disabled]="loading">
+            <mat-icon>search</mat-icon>
+            Buscar
+          </button>
+
+        </form>
+      </div>
 
     </mat-card-content>
   </mat-card>
 
+  <!-- LOADING (debajo del toolbar, igual que otros) -->
+  <div class="state" *ngIf="loading">
+    <mat-spinner diameter="28"></mat-spinner>
+    <span class="muted">Cargando reporte...</span>
+  </div>
+
   <!-- DATA -->
-  <div *ngIf="data" class="grid">
+  <div *ngIf="data && !loading" class="grid">
 
     <!-- Resumen -->
     <mat-card class="card elev">
@@ -242,7 +269,7 @@
 
   </div>
 
-  <!-- EMPTY STATE: solo después de buscar Y sin cambios pendientes -->
+  <!-- EMPTY STATE -->
   <mat-card class="card elev empty"
     *ngIf="hasSearched && !loading && !error && !data && !filtersDirty">
     <mat-card-content class="center-col">
@@ -253,4 +280,3 @@
   </mat-card>
 
 </div>
-
