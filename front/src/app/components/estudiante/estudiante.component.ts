@@ -416,7 +416,7 @@ export class EstudiantesComponent implements OnInit {
     ['Avance', this.formatearNumero((detalle as any).avance)],
     ['Puntaje ponderado', this.formatearNumero((detalle as any).puntaje_ponderado)],
     ['Puntaje PSU', this.formatearNumero((detalle as any).puntaje_psu)],
-    ['Promedio', this.formatearNumero((detalle as any).promedio)],
+    ['Promedio de prácticas', this.formatearNumero((detalle as any).promedio)],
   ]);
 
   section('Contacto', [
