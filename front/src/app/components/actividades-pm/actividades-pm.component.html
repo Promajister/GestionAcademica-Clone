@@ -1,4 +1,4 @@
-<div class="Container Section">
+﻿<div class="Container Section">
 
   <!-- HERO -->
   <div class="hero">
@@ -240,7 +240,20 @@
                     <mat-error *ngIf="fProy('jornadaResponsableTaller').touched && fProy('jornadaResponsableTaller').invalid">Obligatorio</mat-error>
                   </mat-form-field>
                 </div>
+              <div class="FormRow">
+                <mat-form-field appearance="outline" class="FormField">
+                  <mat-label>Número de asistentes *</mat-label>
+                  <input matInput type="number" formControlName="jornadaNumAsistentes" min="0" />
+                  <mat-error *ngIf="fProy('jornadaNumAsistentes').touched && fProy('jornadaNumAsistentes').invalid">Obligatorio</mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="FormField">
+                  <mat-label>Nivel de satisfacción *</mat-label>
+                  <input matInput type="number" formControlName="jornadaSatisfaccion" min="0" />
+                  <mat-error *ngIf="fProy('jornadaSatisfaccion').touched && fProy('jornadaSatisfaccion').invalid">Obligatorio</mat-error>
+                </mat-form-field>
               </div>
+            </div>
 
               <!-- TALLER REMEDIAL -->
               <div *ngIf="fProy('tipoActividad').value === 'TALLER_REMEDIAL'">
@@ -292,7 +305,20 @@
                     <mat-error *ngIf="fProy('congresoRelator').touched && fProy('congresoRelator').invalid">Obligatorio</mat-error>
                   </mat-form-field>
                 </div>
+              <div class="FormRow">
+                <mat-form-field appearance="outline" class="FormField">
+                  <mat-label>Número de asistentes *</mat-label>
+                  <input matInput type="number" formControlName="congresoNumAsistentes" min="0" />
+                  <mat-error *ngIf="fProy('congresoNumAsistentes').touched && fProy('congresoNumAsistentes').invalid">Obligatorio</mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="FormField">
+                  <mat-label>Nivel de satisfacción *</mat-label>
+                  <input matInput type="number" formControlName="congresoSatisfaccion" min="0" />
+                  <mat-error *ngIf="fProy('congresoSatisfaccion').touched && fProy('congresoSatisfaccion').invalid">Obligatorio</mat-error>
+                </mat-form-field>
               </div>
+            </div>
 
               <!-- ALTERNANCIA PEDAGÓGICA -->
               <div *ngIf="fProy('tipoActividad').value === 'ALTERNANCIA_PEDAGOGICA'">
@@ -335,6 +361,13 @@
                     <mat-label>Nombre actividad *</mat-label>
                     <input matInput formControlName="alternanciaNombreActividad" maxlength="300" />
                     <mat-error *ngIf="fProy('alternanciaNombreActividad').touched && fProy('alternanciaNombreActividad').invalid">Obligatorio</mat-error>
+                  </mat-form-field>
+                </div>
+                <div class="FormRow">
+                  <mat-form-field appearance="outline" class="FormField FullWidth">
+                    <mat-label>Estudiantes participantes *</mat-label>
+                    <input matInput formControlName="alternanciaEstudiantesParticipantes" maxlength="250" />
+                    <mat-error *ngIf="fProy('alternanciaEstudiantesParticipantes').touched && fProy('alternanciaEstudiantesParticipantes').invalid">Obligatorio</mat-error>
                   </mat-form-field>
                 </div>
               </div>
@@ -548,12 +581,12 @@
         <mat-icon>info</mat-icon>
         <span>No hay unidad seleccionada.</span>
       </div>
+      <div class="InlineError" *ngIf="showUnidadError && unidades.length === 0">
+        Debes agregar al menos una unidad.
+      </div>
     </div>
   </div>
 </mat-tab>
-
-
-
 
           <!-- =======================
                TAB: EQUIPO DE TRABAJO
@@ -655,7 +688,6 @@
               </div>
             </div>
           </mat-tab>
-
 
           <!-- =======================
                TAB: FINANCIAMIENTO
@@ -842,7 +874,6 @@
               </div>
             </mat-tab>
 
-
           <!-- =======================
                TAB: PARTICIPANTES
                ======================= -->
@@ -930,7 +961,6 @@
                 </button>
               </div>
 
-
               <div class="TableCard">
                 <table mat-table [dataSource]="instituciones" class="mat-elevation-z0 SimpleTable">
                   <ng-container matColumnDef="n">
@@ -993,7 +1023,6 @@
                   <mat-label>Medida de impacto</mat-label>
                   <input matInput formControlName="medidaImpacto" readonly />
                 </mat-form-field>
-
 
                 <mat-form-field appearance="outline" class="FormField">
                   <mat-label>Indicador de Impacto (*)</mat-label>
@@ -1170,7 +1199,6 @@
 
 </mat-tab>
 
-
         </mat-tab-group>
 
         <!-- Acciones inferiores -->
@@ -1190,3 +1218,4 @@
   </mat-card>
 
 </div>
+

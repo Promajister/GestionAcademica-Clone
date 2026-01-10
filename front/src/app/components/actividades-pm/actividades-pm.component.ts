@@ -135,6 +135,8 @@ export class ActividadesPmComponent implements OnInit {
   documentosFileName = '';
   fotosFileName = '';
 
+  showUnidadError = false;
+
   constructor(private fb: FormBuilder, private actividadesPmService: ActividadesPmService) {}
 
   ngOnInit(): void {
@@ -372,6 +374,7 @@ export class ActividadesPmComponent implements OnInit {
     if (exists) return;
 
     this.unidades = [...this.unidades, { cod, unidad }];
+    this.showUnidadError = false;
     this.fProy('unidadCod').setValue('');
     this.fProy('unidadNombre').setValue('');
   }
@@ -719,6 +722,7 @@ export class ActividadesPmComponent implements OnInit {
   guardar(): void {
     if (this.unidades.length === 0) {
       this.form.markAllAsTouched();
+      this.showUnidadError = true;
       this.goToSection('sec-unidades', 0);
       return;
     }
@@ -810,6 +814,7 @@ export class ActividadesPmComponent implements OnInit {
     this.instituciones = [];
     this.estudiantesFeria = [];
     this.estudiantesSalida = [];
+    this.showUnidadError = false;
 
     this.asistenciaFile = null;
     this.asistenciaFileName = '';
