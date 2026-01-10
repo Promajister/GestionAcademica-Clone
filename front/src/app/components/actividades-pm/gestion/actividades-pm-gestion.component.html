@@ -1,0 +1,95 @@
+<mat-card class="card">
+  <div class="header">
+    <div>
+      <h2>Gestión de Actividades</h2>
+      <p>Listado y acciones (ver, editar, eliminar) de actividades de vinculación.</p>
+    </div>
+
+    <button mat-stroked-button type="button" (click)="cargar()">
+      <mat-icon>refresh</mat-icon>
+      Recargar
+    </button>
+  </div>
+
+  <div class="filters" [formGroup]="filtroForm">
+    <mat-form-field appearance="outline">
+      <mat-label>Año</mat-label>
+      <mat-select formControlName="anio">
+        <mat-option *ngFor="let a of anios" [value]="a">{{ a }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Tipo</mat-label>
+      <mat-select formControlName="tipo">
+        <mat-option *ngFor="let t of tipos" [value]="t.value">{{ t.label }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="grow">
+      <mat-label>Buscar por nombre</mat-label>
+      <input matInput formControlName="q" placeholder="Ej: Jornada..." />
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+  </div>
+
+  <div class="state" *ngIf="loading">Cargando...</div>
+  <div class="state error" *ngIf="!loading && errorMsg">{{ errorMsg }}</div>
+  <div class="state" *ngIf="!loading && !errorMsg && rows.length === 0">
+    No hay actividades registradas.
+  </div>
+
+  <table
+    mat-table
+    [dataSource]="rows"
+    class="mat-elevation-z0 table"
+    *ngIf="!loading && rows.length"
+  >
+    <ng-container matColumnDef="nombre">
+      <th mat-header-cell *matHeaderCellDef>Nombre</th>
+      <td mat-cell *matCellDef="let row">{{ row.nombre }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="tipoActividad">
+      <th mat-header-cell *matHeaderCellDef>Tipo</th>
+      <td mat-cell *matCellDef="let row">{{ row.tipoActividad }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="fecha">
+      <th mat-header-cell *matHeaderCellDef>Fechas</th>
+      <td mat-cell *matCellDef="let row">
+        {{ row.fechaInicio | date: 'yyyy-MM-dd' }} → {{ row.fechaTermino | date: 'yyyy-MM-dd' }}
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="sede">
+      <th mat-header-cell *matHeaderCellDef>Sede</th>
+      <td mat-cell *matCellDef="let row">{{ row.sede }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="areaImpacto">
+      <th mat-header-cell *matHeaderCellDef>Impacto</th>
+      <td mat-cell *matCellDef="let row">{{ row.areaImpacto }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="acciones">
+      <th mat-header-cell *matHeaderCellDef class="actions">Acciones</th>
+      <td mat-cell *matCellDef="let row" class="actions">
+        <button mat-icon-button color="primary" (click)="abrirVer(row)" matTooltip="Ver">
+          <mat-icon>visibility</mat-icon>
+        </button>
+
+        <button mat-icon-button color="primary" (click)="abrirEditar(row)" matTooltip="Editar">
+          <mat-icon>edit</mat-icon>
+        </button>
+
+        <button mat-icon-button color="warn" (click)="eliminar(row)" matTooltip="Eliminar">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="cols"></tr>
+    <tr mat-row *matRowDef="let row; columns: cols;"></tr>
+  </table>
+</mat-card>

@@ -33,26 +33,16 @@ export class ActividadesPmService {
 
   constructor(private http: HttpClient) {}
 
-  /**
-   * Crea una actividad PM enviando JSON + archivos en multipart/form-data.
-   * Retorna el response del backend.
-   */
   crear(req: GuardarActividadPmRequest): Observable<any> {
     const formData = this.buildFormData(req);
     return this.http.post(this.baseUrl, formData);
   }
 
-  /**
-   * Actualiza una actividad PM.
-   */
   actualizar(id: number | string, req: GuardarActividadPmRequest): Observable<any> {
     const formData = this.buildFormData(req);
     return this.http.put(`${this.baseUrl}/${id}`, formData);
   }
 
-  /**
-   * Listar actividades
-   */
   listar(filters?: { anio?: number; tipo?: string; q?: string }): Observable<any[]> {
     let params = new HttpParams();
     if (filters?.anio) params = params.set('anio', String(filters.anio));
@@ -62,22 +52,13 @@ export class ActividadesPmService {
     return this.http.get<any[]>(this.baseUrl, { params });
   }
 
-  /**
-   * Obtener detalle
-   */
   obtener(id: number | string): Observable<any> {
     return this.http.get<any>(`${this.baseUrl}/${id}`);
   }
 
-  /**
-   * Construye FormData con:
-   * - metadata (JSON) en un campo "data"
-   * - archivos en campos: asistencia, documentos, fotos
-   */
   private buildFormData(req: GuardarActividadPmRequest): FormData {
     const fd = new FormData();
 
-    // 1) JSON: junta todo en un solo objeto para backend
     const data = {
       ...req.payload,
       unidades: req.unidades,
@@ -92,7 +73,6 @@ export class ActividadesPmService {
 
     fd.append('data', JSON.stringify(data));
 
-    // 2) archivos (si vienen)
     if (req.files?.asistencia) {
       fd.append('asistencia', req.files.asistencia, req.files.asistencia.name);
     }
@@ -105,4 +85,9 @@ export class ActividadesPmService {
 
     return fd;
   }
+
+  eliminar(id: number | string): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/${id}`);
+  }
+
 }
