@@ -295,6 +295,24 @@ export class ActividadesPmComponent implements OnInit {
           this.fProy('responsableNombre').setValue(resp.nombre, { emitEvent: false });
         }
       });
+
+    this.fEq('rut')
+      .valueChanges.pipe(
+        debounceTime(300),
+        distinctUntilChanged(),
+        switchMap((value) => {
+          const rut = String(value ?? '').trim();
+          if (!rut || !this.isRutFormatOk(rut)) return of(null);
+          return this.actividadesPmService.obtenerEquipoTrabajoPorRut(rut).pipe(
+            catchError(() => of(null)),
+          );
+        }),
+      )
+      .subscribe((equipo) => {
+        if (equipo?.nombre) {
+          this.fEq('nombre').setValue(equipo.nombre, { emitEvent: false });
+        }
+      });
   }
 
   fProy(name: string) {
@@ -474,7 +492,9 @@ export class ActividadesPmComponent implements OnInit {
   onRutInputEquipo(ev: Event): void {
     const input = ev.target as HTMLInputElement;
     const formatted = this.formatRut(input.value);
-    this.fEq('rut').setValue(formatted, { emitEvent: false });
+    if (formatted !== this.fEq('rut').value) {
+      this.fEq('rut').setValue(formatted, { emitEvent: true });
+    }
   }
 
   onRutInputResponsable(ev: Event): void {

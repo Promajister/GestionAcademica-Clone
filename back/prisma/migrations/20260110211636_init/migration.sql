@@ -400,6 +400,7 @@ CREATE TABLE `responsable` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `rut` VARCHAR(191) NOT NULL,
     `nombre` VARCHAR(191) NOT NULL,
+    `tipo` VARCHAR(191) NULL,
 
     UNIQUE INDEX `responsable_rut_key`(`rut`),
     PRIMARY KEY (`id`)
@@ -418,11 +419,20 @@ CREATE TABLE `actividad_vinculacion_responsable` (
 -- CreateTable
 CREATE TABLE `actividad_vinculacion_equipo_trabajo` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `actividadVinculacionId` INTEGER NOT NULL,
+    `equipoTrabajoId` INTEGER NOT NULL,
+    `equipo` VARCHAR(191) NOT NULL,
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `equipo_trabajo` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
     `rut` VARCHAR(191) NOT NULL,
     `nombre` VARCHAR(191) NOT NULL,
-    `equipo` VARCHAR(191) NOT NULL,
-    `actividadVinculacionId` INTEGER NOT NULL,
 
+    UNIQUE INDEX `equipo_trabajo_rut_key`(`rut`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -592,6 +602,9 @@ ALTER TABLE `actividad_vinculacion_responsable` ADD CONSTRAINT `actividad_vincul
 
 -- AddForeignKey
 ALTER TABLE `actividad_vinculacion_equipo_trabajo` ADD CONSTRAINT `actividad_vinculacion_equipo_trabajo_actividadVinculacionId_fkey` FOREIGN KEY (`actividadVinculacionId`) REFERENCES `actividad_vinculacion`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `actividad_vinculacion_equipo_trabajo` ADD CONSTRAINT `actividad_vinculacion_equipo_trabajo_equipoTrabajoId_fkey` FOREIGN KEY (`equipoTrabajoId`) REFERENCES `equipo_trabajo`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `actividad_vinculacion_financiamiento` ADD CONSTRAINT `actividad_vinculacion_financiamiento_actividadVinculacionId_fkey` FOREIGN KEY (`actividadVinculacionId`) REFERENCES `actividad_vinculacion`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;

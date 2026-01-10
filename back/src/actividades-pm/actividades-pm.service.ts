@@ -29,6 +29,15 @@ export class ActividadesPmService {
     });
   }
 
+  async findEquipoTrabajoByRut(rut: string) {
+    const normalized = rut?.trim();
+    if (!normalized) return null;
+    return this.prisma.equipoTrabajo.findUnique({
+      where: { rut: normalized },
+      select: { id: true, rut: true, nombre: true },
+    });
+  }
+
   async create(payload: any, files?: {
     asistencia?: Express.Multer.File[];
     documentos?: Express.Multer.File[];
@@ -230,18 +239,28 @@ export class ActividadesPmService {
             responsable: {
               connectOrCreate: {
                 where: { rut },
-                create: { rut, nombre },
+                create: { rut, nombre, tipo },
               },
             },
           };
         }),
       },
       equiposTrabajo: {
-        create: equipoTrabajo.map((e: any) => ({
-          rut: this.normalizeText(e?.rut) ?? '',
-          nombre: this.normalizeText(e?.nombre) ?? '',
-          equipo: this.normalizeText(e?.tipo ?? e?.equipo) ?? '',
-        })),
+        create: equipoTrabajo.map((e: any) => {
+          const rut = this.normalizeText(e?.rut) ?? '';
+          const nombre = this.normalizeText(e?.nombre) ?? '';
+          const equipo = this.normalizeText(e?.tipo ?? e?.equipo) ?? '';
+
+          return {
+            equipo,
+            equipoTrabajo: {
+              connectOrCreate: {
+                where: { rut },
+                create: { rut, nombre },
+              },
+            },
+          };
+        }),
       },
       financiamientos: {
         create: financiamientos.map((f: any) => ({
@@ -280,7 +299,7 @@ export class ActividadesPmService {
     return {
       unidades: { include: { unidad: true } },
       responsables: { include: { responsable: true } },
-      equiposTrabajo: true,
+      equiposTrabajo: { include: { equipoTrabajo: true } },
       financiamientos: true,
       centrosCosto: true,
       matricesParticipantes: true,

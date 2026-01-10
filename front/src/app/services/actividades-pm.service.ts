@@ -77,6 +77,10 @@ export class ActividadesPmService {
     return this.http.get<any>(`${this.baseUrl}/responsables/${encodeURIComponent(rut)}`);
   }
 
+  obtenerEquipoTrabajoPorRut(rut: string): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/equipo-trabajo/${encodeURIComponent(rut)}`);
+  }
+
   /**
    * Construye FormData con:
    * - metadata (JSON) en un campo "data"

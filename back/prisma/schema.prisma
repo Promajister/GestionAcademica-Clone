@@ -564,6 +564,7 @@ model Responsable {
   id     Int    @id @default(autoincrement())
   rut    String @unique
   nombre String
+  tipo   String?
 
   actividades ResponsableVinculacion[]
 
@@ -585,15 +586,27 @@ model ResponsableVinculacion {
 }
 
 model EquipoTrabajoVinculacion {
-  id     Int    @id @default(autoincrement())
-  rut    String
-  nombre String
-  equipo String
+  id Int @id @default(autoincrement())
 
   actividadVinculacionId Int
   actividadVinculacion   ActividadVinculacion @relation(fields: [actividadVinculacionId], references: [id], onDelete: Cascade)
 
+  equipoTrabajoId Int
+  equipoTrabajo   EquipoTrabajo @relation(fields: [equipoTrabajoId], references: [id], onDelete: Cascade)
+
+  equipo String
+
   @@map("actividad_vinculacion_equipo_trabajo")
+}
+
+model EquipoTrabajo {
+  id     Int    @id @default(autoincrement())
+  rut    String @unique
+  nombre String
+
+  actividades EquipoTrabajoVinculacion[]
+
+  @@map("equipo_trabajo")
 }
 
 model FinanciamientoVinculacion {

@@ -112,6 +112,13 @@ export class ActividadesPmController {
     return responsable;
   }
 
+  @Get('equipo-trabajo/:rut')
+  async findEquipoTrabajo(@Param('rut') rut: string) {
+    const equipo = await this.service.findEquipoTrabajoByRut(rut);
+    if (!equipo) throw new NotFoundException('Equipo de trabajo no encontrado');
+    return equipo;
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.service.findOne(id);
