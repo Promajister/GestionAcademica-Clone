@@ -538,25 +538,48 @@ model ActividadVinculacion {
   @@map("actividad_vinculacion")
 }
 
-model UnidadVinculacion {
+model Unidad {
   id     Int    @id @default(autoincrement())
-  codigo String
+  codigo String @unique
   nombre String
+
+  actividades UnidadVinculacion[]
+
+  @@map("unidad")
+}
+
+model UnidadVinculacion {
+  id Int @id @default(autoincrement())
 
   actividadVinculacionId Int
   actividadVinculacion   ActividadVinculacion @relation(fields: [actividadVinculacionId], references: [id], onDelete: Cascade)
+
+  unidadId Int
+  unidad   Unidad @relation(fields: [unidadId], references: [id], onDelete: Cascade)
 
   @@map("actividad_vinculacion_unidad")
 }
 
-model ResponsableVinculacion {
+model Responsable {
   id     Int    @id @default(autoincrement())
-  rut    String
+  rut    String @unique
   nombre String
-  tipo   String // INTERNO | EXTERNO
+
+  actividades ResponsableVinculacion[]
+
+  @@map("responsable")
+}
+
+model ResponsableVinculacion {
+  id Int @id @default(autoincrement())
 
   actividadVinculacionId Int
   actividadVinculacion   ActividadVinculacion @relation(fields: [actividadVinculacionId], references: [id], onDelete: Cascade)
+
+  responsableId Int
+  responsable   Responsable @relation(fields: [responsableId], references: [id], onDelete: Cascade)
+
+  tipo String // INTERNO | EXTERNO
 
   @@map("actividad_vinculacion_responsable")
 }

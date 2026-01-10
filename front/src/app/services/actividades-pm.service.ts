@@ -69,6 +69,14 @@ export class ActividadesPmService {
     return this.http.get<any>(`${this.baseUrl}/${id}`);
   }
 
+  obtenerUnidadPorCodigo(codigo: string): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/unidades/${encodeURIComponent(codigo)}`);
+  }
+
+  obtenerResponsablePorRut(rut: string): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/responsables/${encodeURIComponent(rut)}`);
+  }
+
   /**
    * Construye FormData con:
    * - metadata (JSON) en un campo "data"

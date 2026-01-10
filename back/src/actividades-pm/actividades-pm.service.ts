@@ -11,6 +11,24 @@ interface QueryFilters {
 export class ActividadesPmService {
   constructor(private prisma: PrismaService) {}
 
+  async findUnidadByCodigo(codigo: string) {
+    const normalized = codigo?.trim();
+    if (!normalized) return null;
+    return this.prisma.unidad.findUnique({
+      where: { codigo: normalized },
+      select: { id: true, codigo: true, nombre: true },
+    });
+  }
+
+  async findResponsableByRut(rut: string) {
+    const normalized = rut?.trim();
+    if (!normalized) return null;
+    return this.prisma.responsable.findUnique({
+      where: { rut: normalized },
+      select: { id: true, rut: true, nombre: true },
+    });
+  }
+
   async create(payload: any, files?: {
     asistencia?: Express.Multer.File[];
     documentos?: Express.Multer.File[];
@@ -187,17 +205,36 @@ export class ActividadesPmService {
       profesorResponsable: this.normalizeText(proyecto?.salidaProfesorResponsable),
 
       unidades: {
-        create: unidades.map((u: any) => ({
-          codigo: this.normalizeText(u?.cod ?? u?.codigo) ?? '',
-          nombre: this.normalizeText(u?.unidad ?? u?.nombre) ?? '',
-        })),
+        create: unidades.map((u: any) => {
+          const codigo = this.normalizeText(u?.cod ?? u?.codigo) ?? '';
+          const nombre = this.normalizeText(u?.unidad ?? u?.nombre) ?? '';
+
+          return {
+            unidad: {
+              connectOrCreate: {
+                where: { codigo },
+                create: { codigo, nombre },
+              },
+            },
+          };
+        }),
       },
       responsables: {
-        create: responsables.map((r: any) => ({
-          rut: this.normalizeText(r?.rut) ?? '',
-          nombre: this.normalizeText(r?.nombre) ?? '',
-          tipo: this.normalizeText(r?.tipo) ?? '',
-        })),
+        create: responsables.map((r: any) => {
+          const rut = this.normalizeText(r?.rut) ?? '';
+          const nombre = this.normalizeText(r?.nombre) ?? '';
+          const tipo = this.normalizeText(r?.tipo) ?? '';
+
+          return {
+            tipo,
+            responsable: {
+              connectOrCreate: {
+                where: { rut },
+                create: { rut, nombre },
+              },
+            },
+          };
+        }),
       },
       equiposTrabajo: {
         create: equipoTrabajo.map((e: any) => ({
@@ -241,8 +278,8 @@ export class ActividadesPmService {
 
   private includeAll() {
     return {
-      unidades: true,
-      responsables: true,
+      unidades: { include: { unidad: true } },
+      responsables: { include: { responsable: true } },
       equiposTrabajo: true,
       financiamientos: true,
       centrosCosto: true,

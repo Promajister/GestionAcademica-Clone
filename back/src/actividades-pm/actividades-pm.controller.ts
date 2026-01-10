@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   Get,
+  NotFoundException,
   Param,
   ParseIntPipe,
   Post,
@@ -95,6 +96,20 @@ export class ActividadesPmController {
     @Query('q') q?: string,
   ) {
     return this.service.findAll({ anio, tipo, q });
+  }
+
+  @Get('unidades/:codigo')
+  async findUnidad(@Param('codigo') codigo: string) {
+    const unidad = await this.service.findUnidadByCodigo(codigo);
+    if (!unidad) throw new NotFoundException('Unidad no encontrada');
+    return unidad;
+  }
+
+  @Get('responsables/:rut')
+  async findResponsable(@Param('rut') rut: string) {
+    const responsable = await this.service.findResponsableByRut(rut);
+    if (!responsable) throw new NotFoundException('Responsable no encontrado');
+    return responsable;
   }
 
   @Get(':id')

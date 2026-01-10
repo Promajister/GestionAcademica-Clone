@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {AbstractControl,FormBuilder,FormGroup,ReactiveFormsModule,ValidationErrors,Validators} from '@angular/forms';
+import { catchError, debounceTime, distinctUntilChanged, of, switchMap } from 'rxjs';
 
 import { MatOptionModule } from '@angular/material/core';
 import { MatCardModule } from '@angular/material/card';
@@ -258,6 +259,42 @@ export class ActividadesPmComponent implements OnInit {
     this.aplicarValidadoresTipoActividad(initial);
     this.updateEquipoValidators();
     this.updateInstitucionValidators();
+
+    this.fProy('unidadCod')
+      .valueChanges.pipe(
+        debounceTime(300),
+        distinctUntilChanged(),
+        switchMap((value) => {
+          const codigo = String(value ?? '').trim();
+          if (!codigo) return of(null);
+          return this.actividadesPmService.obtenerUnidadPorCodigo(codigo).pipe(
+            catchError(() => of(null)),
+          );
+        }),
+      )
+      .subscribe((unidad) => {
+        if (unidad?.nombre) {
+          this.fProy('unidadNombre').setValue(unidad.nombre, { emitEvent: false });
+        }
+      });
+
+    this.fProy('responsableRut')
+      .valueChanges.pipe(
+        debounceTime(300),
+        distinctUntilChanged(),
+        switchMap((value) => {
+          const rut = String(value ?? '').trim();
+          if (!rut || !this.isRutFormatOk(rut)) return of(null);
+          return this.actividadesPmService.obtenerResponsablePorRut(rut).pipe(
+            catchError(() => of(null)),
+          );
+        }),
+      )
+      .subscribe((resp) => {
+        if (resp?.nombre) {
+          this.fProy('responsableNombre').setValue(resp.nombre, { emitEvent: false });
+        }
+      });
   }
 
   fProy(name: string) {
@@ -441,10 +478,12 @@ export class ActividadesPmComponent implements OnInit {
   }
 
   onRutInputResponsable(ev: Event): void {
-  const input = ev.target as HTMLInputElement;
-  const formatted = this.formatRut(input.value);
-  this.fProy('responsableRut').setValue(formatted, { emitEvent: false });
-}
+    const input = ev.target as HTMLInputElement;
+    const formatted = this.formatRut(input.value);
+    if (formatted !== this.fProy('responsableRut').value) {
+      this.fProy('responsableRut').setValue(formatted, { emitEvent: true });
+    }
+  }
 
   onRutInputFeria(ev: Event): void {
     const input = ev.target as HTMLInputElement;
