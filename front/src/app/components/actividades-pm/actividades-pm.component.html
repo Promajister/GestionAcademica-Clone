@@ -445,7 +445,10 @@
                   <mat-select formControlName="areaImpacto">
                     <mat-option *ngFor="let o of areasImpacto" [value]="o">{{ o }}</mat-option>
                   </mat-select>
-                  <mat-error *ngIf="fProy('areaImpacto').touched && fProy('areaImpacto').invalid">Obligatorio</mat-error>
+                  <mat-error *ngIf="fProy('areaImpacto').touched && fProy('areaImpacto').hasError('noSeleccione')">
+                    Debes seleccionar una opción válida.
+                  </mat-error>
+
                 </mat-form-field>
 
                 <mat-form-field appearance="outline" class="FormField">
@@ -468,16 +471,26 @@
                 <div class="FormRow">
                   <mat-form-field appearance="outline" class="FormField">
                     <mat-label>Fecha Inicio *</mat-label>
-                    <input matInput type="date" formControlName="fechaInicio" />
+                    <input matInput type="date" formControlName="fechaInicio" (change)="fProy('fechaInicio').markAsTouched()" />
                     <mat-error *ngIf="fProy('fechaInicio').touched && fProy('fechaInicio').invalid">Obligatorio</mat-error>
                   </mat-form-field>
 
                   <mat-form-field appearance="outline" class="FormField">
                     <mat-label>Fecha Término *</mat-label>
-                    <input matInput type="date" formControlName="fechaTermino" />
+                    <input matInput type="date" formControlName="fechaTermino" (change)="fProy('fechaTermino').markAsTouched()" />
                     <mat-error *ngIf="fProy('fechaTermino').touched && fProy('fechaTermino').invalid">Obligatorio</mat-error>
                   </mat-form-field>
                 </div>
+                <div
+                  class="InlineError"
+                  *ngIf="
+                    form.get('proyecto')?.hasError('fechaRango') &&
+                    (fProy('fechaInicio').touched || fProy('fechaTermino').touched)
+                  "
+                >
+                  La fecha de inicio no puede ser mayor que la fecha de término.
+                </div>
+
 
                 <div class="FormRow">
                   <mat-form-field appearance="outline" class="FormField">
@@ -614,6 +627,9 @@
                     autocomplete="off"
                   />
                   <mat-error *ngIf="fEq('rut').touched && fEq('rut').hasError('required')">Obligatorio</mat-error>
+                  <mat-error *ngIf="fEq('rut').touched && fEq('rut').hasError('rutDv')">RUT inválido (dígito verificador incorrecto)</mat-error>
+                  <mat-error *ngIf="fProy('responsableRut').touched && fProy('responsableRut').hasError('rutDv')">RUT inválido (dígito verificador incorrecto)</mat-error>
+
                   <mat-error *ngIf="fEq('rut').touched && fEq('rut').hasError('rut')">Formato inválido (ej: 21.073.336-1)</mat-error>
                 </mat-form-field>
 
@@ -806,9 +822,6 @@
                         {{ d }}
                       </mat-option>
                     </mat-select>
-                    <mat-error *ngIf="form.get('difusion.difusionEquipo')?.touched && form.get('difusion.difusionEquipo')?.invalid">
-                      Debes seleccionar una opción
-                    </mat-error>
                   </mat-form-field>
 
                   <mat-form-field appearance="outline" class="InlineField">
@@ -892,10 +905,7 @@
               <div class="MatrixCard">
                 <div class="MatrixHeader">
                   <span class="MatrixTitle">Matriz por tipo de participante</span>
-                  <button mat-stroked-button type="button" (click)="grabarParticipantes()">
-                    <mat-icon>save</mat-icon>
-                    Grabar
-                  </button>
+
                 </div>
 
                 <div class="MatrixScroll">
@@ -1207,10 +1217,7 @@
             Limpiar
           </button>
 
-          <button mat-flat-button color="primary" class="SubmitBtn" type="button" (click)="guardar()">
-            <mat-icon>save</mat-icon>
-            Grabar
-          </button>
+          
         </div>
 
       </form>

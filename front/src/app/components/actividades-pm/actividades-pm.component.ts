@@ -155,12 +155,13 @@ export class ActividadesPmComponent implements OnInit {
         tipoVinculacion: ['', Validators.required],
         tipoVinculacionOtro: [{ value: '', disabled: true }],
         areaVinculacion: ['', Validators.required],
-        areaImpacto: ['SELECCIONE', Validators.required],
+        areaImpacto: ['SELECCIONE', [Validators.required, this.noSeleccioneValidator(['SELECCIONE'])]],
+
         fechaInicio: ['', Validators.required],
         fechaTermino: ['', Validators.required],
         sede: ['', Validators.required],
         lugar: [''],
-        proyectoAsociado: ['SELECCIONE'],
+        proyectoAsociado: ['SELECCIONE', this.noSeleccioneValidator(['SELECCIONE'])],
         resultados: ['', [Validators.maxLength(1000)]],
 
         tipoActividad: [null, Validators.required],
@@ -198,6 +199,8 @@ export class ActividadesPmComponent implements OnInit {
         salidaProfesorResponsable: [''],
         salidaEstRut: [''],
         salidaEstNombre: [''],
+        },
+  { validators: [this.fechaRangoValidator('fechaInicio', 'fechaTermino')] 
       }),
 
       equipoTrabajo: this.fb.group({
@@ -233,9 +236,10 @@ export class ActividadesPmComponent implements OnInit {
       }),
 
       difusion: this.fb.group({
-        difusionEquipo: ['SELECCIONE', Validators.required],
+        difusionEquipo: ['SELECCIONE'],
         difusionUrl: ['', [this.urlOptionalValidator()]],
       }),
+
     });
 
     this.fProy('tipoVinculacion').valueChanges.subscribe((v: string) => {
@@ -575,15 +579,69 @@ export class ActividadesPmComponent implements OnInit {
     return `${withDots}-${dv}`;
   }
 
-  private rutValidator() {
-    return (control: AbstractControl): ValidationErrors | null => {
-      const v = String(control.value ?? '').trim();
-      if (!v) return null;
-      const okFormat = /^\d{1,2}(\.\d{3}){2}-[0-9K]$/i.test(v);
-      if (!okFormat) return { rut: true };
-      return null;
-    };
+  private validarDvRut(rut: string): boolean {
+  const clean = rut.replace(/\./g, '').replace('-', '').toUpperCase();
+  const body = clean.slice(0, -1);
+  const dv = clean.slice(-1);
+
+  let sum = 0;
+  let mul = 2;
+
+  for (let i = body.length - 1; i >= 0; i--) {
+    sum += Number(body[i]) * mul;
+    mul = mul === 7 ? 2 : mul + 1;
   }
+
+  const res = 11 - (sum % 11);
+  const dvEsperado =
+    res === 11 ? '0' :
+    res === 10 ? 'K' :
+    String(res);
+
+  return dv === dvEsperado;
+}
+
+
+  private rutValidator() {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const v = String(control.value ?? '').trim();
+    if (!v) return null;
+
+    const okFormat = /^\d{1,2}(\.\d{3}){2}-[0-9K]$/i.test(v);
+    if (!okFormat) return { rut: true };
+
+    if (!this.validarDvRut(v)) return { rutDv: true };
+
+    return null;
+  };
+}
+
+  private fechaRangoValidator(startKey: string, endKey: string) {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const g = control as FormGroup;
+    const start = g.get(startKey)?.value;
+    const end = g.get(endKey)?.value;
+
+    if (!start || !end) return null;
+
+    const d1 = new Date(start);
+    const d2 = new Date(end);
+
+    if (Number.isNaN(d1.getTime()) || Number.isNaN(d2.getTime())) return null;
+
+    return d1 <= d2 ? null : { fechaRango: true };
+  };
+}
+
+private noSeleccioneValidator(invalidValues: string[] = ['SELECCIONE']) {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const v = String(control.value ?? '').trim();
+    if (!v) return { required: true };
+    if (invalidValues.includes(v)) return { noSeleccione: true };
+    return null;
+  };
+}
+
 
   addFinanciamiento(): void {
     const g = this.form.get('financiamiento') as FormGroup;
