@@ -1,9 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild, TemplateRef } from '@angular/core';
+
 import { CommonModule } from '@angular/common';
 import {AbstractControl,FormBuilder,FormGroup,ReactiveFormsModule,ValidationErrors,Validators} from '@angular/forms';
 import { catchError, debounceTime, distinctUntilChanged, of, switchMap } from 'rxjs';
 
 import { MatOptionModule } from '@angular/material/core';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -49,6 +52,8 @@ type TipoActividad =
     MatTabsModule,
     MatTableModule,
     MatOptionModule,
+    MatSnackBarModule,
+    MatDialogModule,
   ],
   templateUrl: './actividades-pm.component.html',
   styleUrls: ['./actividades-pm.component.scss'],
@@ -56,6 +61,8 @@ type TipoActividad =
 export class ActividadesPmComponent implements OnInit {
   form!: FormGroup;
   selectedTabIndex = 0;
+  @ViewChild('dialogOk') dialogOk!: TemplateRef<any>;
+
 
   unidades: UnidadRow[] = [];
   responsables: ResponsableRow[] = [];
@@ -138,7 +145,12 @@ export class ActividadesPmComponent implements OnInit {
 
   showUnidadError = false;
 
-  constructor(private fb: FormBuilder, private actividadesPmService: ActividadesPmService) {}
+constructor(
+  private fb: FormBuilder,
+  private actividadesPmService: ActividadesPmService,
+  private dialog: MatDialog
+) {}
+
 
   ngOnInit(): void {
     this.form = this.fb.group({
@@ -813,10 +825,11 @@ private noSeleccioneValidator(invalidValues: string[] = ['SELECCIONE']) {
     const medio = String(g.get('difusionEquipo')?.value ?? '').trim();
     const url = String(g.get('difusionUrl')?.value ?? '').trim();
 
-    if (!medio) {
+    if (!medio || medio === 'SELECCIONE') {
       alert('Por favor selecciona un medio de difusión');
       return;
     }
+
 
     this.difusiones = [...this.difusiones, { medio, url }];
     g.get('difusionEquipo')?.setValue('SELECCIONE');
@@ -886,13 +899,36 @@ private noSeleccioneValidator(invalidValues: string[] = ['SELECCIONE']) {
     };
 
     this.actividadesPmService.crear(request).subscribe({
-      next: () => {
-        this.limpiar();
-      },
-      error: (err) => {
-        console.error('Error guardando actividad', err);
-      },
-    });
+  next: () => {
+    const medios = this.difusiones?.length
+      ? ` (Medio: ${this.difusiones.map((d) => d.medio).join(', ')})`
+      : '';
+
+    this.dialog.open(this.dialogOk, {
+  data: { message: `Actividad de vinculación registrada exitosamente.` },
+  disableClose: true,
+  autoFocus: false,
+  panelClass: 'ok-dialog',
+});
+
+
+  this.limpiar();
+},
+
+  error: (err) => {
+  console.error('Error guardando actividad', err);
+
+  this.dialog.open(this.dialogOk, {
+  data: { message: 'No se pudo registrar la actividad de vinculación. Intenta nuevamente.' },
+  disableClose: false,
+  autoFocus: false,
+  panelClass: 'ok-dialog',
+});
+
+},
+
+});
+
   }
 
   private goToSection(id: string, tabIndex: number) {
@@ -921,6 +957,11 @@ private noSeleccioneValidator(invalidValues: string[] = ['SELECCIONE']) {
       if (typeof invalid.focus === 'function') invalid.focus();
     }, 0);
   }
+
+    closeDialogOk(): void {
+    this.dialog.closeAll();
+  }
+
 
   limpiar(): void {
     this.unidades = [];

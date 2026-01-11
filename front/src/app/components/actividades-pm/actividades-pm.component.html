@@ -28,7 +28,6 @@
           Grabar
         </button>
       </div>
-
     </div>
   </div>
 
@@ -1225,4 +1224,20 @@
   </mat-card>
 
 </div>
+
+<ng-template #dialogOk let-data>
+  <div style="text-align:center;">
+    <mat-icon class="OkIcon">check_circle</mat-icon>
+
+    <h2 class="DialogTitle">Registro exitoso</h2>
+
+    <p class="DialogText">
+      {{ data.message }}
+    </p>
+
+    <button mat-flat-button color="primary" class="OkBtn" (click)="closeDialogOk()">
+      OK
+    </button>
+  </div>
+</ng-template>
 
