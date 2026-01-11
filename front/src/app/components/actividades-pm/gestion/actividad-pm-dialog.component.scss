@@ -1,0 +1,148 @@
+:host{
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0; 
+}
+
+.DialogHeader{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap: 12px;
+  padding: 18px 18px 14px;
+  border-bottom: 1px solid #eef2f7;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(4, 65, 197, 0.16), transparent 55%),
+    radial-gradient(circle at 100% 0%, rgba(4, 65, 197, 0.16), transparent 60%),
+    #fff;
+}
+
+.DialogHeaderLeft{ display:flex; gap:12px; min-width:0; }
+
+.DialogAvatar{
+  width: 44px; height: 44px;
+  border-radius: 14px;
+  display:grid; place-items:center;
+  background: linear-gradient(135deg, #303880);
+  color:#fff;
+  box-shadow: 0 8px 18px rgba(15,23,42,.12);
+  flex: 0 0 auto;
+}
+
+.DialogTitles{ min-width:0; }
+.DialogTitles h2{
+  margin:0;
+  font-size: 18px;
+  font-weight: 800;
+  color:#0f172a;
+}
+.DialogSubtitle{
+  margin-top: 3px;
+  font-size: 13px;
+  color:#475569;
+}
+
+.CloseBtn{ color:#64748b; }
+
+.DialogBody{
+  max-height: calc(90vh - 140px);
+  overflow: auto;
+  padding: 14px 18px 6px;
+}
+
+.error{
+  color: #b91c1c;
+  padding: 10px 0;
+}
+
+.DetailsTop{ display:flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0; }
+.Chip{
+  display:inline-flex; align-items:center; gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background:#fff;
+  font-size: 12.5px;
+}
+.Chip--primary{
+  border-color: rgba(37,99,235,.25);
+  background: rgba(37,99,235,.06);
+}
+.ChipText{
+  max-width: 320px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.Chip mat-icon{
+  width: 16px; height:16px;
+  font-size:16px; line-height:16px;
+}
+
+.DetailsSection{
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed #e5e7eb;
+}
+
+.SectionHead{
+  display:flex;
+  align-items:center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.SectionHead h3{
+  margin:0;
+  font-size: 14px;
+  font-weight: 800;
+  color:#111827;
+}
+
+.DetailsGrid--2{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.KV{
+  border: 1px solid #eef2f7;
+  background: #f8fafc;
+  border-radius: 14px;
+  padding: 10px 12px;
+}
+.KV--full{ grid-column: 1 / -1; }
+
+.K{
+  font-size: 12px;
+  color:#64748b;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+.V{
+  font-size: 14px;
+  color:#0f172a;
+  font-weight: 700;
+  word-break: break-word;
+}
+
+.EditForm .FormRow{
+  display:grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+.FormField{ width: 100%; }
+.FullWidth{ width: 100%; }
+
+.DialogActions{
+  display:flex;
+  justify-content:flex-end;
+  gap: 12px;
+  padding: 14px 18px 16px;
+  border-top: 1px solid #eef2f7;
+  background: #fff;
+}
+
+@media (max-width: 720px){
+  .DetailsGrid--2{ grid-template-columns: 1fr; }
+}

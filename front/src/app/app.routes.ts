@@ -173,6 +173,15 @@ export const routes: Routes = [
   },
 
   {
+    path: 'vinculacion/actividades-pm/gestion',
+    canActivate: [authGuard, roleGuard],
+    data: { allowedRoles: ['jefatura'] }, 
+    loadComponent: () =>
+      import('./components/actividades-pm/gestion/actividades-pm-gestion.component')
+        .then(m => m.ActividadesPmGestionComponent),
+  },
+
+  {
     path: '**',
     redirectTo: 'dashboard',
   },

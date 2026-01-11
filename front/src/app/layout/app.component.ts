@@ -299,6 +299,11 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
             icon: 'playlist_add',
             route: '/vinculacion/actividades-pm',
           },
+          {
+            label: 'Gestionar actividades del plan de mejora',
+            icon: 'manage_search',
+            route: '/vinculacion/actividades-pm/gestion',
+          },
         ],
       },
     ];
@@ -325,7 +330,6 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
       { label: 'Centros Educativos', icon: 'domain', route: '/centros-educativos' },
       { label: 'Prácticas', icon: 'event_note', route: '/practicas' },
       { label: 'Actividades', icon: 'assignment', route: '/actividades-estudiantes' },
-      { label: 'Reportes/Historial', icon: 'timeline', route: '/reportes' },
     ];
   }
 

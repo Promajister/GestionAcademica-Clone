@@ -60,8 +60,9 @@ export class ActividadesPmService {
 
     const search = filters?.q?.trim();
     if (search) {
-      where.nombre = { contains: search, mode: 'insensitive' };
+      where.nombre = { contains: search };
     }
+
 
     if (filters?.anio) {
       const year = Number(filters.anio);
