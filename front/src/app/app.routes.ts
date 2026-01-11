@@ -129,7 +129,7 @@ export const routes: Routes = [
   {
     path: 'reportes',
     canActivate: [authGuard, RoleGuard],
-    data: { roles: [ROLES.JEFATURA] },
+    data: { roles: [ROLES.JEFATURA,ROLES.PRACTICAS] },
     loadComponent: () =>
       import('./components/reportes/reportes.component')
         .then(m => m.ReportesComponent)
@@ -157,7 +157,7 @@ export const routes: Routes = [
   {
     path: 'reportes/historico',
     canActivate: [authGuard, RoleGuard],
-    data: { roles: [ROLES.JEFATURA] },
+    data: { roles: [ROLES.JEFATURA,ROLES] },
     loadComponent: () =>
       import('./components/reportes-historico/reportes-historico.component')
         .then(m => m.ReportesHistoricoComponent),
