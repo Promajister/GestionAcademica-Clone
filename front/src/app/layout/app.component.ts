@@ -295,7 +295,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
         icon: 'groups',
         items: [
           {
-            label: 'Registrar actividades del plan de mejora',
+            label: 'Registrar actividad',
             icon: 'playlist_add',
             route: '/vinculacion/actividades-pm',
           },
