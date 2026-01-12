@@ -142,7 +142,6 @@
 .FormField{ width: 100%; }
 .FullWidth{ grid-column: 1 / -1; }
 
-/* Inline bars (buscar / agregar) */
 .InlineBar{
   display:flex;
   gap: 10px;
@@ -154,7 +153,6 @@
 .InlineField.small{ min-width: 160px; flex: 0 0 180px; }
 .AlignBtn{ height: 52px; margin-top: 4px; }
 
-/* Tables look “like the system” but modern */
 .TableCard{
   border: 1px solid #e5e7eb;
   border-radius: 16px;
@@ -308,9 +306,9 @@
   .EvidenceGrid{ grid-template-columns: 1fr; }
 }
 
-/* Evidencias: full width y campos grandes */
+
 .EvidenceCard--full .FullWidth { width: 100%; }
-.ObsBig { min-height: 160px; } /* textarea más grande */
+.ObsBig { min-height: 160px; } 
 
 .FileInputHidden{
   display: none;

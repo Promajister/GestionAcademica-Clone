@@ -6,7 +6,6 @@ import { environment } from '../../environments/environment';
 const API_URL = `${environment.apiUrl}/actividad-practica`;
 const API_BASE_URL = environment.apiUrl.replace(/\/api$/, '');
 
-// Interfaz que coincide con el modelo de Prisma (lo que devuelve el backend)
 export interface Actividad {
   id: number;
   mes: string;
@@ -19,7 +18,6 @@ export interface Actividad {
   archivo_adjunto?: string;
 }
 
-// Respuesta paginada del backend
 export interface ActividadResponse {
   items: Actividad[];
   page: number;
@@ -28,7 +26,6 @@ export interface ActividadResponse {
   pages: number;
 }
 
-// Parámetros de consulta
 export interface QueryActividadParams {
   search?: string;
   mes?: string;
@@ -36,7 +33,6 @@ export interface QueryActividadParams {
   limit?: number;
 }
 
-// DTO para crear/actualizar (formato que espera el backend)
 export interface CreateActividadDto {
   titulo: string;
   descripcion: string;
@@ -53,10 +49,6 @@ export interface CreateActividadDto {
 export class ActividadesEstudiantesService {
   constructor(private http: HttpClient) {}
 
-  /**
-   * Convertir fecha a formato YYYY-MM-DD usando hora local (sin conversión UTC)
-   * Esto evita problemas de zona horaria que causan que la fecha retroceda un día
-   */
   private formatearFechaLocal(fecha: Date): string {
     const year = fecha.getFullYear();
     const month = (fecha.getMonth() + 1).toString().padStart(2, '0');
@@ -107,7 +99,6 @@ export class ActividadesEstudiantesService {
     // Usar formato local para evitar problemas de zona horaria
     const fechaRegistro = this.formatearFechaLocal(fecha); // YYYY-MM-DD
     
-    // El backend mapea: titulo → nombre_actividad, descripcion → lugar, tallerista → horario, estudiante → estudiantes
     formData.append('titulo', actividad.nombre_actividad || '');
     formData.append('descripcion', actividad.lugar || '');
     formData.append('tallerista', actividad.horario || '');
@@ -115,16 +106,12 @@ export class ActividadesEstudiantesService {
     formData.append('tercerosAsistieron', (actividad.terceros_asistieron ?? false).toString());
     formData.append('fechaRegistro', fechaRegistro);
     
-    // Si hay una URL de evidencia (base64 convertido a URL o URL directa)
     if (actividad.archivo_adjunto && !archivo) {
-      // Si es base64, el backend espera que se suba como archivo
-      // Si es URL, se puede enviar directamente
       if (!actividad.archivo_adjunto.startsWith('data:')) {
         formData.append('evidenciaUrl', actividad.archivo_adjunto);
       }
     }
     
-    // Si hay un archivo, agregarlo al FormData
     if (archivo) {
       formData.append('archivo', archivo);
     }
@@ -215,13 +202,10 @@ export class ActividadesEstudiantesService {
   getArchivoUrl(archivoPath: string | undefined): string | null {
     if (!archivoPath) return null;
     
-    // Si ya es una URL completa, retornarla tal cual
     if (archivoPath.startsWith('http://') || archivoPath.startsWith('https://')) {
       return archivoPath;
     }
-    
-    // Si es una ruta relativa, construir la URL completa
-    // Asegurarse de que la ruta comience con /uploads
+  
     const path = archivoPath.startsWith('/') ? archivoPath : `/${archivoPath}`;
     return `${API_BASE_URL}${path}`;
   }
