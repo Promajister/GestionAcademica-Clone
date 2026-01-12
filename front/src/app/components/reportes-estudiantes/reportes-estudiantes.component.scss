@@ -1,107 +1,268 @@
+/* reportes-estudiantes.component.scss */
+
+:host { display: block; }
+
 .re-students {
-  // Contenedor real
   max-width: 1120px;
   margin: 0 auto;
   padding: 18px 18px 26px;
 
   .muted { opacity: .82; }
   .error { color: #b42318; opacity: 1; }
-  .spacer { flex: 1; }
 
-  // Un fondo suave ayuda a separar cards del layout general
-  // (si tu layout padre ya tiene fondo, esto igual funciona bien)
-  background: linear-gradient(180deg, rgba(248,250,252,.9), rgba(248,250,252,.0));
-  border-radius: 18px;
-
-  .topbar {
-    display: flex;
-    align-items: flex-start;
-    gap: 14px;
+  /* ===== HERO ===== */
+  .hero {
+    position: relative;
+    border-radius: 18px;
+    overflow: hidden;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    background: #fff;
     margin-bottom: 12px;
 
-    .btn-back { border-radius: 999px; }
+    &__bg {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(900px 260px at 0% 0%, rgba(30, 64, 175, 0.14), transparent 55%),
+        radial-gradient(700px 240px at 100% 0%, rgba(99, 102, 241, 0.10), transparent 55%),
+        linear-gradient(180deg, rgba(248,250,252,.9), rgba(248,250,252,.0));
+      pointer-events: none;
+    }
 
-    .titles {
+    &__content {
+      position: relative;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 16px 16px;
+    }
+
+    &__left {
+      display: flex;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    &__icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      background: rgba(30, 64, 175, 0.10);
+      border: 1px solid rgba(30, 64, 175, 0.18);
+
+      mat-icon { color: rgb(30, 64, 175); }
+    }
+
+    .eyebrow {
+      margin: 0 0 6px;
+      font-size: 12px;
+      letter-spacing: .2px;
+      opacity: .8;
+    }
+
+    &__titles {
+      min-width: 0;
+
       h1 {
         margin: 0;
         font-size: 26px;
-        font-weight: 850;
+        font-weight: 900;
         letter-spacing: -0.3px;
+        color: #0f172a;
       }
+
       p {
         margin: 6px 0 0;
         font-size: 13px;
+        color: #475569;
       }
+    }
+
+    &__chips {
+      margin-top: 10px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 11px;
+      border-radius: 999px;
+      border: 1px solid rgba(15, 23, 42, 0.12);
+      background: rgba(248, 250, 252, 0.92);
+      font-size: 12px;
+      color: #0f172a;
+
+      mat-icon {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+        opacity: .9;
+      }
+    }
+
+    .chip-warn {
+      border-color: rgba(234, 179, 8, 0.30);
+      background: rgba(234, 179, 8, 0.10);
+    }
+
+    &__actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
     }
   }
 
+  .btn-pill {
+    border-radius: 999px !important;
+    padding: 0 14px !important;
+    height: 38px !important;
+  }
+
+  /* ===== Cards ===== */
   .card {
     border-radius: 16px;
     border: 1px solid rgba(15, 23, 42, 0.08);
+    background: #fff;
   }
 
-  // Header combinado: export + búsqueda
+  /* ===== Toolbar (export + search) ===== */
   .header-card {
-    margin-top: 6px;
+    margin-top: 10px;
 
-    .header-actions {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 12px;
-
-      @media (min-width: 860px) {
-        grid-template-columns: 1.2fr 1fr;
-        align-items: center;
-      }
+    mat-card-content {
+      padding: 12px 12px;
     }
 
-    .bulk-left {
-      display: flex;
+    .toolbar {
+      display: grid;
+      grid-template-columns: 1.2fr 1px 1fr;
+      gap: 12px;
       align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-      padding: 8px 10px;
-      border-radius: 14px;
-      background: rgba(255, 255, 255, 0.7);
+
+      padding: 10px 12px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.92);
       border: 1px solid rgba(15, 23, 42, 0.06);
     }
 
-    .btn-pill {
+    .toolbar__divider {
+      height: 44px;
+      background: rgba(15, 23, 42, 0.08);
       border-radius: 999px;
-      padding: 0 14px;
+      justify-self: center;
     }
-    .btn-link { border-radius: 999px; }
 
-    .search-right {
+    .toolbar__left {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .toolbar__meta {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      flex-wrap: wrap;
+
+      mat-icon {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+        opacity: .85;
+      }
+
+      .dot {
+        width: 4px;
+        height: 4px;
+        border-radius: 999px;
+        background: rgba(15, 23, 42, 0.25);
+      }
+    }
+
+    .toolbar__actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .btn-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 999px;
+      border: 1px solid rgba(15, 23, 42, 0.10);
+      background: #fff;
+    }
+
+    .toolbar__right {
       display: grid;
       grid-template-columns: 22px 1fr auto;
       gap: 10px;
       align-items: center;
-      padding: 8px 10px;
-      border-radius: 14px;
-      background: rgba(255, 255, 255, 0.7);
-      border: 1px solid rgba(15, 23, 42, 0.06);
+      min-width: 0;
 
       .search-field {
-        min-width: 240px;
         width: 100%;
+        min-width: 240px;
       }
-      .counter { white-space: nowrap; }
+
+      .counter {
+        white-space: nowrap;
+      }
+    }
+
+    @media (max-width: 860px) {
+      .toolbar {
+        grid-template-columns: 1fr;
+      }
+
+      .toolbar__divider {
+        display: none;
+      }
+
+      .toolbar__left {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .toolbar__actions {
+        justify-content: flex-start;
+      }
+
+      .toolbar__right {
+        grid-template-columns: 22px 1fr;
+
+        .counter {
+          grid-column: 1 / -1;
+        }
+      }
     }
   }
 
+  /* ===== Lista ===== */
   .list-card {
     margin-top: 12px;
 
     mat-card-content {
-      padding-top: 10px;
+      padding-top: 12px;
     }
 
     .list-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 4px 2px 10px;
+      padding: 4px 2px 12px;
     }
 
     .rows {
@@ -139,16 +300,18 @@
         min-width: 0;
 
         .row-name {
-          font-weight: 850;
+          font-weight: 900;
           letter-spacing: .1px;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
+          color: #0f172a;
         }
 
         .row-sub {
           font-size: 12px;
           margin-top: 3px;
+          color: #475569;
         }
       }
 
@@ -157,8 +320,9 @@
         gap: 8px;
 
         .btn-pill {
-          border-radius: 999px;
-          padding: 0 14px;
+          border-radius: 999px !important;
+          padding: 0 14px !important;
+          height: 38px !important;
         }
       }
     }
@@ -176,170 +340,234 @@
       padding-top: 8px;
     }
   }
+
+  @media (max-width: 720px) {
+    padding: 14px 14px 22px;
+
+    .hero__content { flex-direction: column; }
+    .hero__actions { width: 100%; }
+    .hero__actions .btn-pill { width: 100%; justify-content: center; }
+  }
 }
 
-.DetailsDialog {
-  position: fixed !important;
-  inset: 0 !important;
-  width: 100vw !important;
-  height: 100vh !important;
-
-  z-index: 10000 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-
-  padding: 18px !important;
+/* =========================
+   MODAL DETALLES (como antes)
+   OJO: esto va FUERA de .re-students para que funcione siempre
+========================= */
+.DetailsDialog{
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 18px;
 }
 
-.DialogOverlay {
+.DialogOverlay{
   position: absolute;
   inset: 0;
   background: rgba(2, 6, 23, 0.55);
   backdrop-filter: blur(3px);
 }
 
-.DialogContent {
+.DialogContent{
   position: relative;
-  width: min(980px, calc(100vw - 24px));
-  max-height: calc(100vh - 24px);
-  overflow: hidden;
-
-  background: #fff;
-  border-radius: 18px;
-  box-shadow: 0 24px 60px rgba(2, 6, 23, 0.35);
-  border: 1px solid rgba(15, 23, 42, 0.12);
-
+  width: min(1120px, 96vw);
+  max-height: 88vh;
   display: flex;
   flex-direction: column;
+  border-radius: 18px;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
 }
 
-.DialogHeader {
+.DialogHeader{
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
-
-  padding: 14px 14px 10px;
-  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
-
-  .DialogHeaderLeft {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    min-width: 0;
-  }
-
-  .DialogAvatar {
-    width: 42px;
-    height: 42px;
-    border-radius: 12px;
-    display: grid;
-    place-items: center;
-
-    background: rgba(30, 64, 175, 0.10);
-    border: 1px solid rgba(30, 64, 175, 0.20);
-
-    mat-icon { color: rgb(30, 64, 175); }
-  }
-
-  .DialogTitles {
-    min-width: 0;
-    h2 {
-      margin: 0;
-      font-size: 18px;
-      font-weight: 900;
-      letter-spacing: -0.2px;
-    }
-
-    .DialogSubtitle {
-      margin-top: 4px;
-      font-size: 13px;
-      opacity: .85;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: min(700px, 70vw);
-    }
-  }
-
-  .CloseBtn { border-radius: 999px; }
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+  background: linear-gradient(180deg, rgba(248, 250, 252, 1), rgba(248, 250, 252, 0.6));
 }
 
-.DialogBody {
-  padding: 14px;
+.DialogHeaderLeft{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.DialogAvatar{
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: rgba(59, 130, 246, 0.12);
+}
+
+.DialogAvatar mat-icon{
+  color: #1d4ed8;
+}
+
+.DialogTitles{
+  min-width: 0;
+}
+
+.DialogTitles h2{
+  margin: 0;
+  font-size: 16px;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.DialogSubtitle{
+  margin-top: 4px;
+  font-size: 12px;
+  color: #64748b;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.CloseBtn{
+  border-radius: 12px;
+}
+
+.DialogBody{
+  padding: 14px 16px;
   overflow: auto;
-
-  .state {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 0;
-  }
-
-  .chips {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-bottom: 12px;
-  }
-
-  .chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 7px 11px;
-    border-radius: 999px;
-    border: 1px solid rgba(15, 23, 42, 0.12);
-    background: rgba(248, 250, 252, 0.9);
-    font-size: 12px;
-
-    mat-icon {
-      font-size: 18px;
-      width: 18px;
-      height: 18px;
-      opacity: .9;
-    }
-  }
-
-  .chip-primary {
-    border-color: rgba(30, 64, 175, 0.25);
-    background: rgba(30, 64, 175, 0.08);
-  }
-
-  .table-wrap {
-    border: 1px solid rgba(15, 23, 42, 0.10);
-    border-radius: 14px;
-    padding: 10px;
-    background: rgba(255, 255, 255, 0.95);
-    overflow: auto; // clave si hay muchas columnas
-  }
-
-  .details-table {
-    width: 100%;
-    min-width: 860px; // evita que “apriete” columnas en pantallas medianas
-    border-radius: 12px;
-    overflow: hidden;
-
-    th {
-      font-weight: 850;
-      white-space: nowrap;
-      position: sticky;
-      top: 0;
-      background: #fff;
-      z-index: 1;
-    }
-
-    td, th {
-      padding: 10px 10px;
-    }
-  }
 }
 
-.DialogActions {
-  padding: 12px 14px;
-  border-top: 1px solid rgba(15, 23, 42, 0.08);
+/* Chips en modal */
+.DetailsTop{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.Chip{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(248, 250, 252, 1);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  color: #0f172a;
+  font-size: 12px;
+}
+
+.Chip mat-icon{
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: #475569;
+}
+
+.ChipText{
+  font-weight: 600;
+}
+
+/* Sección */
+.DetailsSection{
+  margin-top: 10px;
+}
+
+.SectionHead{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.SectionHead mat-icon{
+  color: #475569;
+}
+
+.SectionHead h3{
+  margin: 0;
+  font-size: 14px;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+/* Tabla */
+.table-wrap{
+  width: 100%;
+  overflow: auto;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 14px;
+}
+
+.details-table{
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 960px;
+}
+
+.details-table thead th{
+  text-align: left;
+  font-size: 12px;
+  color: #334155;
+  background: rgba(248, 250, 252, 1);
+  padding: 10px 10px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+  white-space: nowrap;
+}
+
+.details-table tbody td{
+  font-size: 12px;
+  color: #0f172a;
+  padding: 10px 10px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+  vertical-align: top;
+}
+
+.details-table tbody tr:nth-child(even) td{
+  background: rgba(248, 250, 252, 0.6);
+}
+
+/* Footer acciones */
+.DialogActions{
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+  padding: 12px 16px;
+  border-top: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(248, 250, 252, 0.7);
+}
+
+@media (max-width: 760px){
+  .DialogContent{
+    width: 96vw;
+    max-height: 90vh;
+  }
+
+  .details-table{
+    min-width: 820px;
+  }
+}
+
+/* ===== Material tweaks (buscador pill) ===== */
+:host ::ng-deep .search-field .mat-mdc-form-field-subscript-wrapper{
+  display: none !important;
+}
+
+:host ::ng-deep .search-field .mat-mdc-text-field-wrapper{
+  border-radius: 22px !important;
+}
+
+:host ::ng-deep .search-field .mdc-notched-outline{
+  border-radius: 22px !important;
+}
+
+:host ::ng-deep .search-field .mat-mdc-form-field-infix{
+  min-height: 44px !important;
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
 }

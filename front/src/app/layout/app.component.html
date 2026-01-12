@@ -1,9 +1,6 @@
 <!-- LAYOUT COMPLETO (todas las rutas excepto login / recuperar-clave) -->
 <ng-container *ngIf="!isAuthRoute; else authOnly">
-  <mat-sidenav-container
-    class="shell"
-    [class.shell--open]="isSidenavOpened"
-    [style.--side-offset.px]="isSidenavOpened ? 260 : 0">
+  <mat-sidenav-container class="shell">
 
     <!-- SIDEBAR -->
     <mat-sidenav
@@ -20,35 +17,86 @@
             <img [src]="profilePhoto" alt="Foto de perfil" />
           </div>
         </ng-container>
+
         <ng-template #fallbackAvatar>
           <div class="side__avatar side__avatar--fallback">
             <span>{{ initials }}</span>
           </div>
         </ng-template>
-        <div class="who">
-          <div class="name">{{ user.name }}</div>
-          <div class="role">{{ user.roleLabel }}</div>
+
+        <div class="who" *ngIf="user as u; else userSkeleton">
+          <div class="name">{{ u.name }}</div>
+          <div class="role">{{ u.roleLabel }}</div>
         </div>
+
+        <ng-template #userSkeleton>
+          <div class="who">
+            <div class="name">Usuario</div>
+            <div class="role">&nbsp;</div>
+          </div>
+        </ng-template>
+
       </div>
 
       <mat-divider></mat-divider>
 
-      <!-- Título navegación -->
-      <div class="side__section-title">
-        <!-- Opcional: título sección -->
-      </div>
-
       <!-- Navegación -->
       <mat-nav-list class="side__nav">
-        <a mat-list-item
-           *ngFor="let item of nav"
-           [routerLink]="item.route"
-           routerLinkActive="active"
-           [routerLinkActiveOptions]="{ exact: true }"
-           (click)="sidenav.mode === 'over' && sidenav.close()">
+
+        <!-- Links base (Mi cuenta / nav normal) -->
+        <a
+          mat-list-item
+          *ngFor="let item of nav"
+          [routerLink]="item.route"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: true }"
+          (click)="sidenav.mode === 'over' && sidenav.close()">
           <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
           <span matListItemTitle>{{ item.label }}</span>
         </a>
+
+        <!-- Secciones SOLO Jefatura (estilo portal/accordion) -->
+        <ng-container *ngIf="isJefatura">
+
+          <div class="nav-section" *ngFor="let section of navSections">
+
+            <!-- Header del módulo -->
+            <button
+              type="button"
+              class="nav-section__header"
+              (click)="toggleSection(section.id)">
+
+              <span class="nav-section__left">
+                <mat-icon class="nav-section__icon">{{ section.icon }}</mat-icon>
+                <span class="nav-section__title">{{ section.title }}</span>
+              </span>
+
+              <mat-icon
+                class="nav-section__chev"
+                [class.is-open]="openSections[section.id]">
+                chevron_right
+              </mat-icon>
+            </button>
+
+            <!-- Items del módulo -->
+            <div class="nav-section__items" *ngIf="openSections[section.id]">
+              <a
+                mat-list-item
+                class="nav-item nav-item--child"
+                *ngFor="let item of section.items"
+                [routerLink]="item.route"
+                routerLinkActive="active"
+                [routerLinkActiveOptions]="{ exact: true }"
+                (click)="sidenav.mode === 'over' && sidenav.close()">
+
+                <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+                <span matListItemTitle>{{ item.label }}</span>
+              </a>
+            </div>
+
+          </div>
+        </ng-container>
+
       </mat-nav-list>
 
       <!-- Pie del sidebar -->

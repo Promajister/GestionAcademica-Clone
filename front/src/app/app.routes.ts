@@ -6,28 +6,24 @@ import { ROLES } from './components/auth/roles';
 
 
 export const routes: Routes = [
-  // Redirecci�n inicial al dashboard
   {
     path: '',
     pathMatch: 'full',
     redirectTo: 'dashboard',
   },
 
-  // Login (p�gina p�blica)
   {
     path: 'login',
     loadComponent: () =>
       import('./components/login/login.component').then(m => m.LoginComponent),
   },
 
-  // Recuperar clave (página pública)
   {
     path: 'recuperar-clave',
     loadComponent: () =>
       import('./components/auth/forgot-password/forgot-password.component').then(m => m.ForgotPasswordComponent),
   },
 
-  // Dashboard
   {
     path: 'dashboard',
     canActivate: [authGuard],
@@ -35,8 +31,6 @@ export const routes: Routes = [
       import('./components/dashboard/dashboard.component').then(m => m.DashboardComponent),
   },
 
-  // Gesti�n de colaboradores
-  // Mi cuenta
   {
     path: 'mi-cuenta',
     canActivate: [authGuard],
@@ -44,7 +38,6 @@ export const routes: Routes = [
       import('./components/mi-cuenta/mi-cuenta.component').then(m => m.MiCuentaComponent),
   },
 
-  // Gestión de colaboradores
   {
     path: 'colaboradores',
     canActivate: [authGuard, roleGuard],
@@ -53,7 +46,6 @@ export const routes: Routes = [
       import('./components/colaboradores/colaboradores.component').then(m => m.ColaboradoresComponent),
   },
 
-  // Gesti�n de tutores
   {
     path: 'tutores',
     canActivate: [authGuard, roleGuard],
@@ -62,7 +54,6 @@ export const routes: Routes = [
       import('./components/tutores/tutores.component').then(m => m.TutoresComponent),
   },
 
-  // Gesti�n de usuarios
   {
     path: 'usuarios',
     canActivate: [authGuard, roleGuard],
@@ -71,7 +62,6 @@ export const routes: Routes = [
       import('./components/usuarios/usuarios.component').then(m => m.UsuariosComponent),
   },
 
-  // Gesti�n de estudiantes
   {
     path: 'estudiantes',
     canActivate: [authGuard, roleGuard],
@@ -80,7 +70,6 @@ export const routes: Routes = [
       import('./components/estudiante/estudiante.component').then(m => m.EstudiantesComponent),
   },
 
-  // Importar estudiantes desde XLSX (solo jefatura)
   {
     path: 'importar-estudiantes',
     canActivate: [authGuard, roleGuard],
@@ -89,7 +78,6 @@ export const routes: Routes = [
       import('./components/importar-estudiantes/importar-estudiantes.component').then(m => m.ImportarEstudiantesComponent),
   },
 
-  // Registro de encuestas
   {
     path: 'encuestas',
     canActivate: [authGuard, roleGuard],
@@ -98,10 +86,6 @@ export const routes: Routes = [
       import('./components/encuestas/encuestas.component').then(m => m.EncuestasComponent),
   },
 
-  // Supervision general
-
-
-  // Gestión de prácticas
   {
     path: 'practicas',
     canActivate: [authGuard, roleGuard],
@@ -110,7 +94,6 @@ export const routes: Routes = [
       import('./components/practicas/practicas.component').then(m => m.PracticasComponent),
   },
 
-  // Gesti�n de centros educativos
   {
     path: 'centros-educativos',
     canActivate: [authGuard, roleGuard],
@@ -119,7 +102,6 @@ export const routes: Routes = [
       import('./components/centros-educativos/centros-educativos.component').then(m => m.CentrosEducativosComponent),
   },
 
-  // Generaci�n de carta de solicitud
   {
     path: 'carta',
     canActivate: [authGuard, roleGuard],
@@ -128,7 +110,6 @@ export const routes: Routes = [
       import('./components/carta/carta.component').then(m => m.CartaComponent),
   },
 
-  // Estudiantes en pr�ctica (solo para jefatura de carrera)
   {
     path: 'estudiantes-en-practica',
     canActivate: [authGuard, roleGuard],
@@ -137,7 +118,6 @@ export const routes: Routes = [
       import('./components/estudiantes-en-practica/estudiantes-en-practica.component').then(m => m.EstudiantesEnPracticaComponent),
   },
 
-  // Actividades de estudiantes
   {
     path: 'actividades-estudiantes',
     canActivate: [authGuard, roleGuard],
@@ -149,7 +129,7 @@ export const routes: Routes = [
   {
     path: 'reportes',
     canActivate: [authGuard, RoleGuard],
-    data: { roles: [ROLES.JEFATURA, ROLES.PRACTICAS] },
+    data: { roles: [ROLES.JEFATURA,ROLES.PRACTICAS] },
     loadComponent: () =>
       import('./components/reportes/reportes.component')
         .then(m => m.ReportesComponent)
@@ -183,7 +163,15 @@ export const routes: Routes = [
         .then(m => m.ReportesHistoricoComponent),
   },
 
-  // Ruta comodín → redirige a login
+  {
+    path: 'vinculacion/actividades-pm',
+    canActivate: [authGuard, roleGuard],
+    data: { allowedRoles: ['jefatura', 'vinculacion'] },
+    loadComponent: () =>
+      import('./components/actividades-pm/actividades-pm.component')
+        .then(m => m.ActividadesPmComponent),
+  },
+
   {
     path: '**',
     redirectTo: 'dashboard',

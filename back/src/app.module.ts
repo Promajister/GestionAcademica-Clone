@@ -16,6 +16,7 @@ import { TutorModule } from './tutor/tutor.module';
 import { PracticasModule } from './practicas/practicas.module';
 import { ActividadPracticaModule } from './actividad-practica/actividad-practica.module';
 import { ActividadesModule } from './actividades/actividades.module';
+import { ActividadesPmModule } from './actividades-pm/actividades-pm.module';
 import { AuthModule } from './auth/auth.module';
 import { EncuestasModule } from './encuestas/encuestas.module';
 import { UsuariosModule } from './usuarios/usuarios.module';
@@ -39,6 +40,7 @@ import { ReportesModule } from './reportes/reportes.module';
     PracticasModule,
     ActividadPracticaModule,
     ActividadesModule,
+    ActividadesPmModule,
     EncuestasModule,
     AuthModule,
     UsuariosModule,

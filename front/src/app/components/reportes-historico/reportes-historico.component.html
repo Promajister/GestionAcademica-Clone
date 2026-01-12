@@ -1,65 +1,121 @@
 <div class="historico container section">
 
-  <!-- TOPBAR -->
-  <div class="topbar">
-    <button mat-stroked-button color="primary" routerLink="/reportes" class="btn-back">
-      <mat-icon>arrow_back</mat-icon>
-      Volver a Reportes
-    </button>
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero__bg"></div>
 
-    <div class="titles">
-      <h1>Reporte histórico de prácticas</h1>
-      <p class="muted">
-        Filtra por rango de años, tipo de práctica y agrupa por semestre o anual.
-      </p>
-    </div>
+    <div class="hero__content">
+      <div class="hero__left">
+        <div class="hero__icon">
+          <mat-icon>show_chart</mat-icon>
+        </div>
 
-    <div class="spacer"></div>
+        <div class="hero__titles">
+          <p class="eyebrow">Reportes · Histórico</p>
+          <h1>Reporte histórico de prácticas</h1>
+          <p class="muted">
+            Filtra por rango de años, tipo de práctica y agrupa por semestre o anual.
+          </p>
 
-    <!-- acciones rápidas (siempre visibles) -->
-    <div class="top-actions">
-      <button
-        mat-stroked-button
-        color="primary"
-        class="btn-pill"
-        (click)="exportarPDF()"
-        [disabled]="!canExport || loading">
-        <mat-icon>picture_as_pdf</mat-icon>
-        Exportar PDF
-      </button>
+          <!-- Chips (igual que Reporte estudiantes) -->
+          <div class="hero__chips" *ngIf="hasSearched">
+            <span class="chip">
+              <mat-icon>event</mat-icon>
+              <span>{{ fromYear }}–{{ toYear }}</span>
+            </span>
 
-      <button
-        mat-stroked-button
-        color="accent"
-        class="btn-pill"
-        (click)="exportarExcel()"
-        [disabled]="!canExport || loading">
-        <mat-icon>grid_on</mat-icon>
-        Exportar Excel
-      </button>
+            <span class="chip">
+              <mat-icon>account_tree</mat-icon>
+              <span>Agrupar: {{ groupBy === 'year' ? 'Anual' : 'Semestre' }}</span>
+            </span>
+
+            <span class="chip">
+              <mat-icon>school</mat-icon>
+              <span>Tipo: {{ tipo ? tipo : 'Todas' }}</span>
+            </span>
+
+            <span class="chip" *ngIf="!loading">
+              <mat-icon>bar_chart</mat-icon>
+              <span>{{ rows.length }} resultado(s)</span>
+            </span>
+
+            <span class="chip chip-warn" *ngIf="loading">
+              <mat-icon>hourglass_top</mat-icon>
+              <span>Cargando…</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero__actions">
+        <button mat-stroked-button color="primary" routerLink="/reportes" class="btn-pill">
+          <mat-icon>arrow_back</mat-icon>
+          Volver
+        </button>
+      </div>
     </div>
   </div>
 
-  <!-- FILTROS -->
-  <mat-card class="card elev">
-    <mat-card-content>
+  <!-- TOOLBAR (Filtros + export + form) -->
+  <mat-card class="card elev header-card">
+    <mat-card-content class="toolbar">
+
+      
+
+      <div class="toolbar__actions">
+        <button
+          mat-stroked-button
+          color="primary"
+          class="btn-pill"
+          (click)="exportarPDF()"
+          [disabled]="!canExport || loading">
+          <mat-icon>picture_as_pdf</mat-icon>
+          PDF
+        </button>
+
+        <button
+          mat-stroked-button
+          color="accent"
+          class="btn-pill"
+          (click)="exportarExcel()"
+          [disabled]="!canExport || loading">
+          <mat-icon>grid_on</mat-icon>
+          Excel
+        </button>
+      </div>
+
+      <div class="toolbar__divider"></div>
 
       <form class="filters" (ngSubmit)="buscar()">
+
         <mat-form-field appearance="outline">
           <mat-label>Año desde</mat-label>
-          <input matInput type="number" name="fromYear" [(ngModel)]="fromYear" (ngModelChange)="onFiltersChanged()" />
-          <mat-hint>Ej: 2024</mat-hint>
+          <input
+            matInput
+            type="number"
+            name="fromYear"
+            [(ngModel)]="fromYear"
+            (ngModelChange)="onFiltersChanged()" />
+         
         </mat-form-field>
 
         <mat-form-field appearance="outline">
           <mat-label>Año hasta</mat-label>
-          <input matInput type="number" name="toYear" [(ngModel)]="toYear" (ngModelChange)="onFiltersChanged()" />
-          <mat-hint>Ej: 2026</mat-hint>
+          <input
+            matInput
+            type="number"
+            name="toYear"
+            [(ngModel)]="toYear"
+            (ngModelChange)="onFiltersChanged()" />
+       
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="ff-lg">
           <mat-label>Tipo de práctica</mat-label>
-          <mat-select name="tipo" [(ngModel)]="tipo" (ngModelChange)="onFiltersChanged()">
+          <mat-select
+            name="tipo"
+            [(ngModel)]="tipo"
+            (ngModelChange)="onFiltersChanged()">
             <mat-option [value]="null">Todas</mat-option>
             <mat-option *ngFor="let t of tiposPractica" [value]="t.value">
               {{ t.label }}
@@ -69,66 +125,45 @@
 
         <mat-form-field appearance="outline">
           <mat-label>Agrupar</mat-label>
-          <mat-select name="groupBy" [(ngModel)]="groupBy" (ngModelChange)="onFiltersChanged()">
+          <mat-select
+            name="groupBy"
+            [(ngModel)]="groupBy"
+            (ngModelChange)="onFiltersChanged()">
             <mat-option value="semester">Semestre</mat-option>
             <mat-option value="year">Anual</mat-option>
           </mat-select>
         </mat-form-field>
 
-        <button mat-raised-button color="primary" class="btn-search" type="submit" [disabled]="loading">
+        <button
+          mat-raised-button
+          color="primary"
+          class="btn-search"
+          type="submit"
+          [disabled]="loading">
           <mat-icon>search</mat-icon>
           Buscar
         </button>
+
       </form>
-
-      <!-- resumen / estado -->
-      <div class="meta" *ngIf="hasSearched">
-        <span class="pill">
-          <mat-icon>event</mat-icon>
-          {{ fromYear }}–{{ toYear }}
-        </span>
-
-        <span class="pill">
-          <mat-icon>account_tree</mat-icon>
-          Agrupar: {{ groupBy === 'year' ? 'Anual' : 'Semestre' }}
-        </span>
-
-        <span class="pill" *ngIf="tipo; else tipoTodas">
-          <mat-icon>school</mat-icon>
-          {{ tipo }}
-        </span>
-        <ng-template #tipoTodas>
-          <span class="pill">
-            <mat-icon>school</mat-icon>
-            Tipo: Todas
-          </span>
-        </ng-template>
-
-        <span class="pill right" *ngIf="!loading">
-          <mat-icon>bar_chart</mat-icon>
-          {{ rows.length }} resultado(s)
-        </span>
-      </div>
-
-      <!-- LOADING -->
-      <div class="state" *ngIf="loading">
-        <mat-spinner diameter="28"></mat-spinner>
-        <span class="muted">Cargando reporte...</span>
-      </div>
-
-      <!-- ERROR -->
-      <p class="muted error" *ngIf="!loading && error">
-        {{ error }}
-      </p>
 
     </mat-card-content>
   </mat-card>
+
+  <!-- LOADING -->
+  <div class="state" *ngIf="loading">
+    <mat-spinner diameter="28"></mat-spinner>
+    <span class="muted">Cargando reporte...</span>
+  </div>
+
+  <!-- ERROR -->
+  <p class="muted error" *ngIf="!loading && error">
+    {{ error }}
+  </p>
 
   <!-- CHARTS -->
   <mat-card class="card elev charts-card" *ngIf="showCharts">
     <mat-card-content>
       <div class="charts-grid">
-
         <div class="chart-box">
           <div class="chart-title">Evolución de estudiantes</div>
           <div class="chart-wrap">
@@ -142,7 +177,6 @@
             <canvas baseChart [type]="'bar'" [data]="stackedBarData" [options]="stackedBarOptions"></canvas>
           </div>
         </div>
-
       </div>
     </mat-card-content>
   </mat-card>
@@ -194,7 +228,7 @@
     </mat-card-content>
   </mat-card>
 
-  <!-- EMPTY STATE: solo después de buscar Y si no hay cambios pendientes -->
+  <!-- EMPTY -->
   <mat-card class="card elev empty"
     *ngIf="hasSearched && !loading && !error && !rows.length && !filtersDirty">
     <mat-card-content class="center-col">
@@ -203,6 +237,5 @@
       <div class="muted">Prueba cambiando el rango de años, el tipo o el agrupado.</div>
     </mat-card-content>
   </mat-card>
-
 
 </div>

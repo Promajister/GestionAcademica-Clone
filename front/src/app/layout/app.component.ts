@@ -36,6 +36,13 @@ interface NavItem {
   route: string;
 }
 
+interface NavSection {
+  id: 'practicas' | 'vinculacion';
+  title: string;
+  icon: string;
+  items: NavItem[];
+}
+
 @Component({
   standalone: true,
   selector: 'app-root',
@@ -56,7 +63,8 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   private router = inject(Router);
   private platformId = inject(PLATFORM_ID);
   private auth = inject(AuthService);
-  private photoKey = 'app.profilePhoto';
+
+  private readonly photoKey = 'app.profilePhoto';
 
   @ViewChild(MatSidenav) sidenav?: MatSidenav;
 
@@ -67,71 +75,80 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     this.sidenav?.close();
   };
 
+  // UI
   isAuthRoute = false;
-
   isSidenavOpened = true;
-  appTitle = 'Sistema de Prácticas';
 
-  user = { name: 'Invitado', roleLabel: 'Sin rol', icon: 'account_circle' };
+  // Usuario (siempre existe en tu sistema)
+  user!: { name: string; roleLabel: string; icon: string };
   rolePermissions: string[] = [];
-  nav: NavItem[] = [];
+
+  // Foto
   profilePhoto: string | null = null;
 
+  // Nav base
+  nav: NavItem[] = [];
+
+  // Jefatura -> secciones colapsables
+  isJefatura = false;
+  navSections: NavSection[] = [];
+  openSections: Record<'practicas' | 'vinculacion', boolean> = {
+    practicas: true,
+    vinculacion: false,
+  };
+
   ngOnInit(): void {
-    this.applyRole('practicas');
+    if (!isPlatformBrowser(this.platformId)) return;
 
-    if (isPlatformBrowser(this.platformId)) {
-      window.addEventListener('app:close-sidenav', this.closeSidenavListener);
+    window.addEventListener('app:close-sidenav', this.closeSidenavListener);
 
-      this.isAuthRoute = this.isAuthUrl(this.router.url);
-      this.loadRoleFromStorage();
-      this.loadProfilePhoto();
+    this.isAuthRoute = this.isAuthUrl(this.router.url);
 
-      this.navigationSub = this.router.events
-        .pipe(filter((event) => event instanceof NavigationEnd))
-        .subscribe((event: NavigationEnd) => {
-          const url = event.urlAfterRedirects || event.url;
-          this.isAuthRoute = this.isAuthUrl(url);
-          this.loadRoleFromStorage();
-          this.loadProfilePhoto();
-        });
-    }
-  }
+    this.loadRoleFromStorage();  // setea user/nav
+    this.loadProfilePhoto();
 
-  ngAfterViewInit(): void {
-    if (isPlatformBrowser(this.platformId)) {
-      queueMicrotask(() => {
+    this.navigationSub = this.router.events
+      .pipe(filter((event) => event instanceof NavigationEnd))
+      .subscribe((event: NavigationEnd) => {
+        const url = event.urlAfterRedirects || event.url;
+        this.isAuthRoute = this.isAuthUrl(url);
+
         this.loadRoleFromStorage();
         this.loadProfilePhoto();
       });
-    }
+  }
+
+  ngAfterViewInit(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+
+    queueMicrotask(() => {
+      this.loadRoleFromStorage();
+      this.loadProfilePhoto();
+    });
   }
 
   private isAuthUrl(url: string): boolean {
-    const cleanUrl = url.split('?')[0].split('#')[0];
-
+    const clean = url.split('?')[0].split('#')[0];
     return (
-      cleanUrl === '/login' ||
-      cleanUrl === '/recuperar-clave' ||
-      cleanUrl.startsWith('/login/') ||
-      cleanUrl.startsWith('/recuperar-clave/')
+      clean === '/login' ||
+      clean === '/recuperar-clave' ||
+      clean.startsWith('/login/') ||
+      clean.startsWith('/recuperar-clave/')
     );
   }
 
   private loadRoleFromStorage() {
-    try {
-      const saved = isPlatformBrowser(this.platformId)
-        ? localStorage.getItem('app.selectedRole')
-        : null;
+    if (!isPlatformBrowser(this.platformId)) return;
 
+    try {
+      const saved = localStorage.getItem('app.selectedRole');
       if (saved) {
-        const r = JSON.parse(saved) as SavedRole;
-        if (r?.id) {
-          this.applyRole(r.id, r);
+        const role = JSON.parse(saved) as SavedRole;
+        if (role?.id) {
+          this.applyRole(role);
           return;
         }
       }
-
       this.syncRoleFromAuthUser();
     } catch {
       this.syncRoleFromAuthUser();
@@ -144,20 +161,20 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
 
     const id = authUser.role as RoleId;
 
-    const savedRole: SavedRole = {
+    const role: SavedRole = {
       id,
       title: this.mapRoleLabel(id),
       name: authUser.nombre || authUser.email,
-      icon: id === 'jefatura' ? 'school' : id === 'vinculacion' ? 'groups' : 'assignment_ind',
+      icon: this.mapRoleIcon(id),
       permissions: [],
-      color: id === 'jefatura' ? 'purple' : id === 'vinculacion' ? 'green' : 'blue',
+      color: this.mapRoleColor(id),
     };
 
-    this.applyRole(id, savedRole);
-
     if (isPlatformBrowser(this.platformId)) {
-      localStorage.setItem('app.selectedRole', JSON.stringify(savedRole));
+      localStorage.setItem('app.selectedRole', JSON.stringify(role));
     }
+
+    this.applyRole(role);
   }
 
   private loadProfilePhoto() {
@@ -165,13 +182,37 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     this.profilePhoto = localStorage.getItem(this.photoKey);
   }
 
-  private applyRole(id: RoleId, r?: SavedRole) {
-    this.user.name = r?.name ?? this.user.name;
-    this.user.roleLabel = r?.title ?? this.mapRoleLabel(id);
-    this.user.icon = r?.icon ?? this.user.icon;
-    this.rolePermissions = Array.isArray(r?.permissions) ? r!.permissions : [];
-    this.nav = this.buildNav(id);
+  private applyRole(role: SavedRole) {
+    this.user = {
+      name: role.name,
+      roleLabel: role.title,
+      icon: role.icon ?? 'account_circle',
+    };
+
+    this.rolePermissions = Array.isArray(role.permissions) ? role.permissions : [];
+
+    this.isJefatura = role.id === 'jefatura';
+
+    // base siempre
+    this.nav = [
+  { label: 'Mi cuenta', icon: 'person', route: '/mi-cuenta' },
+  ...(role.id === 'jefatura'
+    ? [{ label: 'Usuarios', icon: 'manage_accounts', route: '/usuarios' }]
+    : []),
+];
+
+
+    if (this.isJefatura) {
+      // Jefatura: secciones colapsables
+      this.navSections = this.buildJefaturaSections();
+    } else {
+      // Otros roles: nav normal
+      this.navSections = [];
+      this.nav = this.buildNav(role.id);
+    }
   }
+
+  // ======= Métodos que tu HTML usa (faltaban) =======
 
   onSidenavChange(opened: boolean) {
     this.isSidenavOpened = opened;
@@ -181,21 +222,22 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     sidenav.toggle();
   }
 
-  logout() {
-    if (isPlatformBrowser(this.platformId)) {
-      localStorage.removeItem('app.selectedRole');
-    }
-
-    this.auth.logout();
-    this.router.navigateByUrl('/login');
-  }
-
   goHome() {
     this.router.navigate(['/dashboard']);
   }
 
-  goProfile() {
-    this.router.navigate(['/mi-cuenta']);
+  // ==================================================
+
+  toggleSection(id: 'practicas' | 'vinculacion') {
+    this.openSections[id] = !this.openSections[id];
+  }
+
+  logout() {
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.removeItem('app.selectedRole');
+    }
+    this.auth.logout();
+    this.router.navigateByUrl('/login');
   }
 
   ngOnDestroy(): void {
@@ -206,40 +248,66 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private mapRoleLabel(id: RoleId): string {
-    switch (id) {
-      case 'jefatura':
-        return 'Jefatura de Carrera';
-      case 'vinculacion':
-        return 'Coordinador de Vinculación';
-      case 'practicas':
-        return 'Coordinador de Prácticas';
-      default:
-        return 'Sin rol';
-    }
+    return id === 'jefatura'
+      ? 'Jefatura de Carrera'
+      : id === 'vinculacion'
+      ? 'Coordinador de Vinculación'
+      : 'Coordinador de Prácticas';
+  }
+
+  private mapRoleIcon(id: RoleId): string {
+    return id === 'jefatura'
+      ? 'school'
+      : id === 'vinculacion'
+      ? 'groups'
+      : 'assignment_ind';
+  }
+
+  private mapRoleColor(id: RoleId) {
+    return id === 'jefatura'
+      ? 'purple'
+      : id === 'vinculacion'
+      ? 'green'
+      : 'blue';
+  }
+
+  private buildJefaturaSections(): NavSection[] {
+    return [
+      {
+        id: 'practicas',
+        title: 'Gestión de prácticas',
+        icon: 'assignment_ind',
+        items: [
+          { label: 'Estudiantes', icon: 'school', route: '/estudiantes' },
+          { label: 'Importar estudiantes', icon: 'upload_file', route: '/importar-estudiantes' },
+          { label: 'Estudiantes en Práctica', icon: 'school', route: '/estudiantes-en-practica' },
+          { label: 'Tutores', icon: 'supervisor_account', route: '/tutores' },
+          { label: 'Colaboradores', icon: 'groups', route: '/colaboradores' },
+          { label: 'Centros Educativos', icon: 'domain', route: '/centros-educativos' },
+          { label: 'Actividades', icon: 'event_note', route: '/actividades-estudiantes' },
+          { label: 'Supervisión General', icon: 'analytics', route: '/reportes' },
+          { label: 'Generar Solicitud', icon: 'description', route: '/carta' },
+        ],
+      },
+      {
+        id: 'vinculacion',
+        title: 'Vinculación con el medio',
+        icon: 'groups',
+        items: [
+          {
+            label: 'Registrar actividad',
+            icon: 'playlist_add',
+            route: '/vinculacion/actividades-pm',
+          },
+        ],
+      },
+    ];
   }
 
   private buildNav(id: RoleId): NavItem[] {
-    const base: NavItem[] = [{ label: 'Mi cuenta', icon: 'person', route: '/mi-cuenta' }];
-
-    if (id === 'jefatura') {
-      return [
-        ...base,
-        { label: 'Usuarios', icon: 'manage_accounts', route: '/usuarios' },
-        { label: 'Estudiantes', icon: 'school', route: '/estudiantes' },
-        { label: 'Importar estudiantes', icon: 'upload_file', route: '/importar-estudiantes' },
-        { label: 'Estudiantes en Práctica', icon: 'school', route: '/estudiantes-en-practica' },
-        { label: 'Tutores', icon: 'supervisor_account', route: '/tutores' },
-        { label: 'Colaboradores', icon: 'groups', route: '/colaboradores' },
-        { label: 'Centros Educativos', icon: 'domain', route: '/centros-educativos' },
-        { label: 'Actividades', icon: 'event_note', route: '/actividades-estudiantes' },
-        { label: 'Supervisión General', icon: 'analytics', route: '/reportes' },
-        { label: 'Generar Solicitud', icon: 'description', route: '/carta' },
-      ];
-    }
-
     if (id === 'vinculacion') {
       return [
-        ...base,
+        { label: 'Mi cuenta', icon: 'person', route: '/mi-cuenta' },
         { label: 'Encuestas', icon: 'assignment', route: '/encuestas' },
         { label: 'Estudiantes', icon: 'school', route: '/estudiantes' },
         { label: 'Colaboradores', icon: 'groups', route: '/colaboradores' },
@@ -248,27 +316,23 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
       ];
     }
 
-    if (id === 'practicas') {
-      return [
-        ...base,
-        { label: 'Estudiantes', icon: 'school', route: '/estudiantes' },
-        { label: 'Tutores', icon: 'supervisor_account', route: '/tutores' },
-        { label: 'Colaboradores', icon: 'groups', route: '/colaboradores' },
-        { label: 'Centros Educativos', icon: 'domain', route: '/centros-educativos' },
-        { label: 'Prácticas', icon: 'event_note', route: '/practicas' },
-        { label: 'Actividades', icon: 'assignment', route: '/actividades-estudiantes' },
-        { label: 'Reportes/Historial', icon: 'timeline', route: '/reportes' },
-      ];
-    }
-
-    return base;
+    // practicas
+    return [
+      { label: 'Mi cuenta', icon: 'person', route: '/mi-cuenta' },
+      { label: 'Estudiantes', icon: 'school', route: '/estudiantes' },
+      { label: 'Tutores', icon: 'supervisor_account', route: '/tutores' },
+      { label: 'Colaboradores', icon: 'groups', route: '/colaboradores' },
+      { label: 'Centros Educativos', icon: 'domain', route: '/centros-educativos' },
+      { label: 'Prácticas', icon: 'event_note', route: '/practicas' },
+      { label: 'Actividades', icon: 'assignment', route: '/actividades-estudiantes' },
+      { label: 'Supervisión General', icon: 'analytics', route: '/reportes' },
+    ];
   }
 
   get initials(): string {
-    const n = this.user?.name || '';
-    const parts = n.trim().split(/\s+/);
-    const [a = '', b = ''] = parts;
-    const letters = (a[0] || '') + (b[0] || '');
-    return letters.toUpperCase() || 'U';
+    const parts = this.user?.name?.trim().split(/\s+/) ?? [];
+    const a = parts[0]?.[0] ?? '';
+    const b = parts[1]?.[0] ?? '';
+    return (a + b).toUpperCase();
   }
 }

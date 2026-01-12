@@ -1,25 +1,37 @@
-/* Contenedor general */
+/* =========================
+   CONTENEDOR GENERAL
+========================= */
 .shell {
   height: 100vh;
   background: #f3f4f6;
 }
 
-/* SIDEBAR */
+/* =========================
+   SIDEBAR
+========================= */
 .side {
   width: 260px;
-  
-  border-right: 1px solid #e5e7eb;
   display: flex;
   flex-direction: column;
-  padding: 8px 0 12px;
-  box-shadow: 2px 0 8px rgba(15, 23, 42, 0.04);
+  background: #ffffff;
+  border-right: 1px solid #e5e7eb;
+  overflow: hidden; /* evita scroll horizontal */
 }
 
+/* contenedor interno real del sidenav */
+:host ::ng-deep .side .mat-drawer-inner-container {
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+
+/* =========================
+   HEADER USUARIO
+========================= */
 .side__header {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px 18px 10px;
+  gap: 12px;
+  padding: 14px 16px 12px;
 }
 
 .side__avatar {
@@ -31,8 +43,6 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  position: relative;
-  box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.04);
 }
 
 .side__avatar img {
@@ -42,61 +52,173 @@
 }
 
 .side__avatar--fallback {
-  background: linear-gradient(13deg, #303880);
+  background: #1e3a8a;
   color: #fff;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 0.9rem;
+}
+
+.who {
+  min-width: 0;
 }
 
 .who .name {
   font-size: 0.95rem;
   font-weight: 600;
   color: #111827;
+  line-height: 1.2;
 }
 
 .who .role {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: #6b7280;
 }
 
-.side__section-title {
-  padding: 10px 18px 4px;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: #9ca3af;
-}
-
+/* =========================
+   NAVEGACIÓN
+========================= */
 .side__nav {
-  padding-top: 4px;
   flex: 1;
+  padding: 6px 0 10px;
 }
 
-.side__nav a.mat-mdc-list-item {
-  border-radius: 999px;
-  margin: 2px 0;
+/* -------- Items normales -------- */
+:host ::ng-deep .side__nav a.mat-mdc-list-item {
+  height: 44px;
+  margin: 0 10px;
+  border-radius: 10px;
 }
 
-.side__nav a.active {
-  background: rgba(37, 99, 235, 0.08);
+:host ::ng-deep .side__nav a.mat-mdc-list-item:hover {
+  background: rgba(15, 23, 42, 0.04);
+}
+
+:host ::ng-deep .side__nav a.active.mat-mdc-list-item {
+  background: rgba(37, 99, 235, 0.1);
+}
+
+:host ::ng-deep .side__nav a.active.mat-mdc-list-item mat-icon,
+:host ::ng-deep .side__nav a.active.mat-mdc-list-item .mdc-list-item__primary-text {
   color: #1d4ed8;
+  opacity: 1;
 }
 
+/* =========================
+   SECCIONES (ACCORDION)
+========================= */
+.nav-section {
+  margin-top: 2px;
+}
+
+/* Header del módulo */
+.nav-section__header {
+  width: calc(100% - 20px);
+  margin: 6px 10px 4px;
+  padding: 10px 12px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+
+  background: rgba(17, 24, 39, 0.03);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+
+  text-align: left;
+  color: #111827;
+
+  min-width: 0;
+}
+
+.nav-section__header:hover {
+  background: rgba(15, 23, 42, 0.05);
+}
+
+/* focus accesible pero sutil */
+.nav-section__header:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+}
+
+/* lado izquierdo */
+.nav-section__left {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.nav-section__icon {
+  opacity: 0.75;
+  flex-shrink: 0;
+}
+
+.nav-section__title {
+  font-size: 0.92rem;
+  font-weight: 600;
+  white-space: normal;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;  
+  line-clamp: 2;
+  word-break: break-word;
+}
+
+/* Chevron */
+.nav-section__chev {
+  opacity: 0.65;
+  transition: transform 160ms ease;
+  flex-shrink: 0;
+}
+
+.nav-section__chev.is-open {
+  transform: rotate(90deg);
+}
+
+/* =========================
+   ITEMS DEL MÓDULO
+========================= */
+.nav-section__items {
+  margin: 0 0 6px;
+  padding-left: 14px;
+  margin-left: 18px;
+  border-left: 1px solid rgba(17, 24, 39, 0.08);
+}
+
+/* items hijos */
+:host ::ng-deep .nav-item--child.mat-mdc-list-item {
+  height: 42px;
+  margin: 0 10px 0 0;
+  border-radius: 10px;
+}
+
+:host ::ng-deep .nav-item--child .mdc-list-item__primary-text {
+  font-size: 0.92rem;
+}
+
+:host ::ng-deep .nav-item--child mat-icon[matListItemIcon] {
+  opacity: 0.75;
+}
+
+/* =========================
+   FOOTER
+========================= */
 .side__footer {
-  padding: 8px 18px 0;
-  border-top: 1px solid #e5e7eb;
-  font-size: 0.75rem;
+  padding: 10px 16px 12px;
+  border-top: 1px solid #eef2f7;
+  font-size: 0.74rem;
   color: #9ca3af;
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.side__footer-version {
-  font-size: 0.7rem;
-}
-
-/* TOPBAR */
+/* =========================
+   CONTENIDO / TOPBAR
+========================= */
 .content {
   display: flex;
   flex-direction: column;
@@ -107,40 +229,15 @@
   position: sticky;
   top: 0;
   z-index: 10;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
 }
 
 .menu-btn {
   margin-right: 8px;
 }
 
-.topbar__brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.topbar__logo {
-  width: 32px;
-  height: 32px;
-  border-radius: 999px;
-  background: rgba(15, 23, 42, 0.12);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 19px;
-}
-
-.topbar__titles .title {
-  display: block;
-  font-weight: 600;
-  font-size: 1.05rem;
-}
-
-.topbar__titles .subtitle {
-  display: block;
-  font-size: 0.75rem;
-  opacity: 0.8;
+.home-btn {
+  margin-right: 4px;
 }
 
 .spacer {
@@ -151,21 +248,18 @@
   margin-left: 4px;
 }
 
-/* CONTENIDO PRINCIPAL */
 .page {
   flex: 1;
   padding: 20px 24px 24px;
   overflow: auto;
 }
 
-/* Responsivo: sidebar tipo "over" en pantallas pequeñas si ya lo manejas desde TS */
+/* =========================
+   RESPONSIVE
+========================= */
 @media (max-width: 768px) {
   .side {
     width: 240px;
-  }
-
-  .topbar__titles .title {
-    font-size: 0.95rem;
   }
 
   .page {

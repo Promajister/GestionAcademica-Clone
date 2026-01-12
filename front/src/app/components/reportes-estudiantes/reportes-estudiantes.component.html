@@ -1,28 +1,67 @@
 <div class="re-students container section">
 
-  <!-- Header -->
-  <div class="topbar">
-    <button mat-stroked-button color="primary" routerLink="/reportes" class="btn-back">
-      <mat-icon>arrow_back</mat-icon>
-      Volver
-    </button>
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero__bg"></div>
 
-    <div class="titles">
-      <h1>Reporte de estudiantes</h1>
-      <p class="muted">Listado paginado con búsqueda y exportación múltiple</p>
+    <div class="hero__content">
+      <div class="hero__left">
+        <div class="hero__icon">
+          <mat-icon>assignment</mat-icon>
+        </div>
+
+        <div class="hero__titles">
+          <p class="eyebrow">Reportes · Estudiantes</p>
+          <h1>Reporte de estudiantes</h1>
+          <p class="muted">Listado paginado con búsqueda y exportación múltiple</p>
+
+          <div class="hero__chips">
+            <span class="chip">
+              <mat-icon>layers</mat-icon>
+              <span>Total: {{ totalItems || 0 }}</span>
+            </span>
+
+            <span class="chip" *ngIf="selectedCount">
+              <mat-icon>check_circle</mat-icon>
+              <span>Seleccionados: {{ selectedCount }}</span>
+            </span>
+
+            <span class="chip chip-warn" *ngIf="exporting">
+              <mat-icon>hourglass_top</mat-icon>
+              <span>Exportando…</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero__actions">
+        <button mat-stroked-button color="primary" routerLink="/reportes" class="btn-pill">
+          <mat-icon>arrow_back</mat-icon>
+          Volver
+        </button>
+      </div>
     </div>
-
-    <div class="spacer"></div>
   </div>
 
-  <!-- Header actions -->
+  <!-- TOOLBAR -->
   <mat-card class="card elev header-card">
-    <mat-card-content class="header-actions">
-      <div class="bulk-left">
+  <mat-card-content class="toolbar">
+
+    <!-- Acciones -->
+    <div class="toolbar__left">
+      <div class="toolbar__meta">
+        <mat-icon class="muted">checklist</mat-icon>
         <span class="muted">
           <strong>{{ selectedCount }}</strong> seleccionado(s)
         </span>
 
+        <span class="dot" *ngIf="selectedCount"></span>
+
+        <span class="muted exporting" *ngIf="exporting">Exportando…</span>
+        <span class="muted error" *ngIf="exportError">{{ exportError }}</span>
+      </div>
+
+      <div class="toolbar__actions">
         <button
           mat-stroked-button
           color="primary"
@@ -43,32 +82,40 @@
           Excel
         </button>
 
-        <button mat-button class="btn-link" (click)="limpiarSeleccion()" [disabled]="!selectedCount || exporting">
-          Limpiar
+        <button
+          mat-icon-button
+          class="btn-icon"
+          (click)="limpiarSeleccion()"
+          [disabled]="!selectedCount || exporting"
+          matTooltip="Limpiar selección">
+          <mat-icon>close</mat-icon>
         </button>
-
-        <span class="muted exporting" *ngIf="exporting">Exportando...</span>
-        <span class="muted error" *ngIf="exportError">{{ exportError }}</span>
       </div>
+    </div>
 
-      <div class="search-right">
-        <mat-icon class="muted">search</mat-icon>
+    <div class="toolbar__divider"></div>
 
-        <mat-form-field appearance="outline" class="search-field" floatLabel="always">
-          <mat-label>Buscar</mat-label>
-          <input
-            matInput
-            [(ngModel)]="terminoBusqueda"
-            (ngModelChange)="onFiltersChange()"
-            placeholder="Nombre, RUT, plan, centro, supervisor..." />
-        </mat-form-field>
+    <!-- Buscar -->
+    <div class="toolbar__right">
+      <mat-icon class="muted">search</mat-icon>
 
-        <div class="muted counter">
-          <span *ngIf="!cargandoLista">{{ totalItems }} resultado(s)</span>
-        </div>
+      <mat-form-field appearance="outline" class="search-field" floatLabel="always">
+        <mat-label>Buscar</mat-label>
+        <input
+          matInput
+          [(ngModel)]="terminoBusqueda"
+          (ngModelChange)="onFiltersChange()"
+          placeholder="Nombre, RUT, plan, centro, supervisor..." />
+      </mat-form-field>
+
+      <div class="counter muted">
+        <span *ngIf="!cargandoLista">{{ totalItems }} resultado(s)</span>
       </div>
-    </mat-card-content>
-  </mat-card>
+    </div>
+
+  </mat-card-content>
+</mat-card>
+
 
   <!-- List -->
   <mat-card class="card elev list-card">
@@ -132,5 +179,101 @@
 
     </mat-card-content>
   </mat-card>
+  <!-- ===================== -->
+<!-- MODAL VER DETALLES (NO TOCAR ESTILO, como antes) -->
+<!-- ===================== -->
+@if (estudianteSeleccionado) {
+  <div class="DetailsDialog">
+    <div class="DialogOverlay" (click)="cerrarDetalles()"></div>
+
+    <div class="DialogContent DialogContent--details" role="dialog">
+      <div class="DialogHeader DialogHeader--details">
+        <div class="DialogHeaderLeft">
+          <div class="DialogAvatar">
+            <mat-icon>person</mat-icon>
+          </div>
+
+          <div class="DialogTitles">
+            <h2>Detalle del estudiante</h2>
+            <div class="DialogSubtitle">
+              {{ estudianteSeleccionado.nombre || '—' }}
+            </div>
+          </div>
+        </div>
+
+        <button mat-icon-button class="CloseBtn" (click)="cerrarDetalles()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <div class="DialogBody">
+        <div *ngIf="detallesLoading" class="center muted" style="padding: 32px">
+          Cargando información…
+        </div>
+
+        <div *ngIf="detallesError" class="center error" style="padding: 24px">
+          {{ detallesError }}
+        </div>
+
+        <ng-container *ngIf="!detallesLoading && !detallesError">
+          <div class="DetailsTop">
+            <span class="Chip">
+              <mat-icon>badge</mat-icon>
+              <span class="ChipText">{{ estudianteSeleccionado.rut }}</span>
+            </span>
+
+            <span class="Chip">
+              <mat-icon>school</mat-icon>
+              <span class="ChipText">
+                {{ practicasCount() }} práctica(s)
+              </span>
+            </span>
+          </div>
+
+          <div class="DetailsSection">
+            <div class="SectionHead">
+              <mat-icon>work</mat-icon>
+              <h3>Prácticas</h3>
+            </div>
+
+            <div class="table-wrap">
+              <table class="details-table">
+                <thead>
+                  <tr>
+                    <th>Tipo</th>
+                    <th>Estado</th>
+                    <th>Periodo</th>
+                    <th>Centro</th>
+                    <th>Supervisor</th>
+                    <th>Inicio</th>
+                    <th>Término</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let p of estudianteSeleccionado.practicas">
+                    <td>{{ p.tipo }}</td>
+                    <td>{{ p.estado }}</td>
+                    <td>{{ formatPeriodo(p) }}</td>
+                    <td>{{ p.centro }}</td>
+                    <td>{{ formatSupervisor(p) }}</td>
+                    <td>{{ formatDate(p.fechaInicio) }}</td>
+                    <td>{{ formatDate(p.fechaTermino) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+
+      <div class="DialogActions DialogActions--details">
+        <button mat-stroked-button (click)="cerrarDetalles()">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
 
 </div>

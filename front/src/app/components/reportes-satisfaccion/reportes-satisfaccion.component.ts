@@ -99,10 +99,7 @@ export class ReportesSatisfaccionComponent {
         },
       });
   }
-
-  // ==========================
-  // Helpers PDF (mismo estilo "estudiantes")
-  // ==========================
+  
   private async loadImageAsDataURLSafe(path: string): Promise<string | null> {
     try {
       const res = await fetch(path);
@@ -287,10 +284,10 @@ export class ReportesSatisfaccionComponent {
       ['Prácticas (total)', safe(data.practicas.totalPracticas)],
       ['Estudiantes', safe(data.practicas.estudiantesUnicos)],
 
-      ['Aprobadas', `${safe(data.practicas.aprobadas)} (${safe(data.practicas.porcentajes.aprobadas)}%)`],
-      ['Reprobadas', `${safe(data.practicas.reprobadas)} (${safe(data.practicas.porcentajes.reprobadas)}%)`],
-      ['En curso', `${safe(data.practicas.enCurso)} (${safe(data.practicas.porcentajes.enCurso)}%)`],
-      ['% aprobación (solo evaluadas)', `${safe(data.practicas.porcentajeAprobacionEvaluadas)}%`],
+      ['Aprobadas', `${this.data.practicas.aprobadas} (${this.data.practicas.porcentajes.aprobadas}%)`],
+      ['Reprobadas', `${this.data.practicas.reprobadas} (${this.data.practicas.porcentajes.reprobadas}%)`],
+      ['En curso', `${this.data.practicas.enCurso} (${this.data.practicas.porcentajes.enCurso}%)`],
+
 
       ['Encuestas Estudiantes (registradas)', safe(data.encuestasEstudiantes.totalEncuestas)],
       ['Alternativas respondidas (Estudiantes)', safe(data.encuestasEstudiantes.totalAlternativasRespondidas)],
@@ -363,8 +360,6 @@ export class ReportesSatisfaccionComponent {
       { Indicador: 'En curso', Valor: this.data.practicas.enCurso },
       { Indicador: '% En curso', Valor: this.data.practicas.porcentajes.enCurso },
 
-      { Indicador: '% aprobación (solo evaluadas)', Valor: this.data.practicas.porcentajeAprobacionEvaluadas },
-
       { Indicador: 'Encuestas Estudiantes (registradas)', Valor: this.data.encuestasEstudiantes.totalEncuestas },
       { Indicador: 'Alternativas respondidas (Estudiantes)', Valor: this.data.encuestasEstudiantes.totalAlternativasRespondidas },
       { Indicador: '% Satisfacción Estudiantes', Valor: this.data.encuestasEstudiantes.porcentajeSatisfaccion },
@@ -385,3 +380,4 @@ export class ReportesSatisfaccionComponent {
     );
   }
 }
+
