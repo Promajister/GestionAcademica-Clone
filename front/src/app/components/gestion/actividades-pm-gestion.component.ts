@@ -12,7 +12,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
-import { ActividadesPmService } from '../../../services/actividades-pm.service';
+import { ActividadesPmService } from '../../services/actividades-pm.service';
 import { ActividadPmDialogComponent } from './actividad-pm-dialog.component';
 import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';

@@ -177,7 +177,7 @@ export const routes: Routes = [
     canActivate: [authGuard, roleGuard],
     data: { allowedRoles: ['jefatura'] }, 
     loadComponent: () =>
-      import('./components/actividades-pm/gestion/actividades-pm-gestion.component')
+      import('./components/gestion/actividades-pm-gestion.component')
         .then(m => m.ActividadesPmGestionComponent),
   },
 

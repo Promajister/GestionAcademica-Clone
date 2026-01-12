@@ -10,7 +10,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
-import { ActividadesPmService } from '../../../services/actividades-pm.service';
+import { ActividadesPmService } from '../../services/actividades-pm.service';
 
 export interface ActividadPmDialogData {
   id: number;
