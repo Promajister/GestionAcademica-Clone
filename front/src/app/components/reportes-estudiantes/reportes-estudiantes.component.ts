@@ -242,8 +242,12 @@ export class ReportesEstudianteComponent {
   }
 
   private formatTipo(value: any): string {
-    const s = value ? String(value) : '—';
+    const s = value ? String(value) : '-';
     return s.replace(/\s+/g, ' ').trim();
+  }
+
+  private formatNotaFinal(value: any): string {
+    return value === null || value === undefined || value === '' ? '-' : String(value);
   }
 
   private getSelectedRuts(): string[] {
@@ -358,14 +362,14 @@ export class ReportesEstudianteComponent {
     const sub = `RUT: ${safe(est?.rut)}  •  Plan: ${safe(est?.plan)}`;
 
     const rowTitle: RowInput = [
-      { content: title, colSpan: 5, styles: { fontStyle: 'bold' as any } } as CellDef,
+      { content: title, colSpan: 6, styles: { fontStyle: 'bold' as any } } as CellDef,
     ];
 
     const rowSub: RowInput = [
-      { content: sub, colSpan: 5, styles: { fontStyle: 'normal' as any } } as CellDef,
+      { content: sub, colSpan: 6, styles: { fontStyle: 'normal' as any } } as CellDef,
     ];
 
-    const rowCols: RowInput = ['N°', 'Tipo', 'Estado', 'Supervisor', 'Centro Educativo'];
+    const rowCols: RowInput = ['N°', 'Tipo', 'Estado', 'Nota final', 'Supervisor', 'Centro Educativo'];
 
     return [rowTitle, rowSub, rowCols];
   }
@@ -434,10 +438,11 @@ export class ReportesEstudianteComponent {
             };
 
             const wN = 30;
-            const wTipo = 165;
-            const wEstado = 90;
-            const wSupervisor = 120;
-            const wCentro = contentW - (wN + wTipo + wEstado + wSupervisor);
+            const wTipo = 150;
+            const wEstado = 80;
+            const wNota = 45;
+            const wSupervisor = 110;
+            const wCentro = contentW - (wN + wTipo + wEstado + wNota + wSupervisor);
 
             for (let idx = 0; idx < estudiantes.length; idx++) {
               const est: any = estudiantes[idx];
@@ -449,12 +454,13 @@ export class ReportesEstudianteComponent {
 
               const body: RowInput[] =
                 practicas.length === 0
-                  ? [[{ content: 'Sin prácticas registradas.', colSpan: 5 } as CellDef]]
+                  ? [[{ content: 'Sin prácticas registradas.', colSpan: 6 } as CellDef]]
                   : practicas.flatMap((p: any, i: number) => {
                       const filaPrincipal: RowInput = [
                         String(i + 1),
                         this.formatTipo(p?.tipo),
                         safe(p?.estado),
+                        this.formatNotaFinal(p?.notaFinal ?? p?.nota_final),
                         this.formatSupervisor(p),
                         safe(p?.centro),
                       ];
@@ -463,7 +469,7 @@ export class ReportesEstudianteComponent {
                         '',
                         {
                           content: this.formatPeriodoLinea(p),
-                          colSpan: 4,
+                          colSpan: 5,
                           styles: { fontStyle: 'normal' as any, textColor: colors.text as any } as any,
                         } as CellDef,
                       ];
@@ -500,8 +506,9 @@ export class ReportesEstudianteComponent {
                   0: { cellWidth: wN, halign: 'center' },
                   1: { cellWidth: wTipo },
                   2: { cellWidth: wEstado },
-                  3: { cellWidth: wSupervisor },
-                  4: { cellWidth: wCentro },
+                  3: { cellWidth: wNota, halign: 'center' },
+                  4: { cellWidth: wSupervisor },
+                  5: { cellWidth: wCentro },
                 },
                 didParseCell: (data) => {
                   if (data.section === 'head') {
@@ -600,6 +607,7 @@ export class ReportesEstudianteComponent {
                   Plan: est.plan ?? '',
                   Tipo: '',
                   Estado: '',
+                  'Nota final': '-',
                   Periodo: '',
                   Centro: '',
                   Supervisor: '',
@@ -616,6 +624,7 @@ export class ReportesEstudianteComponent {
                   Plan: est.plan ?? '',
                   Tipo: p.tipo ?? '',
                   Estado: p.estado ?? '',
+                  'Nota final': this.formatNotaFinal(p.notaFinal ?? p.nota_final),
                   Periodo: this.formatPeriodo(p),
                   Centro: p.centro ?? '',
                   Supervisor: this.formatSupervisor(p),
@@ -633,6 +642,7 @@ export class ReportesEstudianteComponent {
               { wch: 16 },
               { wch: 28 },
               { wch: 14 },
+              { wch: 12 },
               { wch: 22 },
               { wch: 28 },
               { wch: 22 },

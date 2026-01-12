@@ -202,6 +202,7 @@ export class ReportesService {
             id: p.id,
             tipo: p.tipo,
             estado: p.estado,
+            notaFinal: p.nota_final,
             anio,
             semestre,
             fechaInicio: p.fecha_inicio,

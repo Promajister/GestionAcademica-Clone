@@ -80,6 +80,7 @@ export interface ReporteEstudiante {
     id: number;
     tipo?: string | null;
     estado: EstadoPractica;
+    notaFinal?: number | null;
 
     anio?: number;       
     semestre?: number;   
