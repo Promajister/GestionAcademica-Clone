@@ -60,8 +60,9 @@ export class ActividadesPmService {
 
     const search = filters?.q?.trim();
     if (search) {
-      where.nombre = { contains: search, mode: 'insensitive' };
+      where.nombre = { contains: search };
     }
+
 
     if (filters?.anio) {
       const year = Number(filters.anio);
@@ -146,6 +147,7 @@ export class ActividadesPmService {
     const evidencias = payload?.evidencias ?? {};
     const participantes = payload?.participantes ?? {};
     const difusiones = Array.isArray(payload?.difusiones) ? payload.difusiones : [];
+    const impacto = payload?.impacto ?? {};
     const difusion = difusiones[0] ?? payload?.difusion ?? {};
 
     const tipoVinculacion =
@@ -173,6 +175,8 @@ export class ActividadesPmService {
       tipoVinculacion: this.requiredText(tipoVinculacion),
       areaVinculacion: this.requiredText(proyecto?.areaVinculacion),
       areaImpacto: this.requiredText(proyecto?.areaImpacto),
+      medidaImpacto: this.normalizeText(impacto?.medidaImpacto ?? payload?.medidaImpacto),
+      indicadorImpacto: this.normalizeText(impacto?.indicadorImpacto ?? payload?.indicadorImpacto),
       sede: this.requiredText(proyecto?.sede),
 
       fechaInicio: this.requiredDate(proyecto?.fechaInicio),

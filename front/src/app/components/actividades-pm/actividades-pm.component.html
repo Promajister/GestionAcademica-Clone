@@ -1,6 +1,4 @@
 ﻿<div class="Container Section">
-
-  <!-- HERO -->
   <div class="hero">
     <div class="hero__bg"></div>
     <div class="hero__content">
@@ -31,7 +29,6 @@
     </div>
   </div>
 
-  <!-- FORM -->
   <mat-card class="elev FormCard">
     <div class="form-topline"></div>
 
@@ -63,9 +60,6 @@
       <form [formGroup]="form">
 
         <mat-tab-group class="Tabs" animationDuration="200ms" [(selectedIndex)]="selectedTabIndex">
-          <!-- =======================
-               TAB: PROYECTO
-               ======================= -->
           <mat-tab>
             <ng-template mat-tab-label>
               <mat-icon class="TabIcon">folder</mat-icon>
@@ -74,7 +68,6 @@
 
             <div class="TabBody" formGroupName="proyecto" data-tab="0">
 
-              <!-- SECTION: RESPONSABLE -->
               <div class="SectionHead" id="sec-responsables">
                 <mat-icon>person</mat-icon>
                 <h3>Responsable *</h3>
@@ -150,7 +143,6 @@
 
               <div class="SectionDivider"></div>
 
-              <!-- SECTION: INFORMACIÓN GENERAL -->
               <div class="SectionHead">
                 <mat-icon>edit_note</mat-icon>
                 <h3>Información General</h3>
@@ -185,7 +177,6 @@
 
               <div class="SectionDivider"></div>
 
-              <!-- SECTION: TIPO DE ACTIVIDAD -->
               <div class="SectionHead">
                 <mat-icon>event</mat-icon>
                 <h3>Tipo de Actividad *</h3>
@@ -203,7 +194,6 @@
                 </mat-form-field>
               </div>
 
-              <!-- FERIA VOCACIONAL -->
               <div *ngIf="fProy('tipoActividad').value === 'FERIA_VOCACIONAL'">
                 <div class="FormRow">
                   <mat-form-field appearance="outline" class="FormField FullWidth">
@@ -214,7 +204,6 @@
                 </div>
               </div>
 
-              <!-- JORNADA PEDAGÓGICA -->
               <div *ngIf="fProy('tipoActividad').value === 'JORNADA_PEDAGOGICA'">
                 <div class="FormRow">
                   <mat-form-field appearance="outline" class="FormField FullWidth">
@@ -254,7 +243,6 @@
               </div>
             </div>
 
-              <!-- TALLER REMEDIAL -->
               <div *ngIf="fProy('tipoActividad').value === 'TALLER_REMEDIAL'">
                 <div class="FormRow">
                   <mat-form-field appearance="outline" class="FormField">
@@ -281,7 +269,6 @@
                 </div>
               </div>
 
-              <!-- CONGRESO ACADÉMICO -->
               <div *ngIf="fProy('tipoActividad').value === 'CONGRESO_ACADEMICO'">
                 <div class="FormRow">
                   <mat-form-field appearance="outline" class="FormField FullWidth">
@@ -319,7 +306,6 @@
               </div>
             </div>
 
-              <!-- ALTERNANCIA PEDAGÓGICA -->
               <div *ngIf="fProy('tipoActividad').value === 'ALTERNANCIA_PEDAGOGICA'">
                 <div class="FormRow">
                   <mat-form-field appearance="outline" class="FormField">
@@ -371,7 +357,6 @@
                 </div>
               </div>
 
-              <!-- SALIDA A TERRENO -->
               <div *ngIf="fProy('tipoActividad').value === 'SALIDA_A_TERRENO'">
                 <div class="FormRow">
                   <mat-form-field appearance="outline" class="FormField">
@@ -398,7 +383,6 @@
 
               <div class="SectionDivider"></div>
 
-              <!-- SECTION: INFORMACIÓN DE VINCULACIÓN -->
               <div class="SectionHead">
                 <mat-icon>link</mat-icon>
                 <h3>Información de Vinculación</h3>
@@ -432,7 +416,6 @@
 
               <div class="SectionDivider"></div>
 
-              <!-- SECTION: DATOS DE IMPACTO -->
               <div class="SectionHead">
                 <mat-icon>trending_up</mat-icon>
                 <h3>Datos de Impacto</h3>
@@ -461,7 +444,6 @@
 
                 <div class="SectionDivider"></div>
 
-                <!-- SECTION: PLANIFICACIÓN -->
                 <div class="SectionHead">
                   <mat-icon>calendar_today</mat-icon>
                   <h3>Planificación</h3>
@@ -507,7 +489,6 @@
 
                 <div class="SectionDivider"></div>
 
-                <!-- SECTION: RESULTADOS -->
                 <div class="SectionHead">
                   <mat-icon>assessment</mat-icon>
                   <h3>Resultados</h3>
@@ -524,9 +505,6 @@
             </div>
           </mat-tab>
 
-          <!-- =======================
-     TAB: UNIDAD
-     ======================= -->
 <mat-tab>
   <ng-template mat-tab-label>
     <mat-icon class="TabIcon">apartment</mat-icon>
@@ -600,9 +578,6 @@
   </div>
 </mat-tab>
 
-          <!-- =======================
-               TAB: EQUIPO DE TRABAJO
-               ======================= -->
           <mat-tab>
             <ng-template mat-tab-label>
               <mat-icon class="TabIcon">groups</mat-icon>
@@ -704,9 +679,6 @@
             </div>
           </mat-tab>
 
-          <!-- =======================
-               TAB: FINANCIAMIENTO
-               ======================= -->
           <mat-tab>
             <ng-template mat-tab-label>
               <mat-icon class="TabIcon">payments</mat-icon>
@@ -798,9 +770,6 @@
             </div>
           </mat-tab>
 
-          <!-- =======================
-                TAB: DIFUSIÓN
-              ======================= -->
             <mat-tab>
               <ng-template mat-tab-label>
                 <mat-icon class="TabIcon">campaign</mat-icon>
@@ -886,9 +855,6 @@
               </div>
             </mat-tab>
 
-          <!-- =======================
-               TAB: PARTICIPANTES
-               ======================= -->
           <mat-tab>
             <ng-template mat-tab-label>
               <mat-icon class="TabIcon">group</mat-icon>
@@ -1012,9 +978,6 @@
             </div>
           </mat-tab>
 
-          <!-- =======================
-               TAB: EVALUACIÓN IMPACTO
-               ======================= -->
           <mat-tab>
             <ng-template mat-tab-label>
               <mat-icon class="TabIcon">analytics</mat-icon>
@@ -1043,9 +1006,6 @@
             </div>
           </mat-tab>
 
-          <!-- =======================
-     TAB: EVIDENCIAS
-     ======================= -->
       <mat-tab>
         <ng-template mat-tab-label>
           <mat-icon class="TabIcon">verified</mat-icon>
@@ -1066,7 +1026,6 @@
 
         <div class="EvidenceGrid">
 
-          <!-- Lista asistencia -->
           <div class="EvidenceCard">
             <div class="EvidenceIcon">
               <mat-icon>groups</mat-icon>
@@ -1076,7 +1035,6 @@
               <h4>Lista de asistencia</h4>
               <p>Sube Excel o PDF.</p>
 
-              <!-- input file oculto -->
               <input
                 #fileAsistencia
                 type="file"
@@ -1101,7 +1059,6 @@
             </div>
           </div>
 
-          <!-- Documentos -->
           <div class="EvidenceCard">
             <div class="EvidenceIcon">
               <mat-icon>description</mat-icon>
@@ -1135,7 +1092,6 @@
             </div>
           </div>
 
-          <!-- Fotografías -->
           <div class="EvidenceCard">
             <div class="EvidenceIcon">
               <mat-icon>photo_camera</mat-icon>
@@ -1169,7 +1125,6 @@
             </div>
           </div>
 
-          <!-- URL noticia (ANCHO COMPLETO) -->
           <div class="EvidenceCard EvidenceCard--full">
             <div class="EvidenceIcon">
               <mat-icon>link</mat-icon>
@@ -1186,7 +1141,6 @@
             </div>
           </div>
 
-          <!-- Observaciones (ANCHO COMPLETO + MÁS GRANDE) -->
           <div class="EvidenceCard EvidenceCard--full">
             <div class="EvidenceIcon">
               <mat-icon>notes</mat-icon>
@@ -1210,7 +1164,6 @@
 
         </mat-tab-group>
 
-        <!-- Acciones inferiores -->
         <div class="FormActions">
           <button mat-stroked-button class="CancelBtn" type="button" (click)="limpiar()">
             Limpiar
