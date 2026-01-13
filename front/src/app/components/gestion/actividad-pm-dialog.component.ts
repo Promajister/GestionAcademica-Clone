@@ -461,6 +461,112 @@ export class ActividadPmDialogComponent implements OnInit {
     return null;
   }
 
+  private aplicarValidadoresTipoActividad(t?: TipoActividad | null) {
+    const allSpecific = [
+      'feriaInstitucionVisitada',
+      'jornadaTemaCentral',
+      'jornadaTalleres',
+      'jornadaResponsableTaller',
+      'jornadaNumAsistentes',
+      'jornadaSatisfaccion',
+      'tallerAsignatura',
+      'tallerCompetencia',
+      'tallerNombreEstudiantesBeneficiados',
+      'congresoNombreEvento',
+      'congresoPonenciaPresentada',
+      'congresoRelator',
+      'congresoNumAsistentes',
+      'congresoSatisfaccion',
+      'alternanciaColegioAsociado',
+      'alternanciaDocenteColaborador',
+      'alternanciaAsignatura',
+      'alternanciaCurso',
+      'alternanciaDocenteAsignatura',
+      'alternanciaEstudiantesParticipantes',
+      'alternanciaNombreActividad',
+      'salidaObjetivoPedagogico',
+      'salidaAsignaturaVinculada',
+      'salidaProfesorResponsable',
+    ];
+
+    for (const k of allSpecific) {
+      const c = this.fProy(k);
+      c.clearValidators();
+      c.updateValueAndValidity({ emitEvent: false });
+    }
+
+    if (!t) return;
+
+    const reqText = (k: string, max = 250) => this.setReq(k, [Validators.required, Validators.maxLength(max)]);
+    const reqNum = (k: string) => this.setReq(k, [Validators.required, Validators.min(0)]);
+
+    if (t === 'FERIA_VOCACIONAL') reqText('feriaInstitucionVisitada', 200);
+
+    if (t === 'JORNADA_PEDAGOGICA') {
+      reqText('jornadaTemaCentral', 250);
+      reqText('jornadaTalleres', 250);
+      reqText('jornadaResponsableTaller', 200);
+      reqNum('jornadaNumAsistentes');
+      reqNum('jornadaSatisfaccion');
+    }
+
+    if (t === 'TALLER_REMEDIAL') {
+      reqText('tallerAsignatura', 200);
+      reqText('tallerCompetencia', 250);
+      reqNum('tallerNombreEstudiantesBeneficiados');
+    }
+
+    if (t === 'CONGRESO_ACADEMICO') {
+      reqText('congresoNombreEvento', 250);
+      reqText('congresoPonenciaPresentada', 250);
+      reqText('congresoRelator', 200);
+      reqNum('congresoNumAsistentes');
+      reqNum('congresoSatisfaccion');
+    }
+
+    if (t === 'ALTERNANCIA_PEDAGOGICA') {
+      reqText('alternanciaColegioAsociado', 250);
+      reqText('alternanciaDocenteColaborador', 200);
+      reqText('alternanciaAsignatura', 200);
+      reqText('alternanciaCurso', 80);
+      reqText('alternanciaDocenteAsignatura', 200);
+      reqText('alternanciaEstudiantesParticipantes', 250);
+      reqText('alternanciaNombreActividad', 250);
+    }
+
+    if (t === 'SALIDA_A_TERRENO') {
+      reqText('salidaObjetivoPedagogico', 300);
+      reqText('salidaAsignaturaVinculada', 200);
+      reqText('salidaProfesorResponsable', 200);
+    }
+  }
+
+  private setReq(key: string, validators: any[]) {
+    const c = this.fProy(key);
+    c.setValidators(validators);
+    c.updateValueAndValidity({ emitEvent: false });
+  }
+
+  private urlOptionalValidator() {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const v = String(control.value ?? '').trim();
+      if (!v) return null;
+      const ok = /^https?:\/\/.+/i.test(v);
+      return ok ? null : { url: true };
+    };
+  }
+
+  private buildParticipantesControls(): Record<string, any> {
+    const obj: Record<string, any> = {};
+    const tipos = ['ASISTENTE', 'EXPOSITOR'];
+    for (const t of tipos) {
+      for (const col of this.participantesColumnas) {
+        obj[this.key(t, col)] = [0, [Validators.min(0)]];
+      }
+    }
+    return obj;
+  }
+
   cargar(): void {
     this.loading = true;
     this.errorMsg = '';
@@ -754,112 +860,6 @@ export class ActividadPmDialogComponent implements OnInit {
         this.saving = false;
       },
     });
-  }
-
-  private aplicarValidadoresTipoActividad(t?: TipoActividad | null) {
-    const allSpecific = [
-      'feriaInstitucionVisitada',
-      'jornadaTemaCentral',
-      'jornadaTalleres',
-      'jornadaResponsableTaller',
-      'jornadaNumAsistentes',
-      'jornadaSatisfaccion',
-      'tallerAsignatura',
-      'tallerCompetencia',
-      'tallerNombreEstudiantesBeneficiados',
-      'congresoNombreEvento',
-      'congresoPonenciaPresentada',
-      'congresoRelator',
-      'congresoNumAsistentes',
-      'congresoSatisfaccion',
-      'alternanciaColegioAsociado',
-      'alternanciaDocenteColaborador',
-      'alternanciaAsignatura',
-      'alternanciaCurso',
-      'alternanciaDocenteAsignatura',
-      'alternanciaEstudiantesParticipantes',
-      'alternanciaNombreActividad',
-      'salidaObjetivoPedagogico',
-      'salidaAsignaturaVinculada',
-      'salidaProfesorResponsable',
-    ];
-
-    for (const k of allSpecific) {
-      const c = this.fProy(k);
-      c.clearValidators();
-      c.updateValueAndValidity({ emitEvent: false });
-    }
-
-    if (!t) return;
-
-    const reqText = (k: string, max = 250) => this.setReq(k, [Validators.required, Validators.maxLength(max)]);
-    const reqNum = (k: string) => this.setReq(k, [Validators.required, Validators.min(0)]);
-
-    if (t === 'FERIA_VOCACIONAL') reqText('feriaInstitucionVisitada', 200);
-
-    if (t === 'JORNADA_PEDAGOGICA') {
-      reqText('jornadaTemaCentral', 250);
-      reqText('jornadaTalleres', 250);
-      reqText('jornadaResponsableTaller', 200);
-      reqNum('jornadaNumAsistentes');
-      reqNum('jornadaSatisfaccion');
-    }
-
-    if (t === 'TALLER_REMEDIAL') {
-      reqText('tallerAsignatura', 200);
-      reqText('tallerCompetencia', 250);
-      reqNum('tallerNombreEstudiantesBeneficiados');
-    }
-
-    if (t === 'CONGRESO_ACADEMICO') {
-      reqText('congresoNombreEvento', 250);
-      reqText('congresoPonenciaPresentada', 250);
-      reqText('congresoRelator', 200);
-      reqNum('congresoNumAsistentes');
-      reqNum('congresoSatisfaccion');
-    }
-
-    if (t === 'ALTERNANCIA_PEDAGOGICA') {
-      reqText('alternanciaColegioAsociado', 250);
-      reqText('alternanciaDocenteColaborador', 200);
-      reqText('alternanciaAsignatura', 200);
-      reqText('alternanciaCurso', 80);
-      reqText('alternanciaDocenteAsignatura', 200);
-      reqText('alternanciaEstudiantesParticipantes', 250);
-      reqText('alternanciaNombreActividad', 250);
-    }
-
-    if (t === 'SALIDA_A_TERRENO') {
-      reqText('salidaObjetivoPedagogico', 300);
-      reqText('salidaAsignaturaVinculada', 200);
-      reqText('salidaProfesorResponsable', 200);
-    }
-  }
-
-  private setReq(key: string, validators: any[]) {
-    const c = this.fProy(key);
-    c.setValidators(validators);
-    c.updateValueAndValidity({ emitEvent: false });
-  }
-
-  private urlOptionalValidator() {
-    return (control: AbstractControl): ValidationErrors | null => {
-      const v = String(control.value ?? '').trim();
-      if (!v) return null;
-      const ok = /^https?:\/\/.+/i.test(v);
-      return ok ? null : { url: true };
-    };
-  }
-
-  private buildParticipantesControls(): Record<string, any> {
-    const obj: Record<string, any> = {};
-    const tipos = ['ASISTENTE', 'EXPOSITOR'];
-    for (const t of tipos) {
-      for (const col of this.participantesColumnas) {
-        obj[this.key(t, col)] = [0, [Validators.min(0)]];
-      }
-    }
-    return obj;
   }
 
   key(tipo: string, col: string): string {

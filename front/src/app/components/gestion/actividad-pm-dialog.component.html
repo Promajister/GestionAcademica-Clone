@@ -883,7 +883,7 @@
         </div>
       </mat-tab>
 
-      <mat-tab>
+      <mat-tab *ngIf="isView">
         <ng-template mat-tab-label>
           <mat-icon class="TabIcon">analytics</mat-icon>
           Evaluación de Impacto
