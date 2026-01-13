@@ -161,13 +161,21 @@ export class ActividadesPmGestionComponent implements OnInit {
   trackById = (_: number, row: any) => row?.id;
 
   formatearRangoFechas(inicio?: string, termino?: string): string {
-  const f = (v?: string) => {
-    if (!v) return '-';
-    const d = new Date(v);
-    return isNaN(d.getTime()) ? v : d.toLocaleDateString('es-CL');
-  };
-  if (!inicio && !termino) return '-';
-  return `${f(inicio)} → ${f(termino)}`;
+    const f = (v?: string) => {
+      const raw = String(v ?? '').trim();
+      if (!raw) return '-';
+
+      const datePart = raw.includes('T') ? raw.split('T')[0] : raw;
+
+      const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(datePart);
+      if (!m) return raw;
+
+      const [, yyyy, mm, dd] = m;
+      return `${dd}/${mm}/${yyyy}`; 
+    };
+
+    if (!inicio && !termino) return '-';
+    return `${f(inicio)} → ${f(termino)}`;
   }
 
   eliminar(row: any): void {

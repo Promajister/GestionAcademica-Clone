@@ -16,12 +16,12 @@
           <div class="hero__chips">
             <span class="chip">
               <mat-icon>layers</mat-icon>
-              <span>Total: {{ rows?.length || 0 }}</span>
+              <span>Total: {{ rows.length }}</span>
             </span>
 
             <span class="chip chip--soft" *ngIf="!loading">
               <mat-icon>visibility</mat-icon>
-              <span>{{ rows?.length || 0 }} en pantalla</span>
+              <span>{{ rows.length }} en pantalla</span>
             </span>
           </div>
         </div>
@@ -81,7 +81,7 @@
       </mat-card-title>
 
       <div class="panel__meta muted">
-        {{ rows?.length || 0 }} resultado(s)
+        {{ rows.length }} resultado(s)
       </div>
     </mat-card-header>
 
@@ -123,7 +123,7 @@
                 <th>Fechas</th>
                 <th>Sede</th>
                 <th>Impacto</th>
-                <th class="th-actions">Acciones</th>
+                <th></th>
               </tr>
             </thead>
 
