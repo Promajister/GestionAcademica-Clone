@@ -469,6 +469,8 @@ model ActividadVinculacion {
   tipoVinculacion String
   areaVinculacion String
   areaImpacto     String
+  medidaImpacto   String?
+  indicadorImpacto String?
   sede            String
 
   fechaInicio  DateTime

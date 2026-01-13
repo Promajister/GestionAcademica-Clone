@@ -1,4 +1,4 @@
-<div class="DialogHeader">
+﻿<div class="DialogHeader">
   <div class="DialogHeaderLeft">
     <div class="DialogAvatar">
       <mat-icon>{{ isView ? 'visibility' : 'edit' }}</mat-icon>
@@ -538,7 +538,7 @@
 
               <ng-container matColumnDef="unidad">
                 <th mat-header-cell *matHeaderCellDef>Unidad</th>
-                <td mat-cell *matCellDef="let row">{{ row.unidad }}</td>
+                <td mat-cell *matCellDef="let row">{{ row.unidad?.nombre || row.unidad }}</td>
               </ng-container>
 
               <ng-container matColumnDef="accion">

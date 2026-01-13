@@ -1,4 +1,4 @@
-import { Component, Inject, OnInit } from '@angular/core';
+﻿import { Component, Inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   AbstractControl,
@@ -359,13 +359,14 @@ export class ActividadPmDialogComponent implements OnInit {
 
   // ============================= helpers UI =============================
   getTipoActividadLabel(value?: string): string {
-    if (!value) return '—';
+    if (!value) return '-';
     const hit = this.tipoActividadCatalogo.find(x => x.value === value);
-    return hit?.label ?? value.replaceAll('_', ' ');
+    const label = hit?.label ?? value.replaceAll('_', ' ');
+    return this.fixMojibake(label);
   }
 
   private toDateLabel(v?: any): string {
-    if (!v) return '—';
+    if (!v) return '-';
     const d = new Date(v);
     return isNaN(d.getTime()) ? String(v) : d.toLocaleDateString('es-CL');
   }
@@ -377,9 +378,73 @@ export class ActividadPmDialogComponent implements OnInit {
     return d.toISOString().substring(0, 10);
   }
 
+  private getArchivoEvidencia(archivos: any[], tipo: string) {
+    return (archivos ?? []).find((a) => a?.tipo === tipo) ?? null;
+  }
+
+  private getArchivoNombre(archivo: any): string {
+    if (!archivo) return '';
+    const nombre = String(archivo?.nombre ?? '').trim();
+    if (nombre) return nombre;
+    const url = String(archivo?.url ?? '').trim();
+    if (!url) return '';
+    const parts = url.split('/');
+    return parts[parts.length - 1] ?? '';
+  }
+
+  private mapParticipanteCampo(col: string): string | null {
+    const clean = col.toUpperCase();
+    if (clean.includes('DIRECTIVOS') && clean.includes('UTA')) return 'directivosUta';
+    if (clean.includes('DOCENTES') && clean.includes('UTA')) return 'docentesUta';
+    if (clean.includes('ESTUDIANTES') && clean.includes('UTA')) return 'estudiantesUta';
+    if (clean.includes('FUNCIONARIOS') && clean.includes('GESTION') && clean.includes('UTA')) return 'funcionariosGestionUta';
+    if (clean.includes('EXALUMNOS')) return 'exalumnos';
+    if (clean.includes('OTROS') && clean.includes('EXTERNOS')) return 'otrosExternos';
+    return null;
+  }
+
+  private normalizeToken(value: string): string {
+    return this.fixMojibake(value)
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toUpperCase();
+  }
+
+  private normalizeSelectValue(value: any, options: string[]): string {
+    const raw = this.fixMojibake(String(value ?? '')).trim();
+    if (!raw) return '';
+    if (options.includes(raw)) return raw;
+    const rawNorm = this.normalizeToken(raw);
+    const hit = options.find((o) => this.normalizeToken(o) === rawNorm);
+    return hit ?? raw;
+  }
+
+  private normalizeTipoActividad(value: any): TipoActividad | null {
+    const raw = this.fixMojibake(String(value ?? '')).trim();
+    if (!raw) return null;
+    if (this.tipoActividadCatalogo.some((x) => x.value === raw)) return raw as TipoActividad;
+    const rawNorm = this.normalizeToken(raw);
+    const hit = this.tipoActividadCatalogo.find((x) => this.normalizeToken(x.label) === rawNorm);
+    return hit?.value ?? null;
+  }
+
   get fechaRango(): string {
-    if (!this.actividad) return '—';
-    return `${this.toDateLabel(this.actividad.fechaInicio)} → ${this.toDateLabel(this.actividad.fechaTermino)}`;
+    if (!this.actividad) return '-';
+    return `${this.toDateLabel(this.actividad.fechaInicio)} - ${this.toDateLabel(this.actividad.fechaTermino)}`;
+  }
+
+  private fixMojibake(value: string): string {
+    if (!value) return value;
+    if (!value.includes('Ã') && !value.includes('Â') && !value.includes('\uFFFD')) return value;
+    try {
+      return new TextDecoder('utf-8').decode(
+        Uint8Array.from(value, (c) => c.charCodeAt(0)),
+      );
+    } catch {
+      return value;
+    }
   }
 
   // ============================= cargar =============================
@@ -391,7 +456,59 @@ export class ActividadPmDialogComponent implements OnInit {
       next: (a: any) => {
         // defensivo: payload o plano
         const root = a?.payload ?? a ?? {};
-        const proy = root?.proyecto ?? root ?? {};
+        const proyBase = root?.proyecto ?? root ?? {};
+        const tipoActividad = this.normalizeTipoActividad(proyBase?.tipoActividad ?? root?.tipoActividad);
+        const tipoVinculacion = this.normalizeSelectValue(
+          proyBase?.tipoVinculacion ?? root?.tipoVinculacion,
+          this.tiposVinculacion,
+        );
+        const areaVinculacion = this.normalizeSelectValue(
+          proyBase?.areaVinculacion ?? root?.areaVinculacion,
+          this.areasVinculacion,
+        );
+        const areaImpacto = this.normalizeSelectValue(
+          proyBase?.areaImpacto ?? root?.areaImpacto,
+          this.areasImpacto,
+        );
+        const sede = this.normalizeSelectValue(proyBase?.sede ?? root?.sede, this.sedes);
+        const proyectoAsociado = this.normalizeSelectValue(
+          proyBase?.proyectoAsociado ?? proyBase?.proyecto ?? root?.proyecto,
+          this.proyectos,
+        );
+        const proy = {
+          ...proyBase,
+          tipoActividad: tipoActividad ?? proyBase?.tipoActividad,
+          tipoVinculacion,
+          areaVinculacion,
+          areaImpacto,
+          sede,
+          proyectoAsociado,
+          feriaInstitucionVisitada: proyBase.feriaInstitucionVisitada ?? root?.institucionVisitada,
+          jornadaTemaCentral: proyBase.jornadaTemaCentral ?? root?.temaCentral,
+          jornadaTalleres: proyBase.jornadaTalleres ?? root?.talleres,
+          jornadaResponsableTaller: proyBase.jornadaResponsableTaller ?? root?.responsableTaller,
+          tallerAsignatura: proyBase.tallerAsignatura ?? root?.asignaturaRemedial,
+          tallerCompetencia: proyBase.tallerCompetencia ?? root?.competenciaAReforzar,
+          tallerNombreEstudiantesBeneficiados:
+            proyBase.tallerNombreEstudiantesBeneficiados ?? root?.numeroEstudiantesBeneficiados,
+          congresoNombreEvento: proyBase.congresoNombreEvento ?? root?.nombreEvento,
+          congresoPonenciaPresentada: proyBase.congresoPonenciaPresentada ?? root?.ponenciaPresentada,
+          congresoRelator: proyBase.congresoRelator ?? root?.relator,
+          alternanciaColegioAsociado: proyBase.alternanciaColegioAsociado ?? root?.colegioAsociado,
+          alternanciaDocenteColaborador: proyBase.alternanciaDocenteColaborador ?? root?.docenteColaborador,
+          alternanciaAsignatura: proyBase.alternanciaAsignatura ?? root?.asignaturaAlternancia,
+          alternanciaCurso: proyBase.alternanciaCurso ?? root?.curso,
+          alternanciaDocenteAsignatura: proyBase.alternanciaDocenteAsignatura ?? root?.docenteAsignatura,
+          alternanciaNombreActividad: proyBase.alternanciaNombreActividad ?? root?.nombreActividadAlternancia,
+          salidaObjetivoPedagogico: proyBase.salidaObjetivoPedagogico ?? root?.objetivoPedagogico,
+          salidaAsignaturaVinculada: proyBase.salidaAsignaturaVinculada ?? root?.asignaturaVinculada,
+          salidaProfesorResponsable: proyBase.salidaProfesorResponsable ?? root?.profesorResponsable,
+        };
+
+        const archivos = root?.archivosEvidencia ?? a?.archivosEvidencia ?? [];
+        const archivoAsistencia = this.getArchivoEvidencia(archivos, 'LISTA_ASISTENCIA');
+        const archivoDocumentos = this.getArchivoEvidencia(archivos, 'DOCUMENTO');
+        const archivoFotos = this.getArchivoEvidencia(archivos, 'FOTOGRAFIA');
 
         this.actividad = {
           ...proy,
@@ -405,13 +522,37 @@ export class ActividadPmDialogComponent implements OnInit {
             fechaInicio: this.toDateInput(proy?.fechaInicio),
             fechaTermino: this.toDateInput(proy?.fechaTermino),
           },
-          evidencias: root?.evidencias ?? {},
+          evidencias: {
+            ...(root?.evidencias ?? {}),
+            listaAsistenciaRef: root?.evidencias?.listaAsistenciaRef ?? archivoAsistencia?.url ?? '',
+            documentosRef: root?.evidencias?.documentosRef ?? archivoDocumentos?.url ?? '',
+            fotosRef: root?.evidencias?.fotosRef ?? archivoFotos?.url ?? '',
+            enlaceNoticia: root?.evidencias?.enlaceNoticia ?? root?.enlaceNoticia ?? '',
+            observaciones: root?.evidencias?.observaciones ?? root?.observaciones ?? '',
+          },
           participantes: {
             ...(root?.participantes ?? {}),
           },
-          impacto: root?.impacto ?? {},
-          difusion: root?.difusion ?? {},
+          impacto: {
+            medidaImpacto:
+              root?.impacto?.medidaImpacto ?? root?.medidaImpacto ?? 'ENCUESTA',
+            indicadorImpacto:
+              root?.impacto?.indicadorImpacto ?? root?.indicadorImpacto ?? '',
+          },
+          difusion: {
+            difusionEquipo:
+              root?.difusion?.difusionEquipo ??
+              root?.difusion?.medio ??
+              root?.medioDifusion ??
+              'SELECCIONE',
+            difusionUrl:
+              root?.difusion?.difusionUrl ?? root?.difusion?.url ?? root?.urlDifusion ?? '',
+          },
         });
+
+        this.asistenciaFileName = this.getArchivoNombre(archivoAsistencia);
+        this.documentosFileName = this.getArchivoNombre(archivoDocumentos);
+        this.fotosFileName = this.getArchivoNombre(archivoFotos);
 
         // patch matriz participantes (si viene en payload)
         if (root?.participantes) {
@@ -425,22 +566,89 @@ export class ActividadPmDialogComponent implements OnInit {
           });
         }
 
-        // listas
-        this.unidades = a?.unidades ?? root?.unidades ?? [];
-        this.responsables = a?.responsables ?? root?.responsables ?? [];
-        this.equipoTrabajo = a?.equipoTrabajo ?? root?.equipoTrabajo ?? [];
-        this.financiamientos = a?.financiamientos ?? root?.financiamientos ?? [];
-        this.centrosCosto = a?.centrosCosto ?? root?.centrosCosto ?? [];
-        this.difusiones = a?.difusiones ?? root?.difusiones ?? [];
-        this.instituciones = a?.instituciones ?? root?.instituciones ?? [];
+        const matrices = root?.matricesParticipantes ?? a?.matricesParticipantes ?? [];
+        if (Array.isArray(matrices) && matrices.length > 0) {
+          const g = this.form.get('participantes') as FormGroup;
+          for (const tipo of ['ASISTENTE', 'EXPOSITOR'] as const) {
+            const row = matrices.find((m: any) => m?.tipoParticipante === tipo);
+            if (!row) continue;
+            for (const col of this.participantesColumnas) {
+              const field = this.mapParticipanteCampo(col);
+              const key = this.key(tipo, col);
+              if (!field || !g.get(key)) continue;
+              g.get(key)?.setValue(row[field] ?? 0, { emitEvent: false });
+            }
+          }
+        }
 
-        // estudiantes: si tu backend separa, puedes mapear mejor aquí
+        // listas
+        const unidadesRaw = a?.unidades ?? root?.unidades ?? [];
+        this.unidades = (unidadesRaw ?? []).map((u: any) => ({
+          cod: u?.cod ?? u?.codigo ?? u?.unidad?.codigo ?? '',
+          unidad: u?.unidad?.nombre ?? u?.nombre ?? u?.unidad ?? '',
+        }));
+
+        const responsablesRaw = a?.responsables ?? root?.responsables ?? [];
+        this.responsables = (responsablesRaw ?? []).map((r: any) => ({
+          rut: r?.rut ?? r?.responsable?.rut ?? '',
+          nombre: r?.nombre ?? r?.responsable?.nombre ?? '',
+          tipo: r?.tipo ?? r?.responsable?.tipo ?? '',
+        }));
+
+        const equipoRaw =
+          a?.equiposTrabajo ??
+          root?.equiposTrabajo ??
+          a?.equipoTrabajo ??
+          root?.equipoTrabajo ??
+          [];
+        this.equipoTrabajo = (equipoRaw ?? []).map((e: any) => ({
+          rut: e?.rut ?? e?.equipoTrabajo?.rut ?? '',
+          nombre: e?.nombre ?? e?.equipoTrabajo?.nombre ?? '',
+          tipo: e?.equipo ?? e?.tipo ?? '',
+        }));
+
+        const finRaw = a?.financiamientos ?? root?.financiamientos ?? [];
+        this.financiamientos = (finRaw ?? []).map((f: any) => ({
+          categoria: f?.categoria ?? f?.finCategoria ?? '',
+          tipoFinanciamiento: f?.tipoFinanciamiento ?? f?.tipo ?? '',
+          monto: f?.monto ?? f?.finMonto ?? 0,
+        }));
+
+        const ccRaw = a?.centrosCosto ?? root?.centrosCosto ?? [];
+        this.centrosCosto = (ccRaw ?? []).map((c: any) => ({
+          tipo: c?.tipo ?? c?.nombre ?? '',
+        }));
+
+        const difusionesRaw = a?.difusiones ?? root?.difusiones ?? [];
+        if (Array.isArray(difusionesRaw) && difusionesRaw.length > 0) {
+          this.difusiones = difusionesRaw.map((d: any) => ({
+            medio: d?.medio ?? d?.difusionEquipo ?? '',
+            url: d?.url ?? d?.difusionUrl ?? '',
+          }));
+        } else if (root?.medioDifusion || root?.urlDifusion) {
+          this.difusiones = [
+            {
+              medio: root?.medioDifusion ?? '',
+              url: root?.urlDifusion ?? '',
+            },
+          ];
+        } else {
+          this.difusiones = [];
+        }
+
+        const instRaw = a?.instituciones ?? root?.instituciones ?? [];
+        this.instituciones = (instRaw ?? []).map((i: any) => ({
+          tipo: i?.tipo ?? '',
+          nombre: i?.nombre ?? '',
+        }));
+
+        // estudiantes: si tu backend separa, puedes mapear mejor aqui
         const est = a?.estudiantes ?? root?.estudiantes ?? [];
-        // los dejamos “neutros”; si después quieres separar feria/salida, lo ajustamos.
+        // los dejamos "neutros"; si despues quieres separar feria/salida, lo ajustamos.
         this.estudiantesFeria = est ?? [];
         this.estudiantesSalida = [];
 
-        // si estás en modo view: bloquear todo
+        // si estas en modo view: bloquear todo
         if (this.isView) {
           this.form.disable({ emitEvent: false });
         }
