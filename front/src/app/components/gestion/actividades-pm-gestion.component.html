@@ -23,6 +23,16 @@
               <mat-icon>visibility</mat-icon>
               <span>{{ rows.length }} en pantalla</span>
             </span>
+
+            <span class="chip" *ngIf="exporting">
+              <mat-icon>hourglass_top</mat-icon>
+              <span>Exportando...</span>
+            </span>
+
+            <span class="chip" *ngIf="exportError">
+              <mat-icon>error</mat-icon>
+              <span>{{ exportError }}</span>
+            </span>
           </div>
         </div>
       </div>
@@ -31,6 +41,28 @@
         <button mat-flat-button color="primary" class="btn-cta" (click)="cargar()">
           <mat-icon>refresh</mat-icon>
           Recargar
+        </button>
+
+        <button
+          mat-stroked-button
+          color="primary"
+          class="btn-ghost"
+          type="button"
+          (click)="exportarPdf()"
+          [disabled]="exporting || !rows.length">
+          <mat-icon>picture_as_pdf</mat-icon>
+          PDF
+        </button>
+
+        <button
+          mat-stroked-button
+          color="accent"
+          class="btn-ghost"
+          type="button"
+          (click)="exportarExcel()"
+          [disabled]="exporting || !rows.length">
+          <mat-icon>grid_on</mat-icon>
+          Excel
         </button>
 
         <button mat-stroked-button class="btn-ghost" type="button" (click)="limpiarFiltros()">
