@@ -2,7 +2,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  min-height: 0; 
+  min-height: 0;
 }
 
 .DialogHeader{
@@ -56,6 +56,8 @@
   padding: 10px 0;
 }
 
+.muted { color: #64748b; font-size: 13px; }
+
 .DetailsTop{ display:flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0; }
 .Chip{
   display:inline-flex; align-items:center; gap: 6px;
@@ -80,60 +82,6 @@
   font-size:16px; line-height:16px;
 }
 
-.DetailsSection{
-  margin-top: 14px;
-  padding-top: 12px;
-  border-top: 1px dashed #e5e7eb;
-}
-
-.SectionHead{
-  display:flex;
-  align-items:center;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-.SectionHead h3{
-  margin:0;
-  font-size: 14px;
-  font-weight: 800;
-  color:#111827;
-}
-
-.DetailsGrid--2{
-  display:grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.KV{
-  border: 1px solid #eef2f7;
-  background: #f8fafc;
-  border-radius: 14px;
-  padding: 10px 12px;
-}
-.KV--full{ grid-column: 1 / -1; }
-
-.K{
-  font-size: 12px;
-  color:#64748b;
-  font-weight: 700;
-  margin-bottom: 2px;
-}
-.V{
-  font-size: 14px;
-  color:#0f172a;
-  font-weight: 700;
-  word-break: break-word;
-}
-
-.EditForm .FormRow{
-  display:grid;
-  grid-template-columns: 1fr;
-  gap: 12px;
-}
-.FormField{ width: 100%; }
-.FullWidth{ width: 100%; }
-
 .DialogActions{
   display:flex;
   justify-content:flex-end;
@@ -143,6 +91,189 @@
   background: #fff;
 }
 
-@media (max-width: 720px){
-  .DetailsGrid--2{ grid-template-columns: 1fr; }
+/* ======================= estilos “registrar” (adaptados) ======================= */
+
+.Tabs{ margin-top: 6px; }
+.TabIcon{ margin-right: 8px; vertical-align: middle; }
+.TabBody{ padding: 14px 2px 6px; }
+
+.SectionHead{
+  display:flex; align-items:center; gap: 8px;
+  margin: 2px 0 10px;
+}
+.SectionHead mat-icon{ color:#303880; }
+.SectionHead h3{ margin: 0; font-size: 14px; font-weight: 900; color:#111827; }
+
+.SectionDivider{ margin: 14px 0 12px; border-top: 1px dashed #e5e7eb; }
+
+.FormRow{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  align-items: start;
+  margin-bottom: 6px;
+}
+.FormField{ width: 100%; }
+.FullWidth{ grid-column: 1 / -1; }
+
+.InlineBar{
+  display:flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.InlineField{ min-width: 240px; flex: 1 1 260px; }
+.InlineField.small{ min-width: 160px; flex: 0 0 180px; }
+.AlignBtn{ height: 52px; margin-top: 4px; }
+
+.TableCard{
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 10px;
+  background: #fff;
+}
+.SimpleTable{
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.col-actions{ width: 90px; text-align: right; }
+.EmptyState{
+  display:flex;
+  align-items:center;
+  gap: 8px;
+  padding: 10px 6px;
+  color:#64748b;
+  font-size: 13px;
+}
+.InlineError{
+  padding: 4px 6px 0;
+  color: #dc2626;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.MatrixCard{
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  background: #fff;
+  overflow: hidden;
+}
+.MatrixHeader{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding: 10px 12px;
+  border-bottom: 1px solid #eef2f7;
+}
+.MatrixTitle{ font-weight: 900; color:#0f172a; }
+.MatrixScroll{ overflow: auto; padding: 10px 12px 12px; }
+.Matrix{
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  min-width: 820px;
+}
+.Matrix th, .Matrix td{
+  border: 1px solid #e5e7eb;
+  padding: 8px;
+  font-size: 13px;
+}
+.Matrix th{
+  background: #f8fafc;
+  font-weight: 900;
+  color:#0f172a;
+}
+.rowHead{
+  background: #f8fafc;
+  font-weight: 900;
+  white-space: nowrap;
+}
+.MatrixInput{
+  width: 100%;
+  max-width: 90px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  outline: none;
+}
+
+.EvidenceHint{
+  display:flex;
+  align-items:flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid #eef2f7;
+  background: #f8fafc;
+  color:#334155;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+.EvidenceHint mat-icon{ color:#446BA9; margin-top: 1px; }
+
+.EvidenceGrid{
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.EvidenceCard{
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  align-items: flex-start;
+}
+
+.EvidenceCard--full{ grid-column: 1 / -1; }
+
+.EvidenceIcon{
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: #eef2ff;
+  border: 1px solid #dbeafe;
+  color: #446BA9;
+  flex: 0 0 auto;
+}
+
+.EvidenceBody{ flex: 1 1 auto; }
+.EvidenceBody h4{ margin: 0; font-size: 14px; font-weight: 800; color: #0f172a; }
+.EvidenceBody p{ margin: 4px 0 10px; font-size: 13px; color: #475569; }
+
+@media (max-width: 900px){
+  .EvidenceGrid{ grid-template-columns: 1fr; }
+}
+
+.EvidenceCard--full .FullWidth { width: 100%; }
+.ObsBig { min-height: 160px; }
+
+.FileInputHidden{ display: none; }
+
+.FileRow{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.FileName{
+  font-size: 13px;
+  color: #0f172a;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 820px){
+  .FormRow{ grid-template-columns: 1fr; }
 }
