@@ -75,26 +75,22 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     this.sidenav?.close();
   };
 
-  // UI
   isAuthRoute = false;
   isSidenavOpened = true;
 
-  // Usuario (siempre existe en tu sistema)
   user!: { name: string; roleLabel: string; icon: string };
   rolePermissions: string[] = [];
 
-  // Foto
   profilePhoto: string | null = null;
 
-  // Nav base
   nav: NavItem[] = [];
 
-  // Jefatura -> secciones colapsables
   isJefatura = false;
+  isVinculacion = false;
   navSections: NavSection[] = [];
   openSections: Record<'practicas' | 'vinculacion', boolean> = {
     practicas: true,
-    vinculacion: false,
+    vinculacion: true, 
   };
 
   ngOnInit(): void {
@@ -104,7 +100,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.isAuthRoute = this.isAuthUrl(this.router.url);
 
-    this.loadRoleFromStorage();  // setea user/nav
+    this.loadRoleFromStorage();  
     this.loadProfilePhoto();
 
     this.navigationSub = this.router.events
@@ -192,27 +188,28 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     this.rolePermissions = Array.isArray(role.permissions) ? role.permissions : [];
 
     this.isJefatura = role.id === 'jefatura';
+    this.isVinculacion = role.id === 'vinculacion';
 
-    // base siempre
-    this.nav = [
-  { label: 'Mi cuenta', icon: 'person', route: '/mi-cuenta' },
-  ...(role.id === 'jefatura'
-    ? [{ label: 'Usuarios', icon: 'manage_accounts', route: '/usuarios' }]
-    : []),
-];
-
+    // ✅ Mantén el nav normal según rol (incluye Encuestas, Estudiantes, etc.)
+    this.navSections = [];
 
     if (this.isJefatura) {
-      // Jefatura: secciones colapsables
+      // Jefatura: nav base + catálogo completo
+      this.nav = [
+        { label: 'Mi cuenta', icon: 'person', route: '/mi-cuenta' },
+        { label: 'Usuarios', icon: 'manage_accounts', route: '/usuarios' },
+      ];
       this.navSections = this.buildJefaturaSections();
     } else {
-      // Otros roles: nav normal
-      this.navSections = [];
+      // Vinculación y Prácticas: nav normal (el que ya tenías)
       this.nav = this.buildNav(role.id);
+
+      // ✅ Si es vinculación, además muestra catálogo de "Vinculación con el medio"
+      if (this.isVinculacion) {
+        this.navSections = this.buildVinculacionSections();
+      }
     }
   }
-
-  // ======= Métodos que tu HTML usa (faltaban) =======
 
   onSidenavChange(opened: boolean) {
     this.isSidenavOpened = opened;
@@ -225,8 +222,6 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   goHome() {
     this.router.navigate(['/dashboard']);
   }
-
-  // ==================================================
 
   toggleSection(id: 'practicas' | 'vinculacion') {
     this.openSections[id] = !this.openSections[id];
@@ -309,6 +304,20 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     ];
   }
 
+  private buildVinculacionSections(): NavSection[] {
+    return [
+      {
+        id: 'vinculacion',
+        title: 'Vinculación con el medio',
+        icon: 'groups',
+        items: [
+          { label: 'Registrar actividad', icon: 'playlist_add', route: '/vinculacion/actividades-pm' },
+          { label: 'Gestionar actividades del plan de mejora', icon: 'manage_search', route: '/vinculacion/actividades-pm/gestion' },
+        ],
+      },
+    ];
+  }
+
   private buildNav(id: RoleId): NavItem[] {
     if (id === 'vinculacion') {
       return [
@@ -321,7 +330,6 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
       ];
     }
 
-    // practicas
     return [
       { label: 'Mi cuenta', icon: 'person', route: '/mi-cuenta' },
       { label: 'Estudiantes', icon: 'school', route: '/estudiantes' },

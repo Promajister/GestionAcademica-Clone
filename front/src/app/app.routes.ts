@@ -157,7 +157,7 @@ export const routes: Routes = [
   {
     path: 'reportes/historico',
     canActivate: [authGuard, RoleGuard],
-    data: { roles: [ROLES.JEFATURA,ROLES] },
+    data: { roles: [ROLES.JEFATURA, ROLES.PRACTICAS] },
     loadComponent: () =>
       import('./components/reportes-historico/reportes-historico.component')
         .then(m => m.ReportesHistoricoComponent),
@@ -175,7 +175,7 @@ export const routes: Routes = [
   {
     path: 'vinculacion/actividades-pm/gestion',
     canActivate: [authGuard, roleGuard],
-    data: { allowedRoles: ['jefatura'] }, 
+    data: { allowedRoles: ['jefatura', 'vinculacion'] },
     loadComponent: () =>
       import('./components/gestion/actividades-pm-gestion.component')
         .then(m => m.ActividadesPmGestionComponent),
