@@ -426,8 +426,8 @@ model ActividadVinculacion {
   tipoActividad String // "Feria Vocacional" | "Jornada Pedagogica" | "Taller Remedial" | "Congreso Academico" | "Alternancia Pedagogica" | "Salida a Terreno"
 
   nombre      String
-  objetivo    String
-  descripcion String
+  objetivo    String @db.Text
+  descripcion String @db.Text
 
   tipoVinculacion String
   areaVinculacion String

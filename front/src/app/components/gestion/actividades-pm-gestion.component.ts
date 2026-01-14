@@ -333,8 +333,8 @@ export class ActividadesPmGestionComponent implements OnInit {
                 ['Codigo', 'Unidad'],
                 data.unidades,
                 (u: any) => [
-                  this.safe(u?.cod ?? u?.codigo),
-                  this.safe(u?.unidad ?? u?.nombre ?? u?.unidad?.nombre),
+                  this.safe(this.getUnidadCodigo(u)),
+                  this.safe(this.getUnidadNombre(u)),
                 ],
                 colors,
               );
@@ -350,7 +350,11 @@ export class ActividadesPmGestionComponent implements OnInit {
                 'Responsables',
                 ['RUT', 'Nombre', 'Tipo'],
                 data.responsables,
-                (r: any) => [this.safe(r?.rut), this.safe(r?.nombre), this.safe(r?.tipo)],
+                (r: any) => [
+                  this.safe(this.getResponsableRut(r)),
+                  this.safe(this.getResponsableNombre(r)),
+                  this.safe(this.getResponsableTipo(r)),
+                ],
                 colors,
               );
 
@@ -365,7 +369,11 @@ export class ActividadesPmGestionComponent implements OnInit {
                 'Equipo de trabajo',
                 ['RUT', 'Nombre', 'Tipo'],
                 data.equipoTrabajo,
-                (e: any) => [this.safe(e?.rut), this.safe(e?.nombre), this.safe(e?.tipo ?? e?.equipo)],
+                (e: any) => [
+                  this.safe(this.getEquipoRut(e)),
+                  this.safe(this.getEquipoNombre(e)),
+                  this.safe(this.getEquipoTipo(e)),
+                ],
                 colors,
               );
 
@@ -379,7 +387,7 @@ export class ActividadesPmGestionComponent implements OnInit {
                 contentW,
                 'Financiamiento',
                 ['Categoria', 'Tipo', 'Monto'],
-                data.financiamientos,
+                this.withFinanciamientoTotal(data.financiamientos),
                 (f: any) => [
                   this.safe(f?.categoria ?? f?.finCategoria),
                   this.safe(f?.tipoFinanciamiento ?? f?.tipo),
@@ -556,13 +564,17 @@ export class ActividadesPmGestionComponent implements OnInit {
                 Descripcion: this.safe(proyecto.descripcion ?? data.base?.descripcion),
                 Resultados: this.safe(proyecto.resultados ?? data.base?.resultados),
                 Unidades: this.joinList(data.unidades, (u: any) =>
-                  [u?.cod ?? u?.codigo, u?.unidad ?? u?.nombre ?? u?.unidad?.nombre].filter(Boolean).join(' - '),
+                  [this.getUnidadCodigo(u), this.getUnidadNombre(u)].filter(Boolean).join(' - '),
                 ),
                 Responsables: this.joinList(data.responsables, (r: any) =>
-                  [r?.rut, r?.nombre, r?.tipo].filter(Boolean).join(' - '),
+                  [this.getResponsableRut(r), this.getResponsableNombre(r), this.getResponsableTipo(r)]
+                    .filter(Boolean)
+                    .join(' - '),
                 ),
                 'Equipo trabajo': this.joinList(data.equipoTrabajo, (e: any) =>
-                  [e?.rut, e?.nombre, e?.tipo ?? e?.equipo].filter(Boolean).join(' - '),
+                  [this.getEquipoRut(e), this.getEquipoNombre(e), this.getEquipoTipo(e)]
+                    .filter(Boolean)
+                    .join(' - '),
                 ),
                 Financiamiento: this.joinList(data.financiamientos, (f: any) =>
                   [f?.categoria ?? f?.finCategoria, f?.tipoFinanciamiento ?? f?.tipo, f?.monto ?? f?.finMonto]
@@ -713,14 +725,14 @@ export class ActividadesPmGestionComponent implements OnInit {
     const participantes = data.participantes ?? {};
     if (participantes && typeof participantes === 'object') {
       for (const key of Object.keys(participantes)) {
-        rows.push([key, this.safe(participantes[key])]);
+        rows.push([this.formatParticipanteKey(key), this.safe(participantes[key])]);
       }
     }
 
     const matrices = data.matricesParticipantes ?? [];
     if (Array.isArray(matrices) && matrices.length) {
-      matrices.forEach((m: any, idx: number) => {
-        rows.push([`Matriz ${idx + 1}`, this.safe(JSON.stringify(m))]);
+      matrices.forEach((m: any) => {
+        rows.push(...this.formatMatrizParticipantes(m));
       });
     }
 
@@ -748,6 +760,7 @@ export class ActividadesPmGestionComponent implements OnInit {
     },
   ): number {
     if (!items || items.length === 0) return y;
+    const sectionGap = 14;
 
     if (y > pageHeight - bottom - 40) {
       doc.addPage();
@@ -782,7 +795,7 @@ export class ActividadesPmGestionComponent implements OnInit {
       alternateRowStyles: { fillColor: colors.zebra as any },
     });
 
-    return (doc as any).lastAutoTable?.finalY + 8 || y + 8;
+    return (doc as any).lastAutoTable?.finalY + sectionGap || y + sectionGap;
   }
 
   private renderKeyValueSection(
@@ -803,6 +816,7 @@ export class ActividadesPmGestionComponent implements OnInit {
       zebra: [number, number, number];
     },
   ): number {
+    const sectionGap = 14;
     const filtered = rows.filter((r) => {
       const value = Array.isArray(r) ? r[1] : null;
       return value !== null && value !== undefined && value !== '' && value !== '-';
@@ -845,7 +859,7 @@ export class ActividadesPmGestionComponent implements OnInit {
       alternateRowStyles: { fillColor: colors.zebra as any },
     });
 
-    return (doc as any).lastAutoTable?.finalY + 8 || y + 8;
+    return (doc as any).lastAutoTable?.finalY + sectionGap || y + sectionGap;
   }
 
   private async loadImageAsDataURLSafe(path: string): Promise<string | null> {
@@ -946,6 +960,144 @@ export class ActividadesPmGestionComponent implements OnInit {
   private safe(value: any): string {
     if (value === null || value === undefined || value === '') return '-';
     return String(value);
+  }
+
+  private getUnidadCodigo(unidad: any): string | null {
+    if (!unidad) return null;
+    const nested = unidad?.unidad;
+    return (
+      unidad?.cod ??
+      unidad?.codigo ??
+      (typeof nested === 'object' ? nested?.codigo : null) ??
+      unidad?.unidadCodigo ??
+      null
+    );
+  }
+
+  private getUnidadNombre(unidad: any): string | null {
+    if (!unidad) return null;
+    const nested = unidad?.unidad;
+    if (typeof nested === 'string') return nested;
+    return (
+      (typeof nested === 'object' ? nested?.nombre : null) ??
+      unidad?.nombre ??
+      unidad?.unidadNombre ??
+      null
+    );
+  }
+
+  private getResponsableRut(responsable: any): string | null {
+    if (!responsable) return null;
+    const nested = responsable?.responsable;
+    return (
+      responsable?.rut ??
+      (typeof nested === 'object' ? nested?.rut : null) ??
+      responsable?.responsableRut ??
+      null
+    );
+  }
+
+  private getResponsableNombre(responsable: any): string | null {
+    if (!responsable) return null;
+    const nested = responsable?.responsable;
+    if (typeof nested === 'string') return nested;
+    return (
+      (typeof nested === 'object' ? nested?.nombre : null) ??
+      responsable?.nombre ??
+      responsable?.responsableNombre ??
+      null
+    );
+  }
+
+  private getResponsableTipo(responsable: any): string | null {
+    if (!responsable) return null;
+    const nested = responsable?.responsable;
+    return (
+      responsable?.tipo ??
+      (typeof nested === 'object' ? nested?.tipo : null) ??
+      responsable?.responsableTipo ??
+      null
+    );
+  }
+
+  private getEquipoRut(equipo: any): string | null {
+    if (!equipo) return null;
+    const nested = equipo?.equipoTrabajo;
+    return (
+      equipo?.rut ??
+      (typeof nested === 'object' ? nested?.rut : null) ??
+      equipo?.equipoRut ??
+      null
+    );
+  }
+
+  private getEquipoNombre(equipo: any): string | null {
+    if (!equipo) return null;
+    const nested = equipo?.equipoTrabajo;
+    if (typeof nested === 'string') return nested;
+    return (
+      (typeof nested === 'object' ? nested?.nombre : null) ??
+      equipo?.nombre ??
+      equipo?.equipoNombre ??
+      null
+    );
+  }
+
+  private getEquipoTipo(equipo: any): string | null {
+    if (!equipo) return null;
+    return equipo?.tipo ?? equipo?.equipo ?? equipo?.equipoTipo ?? null;
+  }
+
+  private withFinanciamientoTotal(financiamientos: any[]): any[] {
+    if (!Array.isArray(financiamientos) || financiamientos.length === 0) return [];
+    let total = 0;
+
+    financiamientos.forEach((f) => {
+      const raw = f?.monto ?? f?.finMonto;
+      const n = Number(raw);
+      if (!Number.isNaN(n)) total += n;
+    });
+
+    return [
+      ...financiamientos,
+      { categoria: 'Total', tipo: '', monto: total },
+    ];
+  }
+
+  private formatParticipanteKey(key: string): string {
+    return String(key)
+      .replace(/__+/g, ' - ')
+      .replace(/_/g, ' ')
+      .trim();
+  }
+
+  private formatMatrizParticipantes(matriz: any): RowInput[] {
+    if (!matriz || typeof matriz !== 'object') return [];
+
+    const tipoRaw = String(matriz?.tipoParticipante ?? '').toUpperCase();
+    const tipo =
+      tipoRaw === 'ASISTENTE'
+        ? 'Asistentes'
+        : tipoRaw === 'EXPOSITOR'
+          ? 'Expositores'
+          : this.safe(matriz?.tipoParticipante);
+
+    const fields: Array<[string, string]> = [
+      ['directivosUta', 'Directivos UTA'],
+      ['docentesUta', 'Docentes UTA'],
+      ['estudiantesUta', 'Estudiantes UTA'],
+      ['funcionariosGestionUta', 'Funcionarios Gestion UTA'],
+      ['exalumnos', 'Exalumnos'],
+      ['otrosExternos', 'Otros externos'],
+    ];
+
+    const rows: RowInput[] = [];
+    for (const [key, label] of fields) {
+      if (matriz[key] === null || matriz[key] === undefined) continue;
+      rows.push([`${tipo} - ${label}`, this.safe(matriz[key])]);
+    }
+
+    return rows;
   }
 
   private joinList(list: any[], mapFn: (item: any) => string): string {
