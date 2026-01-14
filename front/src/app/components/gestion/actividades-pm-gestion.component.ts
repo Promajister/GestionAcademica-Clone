@@ -227,7 +227,7 @@ export class ActividadesPmGestionComponent implements OnInit {
     };
 
     if (!inicio && !termino) return '-';
-    return `${f(inicio)} → ${f(termino)}`;
+    return `${f(inicio)} - ${f(termino)}`;
   }
 
   eliminar(row: any): void {
@@ -296,8 +296,8 @@ export class ActividadesPmGestionComponent implements OnInit {
 
             const generatedText = `Generado: ${new Date().toLocaleString('es-CL')}`;
             const headerData = {
-              title: 'REPORTE DE ACREDITACION',
-              subtitle: 'Registro completo de actividades',
+              title: 'REPORTE DE ACREDITACIÓN',
+              subtitle: 'Registro completo de actividades de vinculación',
               generatedText,
             };
 
@@ -345,7 +345,6 @@ export class ActividadesPmGestionComponent implements OnInit {
 
               autoTable(doc, {
                 startY: y,
-                head: [[this.normalizeTableText('Campo'), this.normalizeTableText('Valor')]],
                 body: generalRowsNormalized,
                 margin: { left: margin, right: margin, top, bottom },
                 tableWidth: contentW,
@@ -357,15 +356,9 @@ export class ActividadesPmGestionComponent implements OnInit {
                   lineColor: colors.line as any,
                   lineWidth: 0.8,
                 },
-                columnStyles: { 0: { cellWidth: 170 } },
-                headStyles: {
-                  fillColor: colors.tableHead as any,
-                  textColor: colors.text as any,
-                  fontStyle: 'bold',
-                  lineColor: colors.border as any,
-                  lineWidth: 1,
-                },
+                columnStyles: { 0: { cellWidth: 170, fontStyle: 'bold' } },
                 alternateRowStyles: { fillColor: colors.zebra as any },
+                showHead: 'never',
               });
 
               y = (doc as any).lastAutoTable?.finalY + 10 || y + 10;
@@ -379,7 +372,7 @@ export class ActividadesPmGestionComponent implements OnInit {
                 pageHeight,
                 contentW,
                 'Unidades',
-                ['Codigo', 'Unidad'],
+                ['Código', 'Unidad'],
                 data.unidades,
                 (u: any) => [
                   this.safe(this.getUnidadCodigo(u)),
@@ -435,7 +428,7 @@ export class ActividadesPmGestionComponent implements OnInit {
                 pageHeight,
                 contentW,
                 'Financiamiento',
-                ['Categoria', 'Tipo', 'Monto'],
+                ['Categoría', 'Tipo', 'Monto'],
                 this.withFinanciamientoTotal(data.financiamientos),
                 (f: any) => [
                   this.safe(f?.categoria ?? f?.finCategoria),
@@ -483,7 +476,7 @@ export class ActividadesPmGestionComponent implements OnInit {
                 bottom,
                 pageHeight,
                 contentW,
-                'Difusion',
+                'Difusión',
                 ['Medio', 'URL'],
                 data.difusiones,
                 (d: any) => [this.safe(d?.medio ?? d?.difusionEquipo), this.safe(d?.url ?? d?.difusionUrl)],
@@ -500,7 +493,7 @@ export class ActividadesPmGestionComponent implements OnInit {
                   bottom,
                   pageHeight,
                   contentW,
-                  'Difusion',
+                  'Difusión',
                   singleDifusionRows,
                   colors,
                 );
@@ -572,7 +565,7 @@ export class ActividadesPmGestionComponent implements OnInit {
                 colors,
               );
 
-              const participantesTable = this.buildParticipantesTable(data);
+              const participantesTable = this.buildParticipantesTableWithTotal(data);
               if (participantesTable.length) {
                 y = this.renderListSection(
                   doc,
@@ -588,7 +581,7 @@ export class ActividadesPmGestionComponent implements OnInit {
                     'DIRECTIVOS (UTA)',
                     'DOCENTES (UTA)',
                     'ESTUDIANTES (UTA)',
-                    'FUNCIONARIOS DE GESTION (UTA)',
+                    'FUNCIONARIOS DE GESTIÓN (UTA)',
                     'EXALUMNOS',
                     'OTROS (EXTERNOS)',
                   ],
@@ -656,8 +649,8 @@ export class ActividadesPmGestionComponent implements OnInit {
 
             const generatedText = `Generado: ${new Date().toLocaleString('es-CL')}`;
             const headerData = {
-              title: 'REPORTE DE ACTIVIDADES DE VINCULACION',
-              subtitle: 'Campos clave de actividades',
+              title: 'REPORTE DE ACTIVIDADES DE VINCULACIÓN',
+              subtitle: 'Campos clave de actividades de vinculación',
               generatedText,
             };
 
@@ -678,7 +671,6 @@ export class ActividadesPmGestionComponent implements OnInit {
                 proyecto?.fechaInicio ?? data.base?.fechaInicio,
                 proyecto?.fechaTermino ?? data.base?.fechaTermino,
               );
-              const participantes = this.getTotalParticipantes(data);
               const descripcion = this.safe(proyecto?.descripcion ?? data.base?.descripcion);
 
               if (index > 0) {
@@ -691,13 +683,13 @@ export class ActividadesPmGestionComponent implements OnInit {
               doc.setFont('helvetica', 'bold');
               doc.setFontSize(12);
               doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
-              doc.text(`Actividad ${index + 1}`, margin + 8, y + 2);
+              const nombreActividad = this.safe(proyecto?.nombre ?? data.base?.nombre);
+              doc.text(nombreActividad, margin + 8, y + 2);
 
               const rows: RowInput[] = [
                 ['Tipo de actividad', tipoLabel],
                 ['Fecha de la actividad', fecha],
-                ['Cantidad de participantes', this.safe(participantes)],
-                ['Descripcion', descripcion],
+                ['Descripción', descripcion],
               ];
 
               y += 18;
@@ -714,6 +706,90 @@ export class ActividadesPmGestionComponent implements OnInit {
                 colors,
               );
 
+              const difusionRows = this.buildDifusionRows(data).map((row) => {
+                if (Array.isArray(row) && row[0] === 'Medio') {
+                  return ['Tipo de medio', row[1]];
+                }
+                return row;
+              });
+              if (difusionRows.length) {
+              y = this.renderKeyValueSectionWithUrlStyle(
+                doc,
+                y,
+                margin,
+                  top,
+                  bottom,
+                  pageHeight,
+                  contentW,
+                  'Difusión',
+                  difusionRows,
+                  colors,
+                );
+              }
+
+              y = this.renderListSection(
+                doc,
+                y,
+                margin,
+                top,
+                bottom,
+                pageHeight,
+                contentW,
+                'Unidades',
+                ['Código', 'Unidad'],
+                data.unidades,
+                (u: any) => [
+                  this.safe(this.getUnidadCodigo(u)),
+                  this.safe(this.getUnidadNombre(u)),
+                ],
+                colors,
+              );
+
+              y = this.renderListSection(
+                doc,
+                y,
+                margin,
+                top,
+                bottom,
+                pageHeight,
+                contentW,
+                'Financiamiento',
+                ['Categoría', 'Tipo', 'Monto'],
+                this.withFinanciamientoTotal(data.financiamientos),
+                (f: any) => [
+                  this.safe(f?.categoria ?? f?.finCategoria),
+                  this.safe(f?.tipoFinanciamiento ?? f?.tipo),
+                  this.safe(f?.monto ?? f?.finMonto),
+                ],
+                colors,
+              );
+
+              const participantesTable = this.buildParticipantesTableWithTotal(data);
+              if (participantesTable.length) {
+                y = this.renderListSection(
+                  doc,
+                  y,
+                  margin,
+                  top,
+                  bottom,
+                  pageHeight,
+                  contentW,
+                  'Participantes',
+                  [
+                    'Tipo participante',
+                    'DIRECTIVOS (UTA)',
+                    'DOCENTES (UTA)',
+                    'ESTUDIANTES (UTA)',
+                    'FUNCIONARIOS DE GESTIÓN (UTA)',
+                    'EXALUMNOS',
+                    'OTROS (EXTERNOS)',
+                  ],
+                  participantesTable,
+                  (row: any) => row,
+                  colors,
+                );
+              }
+
               y += 6;
             });
 
@@ -724,7 +800,7 @@ export class ActividadesPmGestionComponent implements OnInit {
               this.drawPdfFooter(doc, i, totalPages);
             }
 
-            doc.save('reporte_acreditacion_resumen.pdf');
+            doc.save('reporte_vinculacion.pdf');
           } catch {
             this.exportError = 'Error al generar PDF.';
           }
@@ -914,13 +990,13 @@ export class ActividadesPmGestionComponent implements OnInit {
     const rows: RowInput[] = [
       ['Nombre', this.safe(p?.nombre ?? data.base?.nombre)],
       ['Objetivo', this.safe(p?.objetivo ?? data.base?.objetivo)],
-      ['Descripcion', this.safe(p?.descripcion ?? data.base?.descripcion)],
-      ['Tipo vinculacion', this.safe(p?.tipoVinculacion ?? data.base?.tipoVinculacion)],
-      ['Tipo vinculacion otro', this.safe(p?.tipoVinculacionOtro ?? data.base?.tipoVinculacionOtro)],
-      ['Area vinculacion', this.safe(p?.areaVinculacion ?? data.base?.areaVinculacion)],
-      ['Area impacto', this.safe(p?.areaImpacto ?? data.base?.areaImpacto)],
+      ['Descripción', this.safe(p?.descripcion ?? data.base?.descripcion)],
+      ['Tipo vinculación', this.safe(p?.tipoVinculacion ?? data.base?.tipoVinculacion)],
+      ['Tipo vinculación otro', this.safe(p?.tipoVinculacionOtro ?? data.base?.tipoVinculacionOtro)],
+      ['Área vinculación', this.safe(p?.areaVinculacion ?? data.base?.areaVinculacion)],
+      ['Área impacto', this.safe(p?.areaImpacto ?? data.base?.areaImpacto)],
       ['Fecha inicio', this.formatDate(p?.fechaInicio ?? data.base?.fechaInicio)],
-      ['Fecha termino', this.formatDate(p?.fechaTermino ?? data.base?.fechaTermino)],
+      ['Fecha término', this.formatDate(p?.fechaTermino ?? data.base?.fechaTermino)],
       ['Sede', this.safe(p?.sede ?? data.base?.sede)],
       ['Lugar', this.safe(p?.lugar ?? data.base?.lugar)],
       ['Proyecto asociado', this.safe(p?.proyectoAsociado ?? p?.proyecto ?? data.base?.proyectoAsociado ?? data.base?.proyecto)],
@@ -928,22 +1004,22 @@ export class ActividadesPmGestionComponent implements OnInit {
     ];
 
     const extras = [
-      ['Institucion visitada', p?.feriaInstitucionVisitada],
+      ['Institución visitada', p?.feriaInstitucionVisitada],
       ['Estudiante feria RUT', p?.feriaEstRut],
       ['Estudiante feria nombre', p?.feriaEstNombre],
       ['Tema central', p?.jornadaTemaCentral],
       ['Talleres', p?.jornadaTalleres],
       ['Responsable taller', p?.jornadaResponsableTaller],
-      ['Numero asistentes', p?.jornadaNumAsistentes],
-      ['Nivel satisfaccion', p?.jornadaSatisfaccion],
+      ['Número asistentes', p?.jornadaNumAsistentes],
+      ['Nivel satisfacción', p?.jornadaSatisfaccion],
       ['Asignatura', p?.tallerAsignatura],
       ['Competencia', p?.tallerCompetencia],
       ['Estudiantes beneficiados', p?.tallerNombreEstudiantesBeneficiados],
       ['Evento', p?.congresoNombreEvento],
       ['Ponencia', p?.congresoPonenciaPresentada],
       ['Relator', p?.congresoRelator],
-      ['Numero asistentes', p?.congresoNumAsistentes],
-      ['Nivel satisfaccion', p?.congresoSatisfaccion],
+      ['Número asistentes', p?.congresoNumAsistentes],
+      ['Nivel satisfacción', p?.congresoSatisfaccion],
       ['Colegio asociado', p?.alternanciaColegioAsociado],
       ['Docente colaborador', p?.alternanciaDocenteColaborador],
       ['Asignatura alternancia', p?.alternanciaAsignatura],
@@ -951,7 +1027,7 @@ export class ActividadesPmGestionComponent implements OnInit {
       ['Docente asignatura', p?.alternanciaDocenteAsignatura],
       ['Estudiantes participantes', p?.alternanciaEstudiantesParticipantes],
       ['Nombre actividad', p?.alternanciaNombreActividad],
-      ['Objetivo pedagogico', p?.salidaObjetivoPedagogico],
+      ['Objetivo pedagógico', p?.salidaObjetivoPedagogico],
       ['Asignatura vinculada', p?.salidaAsignaturaVinculada],
       ['Profesor responsable', p?.salidaProfesorResponsable],
       ['Estudiante salida RUT', p?.salidaEstRut],
@@ -992,6 +1068,32 @@ export class ActividadesPmGestionComponent implements OnInit {
     }
 
     return rows;
+  }
+
+  private buildParticipantesTableWithTotal(data: any): RowInput[] {
+    const rows = this.buildParticipantesTable(data);
+    if (!rows.length) return rows;
+
+    let total = 0;
+    rows.forEach((row) => {
+      if (!Array.isArray(row)) return;
+      for (let i = 1; i <= 6; i += 1) {
+        const value = Number(row[i]);
+        if (!Number.isNaN(value)) total += value;
+      }
+    });
+
+    const totalRow: RowInput = [
+      'Total participantes',
+      this.safe(total),
+      '-',
+      '-',
+      '-',
+      '-',
+      '-',
+    ];
+
+    return [...rows, totalRow];
   }
 
   private buildDifusionRows(data: any): RowInput[] {
@@ -1090,6 +1192,83 @@ export class ActividadesPmGestionComponent implements OnInit {
     return (doc as any).lastAutoTable?.finalY + sectionGap || y + sectionGap;
   }
 
+  private renderKeyValueSectionWithUrlStyle(
+    doc: jsPDF,
+    y: number,
+    margin: number,
+    top: number,
+    bottom: number,
+    pageHeight: number,
+    contentW: number,
+    title: string,
+    rows: RowInput[],
+    colors: {
+      text: [number, number, number];
+      line: [number, number, number];
+      border: [number, number, number];
+      tableHead: [number, number, number];
+      zebra: [number, number, number];
+    },
+  ): number {
+    const sectionGap = 14;
+    const filtered = rows.filter((r) => {
+      const value = Array.isArray(r) ? r[1] : null;
+      return value !== null && value !== undefined && value !== '' && value !== '-';
+    });
+
+    if (!filtered.length) return y;
+
+    if (y > pageHeight - bottom - 40) {
+      doc.addPage();
+      y = top;
+    }
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.text(title, margin, y);
+    y += 6;
+
+    const bodyNormalized = filtered.map((row) => this.normalizeTableRow(row));
+
+    autoTable(doc, {
+      startY: y,
+      body: bodyNormalized,
+      margin: { left: margin, right: margin, top, bottom },
+      tableWidth: contentW,
+      styles: {
+        fontSize: 9,
+        cellPadding: 3,
+        overflow: 'linebreak',
+        textColor: colors.text as any,
+        lineColor: colors.line as any,
+        lineWidth: 0.8,
+      },
+      columnStyles: { 0: { cellWidth: 170, fontStyle: 'bold' } },
+      alternateRowStyles: { fillColor: colors.zebra as any },
+      showHead: 'never',
+      didParseCell: (data) => {
+        if (data.section !== 'body') return;
+        if (data.column.index !== 1) return;
+        const row = filtered[data.row.index];
+        if (Array.isArray(row) && row[0] === 'URL') {
+          data.cell.styles.textColor = [37, 99, 235];
+        }
+      },
+      didDrawCell: (data) => {
+        if (data.section !== 'body') return;
+        if (data.column.index !== 1) return;
+        const row = filtered[data.row.index];
+        if (!Array.isArray(row) || row[0] !== 'URL') return;
+        const raw = row[1];
+        const url = typeof raw === 'string' ? raw.trim() : String(raw ?? '').trim();
+        if (!url || url === '-') return;
+        doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, { url });
+      },
+    });
+
+    return (doc as any).lastAutoTable?.finalY + sectionGap || y + sectionGap;
+  }
+
   private renderKeyValueSectionAll(
     doc: jsPDF,
     y: number,
@@ -1124,7 +1303,6 @@ export class ActividadesPmGestionComponent implements OnInit {
 
     autoTable(doc, {
       startY: y,
-      head: [[this.normalizeTableText('Campo'), this.normalizeTableText('Valor')]],
       body: bodyNormalized,
       margin: { left: margin, right: margin, top, bottom },
       tableWidth: contentW,
@@ -1136,15 +1314,9 @@ export class ActividadesPmGestionComponent implements OnInit {
         lineColor: colors.line as any,
         lineWidth: 0.8,
       },
-      columnStyles: { 0: { cellWidth: 170 } },
-      headStyles: {
-        fillColor: colors.tableHead as any,
-        textColor: colors.text as any,
-        fontStyle: 'bold',
-        lineColor: colors.border as any,
-        lineWidth: 1,
-      },
+      columnStyles: { 0: { cellWidth: 170, fontStyle: 'bold' } },
       alternateRowStyles: { fillColor: colors.zebra as any },
+      showHead: 'never',
     });
 
     return (doc as any).lastAutoTable?.finalY + sectionGap || y + sectionGap;
@@ -1189,7 +1361,6 @@ export class ActividadesPmGestionComponent implements OnInit {
 
     autoTable(doc, {
       startY: y,
-      head: [[this.normalizeTableText('Campo'), this.normalizeTableText('Valor')]],
       body: bodyNormalized,
       margin: { left: margin, right: margin, top, bottom },
       tableWidth: contentW,
@@ -1201,15 +1372,9 @@ export class ActividadesPmGestionComponent implements OnInit {
         lineColor: colors.line as any,
         lineWidth: 0.8,
       },
-      columnStyles: { 0: { cellWidth: 170 } },
-      headStyles: {
-        fillColor: colors.tableHead as any,
-        textColor: colors.text as any,
-        fontStyle: 'bold',
-        lineColor: colors.border as any,
-        lineWidth: 1,
-      },
+      columnStyles: { 0: { cellWidth: 170, fontStyle: 'bold' } },
       alternateRowStyles: { fillColor: colors.zebra as any },
+      showHead: 'never',
     });
 
     return (doc as any).lastAutoTable?.finalY + sectionGap || y + sectionGap;
@@ -1298,8 +1463,8 @@ export class ActividadesPmGestionComponent implements OnInit {
     doc.setFontSize(9);
     doc.setTextColor(muted[0], muted[1], muted[2]);
 
-    doc.text('Gestion Academica | Reporte de acreditacion', margin, pageHeight - 18);
-    doc.text(`Pagina ${page} / ${totalPages}`, pageWidth - margin, pageHeight - 18, {
+    doc.text('Gestión Académica | Reporte de acreditación', margin, pageHeight - 18);
+    doc.text(`Página ${page} / ${totalPages}`, pageWidth - margin, pageHeight - 18, {
       align: 'right' as any,
     });
   }
