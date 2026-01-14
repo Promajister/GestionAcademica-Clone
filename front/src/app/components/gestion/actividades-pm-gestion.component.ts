@@ -287,17 +287,21 @@ export class ActividadesPmGestionComponent implements OnInit {
               doc.rect(margin, y - 12, contentW, 22, 'F');
               doc.setFont('helvetica', 'bold');
               doc.setFontSize(12);
+              doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
               doc.text(`${index + 1}. ${nombre}`, margin + 8, y + 2);
               doc.setFont('helvetica', 'normal');
               doc.setFontSize(9);
+              doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
               doc.text(`Tipo: ${tipoLabel}`, margin, (y += 22));
 
               const generalRows = this.buildGeneralRows(data);
               y += 8;
+              const generalRowsNormalized = generalRows.map((row) => this.normalizeTableRow(row));
+
               autoTable(doc, {
                 startY: y,
-                head: [['Campo', 'Valor']],
-                body: generalRows,
+                head: [[this.normalizeTableText('Campo'), this.normalizeTableText('Valor')]],
+                body: generalRowsNormalized,
                 margin: { left: margin, right: margin, top, bottom },
                 tableWidth: contentW,
                 styles: {
@@ -441,6 +445,22 @@ export class ActividadesPmGestionComponent implements OnInit {
                 colors,
               );
 
+              const singleDifusionRows = this.buildDifusionRows(data);
+              if (singleDifusionRows.length) {
+                y = this.renderKeyValueSection(
+                  doc,
+                  y,
+                  margin,
+                  top,
+                  bottom,
+                  pageHeight,
+                  contentW,
+                  'Difusion',
+                  singleDifusionRows,
+                  colors,
+                );
+              }
+
               y = this.renderListSection(
                 doc,
                 y,
@@ -455,6 +475,22 @@ export class ActividadesPmGestionComponent implements OnInit {
                 (e: any) => [this.safe(e?.rut), this.safe(e?.nombre)],
                 colors,
               );
+
+              const evidenciaFilesRows = this.buildEvidenciasArchivosRows(data);
+              if (evidenciaFilesRows.length) {
+                y = this.renderKeyValueSection(
+                  doc,
+                  y,
+                  margin,
+                  top,
+                  bottom,
+                  pageHeight,
+                  contentW,
+                  'Evidencias adjuntas',
+                  evidenciaFilesRows,
+                  colors,
+                );
+              }
 
               y = this.renderKeyValueSection(
                 doc,
@@ -491,9 +527,9 @@ export class ActividadesPmGestionComponent implements OnInit {
                 colors,
               );
 
-              const participantesRows = this.buildParticipantesRows(data);
-              if (participantesRows.length) {
-                y = this.renderKeyValueSection(
+              const participantesTable = this.buildParticipantesTable(data);
+              if (participantesTable.length) {
+                y = this.renderListSection(
                   doc,
                   y,
                   margin,
@@ -502,7 +538,17 @@ export class ActividadesPmGestionComponent implements OnInit {
                   pageHeight,
                   contentW,
                   'Participantes',
-                  participantesRows,
+                  [
+                    'Tipo participante',
+                    'DIRECTIVOS (UTA)',
+                    'DOCENTES (UTA)',
+                    'ESTUDIANTES (UTA)',
+                    'FUNCIONARIOS DE GESTION (UTA)',
+                    'EXALUMNOS',
+                    'OTROS (EXTERNOS)',
+                  ],
+                  participantesTable,
+                  (row: any) => row,
                   colors,
                 );
               }
@@ -548,57 +594,95 @@ export class ActividadesPmGestionComponent implements OnInit {
               const data = this.normalizeActividad(raw);
               const proyecto = data.proyecto ?? {};
 
+              const participantesCols = this.buildParticipantesExcelCols(data);
+
               return {
-                Nombre: this.safe(proyecto.nombre ?? data.base?.nombre),
-                Tipo: this.getTipoActividadLabel(proyecto.tipoActividad ?? data.base?.tipoActividad),
-                'Tipo vinculacion': this.safe(proyecto.tipoVinculacion ?? data.base?.tipoVinculacion),
-                'Tipo vinculacion otro': this.safe(proyecto.tipoVinculacionOtro ?? data.base?.tipoVinculacionOtro),
-                'Area vinculacion': this.safe(proyecto.areaVinculacion ?? data.base?.areaVinculacion),
-                'Area impacto': this.safe(proyecto.areaImpacto ?? data.base?.areaImpacto),
+                Nombre: this.excelText(proyecto.nombre ?? data.base?.nombre),
+                Tipo: this.excelText(this.getTipoActividadLabel(proyecto.tipoActividad ?? data.base?.tipoActividad)),
+                'Tipo vinculacion': this.excelText(proyecto.tipoVinculacion ?? data.base?.tipoVinculacion),
+                'Tipo vinculacion otro': this.excelText(proyecto.tipoVinculacionOtro ?? data.base?.tipoVinculacionOtro),
+                'Area vinculacion': this.excelText(proyecto.areaVinculacion ?? data.base?.areaVinculacion),
+                'Area impacto': this.excelText(proyecto.areaImpacto ?? data.base?.areaImpacto),
                 'Fecha inicio': this.formatDate(proyecto.fechaInicio ?? data.base?.fechaInicio),
                 'Fecha termino': this.formatDate(proyecto.fechaTermino ?? data.base?.fechaTermino),
-                Sede: this.safe(proyecto.sede ?? data.base?.sede),
-                Lugar: this.safe(proyecto.lugar ?? data.base?.lugar),
-                'Proyecto asociado': this.safe(proyecto.proyectoAsociado ?? data.base?.proyectoAsociado),
-                Objetivo: this.safe(proyecto.objetivo ?? data.base?.objetivo),
-                Descripcion: this.safe(proyecto.descripcion ?? data.base?.descripcion),
-                Resultados: this.safe(proyecto.resultados ?? data.base?.resultados),
-                Unidades: this.joinList(data.unidades, (u: any) =>
-                  [this.getUnidadCodigo(u), this.getUnidadNombre(u)].filter(Boolean).join(' - '),
+                Sede: this.excelText(proyecto.sede ?? data.base?.sede),
+                Lugar: this.excelText(proyecto.lugar ?? data.base?.lugar),
+                'Proyecto asociado': this.excelText(
+                  proyecto.proyectoAsociado ?? proyecto.proyecto ?? data.base?.proyectoAsociado ?? data.base?.proyecto,
                 ),
-                Responsables: this.joinList(data.responsables, (r: any) =>
-                  [this.getResponsableRut(r), this.getResponsableNombre(r), this.getResponsableTipo(r)]
-                    .filter(Boolean)
-                    .join(' - '),
+                Objetivo: this.excelText(proyecto.objetivo ?? data.base?.objetivo),
+                Descripcion: this.excelText(proyecto.descripcion ?? data.base?.descripcion),
+                Resultados: this.excelText(proyecto.resultados ?? data.base?.resultados),
+                Unidades: this.excelText(
+                  this.joinList(data.unidades, (u: any) =>
+                    [this.getUnidadCodigo(u), this.getUnidadNombre(u)].filter(Boolean).join(' - '),
+                  ),
                 ),
-                'Equipo trabajo': this.joinList(data.equipoTrabajo, (e: any) =>
-                  [this.getEquipoRut(e), this.getEquipoNombre(e), this.getEquipoTipo(e)]
-                    .filter(Boolean)
-                    .join(' - '),
+                Responsables: this.excelText(
+                  this.joinList(data.responsables, (r: any) =>
+                    [this.getResponsableRut(r), this.getResponsableNombre(r), this.getResponsableTipo(r)]
+                      .filter(Boolean)
+                      .join(' - '),
+                  ),
                 ),
-                Financiamiento: this.joinList(data.financiamientos, (f: any) =>
-                  [f?.categoria ?? f?.finCategoria, f?.tipoFinanciamiento ?? f?.tipo, f?.monto ?? f?.finMonto]
-                    .filter((x) => x !== undefined && x !== null && x !== '')
-                    .join(' - '),
+                'Equipo trabajo': this.excelText(
+                  this.joinList(data.equipoTrabajo, (e: any) =>
+                    [this.getEquipoRut(e), this.getEquipoNombre(e), this.getEquipoTipo(e)]
+                      .filter(Boolean)
+                      .join(' - '),
+                  ),
                 ),
-                'Centros costo': this.joinList(data.centrosCosto, (c: any) => String(c?.tipo ?? c?.nombre ?? '-')),
-                Instituciones: this.joinList(data.instituciones, (i: any) =>
-                  [i?.tipo, i?.nombre].filter(Boolean).join(' - '),
+                Financiamiento: this.excelText(
+                  this.joinList(data.financiamientos, (f: any) =>
+                    [f?.categoria ?? f?.finCategoria, f?.tipoFinanciamiento ?? f?.tipo, f?.monto ?? f?.finMonto]
+                      .filter((x) => x !== undefined && x !== null && x !== '')
+                      .join(' - '),
+                  ),
                 ),
-                Difusion: this.joinList(data.difusiones, (d: any) =>
-                  [d?.medio ?? d?.difusionEquipo, d?.url ?? d?.difusionUrl].filter(Boolean).join(' - '),
+                'Financiamiento total': this.getFinanciamientoTotal(data.financiamientos),
+                'Centros costo': this.excelText(
+                  this.joinList(data.centrosCosto, (c: any) => String(c?.tipo ?? c?.nombre ?? '-')),
                 ),
-                Estudiantes: this.joinList(data.estudiantes, (e: any) =>
-                  [e?.rut, e?.nombre].filter(Boolean).join(' - '),
+                Instituciones: this.excelText(
+                  this.joinList(data.instituciones, (i: any) =>
+                    [i?.tipo, i?.nombre].filter(Boolean).join(' - '),
+                  ),
                 ),
-                Impacto: this.safe(
+                Difusion: this.excelText(
+                  this.joinList(data.difusiones, (d: any) =>
+                    [d?.medio ?? d?.difusionEquipo, d?.url ?? d?.difusionUrl].filter(Boolean).join(' - '),
+                  ),
+                ),
+                'Difusion (medio)': this.excelText(
+                  proyecto.difusion?.medio ??
+                    proyecto.difusion?.difusionEquipo ??
+                    data.base?.medioDifusion ??
+                    data.base?.difusion?.medio ??
+                    data.base?.difusion?.difusionEquipo,
+                ),
+                'Difusion (url)': this.excelText(
+                  proyecto.difusion?.url ??
+                    proyecto.difusion?.difusionUrl ??
+                    data.base?.urlDifusion ??
+                    data.base?.difusion?.url ??
+                    data.base?.difusion?.difusionUrl,
+                ),
+                Estudiantes: this.excelText(
+                  this.joinList(data.estudiantes, (e: any) => [e?.rut, e?.nombre].filter(Boolean).join(' - ')),
+                ),
+                ...participantesCols,
+                Impacto: this.excelText(
                   JSON.stringify({
                     medidaImpacto: data.impacto?.medidaImpacto ?? data.base?.medidaImpacto ?? null,
                     indicadorImpacto: data.impacto?.indicadorImpacto ?? data.base?.indicadorImpacto ?? null,
                   }),
                 ),
-                Evidencias: this.safe(JSON.stringify(data.evidencias ?? {})),
-                Participantes: this.safe(JSON.stringify(data.participantes ?? {})),
+                Evidencias: this.excelText(JSON.stringify(data.evidencias ?? {})),
+                'Evidencias adjuntas': this.excelText(
+                  this.joinList(data.archivosEvidencia, (a: any) =>
+                    [a?.tipo, a?.nombre, a?.url].filter(Boolean).join(' - '),
+                  ),
+                ),
               };
             });
 
@@ -645,6 +729,7 @@ export class ActividadesPmGestionComponent implements OnInit {
       participantes: root?.participantes ?? base?.participantes ?? {},
       impacto: root?.impacto ?? base?.impacto ?? {},
       difusion: root?.difusion ?? base?.difusion ?? {},
+      archivosEvidencia: base?.archivosEvidencia ?? root?.archivosEvidencia ?? [],
       unidades: base?.unidades ?? root?.unidades ?? [],
       responsables: base?.responsables ?? root?.responsables ?? [],
       equipoTrabajo:
@@ -676,7 +761,7 @@ export class ActividadesPmGestionComponent implements OnInit {
       ['Fecha termino', this.formatDate(p?.fechaTermino ?? data.base?.fechaTermino)],
       ['Sede', this.safe(p?.sede ?? data.base?.sede)],
       ['Lugar', this.safe(p?.lugar ?? data.base?.lugar)],
-      ['Proyecto asociado', this.safe(p?.proyectoAsociado ?? data.base?.proyectoAsociado)],
+      ['Proyecto asociado', this.safe(p?.proyectoAsociado ?? p?.proyecto ?? data.base?.proyectoAsociado ?? data.base?.proyecto)],
       ['Resultados', this.safe(p?.resultados ?? data.base?.resultados)],
     ];
 
@@ -720,23 +805,65 @@ export class ActividadesPmGestionComponent implements OnInit {
     return rows;
   }
 
-  private buildParticipantesRows(data: any): RowInput[] {
-    const rows: RowInput[] = [];
-    const participantes = data.participantes ?? {};
-    if (participantes && typeof participantes === 'object') {
-      for (const key of Object.keys(participantes)) {
-        rows.push([this.formatParticipanteKey(key), this.safe(participantes[key])]);
-      }
+  private buildParticipantesTable(data: any): RowInput[] {
+    const matrices = Array.isArray(data.matricesParticipantes) ? data.matricesParticipantes : [];
+    if (matrices.length) {
+      return matrices.map((m: any) => this.mapMatrizToRow(m));
     }
 
-    const matrices = data.matricesParticipantes ?? [];
-    if (Array.isArray(matrices) && matrices.length) {
-      matrices.forEach((m: any) => {
-        rows.push(...this.formatMatrizParticipantes(m));
-      });
+    const participantes = data.participantes ?? {};
+    if (!participantes || typeof participantes !== 'object') return [];
+
+    const rowsByTipo: Record<string, any> = {};
+    for (const [key, value] of Object.entries(participantes)) {
+      if (!key.includes('__')) continue;
+      const [tipoRaw, campoRaw] = key.split('__');
+      const tipo = String(tipoRaw || '').toUpperCase();
+      const campo = String(campoRaw || '').toUpperCase();
+      rowsByTipo[tipo] = rowsByTipo[tipo] || { tipoParticipante: tipo };
+      rowsByTipo[tipo][campo] = value;
+    }
+
+    const rows: RowInput[] = [];
+    for (const row of Object.values(rowsByTipo)) {
+      rows.push(this.mapParticipantesRow(row));
     }
 
     return rows;
+  }
+
+  private buildDifusionRows(data: any): RowInput[] {
+    const difusion = data.difusion ?? {};
+    const rows: RowInput[] = [];
+
+    const medio =
+      difusion?.medio ??
+      difusion?.difusionEquipo ??
+      data.base?.medioDifusion ??
+      data.base?.difusion?.medio ??
+      data.base?.difusion?.difusionEquipo;
+
+    const url =
+      difusion?.url ??
+      difusion?.difusionUrl ??
+      data.base?.urlDifusion ??
+      data.base?.difusion?.url ??
+      data.base?.difusion?.difusionUrl;
+
+    if (medio) rows.push(['Medio', this.safe(medio)]);
+    if (url) rows.push(['URL', this.safe(url)]);
+
+    return rows;
+  }
+
+  private buildEvidenciasArchivosRows(data: any): RowInput[] {
+    const archivos = data.archivosEvidencia ?? [];
+    if (!Array.isArray(archivos) || archivos.length === 0) return [];
+
+    return archivos.map((a: any) => [
+      this.safe(a?.tipo ?? 'Archivo'),
+      this.safe(a?.nombre ?? a?.url),
+    ]);
   }
 
   private renderListSection(
@@ -772,10 +899,13 @@ export class ActividadesPmGestionComponent implements OnInit {
     doc.text(title, margin, y);
     y += 6;
 
+    const headNormalized = head.map((h) => this.normalizeTableText(h));
+    const bodyNormalized = items.map(mapRow).map((row) => this.normalizeTableRow(row));
+
     autoTable(doc, {
       startY: y,
-      head: [head],
-      body: items.map(mapRow),
+      head: [headNormalized],
+      body: bodyNormalized,
       margin: { left: margin, right: margin, top, bottom },
       tableWidth: contentW,
       styles: {
@@ -834,10 +964,12 @@ export class ActividadesPmGestionComponent implements OnInit {
     doc.text(title, margin, y);
     y += 6;
 
+    const bodyNormalized = filtered.map((row) => this.normalizeTableRow(row));
+
     autoTable(doc, {
       startY: y,
-      head: [['Campo', 'Valor']],
-      body: filtered,
+      head: [[this.normalizeTableText('Campo'), this.normalizeTableText('Valor')]],
+      body: bodyNormalized,
       margin: { left: margin, right: margin, top, bottom },
       tableWidth: contentW,
       styles: {
@@ -957,6 +1089,50 @@ export class ActividadesPmGestionComponent implements OnInit {
     return isNaN(d.getTime()) ? String(value) : d.toLocaleDateString('es-CL');
   }
 
+  private excelText(value: any): string {
+    const safe = this.safe(value);
+    return this.normalizeTableText(safe);
+  }
+
+  private normalizeTableRow(row: RowInput): RowInput {
+    if (!Array.isArray(row)) return row;
+    return row.map((cell) => this.normalizeTableText(cell));
+  }
+
+  private normalizeTableText(value: any): any {
+    if (value === null || value === undefined) return value;
+    if (typeof value !== 'string') return value;
+    const trimmed = value.trim();
+    if (!trimmed) return value;
+    const upper = trimmed.toUpperCase();
+    const lower = trimmed.toLowerCase();
+    if (trimmed === upper && trimmed !== lower) {
+      let result = lower;
+      const allowedAcronyms = new Set([
+        'UTA',
+        'RUT',
+        'PDF',
+        'PM',
+        'VCM',
+      ]);
+      const acronyms = trimmed.match(/\b[A-Z]{2,3}\b/g) ?? [];
+      for (const token of acronyms) {
+        if (!allowedAcronyms.has(token)) continue;
+        const tokenLower = token.toLowerCase();
+        const re = new RegExp(`\\b${tokenLower}\\b`, 'g');
+        result = result.replace(re, token);
+      }
+
+      result = result.replace(
+        /(^[^a-zA-ZÁÉÍÓÚÜÑáéíóúüñ]*)([a-zA-ZÁÉÍÓÚÜÑáéíóúüñ])/,
+        (_match, prefix, letter) => `${prefix}${letter.toUpperCase()}`,
+      );
+
+      return result;
+    }
+    return value;
+  }
+
   private safe(value: any): string {
     if (value === null || value === undefined || value === '') return '-';
     return String(value);
@@ -1064,40 +1240,131 @@ export class ActividadesPmGestionComponent implements OnInit {
     ];
   }
 
-  private formatParticipanteKey(key: string): string {
-    return String(key)
-      .replace(/__+/g, ' - ')
-      .replace(/_/g, ' ')
-      .trim();
+  private getFinanciamientoTotal(financiamientos: any[]): number | string {
+    if (!Array.isArray(financiamientos) || financiamientos.length === 0) return '-';
+    let total = 0;
+    for (const f of financiamientos) {
+      const raw = f?.monto ?? f?.finMonto;
+      const n = Number(raw);
+      if (!Number.isNaN(n)) total += n;
+    }
+    return total;
   }
 
-  private formatMatrizParticipantes(matriz: any): RowInput[] {
-    if (!matriz || typeof matriz !== 'object') return [];
-
+  private mapMatrizToRow(matriz: any): RowInput {
     const tipoRaw = String(matriz?.tipoParticipante ?? '').toUpperCase();
-    const tipo =
-      tipoRaw === 'ASISTENTE'
-        ? 'Asistentes'
-        : tipoRaw === 'EXPOSITOR'
-          ? 'Expositores'
-          : this.safe(matriz?.tipoParticipante);
+    return this.mapParticipantesRow({
+      tipoParticipante: tipoRaw,
+      DIRECTIVOS_UTA: matriz?.directivosUta,
+      DOCENTES_UTA: matriz?.docentesUta,
+      ESTUDIANTES_UTA: matriz?.estudiantesUta,
+      FUNCIONARIOS_GESTION_UTA: matriz?.funcionariosGestionUta,
+      EXALUMNOS: matriz?.exalumnos,
+      OTROS_EXTERNOS: matriz?.otrosExternos,
+    });
+  }
 
-    const fields: Array<[string, string]> = [
-      ['directivosUta', 'Directivos UTA'],
-      ['docentesUta', 'Docentes UTA'],
-      ['estudiantesUta', 'Estudiantes UTA'],
-      ['funcionariosGestionUta', 'Funcionarios Gestion UTA'],
-      ['exalumnos', 'Exalumnos'],
-      ['otrosExternos', 'Otros externos'],
+  private mapParticipantesRow(row: any): RowInput {
+    const tipo = String(row?.tipoParticipante ?? '-').toUpperCase();
+    return [
+      tipo || '-',
+      this.safe(row?.DIRECTIVOS_UTA ?? row?.directivosUta ?? 0),
+      this.safe(row?.DOCENTES_UTA ?? row?.docentesUta ?? 0),
+      this.safe(row?.ESTUDIANTES_UTA ?? row?.estudiantesUta ?? 0),
+      this.safe(row?.FUNCIONARIOS_GESTION_UTA ?? row?.funcionariosGestionUta ?? 0),
+      this.safe(row?.EXALUMNOS ?? row?.exalumnos ?? 0),
+      this.safe(row?.OTROS_EXTERNOS ?? row?.otrosExternos ?? 0),
     ];
+  }
 
-    const rows: RowInput[] = [];
-    for (const [key, label] of fields) {
-      if (matriz[key] === null || matriz[key] === undefined) continue;
-      rows.push([`${tipo} - ${label}`, this.safe(matriz[key])]);
+  private buildParticipantesExcelCols(data: any): Record<string, any> {
+    const cols: Record<string, any> = {
+      'Asistentes - Directivos (UTA)': '-',
+      'Asistentes - Docentes (UTA)': '-',
+      'Asistentes - Estudiantes (UTA)': '-',
+      'Asistentes - Funcionarios de gestion (UTA)': '-',
+      'Asistentes - Exalumnos': '-',
+      'Asistentes - Otros (externos)': '-',
+      'Expositores - Directivos (UTA)': '-',
+      'Expositores - Docentes (UTA)': '-',
+      'Expositores - Estudiantes (UTA)': '-',
+      'Expositores - Funcionarios de gestion (UTA)': '-',
+      'Expositores - Exalumnos': '-',
+      'Expositores - Otros (externos)': '-',
+    };
+
+    const matrices = Array.isArray(data.matricesParticipantes) ? data.matricesParticipantes : [];
+    if (matrices.length) {
+      const asistentes = matrices.find((m: any) => String(m?.tipoParticipante).toUpperCase() === 'ASISTENTE') ?? {};
+      const expositores = matrices.find((m: any) => String(m?.tipoParticipante).toUpperCase() === 'EXPOSITOR') ?? {};
+
+      cols['Asistentes - Directivos (UTA)'] = asistentes?.directivosUta ?? 0;
+      cols['Asistentes - Docentes (UTA)'] = asistentes?.docentesUta ?? 0;
+      cols['Asistentes - Estudiantes (UTA)'] = asistentes?.estudiantesUta ?? 0;
+      cols['Asistentes - Funcionarios de gestion (UTA)'] = asistentes?.funcionariosGestionUta ?? 0;
+      cols['Asistentes - Exalumnos'] = asistentes?.exalumnos ?? 0;
+      cols['Asistentes - Otros (externos)'] = asistentes?.otrosExternos ?? 0;
+
+      cols['Expositores - Directivos (UTA)'] = expositores?.directivosUta ?? 0;
+      cols['Expositores - Docentes (UTA)'] = expositores?.docentesUta ?? 0;
+      cols['Expositores - Estudiantes (UTA)'] = expositores?.estudiantesUta ?? 0;
+      cols['Expositores - Funcionarios de gestion (UTA)'] = expositores?.funcionariosGestionUta ?? 0;
+      cols['Expositores - Exalumnos'] = expositores?.exalumnos ?? 0;
+      cols['Expositores - Otros (externos)'] = expositores?.otrosExternos ?? 0;
+
+      return cols;
     }
 
-    return rows;
+    const participantes = data.participantes ?? {};
+    if (!participantes || typeof participantes !== 'object') return cols;
+
+    for (const [key, value] of Object.entries(participantes)) {
+      if (!key.includes('__')) continue;
+      const [tipoRaw, campoRaw] = key.split('__');
+      const tipo = String(tipoRaw || '').toUpperCase();
+      const campo = this.mapParticipanteField(campoRaw);
+      if (!campo) continue;
+
+      const prefix = tipo === 'EXPOSITOR' ? 'Expositores' : 'Asistentes';
+      const label = this.mapParticipanteFieldLabel(campo);
+      if (!label) continue;
+      cols[`${prefix} - ${label}`] = value ?? 0;
+    }
+
+    return cols;
+  }
+
+  private mapParticipanteField(raw: string): string | null {
+    const clean = String(raw ?? '')
+      .toUpperCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+    if (clean.includes('DIRECTIVOS')) return 'DIRECTIVOS_UTA';
+    if (clean.includes('DOCENTES')) return 'DOCENTES_UTA';
+    if (clean.includes('ESTUDIANTES')) return 'ESTUDIANTES_UTA';
+    if (clean.includes('FUNCIONARIOS') && clean.includes('GESTION')) return 'FUNCIONARIOS_GESTION_UTA';
+    if (clean.includes('EXALUMNOS')) return 'EXALUMNOS';
+    if (clean.includes('OTROS') && clean.includes('EXTERNOS')) return 'OTROS_EXTERNOS';
+    return null;
+  }
+
+  private mapParticipanteFieldLabel(field: string): string | null {
+    switch (field) {
+      case 'DIRECTIVOS_UTA':
+        return 'Directivos (UTA)';
+      case 'DOCENTES_UTA':
+        return 'Docentes (UTA)';
+      case 'ESTUDIANTES_UTA':
+        return 'Estudiantes (UTA)';
+      case 'FUNCIONARIOS_GESTION_UTA':
+        return 'Funcionarios de gestion (UTA)';
+      case 'EXALUMNOS':
+        return 'Exalumnos';
+      case 'OTROS_EXTERNOS':
+        return 'Otros (externos)';
+      default:
+        return null;
+    }
   }
 
   private joinList(list: any[], mapFn: (item: any) => string): string {
