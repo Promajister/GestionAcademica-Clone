@@ -73,6 +73,8 @@ export class ActividadPmDialogComponent implements OnInit {
   errorMsg = '';
 
   actividad: any = null;
+  resumenIa: string | null = null;
+  regenerandoResumen = false;
 
   form!: FormGroup;
   selectedTabIndex = 0;
@@ -641,6 +643,7 @@ export class ActividadPmDialogComponent implements OnInit {
         const archivoFotos = this.getArchivoEvidencia(archivos, 'FOTOGRAFIA');
 
         this.actividad = { ...root, ...proy };
+        this.resumenIa = root?.resumenIa ?? a?.resumenIa ?? null;
 
         const asistentesGeneric =
           proyBase?.numeroAsistentes ?? root?.numeroAsistentes ?? null;
@@ -794,6 +797,20 @@ export class ActividadPmDialogComponent implements OnInit {
 
   cerrar(): void {
     this.dialogRef.close({ refresh: false });
+  }
+
+  regenerarResumenIa(): void {
+    if (!this.actividad?.id || this.regenerandoResumen) return;
+    this.regenerandoResumen = true;
+    this.api.regenerarResumen(this.actividad.id).subscribe({
+      next: (data) => {
+        this.resumenIa = data?.resumenIa ?? this.resumenIa;
+        this.regenerandoResumen = false;
+      },
+      error: () => {
+        this.regenerandoResumen = false;
+      },
+    });
   }
 
   guardar(): void {

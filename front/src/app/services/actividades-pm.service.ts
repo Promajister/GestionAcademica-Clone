@@ -56,6 +56,10 @@ export class ActividadesPmService {
     return this.http.get<any>(`${this.baseUrl}/${id}`);
   }
 
+  regenerarResumen(id: number | string): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/${id}/resumen-ia`, {});
+  }
+
   obtenerUnidadPorCodigo(codigo: string): Observable<any> {
     return this.http.get<any>(`${this.baseUrl}/unidades/${encodeURIComponent(codigo)}`);
   }

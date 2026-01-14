@@ -124,6 +124,11 @@ export class ActividadesPmController {
     return this.service.findOne(id);
   }
 
+  @Post(':id/resumen-ia')
+  regenerarResumen(@Param('id', ParseIntPipe) id: number) {
+    return this.service.regenerarResumen(id);
+  }
+
   @Put(':id')
   @UseInterceptors(
     FileFieldsInterceptor(

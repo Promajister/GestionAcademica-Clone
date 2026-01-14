@@ -45,10 +45,12 @@ export class ActividadesPmService {
   }) {
     const data = this.buildData(payload, files);
 
-    return this.prisma.actividadVinculacion.create({
+    const created = await this.prisma.actividadVinculacion.create({
       data,
       include: this.includeAll(),
     });
+
+    return created;
   }
 
   async findAll(filters: QueryFilters) {
@@ -118,9 +120,27 @@ export class ActividadesPmService {
     await this.prisma.archivoEvidenciaVinculacion.deleteMany({ where: { actividadVinculacionId: id } });
     await this.prisma.estudianteActividadVinculacion.deleteMany({ where: { actividadVinculacionId: id } });
 
-    return this.prisma.actividadVinculacion.update({
+    const updated = await this.prisma.actividadVinculacion.update({
       where: { id },
       data,
+      include: this.includeAll(),
+    });
+
+    return updated;
+  }
+
+  async regenerarResumen(id: number) {
+    const actividad = await this.prisma.actividadVinculacion.findUnique({
+      where: { id },
+      include: this.includeAll(),
+    });
+
+    if (!actividad) throw new NotFoundException('Actividad no encontrada');
+
+    const resumen = await this.generarResumenIa(actividad);
+    return this.prisma.actividadVinculacion.update({
+      where: { id },
+      data: { resumenIa: resumen ?? this.getResumenFallback() },
       include: this.includeAll(),
     });
   }
@@ -311,6 +331,111 @@ export class ActividadesPmService {
       archivosEvidencia: true,
       estudiantes: true,
     };
+  }
+
+  private async generarResumenIa(actividad: any): Promise<string | null> {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      console.warn('[IA] GEMINI_API_KEY no configurada');
+      return null;
+    }
+
+    const prompt = this.buildResumenPrompt(actividad);
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key=${apiKey}`;
+
+    try {
+      const res = await (globalThis as any).fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.2,
+            maxOutputTokens: 200,
+          },
+        }),
+      });
+
+      if (!res?.ok) {
+        const errText = await res.text().catch(() => '');
+        console.warn('[IA] Respuesta no OK', res?.status, errText);
+        return null;
+      }
+      const json = await res.json();
+      const text = json?.candidates?.[0]?.content?.parts?.map((p: any) => p?.text ?? '').join('').trim();
+      if (!text) {
+        console.warn('[IA] Respuesta vacia');
+      }
+      return text || null;
+    } catch {
+      console.warn('[IA] Error al llamar Gemini');
+      return null;
+    }
+  }
+
+  private buildResumenPrompt(actividad: any): string {
+    const safe = (value: any) => {
+      if (value === null || value === undefined || value === '') return '-';
+      return String(value);
+    };
+    const list = (items: any[], mapFn: (item: any) => string) => {
+      if (!Array.isArray(items) || items.length === 0) return '-';
+      const mapped = items.map(mapFn).filter((x) => x);
+      return mapped.length ? mapped.join(', ') : '-';
+    };
+    const tipoActividad = this.formatTipoActividad(actividad?.tipoActividad);
+    const unidades = list(actividad?.unidades, (u: any) => u?.unidad?.nombre || u?.unidad?.codigo || u?.nombre || '');
+    const responsables = list(actividad?.responsables, (r: any) => r?.responsable?.nombre || r?.nombre || '');
+    const equipos = list(actividad?.equiposTrabajo, (e: any) => e?.equipoTrabajo?.nombre || e?.nombre || '');
+    const fechas = `${safe(actividad?.fechaInicio)} a ${safe(actividad?.fechaTermino)}`;
+    const participantes = this.resumenParticipantes(actividad?.matricesParticipantes ?? []);
+
+    return [
+      'Resume en 3-4 oraciones, en espanol claro y formal, la siguiente actividad de vinculacion.',
+      'No inventes informacion y usa solo los datos entregados.',
+      `Nombre: ${safe(actividad?.nombre)}`,
+      `Tipo actividad: ${safe(tipoActividad)}`,
+      `Objetivo: ${safe(actividad?.objetivo)}`,
+      `Descripcion: ${safe(actividad?.descripcion)}`,
+      `Area vinculacion: ${safe(actividad?.areaVinculacion)}`,
+      `Sede: ${safe(actividad?.sede)}`,
+      `Lugar: ${safe(actividad?.lugar)}`,
+      `Fechas: ${fechas}`,
+      `Resultados: ${safe(actividad?.resultados)}`,
+      `Unidades: ${unidades}`,
+      `Responsables: ${responsables}`,
+      `Participantes (resumen): ${participantes}`,
+      'Entrega solo el resumen, sin listas ni etiquetas.',
+    ].join('\n');
+  }
+
+  private formatTipoActividad(value?: string | null): string {
+    if (!value) return '-';
+    return String(value).replace(/_/g, ' ').toLowerCase();
+  }
+
+  private resumenParticipantes(matrices: any[]): string {
+    if (!Array.isArray(matrices) || matrices.length === 0) return '-';
+    const sumRow = (row: any) => {
+      const keys = [
+        'directivosUta',
+        'docentesUta',
+        'estudiantesUta',
+        'funcionariosGestionUta',
+        'exalumnos',
+        'otrosExternos',
+      ];
+      return keys.reduce((acc, k) => acc + (Number(row?.[k]) || 0), 0);
+    };
+    const asistentes = matrices.find((m: any) => m?.tipoParticipante === 'ASISTENTE');
+    const expositores = matrices.find((m: any) => m?.tipoParticipante === 'EXPOSITOR');
+    const totalAsistentes = asistentes ? sumRow(asistentes) : 0;
+    const totalExpositores = expositores ? sumRow(expositores) : 0;
+    return `asistentes ${totalAsistentes}, expositores ${totalExpositores}`;
+  }
+
+  private getResumenFallback(): string {
+    return 'Resumen no disponible. El texto es generado por IA y puede estar limitado por cuota.';
   }
 
   private normalizeText(value: any): string | null {
