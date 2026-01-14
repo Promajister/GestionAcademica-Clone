@@ -56,6 +56,17 @@
 
         <button
           mat-stroked-button
+          color="primary"
+          class="btn-ghost"
+          type="button"
+          (click)="exportarPdfResumen()"
+          [disabled]="exporting || !rows.length">
+          <mat-icon>picture_as_pdf</mat-icon>
+          PDF Resumen
+        </button>
+
+        <button
+          mat-stroked-button
           color="accent"
           class="btn-ghost"
           type="button"
@@ -206,3 +217,4 @@
   </mat-card>
 
 </div>
+

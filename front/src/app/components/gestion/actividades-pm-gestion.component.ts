@@ -251,7 +251,7 @@ export class ActividadesPmGestionComponent implements OnInit {
 
             const generatedText = `Generado: ${new Date().toLocaleString('es-CL')}`;
             const headerData = {
-              title: 'REPORTE DE ACTIVIDADES DE VINCULACION',
+              title: 'REPORTE DE ACREDITACION',
               subtitle: 'Registro completo de actividades',
               generatedText,
             };
@@ -563,7 +563,7 @@ export class ActividadesPmGestionComponent implements OnInit {
               this.drawPdfFooter(doc, i, totalPages);
             }
 
-            doc.save('reporte_actividades_vinculacion.pdf');
+            doc.save('reporte_acreditacion.pdf');
           } catch {
             this.exportError = 'Error al generar PDF.';
           }
@@ -574,6 +574,121 @@ export class ActividadesPmGestionComponent implements OnInit {
       });
   }
 
+  exportarPdfResumen(): void {
+    if (this.exporting || !this.rows?.length) return;
+
+    this.exportError = null;
+    this.exporting = true;
+
+    this.fetchDetalles()
+      .pipe(finalize(() => (this.exporting = false)))
+      .subscribe({
+        next: async (items) => {
+          try {
+            if (!items.length) {
+              this.exportError = 'No se encontraron actividades para exportar.';
+              return;
+            }
+
+            const doc = new jsPDF({ unit: 'pt', format: 'letter' });
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+
+            const margin = 52;
+            const headerH = 92;
+            const top = headerH + 22;
+            const bottom = 54;
+            const contentW = pageWidth - margin * 2;
+
+            const colors = {
+              text: [0, 0, 0] as [number, number, number],
+              line: [229, 231, 235] as [number, number, number],
+              border: [209, 213, 219] as [number, number, number],
+              tableHead: [241, 245, 249] as [number, number, number],
+              zebra: [248, 250, 252] as [number, number, number],
+              section: [248, 250, 252] as [number, number, number],
+            };
+
+            const generatedText = `Generado: ${new Date().toLocaleString('es-CL')}`;
+            const headerData = {
+              title: 'REPORTE DE ACTIVIDADES DE VINCULACION',
+              subtitle: 'Campos clave de actividades',
+              generatedText,
+            };
+
+            const [logoUta, logoFeh] = await Promise.all([
+              this.loadImageAsDataURLSafe('assets/img/uta.png'),
+              this.loadImageAsDataURLSafe('assets/img/feh.png'),
+            ]);
+
+            this.drawPdfHeader(doc, { ...headerData, logoLeft: logoUta, logoRight: logoFeh });
+
+            let y = top;
+
+            items.forEach((raw, index) => {
+              const data = this.normalizeActividad(raw);
+              const proyecto = data.proyecto ?? {};
+              const tipoLabel = this.getTipoActividadLabel(proyecto?.tipoActividad ?? data.base?.tipoActividad);
+              const fecha = this.formatearRangoFechas(
+                proyecto?.fechaInicio ?? data.base?.fechaInicio,
+                proyecto?.fechaTermino ?? data.base?.fechaTermino,
+              );
+              const participantes = this.getTotalParticipantes(data);
+              const descripcion = this.safe(proyecto?.descripcion ?? data.base?.descripcion);
+
+              if (index > 0) {
+                doc.addPage();
+                y = top;
+              }
+
+              doc.setFillColor(colors.section[0], colors.section[1], colors.section[2]);
+              doc.rect(margin, y - 12, contentW, 22, 'F');
+              doc.setFont('helvetica', 'bold');
+              doc.setFontSize(12);
+              doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
+              doc.text(`Actividad ${index + 1}`, margin + 8, y + 2);
+
+              const rows: RowInput[] = [
+                ['Tipo de actividad', tipoLabel],
+                ['Fecha de la actividad', fecha],
+                ['Cantidad de participantes', this.safe(participantes)],
+                ['Descripcion', descripcion],
+              ];
+
+              y += 18;
+              y = this.renderKeyValueSectionAll(
+                doc,
+                y,
+                margin,
+                top,
+                bottom,
+                pageHeight,
+                contentW,
+                'Detalle',
+                rows,
+                colors,
+              );
+
+              y += 6;
+            });
+
+            const totalPages = (doc as any).getNumberOfPages();
+            for (let i = 1; i <= totalPages; i++) {
+              doc.setPage(i);
+              this.drawPdfHeader(doc, { ...headerData, logoLeft: logoUta, logoRight: logoFeh });
+              this.drawPdfFooter(doc, i, totalPages);
+            }
+
+            doc.save('reporte_acreditacion_resumen.pdf');
+          } catch {
+            this.exportError = 'Error al generar PDF.';
+          }
+        },
+        error: () => {
+          this.exportError = 'Error al exportar PDF.';
+        },
+      });
+  }
   exportarExcel(): void {
     if (this.exporting || !this.rows?.length) return;
 
@@ -928,6 +1043,65 @@ export class ActividadesPmGestionComponent implements OnInit {
     return (doc as any).lastAutoTable?.finalY + sectionGap || y + sectionGap;
   }
 
+  private renderKeyValueSectionAll(
+    doc: jsPDF,
+    y: number,
+    margin: number,
+    top: number,
+    bottom: number,
+    pageHeight: number,
+    contentW: number,
+    title: string,
+    rows: RowInput[],
+    colors: {
+      text: [number, number, number];
+      line: [number, number, number];
+      border: [number, number, number];
+      tableHead: [number, number, number];
+      zebra: [number, number, number];
+    },
+  ): number {
+    const sectionGap = 14;
+
+    if (y > pageHeight - bottom - 40) {
+      doc.addPage();
+      y = top;
+    }
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.text(title, margin, y);
+    y += 6;
+
+    const bodyNormalized = rows.map((row) => this.normalizeTableRow(row));
+
+    autoTable(doc, {
+      startY: y,
+      head: [[this.normalizeTableText('Campo'), this.normalizeTableText('Valor')]],
+      body: bodyNormalized,
+      margin: { left: margin, right: margin, top, bottom },
+      tableWidth: contentW,
+      styles: {
+        fontSize: 9,
+        cellPadding: 3,
+        overflow: 'linebreak',
+        textColor: colors.text as any,
+        lineColor: colors.line as any,
+        lineWidth: 0.8,
+      },
+      columnStyles: { 0: { cellWidth: 170 } },
+      headStyles: {
+        fillColor: colors.tableHead as any,
+        textColor: colors.text as any,
+        fontStyle: 'bold',
+        lineColor: colors.border as any,
+        lineWidth: 1,
+      },
+      alternateRowStyles: { fillColor: colors.zebra as any },
+    });
+
+    return (doc as any).lastAutoTable?.finalY + sectionGap || y + sectionGap;
+  }
   private renderKeyValueSection(
     doc: jsPDF,
     y: number,
@@ -1077,7 +1251,7 @@ export class ActividadesPmGestionComponent implements OnInit {
     doc.setFontSize(9);
     doc.setTextColor(muted[0], muted[1], muted[2]);
 
-    doc.text('Gestion Academica | Reporte de actividades', margin, pageHeight - 18);
+    doc.text('Gestion Academica | Reporte de acreditacion', margin, pageHeight - 18);
     doc.text(`Pagina ${page} / ${totalPages}`, pageWidth - margin, pageHeight - 18, {
       align: 'right' as any,
     });
@@ -1251,6 +1425,36 @@ export class ActividadesPmGestionComponent implements OnInit {
     return total;
   }
 
+  private getTotalParticipantes(data: any): number {
+    const matrices = Array.isArray(data?.matricesParticipantes) ? data.matricesParticipantes : [];
+    const keys = [
+      'directivosUta',
+      'docentesUta',
+      'estudiantesUta',
+      'funcionariosGestionUta',
+      'exalumnos',
+      'otrosExternos',
+    ];
+
+    if (matrices.length) {
+      return matrices.reduce((acc: number, row: any) => {
+        const subtotal = keys.reduce((sum, k) => sum + (Number(row?.[k]) || 0), 0);
+        return acc + subtotal;
+      }, 0);
+    }
+
+    const participantes = data?.participantes ?? {};
+    if (!participantes || typeof participantes !== 'object') return 0;
+
+    let total = 0;
+    for (const [key, value] of Object.entries(participantes)) {
+      if (!String(key).includes('__')) continue;
+      const n = Number(value);
+      if (!Number.isNaN(n)) total += n;
+    }
+
+    return total;
+  }
   private mapMatrizToRow(matriz: any): RowInput {
     const tipoRaw = String(matriz?.tipoParticipante ?? '').toUpperCase();
     return this.mapParticipantesRow({
@@ -1374,3 +1578,5 @@ export class ActividadesPmGestionComponent implements OnInit {
   }
 
 }
+
+
