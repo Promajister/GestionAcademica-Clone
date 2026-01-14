@@ -443,7 +443,7 @@ model ActividadVinculacion {
   ingresos Int @default(0)
 
   proyecto   String?
-  resultados String?
+  resultados String? @db.Text
 
   // difusion (1:1 embebida)
   medioDifusion String?

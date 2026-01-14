@@ -899,36 +899,26 @@ private noSeleccioneValidator(invalidValues: string[] = ['SELECCIONE']) {
     };
 
     this.actividadesPmService.crear(request).subscribe({
-  next: () => {
-    const medios = this.difusiones?.length
-      ? ` (Medio: ${this.difusiones.map((d) => d.medio).join(', ')})`
-      : '';
+      next: (res) => {
+        const id = Number(res?.id ?? 0);
+        if (!Number.isFinite(id) || id <= 0) {
+          this.openDialog(false, 'No se pudo registrar la actividad de vinculaci¢n. Intenta nuevamente.');
+          return;
+        }
+        const medios = this.difusiones?.length
+          ? ` (Medio: ${this.difusiones.map((d) => d.medio).join(', ')})`
+          : '';
 
-    this.dialog.open(this.dialogOk, {
-  data: { message: `Actividad de vinculación registrada exitosamente.` },
-  disableClose: true,
-  autoFocus: false,
-  panelClass: 'ok-dialog',
-});
-
-
-  this.limpiar();
-},
-
-  error: (err) => {
-  console.error('Error guardando actividad', err);
-
-  this.dialog.open(this.dialogOk, {
-  data: { message: 'No se pudo registrar la actividad de vinculación. Intenta nuevamente.' },
-  disableClose: false,
-  autoFocus: false,
-  panelClass: 'ok-dialog',
-});
-
-},
-
-});
-
+        this.openDialog(true, `Actividad de vinculaci¢n registrada exitosamente.${medios}`);
+        this.limpiar();
+      },
+      error: (err) => {
+        console.error('Error guardando actividad', err);
+        const apiMessage = err?.error?.message || err?.message;
+        const fallback = 'No se pudo registrar la actividad de vinculaci¢n. Intenta nuevamente.';
+        this.openDialog(false, apiMessage || fallback);
+      },
+    });
   }
 
   private goToSection(id: string, tabIndex: number) {
@@ -958,8 +948,17 @@ private noSeleccioneValidator(invalidValues: string[] = ['SELECCIONE']) {
     }, 0);
   }
 
-    closeDialogOk(): void {
+  closeDialogOk(): void {
     this.dialog.closeAll();
+  }
+
+  private openDialog(success: boolean, message: string): void {
+    this.dialog.open(this.dialogOk, {
+      data: { message, success },
+      disableClose: !success,
+      autoFocus: false,
+      panelClass: 'ok-dialog',
+    });
   }
 
 

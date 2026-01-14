@@ -1,4 +1,4 @@
-﻿<div class="DialogHeader">
+<div class="DialogHeader">
   <div class="DialogHeaderLeft">
     <div class="DialogAvatar">
       <mat-icon>{{ isView ? 'visibility' : 'edit' }}</mat-icon>
@@ -46,6 +46,52 @@
 
   <form *ngIf="!loading && !errorMsg" [formGroup]="form" class="EditForm">
     <mat-tab-group class="Tabs" animationDuration="200ms" [(selectedIndex)]="selectedTabIndex">
+
+      <mat-tab *ngIf="isView">
+        <ng-template mat-tab-label>
+          <mat-icon class="TabIcon">summarize</mat-icon>
+          Resumen
+        </ng-template>
+
+        <div class="TabBody" data-tab="6">
+          <div class="SectionHead">
+            <mat-icon>summarize</mat-icon>
+            <h3>Resumen</h3>
+          </div>
+
+          <div class="EvidenceCard EvidenceCard--full">
+            <div class="EvidenceIcon">
+              <mat-icon>summarize</mat-icon>
+            </div>
+
+            <div class="EvidenceBody">
+              <div class="SummaryHead">
+                <div>
+                  <h4>Resumen</h4>
+                  <p>Texto generado con IA.</p>
+                </div>
+                <button
+                  mat-stroked-button
+                  type="button"
+                  class="MiniBtn"
+                  [disabled]="regenerandoResumen"
+                  (click)="regenerarResumenIa()"
+                >
+                  <mat-icon>autorenew</mat-icon>
+                  {{ regenerandoResumen ? 'Generando...' : 'Regenerar' }}
+                </button>
+              </div>
+
+              <div class="SummaryBox" *ngIf="resumenIa; else NoResumenIa">
+                {{ resumenIa }}
+              </div>
+              <ng-template #NoResumenIa>
+                <div class="SummaryBox muted">Resumen no disponible.</div>
+              </ng-template>
+            </div>
+          </div>
+        </div>
+      </mat-tab>
 
       <mat-tab>
         <ng-template mat-tab-label>
@@ -882,14 +928,13 @@
           </div>
         </div>
       </mat-tab>
-
       <mat-tab *ngIf="isView">
         <ng-template mat-tab-label>
           <mat-icon class="TabIcon">analytics</mat-icon>
           Evaluación de Impacto
         </ng-template>
 
-        <div class="TabBody" formGroupName="impacto" data-tab="6">
+        <div class="TabBody" formGroupName="impacto" data-tab="7">
           <div class="SectionHead">
             <mat-icon>analytics</mat-icon>
             <h3>Evaluación de Impacto</h3>
@@ -915,7 +960,7 @@
           Evidencias
         </ng-template>
 
-        <div class="TabBody" formGroupName="evidencias" data-tab="7">
+        <div class="TabBody" formGroupName="evidencias" data-tab="8">
           <div class="SectionHead">
             <mat-icon>verified</mat-icon>
             <h3>Evidencias de la actividad</h3>
@@ -1083,53 +1128,19 @@
             </div>
 
             <ng-container *ngIf="isView; else ObservacionesFull">
-              <div class="EvidenceRow">
-                <div class="EvidenceCard">
-                  <div class="EvidenceIcon">
-                    <mat-icon>notes</mat-icon>
-                  </div>
-
-                  <div class="EvidenceBody">
-                    <h4>Observaciones</h4>
-                    <p>Detalles adicionales sobre las evidencias.</p>
-
-                    <mat-form-field appearance="outline" class="FullWidth">
-                      <mat-label>Observaciones</mat-label>
-                      <textarea matInput rows="6" formControlName="observaciones" class="ObsBig" readonly></textarea>
-                    </mat-form-field>
-                  </div>
+              <div class="EvidenceCard EvidenceCard--full">
+                <div class="EvidenceIcon">
+                  <mat-icon>notes</mat-icon>
                 </div>
 
-                <div class="EvidenceCard">
-                  <div class="EvidenceIcon">
-                    <mat-icon>summarize</mat-icon>
-                  </div>
+                <div class="EvidenceBody">
+                  <h4>Observaciones</h4>
+                  <p>Detalles adicionales sobre las evidencias.</p>
 
-                  <div class="EvidenceBody">
-                    <div class="SummaryHead">
-                      <div>
-                        <h4>Resumen</h4>
-                        <p>Texto generado con IA.</p>
-                      </div>
-                      <button
-                        mat-stroked-button
-                        type="button"
-                        class="MiniBtn"
-                        [disabled]="regenerandoResumen"
-                        (click)="regenerarResumenIa()"
-                      >
-                        <mat-icon>autorenew</mat-icon>
-                        {{ regenerandoResumen ? 'Generando...' : 'Regenerar' }}
-                      </button>
-                    </div>
-
-                    <div class="SummaryBox" *ngIf="resumenIa; else NoResumenIa">
-                      {{ resumenIa }}
-                    </div>
-                    <ng-template #NoResumenIa>
-                      <div class="SummaryBox muted">Resumen no disponible.</div>
-                    </ng-template>
-                  </div>
+                  <mat-form-field appearance="outline" class="FullWidth">
+                    <mat-label>Observaciones</mat-label>
+                    <textarea matInput rows="6" formControlName="observaciones" class="ObsBig" readonly></textarea>
+                  </mat-form-field>
                 </div>
               </div>
             </ng-container>
@@ -1174,3 +1185,5 @@
     Guardar
   </button>
 </div>
+
+
