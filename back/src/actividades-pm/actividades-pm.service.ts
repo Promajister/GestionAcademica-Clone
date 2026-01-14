@@ -5,6 +5,8 @@ interface QueryFilters {
   anio?: string;
   tipo?: string;
   q?: string;
+  fechaInicio?: string;
+  fechaTermino?: string;
 }
 
 @Injectable()
@@ -65,8 +67,19 @@ export class ActividadesPmService {
       where.nombre = { contains: search };
     }
 
-
-    if (filters?.anio) {
+    if (filters?.fechaInicio || filters?.fechaTermino) {
+      const start = this.parseDate(filters.fechaInicio);
+      const end = this.parseDate(filters.fechaTermino);
+      if (start && end) {
+        end.setHours(23, 59, 59, 999);
+        where.fechaInicio = { gte: start, lte: end };
+      } else if (start) {
+        where.fechaInicio = { gte: start };
+      } else if (end) {
+        end.setHours(23, 59, 59, 999);
+        where.fechaInicio = { lte: end };
+      }
+    } else if (filters?.anio) {
       const year = Number(filters.anio);
       if (!Number.isNaN(year)) {
         const start = new Date(year, 0, 1);

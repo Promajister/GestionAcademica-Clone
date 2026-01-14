@@ -43,11 +43,13 @@ export class ActividadesPmService {
     return this.http.put(`${this.baseUrl}/${id}`, formData);
   }
 
-  listar(filters?: { anio?: number; tipo?: string; q?: string }): Observable<any[]> {
+  listar(filters?: { anio?: number; tipo?: string; q?: string; fechaInicio?: string; fechaTermino?: string }): Observable<any[]> {
     let params = new HttpParams();
     if (filters?.anio) params = params.set('anio', String(filters.anio));
     if (filters?.tipo) params = params.set('tipo', filters.tipo);
     if (filters?.q) params = params.set('q', filters.q);
+    if (filters?.fechaInicio) params = params.set('fechaInicio', filters.fechaInicio);
+    if (filters?.fechaTermino) params = params.set('fechaTermino', filters.fechaTermino);
 
     return this.http.get<any[]>(this.baseUrl, { params });
   }

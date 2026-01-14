@@ -11,6 +11,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 
 import { ActividadesPmService } from '../../services/actividades-pm.service';
 import { ActividadPmDialogComponent } from './actividad-pm-dialog.component';
@@ -39,7 +40,8 @@ import { saveAs } from 'file-saver';
     MatTableModule,
     MatDialogModule,
     MatTooltipModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    MatCheckboxModule
 ],
   templateUrl: './actividades-pm-gestion.component.html',
   styleUrls: ['./actividades-pm-gestion.component.scss'],
@@ -54,13 +56,15 @@ export class ActividadesPmGestionComponent implements OnInit {
 
   cols = ['nombre', 'tipoActividad', 'fecha', 'sede', 'areaImpacto', 'acciones'];
   rows: any[] = [];
+  selectedIds = new Set<number>();
   exporting = false;
   exportError: string | null = null;
 
   filtroForm = this.fb.group({
-    anio: [new Date().getFullYear()],
     tipo: [''],
     q: [''],
+    fechaInicio: [''],
+    fechaTermino: [''],
   });
 
   tipos: { value: string; label: string }[] = [
@@ -73,7 +77,6 @@ export class ActividadesPmGestionComponent implements OnInit {
     { value: 'SALIDA_A_TERRENO', label: 'Salida a Terreno' },
   ];
 
-  anios = Array.from({ length: 7 }).map((_, i) => new Date().getFullYear() - i);
   private tipoActividadLabelMap: Record<string, string> = {};
 
   ngOnInit(): void {
@@ -101,17 +104,22 @@ export class ActividadesPmGestionComponent implements OnInit {
     this.loading = true;
     this.errorMsg = '';
 
-    const { anio, tipo, q } = this.filtroForm.value;
+    const { tipo, q } = this.filtroForm.value;
 
     this.api
       .listar({
-        anio: anio ?? undefined,
         tipo: tipo || undefined,
         q: q || undefined,
+        fechaInicio: this.safeDateParam(this.filtroForm.value.fechaInicio),
+        fechaTermino: this.safeDateParam(this.filtroForm.value.fechaTermino),
       })
       .subscribe({
         next: (data) => {
           this.rows = data ?? [];
+          const ids = new Set((this.rows ?? []).map((r) => Number(r?.id)).filter((id) => !Number.isNaN(id)));
+          for (const id of Array.from(this.selectedIds)) {
+            if (!ids.has(id)) this.selectedIds.delete(id);
+          }
           this.loading = false;
         },
         error: (err) => {
@@ -159,13 +167,50 @@ export class ActividadesPmGestionComponent implements OnInit {
 
   limpiarFiltros(): void {
     this.filtroForm.patchValue({
-        anio: new Date().getFullYear(),
         tipo: '',
         q: '',
+        fechaInicio: '',
+        fechaTermino: '',
     });
   }
 
   trackById = (_: number, row: any) => row?.id;
+
+  toggleRowSelection(row: any, checked: boolean): void {
+    const id = Number(row?.id);
+    if (Number.isNaN(id)) return;
+    if (checked) {
+      this.selectedIds.add(id);
+    } else {
+      this.selectedIds.delete(id);
+    }
+  }
+
+  toggleAllSelection(checked: boolean): void {
+    if (!checked) {
+      this.selectedIds.clear();
+      return;
+    }
+
+    for (const row of this.rows ?? []) {
+      const id = Number(row?.id);
+      if (!Number.isNaN(id)) this.selectedIds.add(id);
+    }
+  }
+
+  isRowSelected(row: any): boolean {
+    const id = Number(row?.id);
+    if (Number.isNaN(id)) return false;
+    return this.selectedIds.has(id);
+  }
+
+  isAllSelected(): boolean {
+    if (!this.rows?.length) return false;
+    return this.rows.every((row) => {
+      const id = Number(row?.id);
+      return !Number.isNaN(id) && this.selectedIds.has(id);
+    });
+  }
 
   formatearRangoFechas(inicio?: string, termino?: string): string {
     const f = (v?: string) => {
@@ -220,7 +265,7 @@ export class ActividadesPmGestionComponent implements OnInit {
     this.exportError = null;
     this.exporting = true;
 
-    this.fetchDetalles()
+    this.fetchDetalles(this.getSelectedIdsOrAll())
       .pipe(finalize(() => (this.exporting = false)))
       .subscribe({
         next: async (items) => {
@@ -580,7 +625,7 @@ export class ActividadesPmGestionComponent implements OnInit {
     this.exportError = null;
     this.exporting = true;
 
-    this.fetchDetalles()
+    this.fetchDetalles(this.getSelectedIdsOrAll())
       .pipe(finalize(() => (this.exporting = false)))
       .subscribe({
         next: async (items) => {
@@ -818,8 +863,10 @@ export class ActividadesPmGestionComponent implements OnInit {
       });
   }
 
-  private fetchDetalles() {
-    const ids = (this.rows ?? []).map((r) => r?.id).filter((id) => id !== null && id !== undefined);
+  private fetchDetalles(selectedIds?: number[]) {
+    const ids = (selectedIds ?? (this.rows ?? []).map((r) => r?.id))
+      .map((id) => Number(id))
+      .filter((id) => !Number.isNaN(id));
     if (!ids.length) return of<any[]>([]);
 
     return forkJoin(
@@ -1255,6 +1302,17 @@ export class ActividadesPmGestionComponent implements OnInit {
     doc.text(`Pagina ${page} / ${totalPages}`, pageWidth - margin, pageHeight - 18, {
       align: 'right' as any,
     });
+  }
+
+  private safeDateParam(value: any): string | undefined {
+    if (!value) return undefined;
+    const raw = String(value).trim();
+    return raw.length ? raw : undefined;
+  }
+
+  private getSelectedIdsOrAll(): number[] {
+    if (this.selectedIds.size) return Array.from(this.selectedIds);
+    return (this.rows ?? []).map((r) => Number(r?.id)).filter((id) => !Number.isNaN(id));
   }
 
   private formatDate(value?: string | null): string {

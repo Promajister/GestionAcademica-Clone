@@ -51,7 +51,7 @@
           (click)="exportarPdf()"
           [disabled]="exporting || !rows.length">
           <mat-icon>picture_as_pdf</mat-icon>
-          PDF
+          Reporte vinculación
         </button>
 
         <button
@@ -62,7 +62,7 @@
           (click)="exportarPdfResumen()"
           [disabled]="exporting || !rows.length">
           <mat-icon>picture_as_pdf</mat-icon>
-          PDF Resumen
+          Reporte Vinculacion
         </button>
 
         <button
@@ -89,12 +89,13 @@
       <mat-icon class="toolbar__icon">tune</mat-icon>
 
       <mat-form-field appearance="outline" class="toolbar__field toolbar__year">
-        <mat-label>Año</mat-label>
-        <mat-select formControlName="anio">
-          @for (a of anios; track a) {
-            <mat-option [value]="a">{{ a }}</mat-option>
-          }
-        </mat-select>
+        <mat-label>Fecha inicio</mat-label>
+        <input matInput type="date" formControlName="fechaInicio" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="toolbar__field toolbar__year">
+        <mat-label>Fecha termino</mat-label>
+        <input matInput type="date" formControlName="fechaTermino" />
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="toolbar__field">
@@ -161,6 +162,14 @@
           <table class="ga-table">
             <thead>
               <tr>
+                <th class="col-select">
+                  <mat-checkbox
+                    [checked]="isAllSelected()"
+                    [disabled]="!rows.length"
+                    (change)="toggleAllSelection($event.checked)"
+                    aria-label="Seleccionar todas">
+                  </mat-checkbox>
+                </th>
                 <th>Nombre</th>
                 <th>Tipo</th>
                 <th>Fechas</th>
@@ -173,6 +182,13 @@
             <tbody>
               @for (r of rows; track r.id) {
                 <tr>
+                  <td class="col-select">
+                    <mat-checkbox
+                      [checked]="isRowSelected(r)"
+                      (change)="toggleRowSelection(r, $event.checked)"
+                      aria-label="Seleccionar actividad">
+                    </mat-checkbox>
+                  </td>
                   <td class="td-strong">
                     <div class="name-cell">
                       <span class="dot"></span>

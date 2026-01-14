@@ -94,8 +94,10 @@ export class ActividadesPmController {
     @Query('anio') anio?: string,
     @Query('tipo') tipo?: string,
     @Query('q') q?: string,
+    @Query('fechaInicio') fechaInicio?: string,
+    @Query('fechaTermino') fechaTermino?: string,
   ) {
-    return this.service.findAll({ anio, tipo, q });
+    return this.service.findAll({ anio, tipo, q, fechaInicio, fechaTermino });
   }
 
   @Get('unidades/:codigo')
