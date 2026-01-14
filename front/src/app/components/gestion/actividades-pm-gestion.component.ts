@@ -23,6 +23,7 @@ import jsPDF from 'jspdf';
 import autoTable, { type RowInput } from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import { environment } from '../../../environments/environment';
 
 
 @Component({
@@ -50,6 +51,7 @@ export class ActividadesPmGestionComponent implements OnInit {
   private fb = inject(FormBuilder);
   private api = inject(ActividadesPmService);
   private dialog = inject(MatDialog);
+  private readonly apiBaseUrl = environment.apiUrl.replace(/\/api$/, '');
 
   loading = false;
   errorMsg = '';
@@ -516,7 +518,7 @@ export class ActividadesPmGestionComponent implements OnInit {
 
               const evidenciaFilesRows = this.buildEvidenciasArchivosRows(data);
               if (evidenciaFilesRows.length) {
-                y = this.renderKeyValueSection(
+                y = this.renderListSectionWithLinks(
                   doc,
                   y,
                   margin,
@@ -525,7 +527,10 @@ export class ActividadesPmGestionComponent implements OnInit {
                   pageHeight,
                   contentW,
                   'Evidencias adjuntas',
+                  ['Tipo', 'Nombre'],
                   evidenciaFilesRows,
+                  (e: any) => [this.safe(e?.tipo), this.safe(e?.nombre)],
+                  (e: any, colIndex: number) => (colIndex === 1 ? this.normalizeLinkUrl(e?.url) : null),
                   colors,
                 );
               }
@@ -1120,14 +1125,15 @@ export class ActividadesPmGestionComponent implements OnInit {
     return rows;
   }
 
-  private buildEvidenciasArchivosRows(data: any): RowInput[] {
+  private buildEvidenciasArchivosRows(data: any): Array<{ tipo: string; nombre: string; url: string | null }> {
     const archivos = data.archivosEvidencia ?? [];
     if (!Array.isArray(archivos) || archivos.length === 0) return [];
 
-    return archivos.map((a: any) => [
-      this.safe(a?.tipo ?? 'Archivo'),
-      this.safe(a?.nombre ?? a?.url),
-    ]);
+    return archivos.map((a: any) => ({
+      tipo: this.safe(a?.tipo ?? 'Archivo'),
+      nombre: this.safe(a?.nombre ?? a?.url),
+      url: a?.url ? String(a.url) : null,
+    }));
   }
 
   private renderListSection(
@@ -1186,10 +1192,99 @@ export class ActividadesPmGestionComponent implements OnInit {
         lineColor: colors.border as any,
         lineWidth: 1,
       },
+    alternateRowStyles: { fillColor: colors.zebra as any },
+  });
+
+  return (doc as any).lastAutoTable?.finalY + sectionGap || y + sectionGap;
+  }
+
+  private renderListSectionWithLinks(
+    doc: jsPDF,
+    y: number,
+    margin: number,
+    top: number,
+    bottom: number,
+    pageHeight: number,
+    contentW: number,
+    title: string,
+    head: string[],
+    items: any[],
+    mapRow: (item: any) => RowInput,
+    linkResolver: (item: any, colIndex: number) => string | null,
+    colors: {
+      text: [number, number, number];
+      line: [number, number, number];
+      border: [number, number, number];
+      tableHead: [number, number, number];
+      zebra: [number, number, number];
+    },
+  ): number {
+    if (!items || items.length === 0) return y;
+    const sectionGap = 14;
+
+    if (y > pageHeight - bottom - 40) {
+      doc.addPage();
+      y = top;
+    }
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.text(title, margin, y);
+    y += 6;
+
+    const headNormalized = head.map((h) => this.normalizeTableText(h));
+    const bodyNormalized = items.map(mapRow).map((row) => this.normalizeTableRow(row));
+
+    autoTable(doc, {
+      startY: y,
+      head: [headNormalized],
+      body: bodyNormalized,
+      margin: { left: margin, right: margin, top, bottom },
+      tableWidth: contentW,
+      styles: {
+        fontSize: 9,
+        cellPadding: 3,
+        textColor: colors.text as any,
+        lineColor: colors.line as any,
+        lineWidth: 0.8,
+      },
+      headStyles: {
+        fillColor: colors.tableHead as any,
+        textColor: colors.text as any,
+        fontStyle: 'bold',
+        lineColor: colors.border as any,
+        lineWidth: 1,
+      },
       alternateRowStyles: { fillColor: colors.zebra as any },
+      didParseCell: (data) => {
+        if (data.section !== 'body') return;
+        const item = items[data.row.index];
+        const url = linkResolver(item, data.column.index);
+        if (url) data.cell.styles.textColor = [37, 99, 235];
+      },
+      didDrawCell: (data) => {
+        if (data.section !== 'body') return;
+        const item = items[data.row.index];
+        const url = linkResolver(item, data.column.index);
+        if (!url) return;
+        doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, { url });
+      },
     });
 
     return (doc as any).lastAutoTable?.finalY + sectionGap || y + sectionGap;
+  }
+
+  private normalizeLinkUrl(raw?: string | null): string | null {
+    if (!raw) return null;
+    const trimmed = String(raw).trim();
+    if (!trimmed || trimmed === '-') return null;
+    if (/^https?:\/\//i.test(trimmed)) return trimmed;
+
+    const origin = this.apiBaseUrl.replace(/\/$/, '');
+    if (trimmed.startsWith('/')) return `${origin}${trimmed}`;
+    return `${origin}/${trimmed}`;
+
+    return trimmed;
   }
 
   private renderKeyValueSectionWithUrlStyle(

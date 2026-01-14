@@ -8,6 +8,7 @@ import {
   ValidationErrors,
   Validators,
 } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 import { catchError, debounceTime, distinctUntilChanged, of, switchMap } from 'rxjs';
 
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -23,6 +24,8 @@ import { MatOptionModule } from '@angular/material/core';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { ActividadesPmService } from '../../services/actividades-pm.service';
+import { saveAs } from 'file-saver';
+import { environment } from '../../../environments/environment';
 
 export interface ActividadPmDialogData {
   id: number;
@@ -118,7 +121,7 @@ export class ActividadPmDialogComponent implements OnInit {
     'Educación regional',
   ];
   sedes = ['CASA MATRIZ ARICA', 'SEDE IQUIQUE'];
-  proyectos = ['SELECCIONE', 'PLAN DE MEJORA', 'PRACTICAS', 'OTRO'];
+  proyectos = ['SELECCIONE', 'PLAN DE MEJORA', 'PRÁCTICAS', 'OTRO'];
 
   equiposCatalogo = [
     'DOCENTES (UTA)',
@@ -160,6 +163,8 @@ export class ActividadPmDialogComponent implements OnInit {
   documentosFileName = '';
   fotosFileName = '';
 
+  private readonly apiBaseUrl = environment.apiUrl.replace(/\/api$/, '');
+
   showUnidadError = false;
 
   constructor(
@@ -167,6 +172,7 @@ export class ActividadPmDialogComponent implements OnInit {
     private dialogRef: MatDialogRef<ActividadPmDialogComponent>,
     private fb: FormBuilder,
     private api: ActividadesPmService,
+    private http: HttpClient,
   ) {}
 
   get isView(): boolean {
@@ -410,9 +416,31 @@ export class ActividadPmDialogComponent implements OnInit {
   }
 
   openUrl(url?: string): void {
-    const u = String(url ?? '').trim();
-    if (!u) return;
-    window.open(u, '_blank');
+    const resolved = this.normalizeDownloadUrl(url);
+    if (!resolved) return;
+    const filename = this.getFileNameFromUrl(resolved);
+
+    this.http.get(resolved, { responseType: 'blob' }).subscribe({
+      next: (blob) => saveAs(blob, filename || 'archivo'),
+      error: () => window.open(resolved, '_blank'),
+    });
+  }
+
+  private normalizeDownloadUrl(raw?: string | null): string | null {
+    if (!raw) return null;
+    const trimmed = String(raw).trim();
+    if (!trimmed || trimmed === '-') return null;
+    if (/^https?:\/\//i.test(trimmed)) return trimmed;
+
+    const base = this.apiBaseUrl.replace(/\/$/, '');
+    if (trimmed.startsWith('/')) return `${base}${trimmed}`;
+    return `${base}/${trimmed}`;
+  }
+
+  private getFileNameFromUrl(url: string): string {
+    const clean = url.split('?')[0] ?? '';
+    const parts = clean.split('/');
+    return parts[parts.length - 1] || 'archivo';
   }
 
   private fixMojibake(value: string): string {
