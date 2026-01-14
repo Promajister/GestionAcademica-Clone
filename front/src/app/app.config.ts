@@ -1,4 +1,4 @@
-import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
+import { ApplicationConfig, importProvidersFrom, provideZoneChangeDetection } from '@angular/core';
 import { provideRouter, withViewTransitions } from '@angular/router';
 import { routes } from './app.routes';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
@@ -7,6 +7,7 @@ import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/
 import { credentialsInterceptor } from './interceptors/credentials.interceptor';
 import { authTokenInterceptor } from './interceptors/auth-token.interceptor';
 import { refreshTokenInterceptor } from './interceptors/refresh-token.interceptor';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -14,6 +15,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes, withViewTransitions()),
     provideClientHydration(withEventReplay()),
     provideAnimations(),
+    importProvidersFrom(MatSnackBarModule),
     provideHttpClient(
       withFetch(),
       withInterceptors([authTokenInterceptor, credentialsInterceptor, refreshTokenInterceptor]),

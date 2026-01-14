@@ -1,8 +1,9 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
-const API = 'http://localhost:3000/api/reportes';
+const API_URL = `${environment.apiUrl}/reportes`;
 
 export type EstadoPractica = 'EN_CURSO' | 'APROBADO' | 'REPROBADO';
 
@@ -136,11 +137,11 @@ export class ReportesService {
   private http = inject(HttpClient);
 
   getSummary(): Observable<ReportesSummary> {
-    return this.http.get<ReportesSummary>(`${API}/summary`);
+    return this.http.get<ReportesSummary>(`${API_URL}/summary`);
   }
 
   getIndicadores(): Observable<ReportesIndicadores> {
-    return this.http.get<ReportesIndicadores>(`${API}/indicadores`);
+    return this.http.get<ReportesIndicadores>(`${API_URL}/indicadores`);
   }
 
   getSatisfaccion(params: {
@@ -155,20 +156,20 @@ export class ReportesService {
 
     if (params.tipo) q.append('tipo', params.tipo);
 
-    return this.http.get<ReporteSatisfaccion>(`${API}/satisfaccion?${q.toString()}`);
+    return this.http.get<ReporteSatisfaccion>(`${API_URL}/satisfaccion?${q.toString()}`);
   }
 
   getReporteEstudiante(
     rut: string
     ): Observable<ReporteEstudiante | null> {
     return this.http.get<ReporteEstudiante | null>(
-        `${API}/estudiante/${encodeURIComponent(rut)}`
+        `${API_URL}/estudiante/${encodeURIComponent(rut)}`
     );
   }
 
   buscarEstudiantes(nombre: string): Observable<EstudianteSearchItem[]> {
     return this.http.get<EstudianteSearchItem[]>(
-       `${API}/estudiantes/buscar?nombre=${encodeURIComponent(nombre)}`
+       `${API_URL}/estudiantes/buscar?nombre=${encodeURIComponent(nombre)}`
       );
   }
 
@@ -187,7 +188,7 @@ export class ReportesService {
     q.set('orderBy', params?.orderBy ?? 'nombre');
     q.set('orderDir', params?.orderDir ?? 'asc');
 
-    return this.http.get<EstudiantesIndexResponse>(`${API}/estudiantes?${q.toString()}`);
+    return this.http.get<EstudiantesIndexResponse>(`${API_URL}/estudiantes?${q.toString()}`);
   }
     
   getHistorico(params: {
@@ -204,7 +205,7 @@ export class ReportesService {
 
     if (params.tipo) q.append('tipo', params.tipo);
 
-    return this.http.get<ReportesHistoricoResponse>(`${API}/historico?${q.toString()}`);
+    return this.http.get<ReportesHistoricoResponse>(`${API_URL}/historico?${q.toString()}`);
   }
 
 

@@ -12,6 +12,7 @@ import { Router, RouterModule, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { Subscription } from 'rxjs';
 import { AuthService } from '../services/auth.service';
+import { NotificationsService } from '../services/notifications.service';
 import { MatSidenavModule, MatSidenav } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatListModule } from '@angular/material/list';
@@ -63,6 +64,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   private router = inject(Router);
   private platformId = inject(PLATFORM_ID);
   private auth = inject(AuthService);
+  private notifications = inject(NotificationsService);
 
   private readonly photoKey = 'app.profilePhoto';
 
@@ -102,6 +104,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.loadRoleFromStorage();  
     this.loadProfilePhoto();
+    this.notifications.start();
 
     this.navigationSub = this.router.events
       .pipe(filter((event) => event instanceof NavigationEnd))
@@ -240,6 +243,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
       window.removeEventListener('app:close-sidenav', this.closeSidenavListener);
     }
     this.navigationSub?.unsubscribe();
+    this.notifications.stop();
   }
 
   private mapRoleLabel(id: RoleId): string {
