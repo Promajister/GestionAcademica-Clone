@@ -1,7 +1,14 @@
 import { Component, OnInit, ViewChild, TemplateRef } from '@angular/core';
 
 import { CommonModule } from '@angular/common';
-import {AbstractControl,FormBuilder,FormGroup,ReactiveFormsModule,ValidationErrors,Validators} from '@angular/forms';
+import {
+  AbstractControl,
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
 import { catchError, debounceTime, distinctUntilChanged, of, switchMap } from 'rxjs';
 
 import { MatOptionModule } from '@angular/material/core';
@@ -145,11 +152,11 @@ export class ActividadesPmComponent implements OnInit {
 
   showUnidadError = false;
 
-constructor(
-  private fb: FormBuilder,
-  private actividadesPmService: ActividadesPmService,
-  private dialog: MatDialog
-) {}
+  constructor(
+    private fb: FormBuilder,
+    private actividadesPmService: ActividadesPmService,
+    private dialog: MatDialog,
+  ) {}
 
 
   ngOnInit(): void {
@@ -211,9 +218,9 @@ constructor(
         salidaProfesorResponsable: [''],
         salidaEstRut: [''],
         salidaEstNombre: [''],
-        },
-  { validators: [this.fechaRangoValidator('fechaInicio', 'fechaTermino')] 
-      }),
+      },
+      { validators: [this.fechaRangoValidator('fechaInicio', 'fechaTermino')] },
+    ),
 
       equipoTrabajo: this.fb.group({
         rut: ['', [Validators.required, this.rutValidator()]],
@@ -592,68 +599,64 @@ constructor(
   }
 
   private validarDvRut(rut: string): boolean {
-  const clean = rut.replace(/\./g, '').replace('-', '').toUpperCase();
-  const body = clean.slice(0, -1);
-  const dv = clean.slice(-1);
+    const clean = rut.replace(/\./g, '').replace('-', '').toUpperCase();
+    const body = clean.slice(0, -1);
+    const dv = clean.slice(-1);
 
-  let sum = 0;
-  let mul = 2;
+    let sum = 0;
+    let mul = 2;
 
-  for (let i = body.length - 1; i >= 0; i--) {
-    sum += Number(body[i]) * mul;
-    mul = mul === 7 ? 2 : mul + 1;
+    for (let i = body.length - 1; i >= 0; i--) {
+      sum += Number(body[i]) * mul;
+      mul = mul === 7 ? 2 : mul + 1;
+    }
+
+    const res = 11 - (sum % 11);
+    const dvEsperado = res === 11 ? '0' : res === 10 ? 'K' : String(res);
+
+    return dv === dvEsperado;
   }
-
-  const res = 11 - (sum % 11);
-  const dvEsperado =
-    res === 11 ? '0' :
-    res === 10 ? 'K' :
-    String(res);
-
-  return dv === dvEsperado;
-}
 
 
   private rutValidator() {
-  return (control: AbstractControl): ValidationErrors | null => {
-    const v = String(control.value ?? '').trim();
-    if (!v) return null;
+    return (control: AbstractControl): ValidationErrors | null => {
+      const v = String(control.value ?? '').trim();
+      if (!v) return null;
 
-    const okFormat = /^\d{1,2}(\.\d{3}){2}-[0-9K]$/i.test(v);
-    if (!okFormat) return { rut: true };
+      const okFormat = /^\d{1,2}(\.\d{3}){2}-[0-9K]$/i.test(v);
+      if (!okFormat) return { rut: true };
 
-    if (!this.validarDvRut(v)) return { rutDv: true };
+      if (!this.validarDvRut(v)) return { rutDv: true };
 
-    return null;
-  };
-}
+      return null;
+    };
+  }
 
   private fechaRangoValidator(startKey: string, endKey: string) {
-  return (control: AbstractControl): ValidationErrors | null => {
-    const g = control as FormGroup;
-    const start = g.get(startKey)?.value;
-    const end = g.get(endKey)?.value;
+    return (control: AbstractControl): ValidationErrors | null => {
+      const g = control as FormGroup;
+      const start = g.get(startKey)?.value;
+      const end = g.get(endKey)?.value;
 
-    if (!start || !end) return null;
+      if (!start || !end) return null;
 
-    const d1 = new Date(start);
-    const d2 = new Date(end);
+      const d1 = new Date(start);
+      const d2 = new Date(end);
 
-    if (Number.isNaN(d1.getTime()) || Number.isNaN(d2.getTime())) return null;
+      if (Number.isNaN(d1.getTime()) || Number.isNaN(d2.getTime())) return null;
 
-    return d1 <= d2 ? null : { fechaRango: true };
-  };
-}
+      return d1 <= d2 ? null : { fechaRango: true };
+    };
+  }
 
-private noSeleccioneValidator(invalidValues: string[] = ['SELECCIONE']) {
-  return (control: AbstractControl): ValidationErrors | null => {
-    const v = String(control.value ?? '').trim();
-    if (!v) return { required: true };
-    if (invalidValues.includes(v)) return { noSeleccione: true };
-    return null;
-  };
-}
-
+  private noSeleccioneValidator(invalidValues: string[] = ['SELECCIONE']) {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const v = String(control.value ?? '').trim();
+      if (!v) return { required: true };
+      if (invalidValues.includes(v)) return { noSeleccione: true };
+      return null;
+    };
+  }
 
   addFinanciamiento(): void {
     const g = this.form.get('financiamiento') as FormGroup;

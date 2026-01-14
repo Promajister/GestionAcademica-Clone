@@ -33,7 +33,7 @@
       <div class="panel-header">
         <div>
           <p class="eyebrow">Datos personales</p>
-          <h2>Informacion de perfil</h2>
+          <h2>Información de perfil</h2>
         </div>
         <span class="tag">{{ user?.role }}</span>
       </div>
@@ -123,7 +123,7 @@
             Requerido
           </mat-error>
           <mat-error *ngIf="passwordForm.get('newPassword')?.touched && passwordForm.get('newPassword')?.hasError('minlength')">
-            Minimo 8 caracteres
+            Mínimo 8 caracteres
           </mat-error>
         </mat-form-field>
 

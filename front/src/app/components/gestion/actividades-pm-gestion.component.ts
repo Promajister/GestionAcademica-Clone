@@ -470,7 +470,7 @@ export class ActividadesPmGestionComponent implements OnInit {
                 colors,
               );
 
-              y = this.renderListSection(
+              y = this.renderListSectionWithLinks(
                 doc,
                 y,
                 margin,
@@ -482,12 +482,23 @@ export class ActividadesPmGestionComponent implements OnInit {
                 ['Medio', 'URL'],
                 data.difusiones,
                 (d: any) => [this.safe(d?.medio ?? d?.difusionEquipo), this.safe(d?.url ?? d?.difusionUrl)],
+                (d: any, colIndex: number) =>
+                  colIndex === 1 ? this.normalizeLinkUrl(d?.url ?? d?.difusionUrl) : null,
                 colors,
               );
 
               const singleDifusionRows = this.buildDifusionRows(data);
               if (singleDifusionRows.length) {
-                y = this.renderKeyValueSection(
+                const medioRow = singleDifusionRows.find(
+                  (row: any) => Array.isArray(row) && row[0] === 'Medio',
+                );
+                const urlRow = singleDifusionRows.find(
+                  (row: any) => Array.isArray(row) && row[0] === 'URL',
+                );
+                const medio = Array.isArray(medioRow) ? medioRow[1] : null;
+                const url = Array.isArray(urlRow) ? urlRow[1] : null;
+
+                y = this.renderListSectionWithLinks(
                   doc,
                   y,
                   margin,
@@ -496,7 +507,10 @@ export class ActividadesPmGestionComponent implements OnInit {
                   pageHeight,
                   contentW,
                   'Difusión',
-                  singleDifusionRows,
+                  ['Medio', 'URL'],
+                  [{ medio, url }],
+                  (d: any) => [this.safe(d?.medio), this.safe(d?.url)],
+                  (d: any, colIndex: number) => (colIndex === 1 ? this.normalizeLinkUrl(d?.url) : null),
                   colors,
                 );
               }
@@ -535,7 +549,7 @@ export class ActividadesPmGestionComponent implements OnInit {
                 );
               }
 
-              y = this.renderKeyValueSection(
+              y = this.renderKeyValueSectionWithUrlStyle(
                 doc,
                 y,
                 margin,
@@ -1345,19 +1359,24 @@ export class ActividadesPmGestionComponent implements OnInit {
         if (data.section !== 'body') return;
         if (data.column.index !== 1) return;
         const row = filtered[data.row.index];
-        if (Array.isArray(row) && row[0] === 'URL') {
-          data.cell.styles.textColor = [37, 99, 235];
-        }
+        if (!Array.isArray(row)) return;
+        const label = String(row[0] ?? '').trim().toUpperCase();
+        if (label !== 'URL') return;
+        const raw = row[1];
+        const normalized = this.normalizeLinkUrl(typeof raw === 'string' ? raw : String(raw ?? ''));
+        if (normalized) data.cell.styles.textColor = [37, 99, 235];
       },
       didDrawCell: (data) => {
         if (data.section !== 'body') return;
         if (data.column.index !== 1) return;
         const row = filtered[data.row.index];
-        if (!Array.isArray(row) || row[0] !== 'URL') return;
+        if (!Array.isArray(row)) return;
+        const label = String(row[0] ?? '').trim().toUpperCase();
+        if (label !== 'URL') return;
         const raw = row[1];
-        const url = typeof raw === 'string' ? raw.trim() : String(raw ?? '').trim();
-        if (!url || url === '-') return;
-        doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, { url });
+        const normalized = this.normalizeLinkUrl(typeof raw === 'string' ? raw : String(raw ?? ''));
+        if (!normalized) return;
+        doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, { url: normalized });
       },
     });
 
