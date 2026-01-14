@@ -21,12 +21,21 @@ export class PracticasService {
         return this.changes$.asObservable();
     }
 
-    private notifyChange(event: 'created'|'updated'|'deleted', payload: any) {
-        this.changes$.next({ type: `practice.${event}`, at: new Date().toISOString(), payload });
-    }
+  private notifyChange(
+    event: 'created' | 'updated' | 'deleted',
+    payload: any,
+    meta?: { createdByRole?: string },
+  ) {
+    this.changes$.next({
+      type: `practice.${event}`,
+      at: new Date().toISOString(),
+      payload,
+      meta,
+    });
+  }
 
 
-  async create(dto: CreatePracticaDto) {
+  async create(dto: CreatePracticaDto, createdByRole?: string) {
     const estado = dto.estado ?? EstadoPractica.EN_CURSO;
     const start = new Date(dto.fecha_inicio);
     const end = dto.fecha_termino ? new Date(dto.fecha_termino) : null;
@@ -127,7 +136,9 @@ export class PracticasService {
       },
     });
 
-    this.notifyChange('created', created);
+    this.notifyChange('created', created, {
+      createdByRole: createdByRole?.toLowerCase(),
+    });
 
     return {
       message: 'Práctica asignada exitosamente.',

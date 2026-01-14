@@ -56,17 +56,16 @@ export class PracticasController {
   ) {
     return this.service.updateNotaFinal(id, dto.nota_final);
   }
-  
+
+  @Sse('stream')
+  stream(): Observable<MessageEvent> {
+    return this.service.stream$.pipe(
+      map((data) => ({ data }) as MessageEvent),
+    );
+  }
+
   @Get(':id')
   async findOne(@Param('id', ParseIntPipe) id: number) {
     return this.service.findOne(id);
   }
-  
-  @Sse('stream')
-  stream(): Observable<MessageEvent> {
-    return this.service.stream$.pipe(
-        map((data) => ({ data }) as MessageEvent),
-    );
-    }
-
 }
