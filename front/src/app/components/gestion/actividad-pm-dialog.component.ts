@@ -74,6 +74,7 @@ export class ActividadPmDialogComponent implements OnInit {
   loading = true;
   saving = false;
   errorMsg = '';
+  formError = '';
 
   actividad: any = null;
   resumenIa: string | null = null;
@@ -216,8 +217,6 @@ export class ActividadPmDialogComponent implements OnInit {
         jornadaTemaCentral: [''],
         jornadaTalleres: [''],
         jornadaResponsableTaller: [''],
-        jornadaNumAsistentes: [null],
-        jornadaSatisfaccion: [null],
 
         tallerAsignatura: [''],
         tallerCompetencia: [''],
@@ -226,8 +225,6 @@ export class ActividadPmDialogComponent implements OnInit {
         congresoNombreEvento: [''],
         congresoPonenciaPresentada: [''],
         congresoRelator: [''],
-        congresoNumAsistentes: [null],
-        congresoSatisfaccion: [null],
 
         alternanciaColegioAsociado: [''],
         alternanciaDocenteColaborador: [''],
@@ -514,16 +511,12 @@ export class ActividadPmDialogComponent implements OnInit {
       'jornadaTemaCentral',
       'jornadaTalleres',
       'jornadaResponsableTaller',
-      'jornadaNumAsistentes',
-      'jornadaSatisfaccion',
       'tallerAsignatura',
       'tallerCompetencia',
       'tallerNombreEstudiantesBeneficiados',
       'congresoNombreEvento',
       'congresoPonenciaPresentada',
       'congresoRelator',
-      'congresoNumAsistentes',
-      'congresoSatisfaccion',
       'alternanciaColegioAsociado',
       'alternanciaDocenteColaborador',
       'alternanciaAsignatura',
@@ -553,8 +546,6 @@ export class ActividadPmDialogComponent implements OnInit {
       reqText('jornadaTemaCentral', 250);
       reqText('jornadaTalleres', 250);
       reqText('jornadaResponsableTaller', 200);
-      reqNum('jornadaNumAsistentes');
-      reqNum('jornadaSatisfaccion');
     }
 
     if (t === 'TALLER_REMEDIAL') {
@@ -567,8 +558,6 @@ export class ActividadPmDialogComponent implements OnInit {
       reqText('congresoNombreEvento', 250);
       reqText('congresoPonenciaPresentada', 250);
       reqText('congresoRelator', 200);
-      reqNum('congresoNumAsistentes');
-      reqNum('congresoSatisfaccion');
     }
 
     if (t === 'ALTERNANCIA_PEDAGOGICA') {
@@ -690,11 +679,6 @@ export class ActividadPmDialogComponent implements OnInit {
         this.actividad = { ...root, ...proy };
         this.resumenIa = root?.resumenIa ?? a?.resumenIa ?? null;
 
-        const asistentesGeneric =
-          proyBase?.numeroAsistentes ?? root?.numeroAsistentes ?? null;
-        const satisfGeneric =
-          proyBase?.nivelSatisfaccion ?? root?.nivelSatisfaccion ?? null;
-
         const proyectoForm: any = {
           ...proy,
           nombre: proy?.nombre ?? proyBase?.nombre ?? root?.nombre ?? '',
@@ -707,20 +691,10 @@ export class ActividadPmDialogComponent implements OnInit {
         };
 
         if (tipoActividad === 'JORNADA_PEDAGOGICA') {
-          if (proyectoForm.jornadaNumAsistentes == null && asistentesGeneric != null) {
-            proyectoForm.jornadaNumAsistentes = asistentesGeneric;
-          }
-          if (proyectoForm.jornadaSatisfaccion == null && satisfGeneric != null) {
-            proyectoForm.jornadaSatisfaccion = satisfGeneric;
-          }
+          // campos de asistentes/satisfacción se obtienen en otra sección
         }
         if (tipoActividad === 'CONGRESO_ACADEMICO') {
-          if (proyectoForm.congresoNumAsistentes == null && asistentesGeneric != null) {
-            proyectoForm.congresoNumAsistentes = asistentesGeneric;
-          }
-          if (proyectoForm.congresoSatisfaccion == null && satisfGeneric != null) {
-            proyectoForm.congresoSatisfaccion = satisfGeneric;
-          }
+          // campos de asistentes/satisfacción se obtienen en otra sección
         }
 
         this.form.patchValue({
@@ -863,6 +837,7 @@ export class ActividadPmDialogComponent implements OnInit {
 
   guardar(): void {
     if (this.isView) return;
+    this.formError = '';
 
     if (this.responsables.length === 0) {
       const rut = this.formatRut(String(this.fProy('responsableRut').value ?? '').trim());
@@ -880,22 +855,28 @@ export class ActividadPmDialogComponent implements OnInit {
       this.form.markAllAsTouched();
       this.showUnidadError = true;
       this.goToSection('sec-unidades', 1);
+      this.formError = 'Debes agregar al menos una unidad.';
       return;
     }
     if (this.responsables.length === 0) {
       this.form.markAllAsTouched();
       this.goToSection('sec-responsables', 0);
+      this.formError = 'Debes agregar al menos un responsable.';
       return;
     }
     if (this.equipoTrabajo.length === 0) {
       this.form.markAllAsTouched();
       this.goToSection('sec-equipo', 2);
+      this.formError = 'Debes agregar al menos un integrante del equipo.';
       return;
     }
 
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       this.focusFirstInvalid();
+      const invalid = this.collectInvalidControls();
+      const detail = invalid.length ? ` (${invalid.slice(0, 6).join(', ')})` : '';
+      this.formError = `Faltan campos obligatorios. Revisa las pestañas.${detail}`;
       return;
     }
 
@@ -1265,5 +1246,21 @@ export class ActividadPmDialogComponent implements OnInit {
 
     tipoCtrl?.updateValueAndValidity({ emitEvent: false });
     nombreCtrl?.updateValueAndValidity({ emitEvent: false });
+  }
+
+  private collectInvalidControls(): string[] {
+    const results: string[] = [];
+    const walk = (control: any, path: string) => {
+      if (!control) return;
+      if (control.controls) {
+        for (const key of Object.keys(control.controls)) {
+          walk(control.controls[key], path ? `${path}.${key}` : key);
+        }
+        return;
+      }
+      if (control.invalid) results.push(path);
+    };
+    walk(this.form, '');
+    return results;
   }
 }

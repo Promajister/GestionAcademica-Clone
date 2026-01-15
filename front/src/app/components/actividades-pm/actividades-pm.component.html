@@ -228,19 +228,6 @@
                     <mat-error *ngIf="fProy('jornadaResponsableTaller').touched && fProy('jornadaResponsableTaller').invalid">Obligatorio</mat-error>
                   </mat-form-field>
                 </div>
-              <div class="FormRow">
-                <mat-form-field appearance="outline" class="FormField">
-                  <mat-label>Número de asistentes *</mat-label>
-                  <input matInput type="number" formControlName="jornadaNumAsistentes" min="0" />
-                  <mat-error *ngIf="fProy('jornadaNumAsistentes').touched && fProy('jornadaNumAsistentes').invalid">Obligatorio</mat-error>
-                </mat-form-field>
-
-                <mat-form-field appearance="outline" class="FormField">
-                  <mat-label>Nivel de satisfacción *</mat-label>
-                  <input matInput type="number" formControlName="jornadaSatisfaccion" min="0" />
-                  <mat-error *ngIf="fProy('jornadaSatisfaccion').touched && fProy('jornadaSatisfaccion').invalid">Obligatorio</mat-error>
-                </mat-form-field>
-              </div>
             </div>
 
               <div *ngIf="fProy('tipoActividad').value === 'TALLER_REMEDIAL'">
@@ -291,19 +278,6 @@
                     <mat-error *ngIf="fProy('congresoRelator').touched && fProy('congresoRelator').invalid">Obligatorio</mat-error>
                   </mat-form-field>
                 </div>
-              <div class="FormRow">
-                <mat-form-field appearance="outline" class="FormField">
-                  <mat-label>Número de asistentes *</mat-label>
-                  <input matInput type="number" formControlName="congresoNumAsistentes" min="0" />
-                  <mat-error *ngIf="fProy('congresoNumAsistentes').touched && fProy('congresoNumAsistentes').invalid">Obligatorio</mat-error>
-                </mat-form-field>
-
-                <mat-form-field appearance="outline" class="FormField">
-                  <mat-label>Nivel de satisfacción *</mat-label>
-                  <input matInput type="number" formControlName="congresoSatisfaccion" min="0" />
-                  <mat-error *ngIf="fProy('congresoSatisfaccion').touched && fProy('congresoSatisfaccion').invalid">Obligatorio</mat-error>
-                </mat-form-field>
-              </div>
             </div>
 
               <div *ngIf="fProy('tipoActividad').value === 'ALTERNANCIA_PEDAGOGICA'">

@@ -45,6 +45,9 @@
   </div>
 
   <form *ngIf="!loading && !errorMsg" [formGroup]="form" class="EditForm">
+    <div *ngIf="formError" class="error">
+      {{ formError }}
+    </div>
     <mat-tab-group class="Tabs" animationDuration="200ms" [(selectedIndex)]="selectedTabIndex">
 
       <mat-tab *ngIf="isView">
@@ -254,18 +257,7 @@
               </mat-form-field>
             </div>
 
-            <div class="FormRow">
-              <mat-form-field appearance="outline" class="FormField">
-                <mat-label>Número de asistentes *</mat-label>
-                <input matInput type="number" formControlName="jornadaNumAsistentes" min="0" [readonly]="isView" />
-              </mat-form-field>
-
-              <mat-form-field appearance="outline" class="FormField">
-                <mat-label>Nivel de satisfacción *</mat-label>
-                <input matInput type="number" formControlName="jornadaSatisfaccion" min="0" [readonly]="isView" />
-              </mat-form-field>
             </div>
-          </div>
 
           <div *ngIf="fProy('tipoActividad').value === 'TALLER_REMEDIAL'">
             <div class="FormRow">
@@ -310,18 +302,7 @@
               </mat-form-field>
             </div>
 
-            <div class="FormRow">
-              <mat-form-field appearance="outline" class="FormField">
-                <mat-label>Número de asistentes *</mat-label>
-                <input matInput type="number" formControlName="congresoNumAsistentes" min="0" [readonly]="isView" />
-              </mat-form-field>
-
-              <mat-form-field appearance="outline" class="FormField">
-                <mat-label>Nivel de satisfacción *</mat-label>
-                <input matInput type="number" formControlName="congresoSatisfaccion" min="0" [readonly]="isView" />
-              </mat-form-field>
             </div>
-          </div>
 
           <div *ngIf="fProy('tipoActividad').value === 'ALTERNANCIA_PEDAGOGICA'">
             <div class="FormRow">

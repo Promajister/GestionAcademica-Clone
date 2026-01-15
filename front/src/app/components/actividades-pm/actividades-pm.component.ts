@@ -194,8 +194,6 @@ export class ActividadesPmComponent implements OnInit {
         jornadaTemaCentral: [''],
         jornadaTalleres: [''],
         jornadaResponsableTaller: [''],
-        jornadaNumAsistentes: [null],
-        jornadaSatisfaccion: [null],
 
         tallerAsignatura: [''],
         tallerCompetencia: [''],
@@ -204,8 +202,6 @@ export class ActividadesPmComponent implements OnInit {
         congresoNombreEvento: [''],
         congresoPonenciaPresentada: [''],
         congresoRelator: [''],
-        congresoNumAsistentes: [null],
-        congresoSatisfaccion: [null],
 
         alternanciaColegioAsociado: [''],
         alternanciaDocenteColaborador: [''],
@@ -365,8 +361,6 @@ export class ActividadesPmComponent implements OnInit {
       'jornadaTemaCentral',
       'jornadaTalleres',
       'jornadaResponsableTaller',
-      'jornadaNumAsistentes',
-      'jornadaSatisfaccion',
 
       'tallerAsignatura',
       'tallerCompetencia',
@@ -375,8 +369,6 @@ export class ActividadesPmComponent implements OnInit {
       'congresoNombreEvento',
       'congresoPonenciaPresentada',
       'congresoRelator',
-      'congresoNumAsistentes',
-      'congresoSatisfaccion',
 
       'alternanciaColegioAsociado',
       'alternanciaDocenteColaborador',
@@ -410,8 +402,6 @@ export class ActividadesPmComponent implements OnInit {
       reqText('jornadaTemaCentral', 250);
       reqText('jornadaTalleres', 250);
       reqText('jornadaResponsableTaller', 200);
-      reqNum('jornadaNumAsistentes');
-      reqNum('jornadaSatisfaccion');
     }
 
     if (t === 'TALLER_REMEDIAL') {
@@ -424,8 +414,6 @@ export class ActividadesPmComponent implements OnInit {
       reqText('congresoNombreEvento', 250);
       reqText('congresoPonenciaPresentada', 250);
       reqText('congresoRelator', 200);
-      reqNum('congresoNumAsistentes');
-      reqNum('congresoSatisfaccion');
     }
 
     if (t === 'ALTERNANCIA_PEDAGOGICA') {
@@ -1123,8 +1111,6 @@ export class ActividadesPmComponent implements OnInit {
         jornadaTemaCentral: '',
         jornadaTalleres: '',
         jornadaResponsableTaller: '',
-        jornadaNumAsistentes: null,
-        jornadaSatisfaccion: null,
 
         tallerAsignatura: '',
         tallerCompetencia: '',
@@ -1133,8 +1119,6 @@ export class ActividadesPmComponent implements OnInit {
         congresoNombreEvento: '',
         congresoPonenciaPresentada: '',
         congresoRelator: '',
-        congresoNumAsistentes: null,
-        congresoSatisfaccion: null,
 
         alternanciaColegioAsociado: '',
         alternanciaDocenteColaborador: '',
