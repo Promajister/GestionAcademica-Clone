@@ -353,6 +353,7 @@ export class ActividadesPmService {
       return null;
     }
 
+    //cambiar modelo si encontramos otro mas barato en tokens
     const prompt = this.buildResumenPrompt(actividad);
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key=${apiKey}`;
 
@@ -403,7 +404,7 @@ export class ActividadesPmService {
     const fechas = `${safe(actividad?.fechaInicio)} a ${safe(actividad?.fechaTermino)}`;
     const participantes = this.resumenParticipantes(actividad?.matricesParticipantes ?? []);
 
-    return [
+    return [ //revisar con claudia los puntos importantes
       'Resume en 3-4 oraciones, en espanol claro y formal, la siguiente actividad de vinculacion.',
       'No inventes informacion y usa solo los datos entregados.',
       `Nombre: ${safe(actividad?.nombre)}`,
@@ -420,7 +421,7 @@ export class ActividadesPmService {
       `Participantes (resumen): ${participantes}`,
       'Entrega solo el resumen, sin listas ni etiquetas.',
     ].join('\n');
-  }
+  } // falta el financiamiento, pero solo el total,  
 
   private formatTipoActividad(value?: string | null): string {
     if (!value) return '-';

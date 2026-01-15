@@ -706,7 +706,7 @@ export class ActividadesPmGestionComponent implements OnInit {
               doc.text(nombreActividad, margin + 8, y + 2);
 
               const rows: RowInput[] = [
-                ['Tipo de actividad', tipoLabel],
+                ['Tipo de vinculación', this.safe(proyecto?.tipoVinculacion ?? data.base?.tipoVinculacion)],
                 ['Fecha de la actividad', fecha],
                 ['Descripción', descripcion],
               ];
@@ -764,30 +764,49 @@ export class ActividadesPmGestionComponent implements OnInit {
                 colors,
               );
 
-              y = this.renderListSection(
-                doc,
-                y,
-                margin,
-                top,
-                bottom,
-                pageHeight,
-                contentW,
-                'Financiamiento',
-                ['Categoría', 'Tipo', 'Monto'],
-                this.withFinanciamientoTotal(data.financiamientos),
-                (f: any) => [
-                  this.safe(f?.categoria ?? f?.finCategoria),
-                  this.safe(f?.tipoFinanciamiento ?? f?.tipo),
-                  this.safe(f?.monto ?? f?.finMonto),
-                ],
-                colors,
-              );
-
-              const participantesTable = this.buildParticipantesTableWithTotal(data);
-              if (participantesTable.length) {
                 y = this.renderListSection(
                   doc,
                   y,
+                  margin,
+                  top,
+                  bottom,
+                  pageHeight,
+                  contentW,
+                  'Financiamiento',
+                  ['Categoría', 'Tipo', 'Monto'],
+                  this.withFinanciamientoTotal(data.financiamientos),
+                  (f: any) => [
+                    this.safe(f?.categoria ?? f?.finCategoria),
+                    this.safe(f?.tipoFinanciamiento ?? f?.tipo),
+                    this.safe(f?.monto ?? f?.finMonto),
+                  ],
+                  colors,
+                );
+
+                const evidenciaFilesRows = this.buildEvidenciasArchivosRows(data);
+                if (evidenciaFilesRows.length) {
+                  y = this.renderListSectionWithLinks(
+                    doc,
+                    y,
+                    margin,
+                    top,
+                    bottom,
+                    pageHeight,
+                    contentW,
+                    'Evidencias adjuntas',
+                    ['Tipo', 'Nombre'],
+                    evidenciaFilesRows,
+                    (e: any) => [this.safe(e?.tipo), this.safe(e?.nombre)],
+                    (e: any, colIndex: number) => (colIndex === 1 ? this.normalizeLinkUrl(e?.url) : null),
+                    colors,
+                  );
+                }
+
+                const participantesTable = this.buildParticipantesTableWithTotal(data);
+                if (participantesTable.length) {
+                  y = this.renderListSection(
+                    doc,
+                    y,
                   margin,
                   top,
                   bottom,
@@ -854,9 +873,9 @@ export class ActividadesPmGestionComponent implements OnInit {
               return {
                 Nombre: this.excelText(proyecto.nombre ?? data.base?.nombre),
                 Tipo: this.excelText(this.getTipoActividadLabel(proyecto.tipoActividad ?? data.base?.tipoActividad)),
-                'Tipo vinculacion': this.excelText(proyecto.tipoVinculacion ?? data.base?.tipoVinculacion),
-                'Tipo vinculacion otro': this.excelText(proyecto.tipoVinculacionOtro ?? data.base?.tipoVinculacionOtro),
-                'Area vinculacion': this.excelText(proyecto.areaVinculacion ?? data.base?.areaVinculacion),
+                'Tipo vinculación': this.excelText(proyecto.tipoVinculacion ?? data.base?.tipoVinculacion),
+                'Tipo vinculación otro': this.excelText(proyecto.tipoVinculacionOtro ?? data.base?.tipoVinculacionOtro),
+                'Área vinculación': this.excelText(proyecto.areaVinculacion ?? data.base?.areaVinculacion),
                 'Area impacto': this.excelText(proyecto.areaImpacto ?? data.base?.areaImpacto),
                 'Fecha inicio': this.formatDate(proyecto.fechaInicio ?? data.base?.fechaInicio),
                 'Fecha termino': this.formatDate(proyecto.fechaTermino ?? data.base?.fechaTermino),
@@ -908,14 +927,14 @@ export class ActividadesPmGestionComponent implements OnInit {
                     [d?.medio ?? d?.difusionEquipo, d?.url ?? d?.difusionUrl].filter(Boolean).join(' - '),
                   ),
                 ),
-                'Difusion (medio)': this.excelText(
+                'Difusión (medio)': this.excelText(
                   proyecto.difusion?.medio ??
                     proyecto.difusion?.difusionEquipo ??
                     data.base?.medioDifusion ??
                     data.base?.difusion?.medio ??
                     data.base?.difusion?.difusionEquipo,
                 ),
-                'Difusion (url)': this.excelText(
+                'Difusión (url)': this.excelText(
                   proyecto.difusion?.url ??
                     proyecto.difusion?.difusionUrl ??
                     data.base?.urlDifusion ??
@@ -1144,10 +1163,27 @@ export class ActividadesPmGestionComponent implements OnInit {
     if (!Array.isArray(archivos) || archivos.length === 0) return [];
 
     return archivos.map((a: any) => ({
-      tipo: this.safe(a?.tipo ?? 'Archivo'),
+      tipo: this.safe(this.formatEvidenciaTipo(a?.tipo)),
       nombre: this.safe(a?.nombre ?? a?.url),
       url: a?.url ? String(a.url) : null,
     }));
+  }
+
+  private formatEvidenciaTipo(raw: any): string {
+    const value = String(raw ?? '').trim();
+    if (!value) return 'Archivo';
+    switch (value.toUpperCase()) {
+      case 'LISTA_ASISTENCIA':
+        return 'Lista asistencia';
+      case 'DOCUMENTO':
+        return 'Documento';
+      case 'FOTOGRAFIA':
+        return 'Fotografía';
+      default: {
+        const normalized = value.replace(/_/g, ' ').toLowerCase();
+        return normalized.replace(/\b[a-z]/g, (char) => char.toUpperCase());
+      }
+    }
   }
 
   private renderListSection(
@@ -1823,13 +1859,13 @@ export class ActividadesPmGestionComponent implements OnInit {
       'Asistentes - Directivos (UTA)': '-',
       'Asistentes - Docentes (UTA)': '-',
       'Asistentes - Estudiantes (UTA)': '-',
-      'Asistentes - Funcionarios de gestion (UTA)': '-',
+      'Asistentes - Funcionarios de gestión (UTA)': '-',
       'Asistentes - Exalumnos': '-',
       'Asistentes - Otros (externos)': '-',
       'Expositores - Directivos (UTA)': '-',
       'Expositores - Docentes (UTA)': '-',
       'Expositores - Estudiantes (UTA)': '-',
-      'Expositores - Funcionarios de gestion (UTA)': '-',
+      'Expositores - Funcionarios de gestión (UTA)': '-',
       'Expositores - Exalumnos': '-',
       'Expositores - Otros (externos)': '-',
     };
@@ -1842,14 +1878,14 @@ export class ActividadesPmGestionComponent implements OnInit {
       cols['Asistentes - Directivos (UTA)'] = asistentes?.directivosUta ?? 0;
       cols['Asistentes - Docentes (UTA)'] = asistentes?.docentesUta ?? 0;
       cols['Asistentes - Estudiantes (UTA)'] = asistentes?.estudiantesUta ?? 0;
-      cols['Asistentes - Funcionarios de gestion (UTA)'] = asistentes?.funcionariosGestionUta ?? 0;
+      cols['Asistentes - Funcionarios de gestión (UTA)'] = asistentes?.funcionariosGestionUta ?? 0;
       cols['Asistentes - Exalumnos'] = asistentes?.exalumnos ?? 0;
       cols['Asistentes - Otros (externos)'] = asistentes?.otrosExternos ?? 0;
 
       cols['Expositores - Directivos (UTA)'] = expositores?.directivosUta ?? 0;
       cols['Expositores - Docentes (UTA)'] = expositores?.docentesUta ?? 0;
       cols['Expositores - Estudiantes (UTA)'] = expositores?.estudiantesUta ?? 0;
-      cols['Expositores - Funcionarios de gestion (UTA)'] = expositores?.funcionariosGestionUta ?? 0;
+      cols['Expositores - Funcionarios de gestión (UTA)'] = expositores?.funcionariosGestionUta ?? 0;
       cols['Expositores - Exalumnos'] = expositores?.exalumnos ?? 0;
       cols['Expositores - Otros (externos)'] = expositores?.otrosExternos ?? 0;
 
@@ -1898,7 +1934,7 @@ export class ActividadesPmGestionComponent implements OnInit {
       case 'ESTUDIANTES_UTA':
         return 'Estudiantes (UTA)';
       case 'FUNCIONARIOS_GESTION_UTA':
-        return 'Funcionarios de gestion (UTA)';
+        return 'Funcionarios de gestión (UTA)';
       case 'EXALUMNOS':
         return 'Exalumnos';
       case 'OTROS_EXTERNOS':
