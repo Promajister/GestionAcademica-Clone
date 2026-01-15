@@ -256,7 +256,7 @@
   class="elev detail-card custom-modal stats-modal"
   *ngIf="
     tipoStatsVisible === 'ESTUDIANTIL' &&
-    estadisticasEstudiantiles?.length &&
+    estadisticasEstudiantiles.length &&
     totalEncuestasEstudiantiles
   "
 >
@@ -391,7 +391,7 @@
   class="elev detail-card custom-modal stats-modal"
   *ngIf="
     tipoStatsVisible === 'COLABORADORES_JEFES' &&
-    estadisticasColaboradores?.length &&
+    estadisticasColaboradores.length &&
     totalEncuestasColaboradores
   "
 >
@@ -2030,7 +2030,7 @@
         <span><strong>Respuestas:</strong> {{ selectedEncuesta.respuestas.length }}</span>
       </div>
 
-      <div class="summary-chip" *ngIf="selectedEncuesta?.tipo">
+      <div class="summary-chip" *ngIf="selectedEncuesta.tipo">
         <mat-icon>{{ selectedEncuesta.tipo === 'ESTUDIANTIL' ? 'perm_identity' : 'groups' }}</mat-icon>
         <span>{{ mapTipoLabel(selectedEncuesta.tipo) }}</span>
       </div>
@@ -2069,7 +2069,7 @@
         </span>
       </div>
 
-      <div class="table-wrapper" *ngIf="selectedEncuesta?.respuestas?.length; else noRespuestas">
+      <div class="table-wrapper" *ngIf="selectedEncuesta.respuestas.length; else noRespuestas">
         <table class="detail-plain-table answers-table">
           <thead>
             <tr>

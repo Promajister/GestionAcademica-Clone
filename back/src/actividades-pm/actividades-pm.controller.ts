@@ -22,7 +22,7 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { existsSync } from 'fs';
 import * as path from 'path';
-import * as archiver from 'archiver';
+import archiver from 'archiver';
 import { ActividadesPmService } from './actividades-pm.service';
 import { JwtCookieAuthGuard } from '../auth/guards/jwt-cookie-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';

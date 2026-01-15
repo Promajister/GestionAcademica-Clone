@@ -1126,19 +1126,35 @@ export class ActividadPmDialogComponent implements OnInit {
       return;
     }
 
-    if (tipo == 'asistencia') {
-      this.asistenciaFile = validFiles;
-      this.asistenciaFileName = this.formatFileNames(validFiles);
-      this.asistenciaFilesCount = validFiles.length;
-    } else if (tipo == 'documentos') {
-      this.documentosFile = validFiles;
-      this.documentosFileName = this.formatFileNames(validFiles);
-      this.documentosFilesCount = validFiles.length;
-    } else {
-      this.fotosFile = validFiles;
-      this.fotosFileName = this.formatFileNames(validFiles);
-      this.fotosFilesCount = validFiles.length;
+    const current =
+      tipo === 'asistencia'
+        ? this.asistenciaFile
+        : tipo === 'documentos'
+        ? this.documentosFile
+        : this.fotosFile;
+    const merged = [...current, ...validFiles];
+    const unique = new Map<string, File>();
+    for (const file of merged) {
+      const key = `${file.name}__${file.size}__${file.lastModified}`;
+      if (!unique.has(key)) unique.set(key, file);
     }
+    const finalFiles = Array.from(unique.values()).slice(0, 10);
+
+    if (tipo == 'asistencia') {
+      this.asistenciaFile = finalFiles;
+      this.asistenciaFileName = this.formatFileNames(finalFiles);
+      this.asistenciaFilesCount = finalFiles.length;
+    } else if (tipo == 'documentos') {
+      this.documentosFile = finalFiles;
+      this.documentosFileName = this.formatFileNames(finalFiles);
+      this.documentosFilesCount = finalFiles.length;
+    } else {
+      this.fotosFile = finalFiles;
+      this.fotosFileName = this.formatFileNames(finalFiles);
+      this.fotosFilesCount = finalFiles.length;
+    }
+
+    input.value = '';
   }
 
   private formatFileNames(files: File[]): string {

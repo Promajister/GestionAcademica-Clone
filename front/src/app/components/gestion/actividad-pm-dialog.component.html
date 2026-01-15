@@ -981,25 +981,14 @@
                   </ng-template>
 
                   <button
-                    *ngIf="form.get('evidencias.listaAsistenciaRef')?.value"
-                    mat-stroked-button
-                    type="button"
-                    class="MiniBtn"
-                    (click)="openUrl(form.get('evidencias.listaAsistenciaRef')?.value)"
-                  >
-                    <mat-icon>open_in_new</mat-icon>
-                    Ver
-                  </button>
-
-                  <button
-                    *ngIf="asistenciaFilesCount > 0"
+                    *ngIf="isView && asistenciaFilesCount > 0"
                     mat-stroked-button
                     type="button"
                     class="MiniBtn"
                     (click)="downloadZip('asistencia')"
                   >
                     <mat-icon>download</mat-icon>
-                    ZIP
+                    Descargar
                   </button>
                 </div>
               </div>
@@ -1037,25 +1026,14 @@
                   </ng-template>
 
                   <button
-                    *ngIf="form.get('evidencias.documentosRef')?.value"
-                    mat-stroked-button
-                    type="button"
-                    class="MiniBtn"
-                    (click)="openUrl(form.get('evidencias.documentosRef')?.value)"
-                  >
-                    <mat-icon>open_in_new</mat-icon>
-                    Ver
-                  </button>
-
-                  <button
-                    *ngIf="documentosFilesCount > 0"
+                    *ngIf="isView && documentosFilesCount > 0"
                     mat-stroked-button
                     type="button"
                     class="MiniBtn"
                     (click)="downloadZip('documentos')"
                   >
                     <mat-icon>download</mat-icon>
-                    ZIP
+                    Descargar
                   </button>
                 </div>
               </div>
@@ -1093,25 +1071,14 @@
                   </ng-template>
 
                   <button
-                    *ngIf="form.get('evidencias.fotosRef')?.value"
-                    mat-stroked-button
-                    type="button"
-                    class="MiniBtn"
-                    (click)="openUrl(form.get('evidencias.fotosRef')?.value)"
-                  >
-                    <mat-icon>open_in_new</mat-icon>
-                    Ver
-                  </button>
-
-                  <button
-                    *ngIf="fotosFilesCount > 0"
+                    *ngIf="isView && fotosFilesCount > 0"
                     mat-stroked-button
                     type="button"
                     class="MiniBtn"
                     (click)="downloadZip('fotos')"
                   >
                     <mat-icon>download</mat-icon>
-                    ZIP
+                    Descargar
                   </button>
                 </div>
               </div>
