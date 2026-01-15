@@ -864,6 +864,18 @@ export class ActividadPmDialogComponent implements OnInit {
   guardar(): void {
     if (this.isView) return;
 
+    if (this.responsables.length === 0) {
+      const rut = this.formatRut(String(this.fProy('responsableRut').value ?? '').trim());
+      const nombre = String(this.fProy('responsableNombre').value ?? '').trim();
+      const tipo = String(this.fProy('responsableTipo').value ?? 'Académicos');
+      if (rut && nombre) {
+        this.responsables = [...this.responsables, { rut, nombre, tipo }];
+        this.fProy('responsableRut').setValue('');
+        this.fProy('responsableNombre').setValue('');
+        this.fProy('responsableTipo').setValue('Académicos');
+      }
+    }
+
     if (this.unidades.length === 0) {
       this.form.markAllAsTouched();
       this.showUnidadError = true;

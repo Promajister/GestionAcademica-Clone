@@ -68,6 +68,8 @@ type TipoActividad =
 export class ActividadesPmComponent implements OnInit {
   form!: FormGroup;
   selectedTabIndex = 0;
+  private readonly draftKey = 'actividad_pm_draft_v1';
+  private draftTimer: ReturnType<typeof setTimeout> | null = null;
   @ViewChild('dialogOk') dialogOk!: TemplateRef<any>;
 
 
@@ -336,6 +338,12 @@ export class ActividadesPmComponent implements OnInit {
           this.fEq('nombre').setValue(equipo.nombre, { emitEvent: false });
         }
       });
+
+    this.loadDraft();
+
+    this.form.valueChanges.pipe(debounceTime(500)).subscribe(() => {
+      this.scheduleDraftSave();
+    });
   }
 
   fProy(name: string) {
@@ -455,10 +463,12 @@ export class ActividadesPmComponent implements OnInit {
     this.showUnidadError = false;
     this.fProy('unidadCod').setValue('');
     this.fProy('unidadNombre').setValue('');
+    this.scheduleDraftSave();
   }
 
   removeUnidad(row: UnidadRow): void {
     this.unidades = this.unidades.filter((x) => x !== row);
+    this.scheduleDraftSave();
   }
 
   addResponsable(): void {
@@ -473,10 +483,12 @@ export class ActividadesPmComponent implements OnInit {
     this.fProy('responsableRut').setValue('');
     this.fProy('responsableNombre').setValue('');
     this.fProy('responsableTipo').setValue('Académicos');
+    this.scheduleDraftSave();
   }
 
   removeResponsable(row: ResponsableRow): void {
     this.responsables = this.responsables.filter((x) => x !== row);
+    this.scheduleDraftSave();
   }
 
 
@@ -505,11 +517,13 @@ export class ActividadesPmComponent implements OnInit {
     g.markAsPristine();
     g.markAsUntouched();
     this.updateEquipoValidators();
+    this.scheduleDraftSave();
   }
 
   removeEquipo(row: EquipoRow): void {
     this.equipoTrabajo = this.equipoTrabajo.filter((x) => x !== row);
     this.updateEquipoValidators();
+    this.scheduleDraftSave();
   }
 
   onRutInputEquipo(ev: Event): void {
@@ -556,10 +570,12 @@ export class ActividadesPmComponent implements OnInit {
 
     this.fProy('feriaEstRut').setValue('');
     this.fProy('feriaEstNombre').setValue('');
+    this.scheduleDraftSave();
   }
 
   removeEstudianteFeria(row: EstudianteRow): void {
     this.estudiantesFeria = this.estudiantesFeria.filter((x) => x !== row);
+    this.scheduleDraftSave();
   }
 
   addEstudianteSalida(): void {
@@ -578,10 +594,12 @@ export class ActividadesPmComponent implements OnInit {
 
     this.fProy('salidaEstRut').setValue('');
     this.fProy('salidaEstNombre').setValue('');
+    this.scheduleDraftSave();
   }
 
   removeEstudianteSalida(row: EstudianteRow): void {
     this.estudiantesSalida = this.estudiantesSalida.filter((x) => x !== row);
+    this.scheduleDraftSave();
   }
 
   private isRutFormatOk(v: string): boolean {
@@ -677,10 +695,12 @@ export class ActividadesPmComponent implements OnInit {
     g.get('finMonto')?.setValue(0);
     g.markAsPristine();
     g.markAsUntouched();
+    this.scheduleDraftSave();
   }
 
   removeFin(row: FinRow): void {
     this.financiamientos = this.financiamientos.filter((x) => x !== row);
+    this.scheduleDraftSave();
   }
 
   addCentroCosto(): void {
@@ -692,10 +712,12 @@ export class ActividadesPmComponent implements OnInit {
     }
     this.centrosCosto = [...this.centrosCosto, { tipo }];
     g.get('ccTipo')?.setValue('');
+    this.scheduleDraftSave();
   }
 
   removeCC(row: CentroCostoRow): void {
     this.centrosCosto = this.centrosCosto.filter((x) => x !== row);
+    this.scheduleDraftSave();
   }
 
   onFileSelected(event: Event, tipo: 'asistencia' | 'documentos' | 'fotos'): void {
@@ -731,6 +753,7 @@ export class ActividadesPmComponent implements OnInit {
       this.fotosFile = validFiles;
       this.fotosFileName = this.formatFileNames(validFiles);
     }
+    this.scheduleDraftSave();
   }
 
   private formatFileNames(files: File[]): string {
@@ -738,6 +761,73 @@ export class ActividadesPmComponent implements OnInit {
     if (!names.length) return '';
     if (names.length <= 2) return names.join(', ');
     return `${names[0]}, ${names[1]} (+${names.length - 2} mas)`;
+  }
+
+  private scheduleDraftSave(): void {
+    if (this.draftTimer) clearTimeout(this.draftTimer);
+    this.draftTimer = setTimeout(() => this.saveDraft(), 400);
+  }
+
+  private saveDraft(): void {
+    if (!this.form) return;
+    const draft = {
+      form: this.form.getRawValue(),
+      unidades: this.unidades,
+      responsables: this.responsables,
+      equipoTrabajo: this.equipoTrabajo,
+      financiamientos: this.financiamientos,
+      centrosCosto: this.centrosCosto,
+      instituciones: this.instituciones,
+      difusiones: this.difusiones,
+      estudiantesFeria: this.estudiantesFeria,
+      estudiantesSalida: this.estudiantesSalida,
+      selectedTabIndex: this.selectedTabIndex,
+      files: {
+        asistenciaFileName: this.asistenciaFileName,
+        documentosFileName: this.documentosFileName,
+        fotosFileName: this.fotosFileName,
+      },
+      savedAt: new Date().toISOString(),
+    };
+    try {
+      localStorage.setItem(this.draftKey, JSON.stringify(draft));
+    } catch {
+      // ignore storage errors
+    }
+  }
+
+  private loadDraft(): void {
+    try {
+      const raw = localStorage.getItem(this.draftKey);
+      if (!raw) return;
+      const draft = JSON.parse(raw);
+      if (draft?.form) this.form.patchValue(draft.form);
+      this.unidades = draft?.unidades ?? [];
+      this.responsables = draft?.responsables ?? [];
+      this.equipoTrabajo = draft?.equipoTrabajo ?? [];
+      this.financiamientos = draft?.financiamientos ?? [];
+      this.centrosCosto = draft?.centrosCosto ?? [];
+      this.instituciones = draft?.instituciones ?? [];
+      this.difusiones = draft?.difusiones ?? [];
+      this.estudiantesFeria = draft?.estudiantesFeria ?? [];
+      this.estudiantesSalida = draft?.estudiantesSalida ?? [];
+      this.selectedTabIndex = draft?.selectedTabIndex ?? this.selectedTabIndex;
+      this.asistenciaFileName = draft?.files?.asistenciaFileName ?? '';
+      this.documentosFileName = draft?.files?.documentosFileName ?? '';
+      this.fotosFileName = draft?.files?.fotosFileName ?? '';
+      this.updateEquipoValidators();
+      this.updateInstitucionValidators();
+    } catch {
+      // ignore parse errors
+    }
+  }
+
+  private clearDraft(): void {
+    try {
+      localStorage.removeItem(this.draftKey);
+    } catch {
+      // ignore storage errors
+    }
   }
 
   private urlOptionalValidator() {
@@ -784,11 +874,13 @@ export class ActividadesPmComponent implements OnInit {
     g.get('instNombre')?.markAsPristine();
     g.get('instNombre')?.markAsUntouched();
     this.updateInstitucionValidators();
+    this.scheduleDraftSave();
   }
 
   removeInstitucion(row: InstRow): void {
     this.instituciones = this.instituciones.filter((x) => x !== row);
     this.updateInstitucionValidators();
+    this.scheduleDraftSave();
   }
 
   editResponsable(row: ResponsableRow): void {
@@ -849,10 +941,12 @@ export class ActividadesPmComponent implements OnInit {
     g.get('difusionUrl')?.setValue('');
     g.markAsPristine();
     g.markAsUntouched();
+    this.scheduleDraftSave();
   }
 
   removeDifusion(row: DifusionRow): void {
     this.difusiones = this.difusiones.filter((x) => x !== row);
+    this.scheduleDraftSave();
   }
 
   editDifusion(row: DifusionRow): void {
@@ -932,10 +1026,12 @@ export class ActividadesPmComponent implements OnInit {
         this.openDialog(false, apiMessage || fallback);
       },
     });
+
   }
 
   private goToSection(id: string, tabIndex: number) {
     this.selectedTabIndex = tabIndex;
+    this.scheduleDraftSave();
     setTimeout(() => {
       const target = document.getElementById(id);
       if (!target) return;
@@ -1072,6 +1168,7 @@ export class ActividadesPmComponent implements OnInit {
     this.form.markAsUntouched();
     this.updateEquipoValidators();
     this.updateInstitucionValidators();
+    this.clearDraft();
   }
 
   private updateEquipoValidators() {
