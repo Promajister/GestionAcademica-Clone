@@ -4,9 +4,9 @@ import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 export interface EvidenciasFiles {
-  asistencia?: File | null;
-  documentos?: File | null;
-  fotos?: File | null;
+  asistencia?: File[];
+  documentos?: File[];
+  fotos?: File[];
 }
 
 export interface DifusionItem {
@@ -91,14 +91,20 @@ export class ActividadesPmService {
 
     fd.append('data', JSON.stringify(data));
 
-    if (req.files?.asistencia) {
-      fd.append('asistencia', req.files.asistencia, req.files.asistencia.name);
+    if (req.files?.asistencia?.length) {
+      for (const file of req.files.asistencia) {
+        fd.append('asistencia', file, file.name);
+      }
     }
-    if (req.files?.documentos) {
-      fd.append('documentos', req.files.documentos, req.files.documentos.name);
+    if (req.files?.documentos?.length) {
+      for (const file of req.files.documentos) {
+        fd.append('documentos', file, file.name);
+      }
     }
-    if (req.files?.fotos) {
-      fd.append('fotos', req.files.fotos, req.files.fotos.name);
+    if (req.files?.fotos?.length) {
+      for (const file of req.files.fotos) {
+        fd.append('fotos', file, file.name);
+      }
     }
 
     return fd;

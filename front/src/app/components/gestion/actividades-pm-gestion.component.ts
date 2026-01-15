@@ -917,6 +917,7 @@ export class ActividadesPmGestionComponent implements OnInit {
                   }),
                 ),
                 Evidencias: this.excelText(JSON.stringify(data.evidencias ?? {})),
+                'Resumen IA': this.excelText(data.base?.resumenIa ?? ''),
                 'Evidencias adjuntas': this.excelText(
                   this.joinList(data.archivosEvidencia, (a: any) =>
                     [a?.tipo, a?.nombre, a?.url].filter(Boolean).join(' - '),

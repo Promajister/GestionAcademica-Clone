@@ -142,9 +142,9 @@ export class ActividadesPmComponent implements OnInit {
     { value: 'SALIDA_A_TERRENO', label: 'Salida a Terreno' },
   ];
 
-  asistenciaFile: File | null = null;
-  documentosFile: File | null = null;
-  fotosFile: File | null = null;
+  asistenciaFile: File[] = [];
+  documentosFile: File[] = [];
+  fotosFile: File[] = [];
 
   asistenciaFileName = '';
   documentosFileName = '';
@@ -700,34 +700,44 @@ export class ActividadesPmComponent implements OnInit {
 
   onFileSelected(event: Event, tipo: 'asistencia' | 'documentos' | 'fotos'): void {
     const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    if (!file) return;
+    const files = Array.from(input.files ?? []);
+    if (!files.length) return;
 
     const maxMb = 10;
-    const sizeOk = file.size <= maxMb * 1024 * 1024;
-
-    const ext = (file.name.split('.').pop() ?? '').toLowerCase();
     const allow = {
       asistencia: ['pdf', 'xls', 'xlsx'],
       documentos: ['pdf', 'xls', 'xlsx'],
       fotos: ['jpg', 'jpeg', 'png'],
     }[tipo];
 
-    if (!allow.includes(ext) || !sizeOk) {
+    const validFiles = files.filter((file) => {
+      const sizeOk = file.size <= maxMb * 1024 * 1024;
+      const ext = (file.name.split('.').pop() ?? '').toLowerCase();
+      return allow.includes(ext) && sizeOk;
+    });
+
+    if (!validFiles.length) {
       input.value = '';
       return;
     }
 
-    if (tipo === 'asistencia') {
-      this.asistenciaFile = file;
-      this.asistenciaFileName = file.name;
-    } else if (tipo === 'documentos') {
-      this.documentosFile = file;
-      this.documentosFileName = file.name;
+    if (tipo == 'asistencia') {
+      this.asistenciaFile = validFiles;
+      this.asistenciaFileName = this.formatFileNames(validFiles);
+    } else if (tipo == 'documentos') {
+      this.documentosFile = validFiles;
+      this.documentosFileName = this.formatFileNames(validFiles);
     } else {
-      this.fotosFile = file;
-      this.fotosFileName = file.name;
+      this.fotosFile = validFiles;
+      this.fotosFileName = this.formatFileNames(validFiles);
     }
+  }
+
+  private formatFileNames(files: File[]): string {
+    const names = files.map((f) => f.name).filter((n) => n);
+    if (!names.length) return '';
+    if (names.length <= 2) return names.join(', ');
+    return `${names[0]}, ${names[1]} (+${names.length - 2} mas)`;
   }
 
   private urlOptionalValidator() {
@@ -976,11 +986,11 @@ export class ActividadesPmComponent implements OnInit {
     this.estudiantesSalida = [];
     this.showUnidadError = false;
 
-    this.asistenciaFile = null;
+    this.asistenciaFile = [];
     this.asistenciaFileName = '';
-    this.documentosFile = null;
+    this.documentosFile = [];
     this.documentosFileName = '';
-    this.fotosFile = null;
+    this.fotosFile = [];
     this.fotosFileName = '';
 
     const part = this.form.get('participantes') as FormGroup;

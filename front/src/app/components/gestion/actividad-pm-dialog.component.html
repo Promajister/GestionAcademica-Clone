@@ -982,6 +982,7 @@
                   type="file"
                   class="FileInputHidden"
                   accept=".pdf,.xls,.xlsx"
+                  multiple
                   (change)="onFileSelected($event, 'asistencia')"
                 />
 
@@ -1008,6 +1009,17 @@
                     <mat-icon>open_in_new</mat-icon>
                     Ver
                   </button>
+
+                  <button
+                    *ngIf="asistenciaFilesCount > 0"
+                    mat-stroked-button
+                    type="button"
+                    class="MiniBtn"
+                    (click)="downloadZip('asistencia')"
+                  >
+                    <mat-icon>download</mat-icon>
+                    ZIP
+                  </button>
                 </div>
               </div>
             </div>
@@ -1026,6 +1038,7 @@
                   type="file"
                   class="FileInputHidden"
                   accept=".pdf,.xls,.xlsx"
+                  multiple
                   (change)="onFileSelected($event, 'documentos')"
                 />
 
@@ -1052,6 +1065,17 @@
                     <mat-icon>open_in_new</mat-icon>
                     Ver
                   </button>
+
+                  <button
+                    *ngIf="documentosFilesCount > 0"
+                    mat-stroked-button
+                    type="button"
+                    class="MiniBtn"
+                    (click)="downloadZip('documentos')"
+                  >
+                    <mat-icon>download</mat-icon>
+                    ZIP
+                  </button>
                 </div>
               </div>
             </div>
@@ -1070,6 +1094,7 @@
                   type="file"
                   class="FileInputHidden"
                   accept=".jpg,.jpeg,.png"
+                  multiple
                   (change)="onFileSelected($event, 'fotos')"
                 />
 
@@ -1095,6 +1120,17 @@
                   >
                     <mat-icon>open_in_new</mat-icon>
                     Ver
+                  </button>
+
+                  <button
+                    *ngIf="fotosFilesCount > 0"
+                    mat-stroked-button
+                    type="button"
+                    class="MiniBtn"
+                    (click)="downloadZip('fotos')"
+                  >
+                    <mat-icon>download</mat-icon>
+                    ZIP
                   </button>
                 </div>
               </div>

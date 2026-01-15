@@ -155,13 +155,16 @@ export class ActividadPmDialogComponent implements OnInit {
     { value: 'SALIDA_A_TERRENO', label: 'Salida a Terreno' },
   ];
 
-  asistenciaFile: File | null = null;
-  documentosFile: File | null = null;
-  fotosFile: File | null = null;
+  asistenciaFile: File[] = [];
+  documentosFile: File[] = [];
+  fotosFile: File[] = [];
 
   asistenciaFileName = '';
   documentosFileName = '';
   fotosFileName = '';
+  asistenciaFilesCount = 0;
+  documentosFilesCount = 0;
+  fotosFilesCount = 0;
 
   private readonly apiBaseUrl = environment.apiUrl.replace(/\/api$/, '');
 
@@ -401,8 +404,8 @@ export class ActividadPmDialogComponent implements OnInit {
     return '';
   }
 
-  private getArchivoEvidencia(archivos: any[], tipo: string) {
-    return (archivos ?? []).find((a) => a?.tipo === tipo) ?? null;
+  private getArchivosEvidencia(archivos: any[], tipo: string) {
+    return (archivos ?? []).filter((a) => a?.tipo === tipo);
   }
 
   private getArchivoNombre(archivo: any): string {
@@ -413,6 +416,20 @@ export class ActividadPmDialogComponent implements OnInit {
     if (!url) return '';
     const parts = url.split('/');
     return parts[parts.length - 1] ?? '';
+  }
+
+  private formatArchivoNombres(archivos: any[]): string {
+    const names = (archivos ?? []).map((a) => this.getArchivoNombre(a)).filter((n) => n);
+    if (!names.length) return '';
+    if (names.length <= 2) return names.join(', ');
+    return `${names[0]}, ${names[1]} (+${names.length - 2} mas)`;
+  }
+
+  downloadZip(tipo: 'asistencia' | 'documentos' | 'fotos'): void {
+    const id = Number(this.data?.id ?? this.actividad?.id);
+    if (!Number.isFinite(id) || id <= 0) return;
+    const url = `${this.apiBaseUrl}/api/actividades-pm/${id}/archivos/${tipo}/zip`;
+    window.open(url, '_blank');
   }
 
   openUrl(url?: string): void {
@@ -666,9 +683,9 @@ export class ActividadPmDialogComponent implements OnInit {
         };
 
         const archivos = root?.archivosEvidencia ?? a?.archivosEvidencia ?? [];
-        const archivoAsistencia = this.getArchivoEvidencia(archivos, 'LISTA_ASISTENCIA');
-        const archivoDocumentos = this.getArchivoEvidencia(archivos, 'DOCUMENTO');
-        const archivoFotos = this.getArchivoEvidencia(archivos, 'FOTOGRAFIA');
+        const archivosAsistencia = this.getArchivosEvidencia(archivos, 'LISTA_ASISTENCIA');
+        const archivosDocumentos = this.getArchivosEvidencia(archivos, 'DOCUMENTO');
+        const archivosFotos = this.getArchivosEvidencia(archivos, 'FOTOGRAFIA');
 
         this.actividad = { ...root, ...proy };
         this.resumenIa = root?.resumenIa ?? a?.resumenIa ?? null;
@@ -710,9 +727,9 @@ export class ActividadPmDialogComponent implements OnInit {
           proyecto: proyectoForm,
           evidencias: {
             ...(root?.evidencias ?? {}),
-            listaAsistenciaRef: root?.evidencias?.listaAsistenciaRef ?? archivoAsistencia?.url ?? '',
-            documentosRef: root?.evidencias?.documentosRef ?? archivoDocumentos?.url ?? '',
-            fotosRef: root?.evidencias?.fotosRef ?? archivoFotos?.url ?? '',
+            listaAsistenciaRef: root?.evidencias?.listaAsistenciaRef ?? archivosAsistencia[0]?.url ?? '',
+            documentosRef: root?.evidencias?.documentosRef ?? archivosDocumentos[0]?.url ?? '',
+            fotosRef: root?.evidencias?.fotosRef ?? archivosFotos[0]?.url ?? '',
             enlaceNoticia: root?.evidencias?.enlaceNoticia ?? root?.enlaceNoticia ?? '',
             observaciones: root?.evidencias?.observaciones ?? root?.observaciones ?? '',
           },
@@ -733,9 +750,12 @@ export class ActividadPmDialogComponent implements OnInit {
           },
         });
 
-        this.asistenciaFileName = this.getArchivoNombre(archivoAsistencia);
-        this.documentosFileName = this.getArchivoNombre(archivoDocumentos);
-        this.fotosFileName = this.getArchivoNombre(archivoFotos);
+        this.asistenciaFileName = this.formatArchivoNombres(archivosAsistencia);
+        this.asistenciaFilesCount = archivosAsistencia.length;
+        this.documentosFileName = this.formatArchivoNombres(archivosDocumentos);
+        this.documentosFilesCount = archivosDocumentos.length;
+        this.fotosFileName = this.formatArchivoNombres(archivosFotos);
+        this.fotosFilesCount = archivosFotos.length;
 
         const matrices = root?.matricesParticipantes ?? a?.matricesParticipantes ?? [];
         if (Array.isArray(matrices) && matrices.length > 0) {
@@ -1092,34 +1112,47 @@ export class ActividadPmDialogComponent implements OnInit {
 
   onFileSelected(event: Event, tipo: 'asistencia' | 'documentos' | 'fotos'): void {
     const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    if (!file) return;
+    const files = Array.from(input.files ?? []);
+    if (!files.length) return;
 
     const maxMb = 10;
-    const sizeOk = file.size <= maxMb * 1024 * 1024;
-
-    const ext = (file.name.split('.').pop() ?? '').toLowerCase();
     const allow = {
       asistencia: ['pdf', 'xls', 'xlsx'],
       documentos: ['pdf', 'xls', 'xlsx'],
       fotos: ['jpg', 'jpeg', 'png'],
     }[tipo];
 
-    if (!allow.includes(ext) || !sizeOk) {
+    const validFiles = files.filter((file) => {
+      const sizeOk = file.size <= maxMb * 1024 * 1024;
+      const ext = (file.name.split('.').pop() ?? '').toLowerCase();
+      return allow.includes(ext) && sizeOk;
+    });
+
+    if (!validFiles.length) {
       input.value = '';
       return;
     }
 
-    if (tipo === 'asistencia') {
-      this.asistenciaFile = file;
-      this.asistenciaFileName = file.name;
-    } else if (tipo === 'documentos') {
-      this.documentosFile = file;
-      this.documentosFileName = file.name;
+    if (tipo == 'asistencia') {
+      this.asistenciaFile = validFiles;
+      this.asistenciaFileName = this.formatFileNames(validFiles);
+      this.asistenciaFilesCount = validFiles.length;
+    } else if (tipo == 'documentos') {
+      this.documentosFile = validFiles;
+      this.documentosFileName = this.formatFileNames(validFiles);
+      this.documentosFilesCount = validFiles.length;
     } else {
-      this.fotosFile = file;
-      this.fotosFileName = file.name;
+      this.fotosFile = validFiles;
+      this.fotosFileName = this.formatFileNames(validFiles);
+      this.fotosFilesCount = validFiles.length;
     }
+  }
+
+  private formatFileNames(files: File[]): string {
+    const names = files.map((f) => f.name).filter((n) => n);
+    if (!names.length) return '';
+    if (names.length <= 2) return names.join(', ');
+    return `${names[0]}, ${names[1]} (+${names.length - 2} mas)`;
   }
 
   onRutInputEquipo(ev: Event): void {
