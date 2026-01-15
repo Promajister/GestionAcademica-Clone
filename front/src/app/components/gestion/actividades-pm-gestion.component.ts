@@ -296,16 +296,16 @@ export class ActividadesPmGestionComponent implements OnInit {
               section: [248, 250, 252] as [number, number, number],
             };
 
-            const generatedText = `Generado: ${new Date().toLocaleString('es-CL')}`;
+            const generatedText = this.buildGeneratedText();
             const headerData = {
               title: 'REPORTE DE ACREDITACIÓN',
-              subtitle: 'Registro completo de actividades de vinculación',
+              subtitle: this.getFiltroYear(items),
               generatedText,
             };
 
             const [logoUta, logoFeh] = await Promise.all([
-              this.loadImageAsDataURLSafe('assets/img/uta.png'),
-              this.loadImageAsDataURLSafe('assets/img/feh.png'),
+              this.loadLogoAsDataURLSafe('assets/img/uta.png'),
+              this.loadLogoAsDataURLSafe('assets/img/feh.png'),
             ]);
 
             this.drawPdfHeader(doc, { ...headerData, logoLeft: logoUta, logoRight: logoFeh });
@@ -320,7 +320,6 @@ export class ActividadesPmGestionComponent implements OnInit {
 
             items.forEach((raw, index) => {
               const data = this.normalizeActividad(raw);
-              const nombre = this.safe(data.proyecto?.nombre ?? data.base?.nombre);
               const tipoLabel = this.getTipoActividadLabel(data.proyecto?.tipoActividad ?? data.base?.tipoActividad);
 
               if (index > 0) {
@@ -330,16 +329,7 @@ export class ActividadesPmGestionComponent implements OnInit {
 
               ensureSpace(40);
 
-              doc.setFillColor(colors.section[0], colors.section[1], colors.section[2]);
-              doc.rect(margin, y - 12, contentW, 22, 'F');
-              doc.setFont('helvetica', 'bold');
-              doc.setFontSize(12);
-              doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
-              doc.text(`${index + 1}. ${nombre}`, margin + 8, y + 2);
-              doc.setFont('helvetica', 'normal');
-              doc.setFontSize(9);
-              doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
-              doc.text(`Tipo: ${tipoLabel}`, margin, (y += 22));
+              y -= 2;
 
               const generalRows = this.buildGeneralRows(data);
               y += 8;
@@ -435,7 +425,7 @@ export class ActividadesPmGestionComponent implements OnInit {
                 (f: any) => [
                   this.safe(f?.categoria ?? f?.finCategoria),
                   this.safe(f?.tipoFinanciamiento ?? f?.tipo),
-                  this.safe(f?.monto ?? f?.finMonto),
+                  this.formatMoney(f?.monto ?? f?.finMonto),
                 ],
                 colors,
               );
@@ -530,25 +520,6 @@ export class ActividadesPmGestionComponent implements OnInit {
                 colors,
               );
 
-              const evidenciaFilesRows = this.buildEvidenciasArchivosRows(data);
-              if (evidenciaFilesRows.length) {
-                y = this.renderListSectionWithLinks(
-                  doc,
-                  y,
-                  margin,
-                  top,
-                  bottom,
-                  pageHeight,
-                  contentW,
-                  'Evidencias adjuntas',
-                  ['Tipo', 'Nombre'],
-                  evidenciaFilesRows,
-                  (e: any) => [this.safe(e?.tipo), this.safe(e?.nombre)],
-                  (e: any, colIndex: number) => (colIndex === 1 ? this.normalizeLinkUrl(e?.url) : null),
-                  colors,
-                );
-              }
-
               y = this.renderKeyValueSectionWithUrlStyle(
                 doc,
                 y,
@@ -617,10 +588,10 @@ export class ActividadesPmGestionComponent implements OnInit {
             for (let i = 1; i <= totalPages; i++) {
               doc.setPage(i);
               this.drawPdfHeader(doc, { ...headerData, logoLeft: logoUta, logoRight: logoFeh });
-              this.drawPdfFooter(doc, i, totalPages);
+              this.drawPdfFooter(doc, i, totalPages, 'Reporte de acreditación');
             }
 
-            doc.save('reporte_acreditacion.pdf');
+            doc.save(this.buildPdfFileName('reporte_acreditacion', items));
           } catch {
             this.exportError = 'Error al generar PDF.';
           }
@@ -666,16 +637,16 @@ export class ActividadesPmGestionComponent implements OnInit {
               section: [248, 250, 252] as [number, number, number],
             };
 
-            const generatedText = `Generado: ${new Date().toLocaleString('es-CL')}`;
+            const generatedText = this.buildGeneratedText();
             const headerData = {
               title: 'REPORTE DE ACTIVIDADES DE VINCULACIÓN',
-              subtitle: 'Campos clave de actividades de vinculación',
+              subtitle: this.getFiltroYear(items),
               generatedText,
             };
 
             const [logoUta, logoFeh] = await Promise.all([
-              this.loadImageAsDataURLSafe('assets/img/uta.png'),
-              this.loadImageAsDataURLSafe('assets/img/feh.png'),
+              this.loadLogoAsDataURLSafe('assets/img/uta.png'),
+              this.loadLogoAsDataURLSafe('assets/img/feh.png'),
             ]);
 
             this.drawPdfHeader(doc, { ...headerData, logoLeft: logoUta, logoRight: logoFeh });
@@ -697,30 +668,24 @@ export class ActividadesPmGestionComponent implements OnInit {
                 y = top;
               }
 
-              doc.setFillColor(colors.section[0], colors.section[1], colors.section[2]);
-              doc.rect(margin, y - 12, contentW, 22, 'F');
-              doc.setFont('helvetica', 'bold');
-              doc.setFontSize(12);
-              doc.setTextColor(colors.text[0], colors.text[1], colors.text[2]);
-              const nombreActividad = this.safe(proyecto?.nombre ?? data.base?.nombre);
-              doc.text(nombreActividad, margin + 8, y + 2);
-
               const rows: RowInput[] = [
+                ['Nombre', this.safe(proyecto?.nombre ?? data.base?.nombre)],
                 ['Tipo de vinculación', this.safe(proyecto?.tipoVinculacion ?? data.base?.tipoVinculacion)],
                 ['Fecha de la actividad', fecha],
+                ['Lugar', this.safe(proyecto?.lugar ?? data.base?.lugar)],
                 ['Descripción', descripcion],
               ];
 
-              y += 18;
-              y = this.renderKeyValueSectionAll(
-                doc,
-                y,
+                y += 6;
+                y = this.renderKeyValueSectionAll(
+                  doc,
+                  y,
                 margin,
                 top,
                 bottom,
                 pageHeight,
                 contentW,
-                'Detalle',
+                '',
                 rows,
                 colors,
               );
@@ -778,7 +743,7 @@ export class ActividadesPmGestionComponent implements OnInit {
                   (f: any) => [
                     this.safe(f?.categoria ?? f?.finCategoria),
                     this.safe(f?.tipoFinanciamiento ?? f?.tipo),
-                    this.safe(f?.monto ?? f?.finMonto),
+                    this.formatMoney(f?.monto ?? f?.finMonto),
                   ],
                   colors,
                 );
@@ -835,10 +800,10 @@ export class ActividadesPmGestionComponent implements OnInit {
             for (let i = 1; i <= totalPages; i++) {
               doc.setPage(i);
               this.drawPdfHeader(doc, { ...headerData, logoLeft: logoUta, logoRight: logoFeh });
-              this.drawPdfFooter(doc, i, totalPages);
+              this.drawPdfFooter(doc, i, totalPages, 'Reporte de actividades de vinculación');
             }
 
-            doc.save('reporte_vinculacion.pdf');
+            doc.save(this.buildPdfFileName('reporte_vinculacion', items));
           } catch {
             this.exportError = 'Error al generar PDF.';
           }
@@ -1025,9 +990,10 @@ export class ActividadesPmGestionComponent implements OnInit {
 
   private buildGeneralRows(data: any): RowInput[] {
     const p = data.proyecto ?? {};
-    const rows: RowInput[] = [
-      ['Nombre', this.safe(p?.nombre ?? data.base?.nombre)],
-      ['Objetivo', this.safe(p?.objetivo ?? data.base?.objetivo)],
+      const rows: RowInput[] = [
+        ['Nombre', this.safe(p?.nombre ?? data.base?.nombre)],
+        ['Tipo de actividad', this.getTipoActividadLabel(p?.tipoActividad ?? data.base?.tipoActividad)],
+        ['Objetivo', this.safe(p?.objetivo ?? data.base?.objetivo)],
       ['Descripción', this.safe(p?.descripcion ?? data.base?.descripcion)],
       ['Tipo vinculación', this.safe(p?.tipoVinculacion ?? data.base?.tipoVinculacion)],
       ['Tipo vinculación otro', this.safe(p?.tipoVinculacionOtro ?? data.base?.tipoVinculacionOtro)],
@@ -1214,13 +1180,34 @@ export class ActividadesPmGestionComponent implements OnInit {
       y = top;
     }
 
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.text(title, margin, y);
-    y += 6;
+    if (title) {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.text(title, margin, y);
+      y += 6;
+    }
 
     const headNormalized = head.map((h) => this.normalizeTableText(h));
     const bodyNormalized = items.map(mapRow).map((row) => this.normalizeTableRow(row));
+    const normalizedTitle = String(title ?? '').trim().toLowerCase();
+    const totalRowIndex =
+      normalizedTitle === 'participantes'
+        ? bodyNormalized.findIndex(
+            (row) =>
+              Array.isArray(row) &&
+              String(row[0] ?? '')
+                .trim()
+                .toLowerCase() === 'total participantes',
+          )
+        : normalizedTitle === 'financiamiento'
+          ? bodyNormalized.findIndex(
+              (row) =>
+                Array.isArray(row) &&
+                String(row[0] ?? '')
+                  .trim()
+                  .toLowerCase() === 'total',
+            )
+          : -1;
 
     autoTable(doc, {
       startY: y,
@@ -1241,6 +1228,12 @@ export class ActividadesPmGestionComponent implements OnInit {
         fontStyle: 'bold',
         lineColor: colors.border as any,
         lineWidth: 1,
+      },
+      didParseCell: (data) => {
+        if (totalRowIndex < 0) return;
+        if (data.section !== 'body') return;
+        if (data.row.index !== totalRowIndex) return;
+        data.cell.styles.fontStyle = 'bold';
       },
     alternateRowStyles: { fillColor: colors.zebra as any },
   });
@@ -1277,10 +1270,12 @@ export class ActividadesPmGestionComponent implements OnInit {
       y = top;
     }
 
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.text(title, margin, y);
-    y += 6;
+    if (title) {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.text(title, margin, y);
+      y += 6;
+    }
 
     const headNormalized = head.map((h) => this.normalizeTableText(h));
     const bodyNormalized = items.map(mapRow).map((row) => this.normalizeTableRow(row));
@@ -1535,15 +1530,78 @@ export class ActividadesPmGestionComponent implements OnInit {
       const res = await fetch(path);
       if (!res.ok) return null;
       const blob = await res.blob();
-      return await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
+      return await this.blobToJpegDataUrl(blob, 0.75);
     } catch {
       return null;
     }
+  }
+
+  private async loadLogoAsDataURLSafe(path: string): Promise<string | null> {
+    try {
+      const res = await fetch(path);
+      if (!res.ok) return null;
+      const blob = await res.blob();
+      return await this.blobToPngDataUrl(blob, 256);
+    } catch {
+      return null;
+    }
+  }
+
+  private blobToJpegDataUrl(blob: Blob, quality: number): Promise<string | null> {
+    return new Promise((resolve) => {
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth || img.width;
+        canvas.height = img.naturalHeight || img.height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          URL.revokeObjectURL(url);
+          resolve(null);
+          return;
+        }
+        ctx.drawImage(img, 0, 0);
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+        URL.revokeObjectURL(url);
+        resolve(dataUrl);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve(null);
+      };
+      img.src = url;
+    });
+  }
+
+  private blobToPngDataUrl(blob: Blob, maxWidth: number): Promise<string | null> {
+    return new Promise((resolve) => {
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => {
+        const naturalW = img.naturalWidth || img.width;
+        const naturalH = img.naturalHeight || img.height;
+        const scale = naturalW > maxWidth ? maxWidth / naturalW : 1;
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(naturalW * scale));
+        canvas.height = Math.max(1, Math.round(naturalH * scale));
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          URL.revokeObjectURL(url);
+          resolve(null);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/png');
+        URL.revokeObjectURL(url);
+        resolve(dataUrl);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve(null);
+      };
+      img.src = url;
+    });
   }
 
   private drawPdfHeader(
@@ -1571,7 +1629,8 @@ export class ActividadesPmGestionComponent implements OnInit {
 
     const drawLogo = (dataUrl: string | null | undefined, x: number, y: number, w: number, h: number) => {
       if (!dataUrl) return;
-      doc.addImage(dataUrl, 'PNG', x, y, w, h);
+      const format = dataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+      doc.addImage(dataUrl, format, x, y, w, h);
     };
 
     drawLogo(opts.logoLeft, margin, 18, 76, 56);
@@ -1595,7 +1654,90 @@ export class ActividadesPmGestionComponent implements OnInit {
     doc.line(margin, headerH, pageWidth - margin, headerH);
   }
 
-  private drawPdfFooter(doc: jsPDF, page: number, totalPages: number) {
+  private buildGeneratedText(): string {
+    const formatted = new Intl.DateTimeFormat('es-CL', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+    }).format(new Date());
+
+    return `Fecha y hora: ${formatted}`;
+  }
+
+  private buildPdfFileName(base: string, items: any[]): string {
+    const ids: string[] = [];
+    for (const raw of items ?? []) {
+      const data = this.normalizeActividad(raw);
+      const id = data.base?.id ?? data.proyecto?.id;
+      if (id !== null && id !== undefined && id !== '') ids.push(String(id));
+    }
+    const suffix =
+      ids.length === 1
+        ? this.sanitizeFileName(ids[0])
+        : ids.length > 1
+          ? 'varias_actividades'
+          : '';
+    return suffix ? `${base}_${suffix}.pdf` : `${base}.pdf`;
+  }
+
+  private sanitizeFileName(value: string): string {
+    const trimmed = String(value ?? '').trim();
+    if (!trimmed) return '';
+    return trimmed
+      .replace(/[^a-zA-Z0-9 _-]/g, '')
+      .replace(/\s+/g, '_')
+      .replace(/_+/g, '_')
+      .slice(0, 80);
+  }
+
+  private formatMoney(value: any): string {
+    if (value === null || value === undefined || value === '') return '-';
+    const n = Number(value);
+    if (Number.isNaN(n)) return this.safe(value);
+    return new Intl.NumberFormat('es-CL').format(n);
+  }
+
+  private getFiltroYear(items: any[]): string {
+    const startYear = this.extractYear(this.filtroForm?.value?.fechaInicio);
+    const endYear = this.extractYear(this.filtroForm?.value?.fechaTermino);
+
+    if (startYear || endYear) {
+      if (startYear && endYear) {
+        return startYear == endYear ? String(startYear) : `${startYear}-${endYear}`;
+      }
+      return String(startYear ?? endYear);
+    }
+
+    const years = new Set<number>();
+    for (const raw of items ?? []) {
+      const data = this.normalizeActividad(raw);
+      const proyecto = data.proyecto ?? {};
+      const year = this.extractYear(proyecto?.fechaInicio ?? data.base?.fechaInicio);
+      if (year) years.add(year);
+    }
+
+    if (!years.size) return '-';
+    const sorted = Array.from(years).sort((a, b) => a - b);
+    if (sorted.length == 1) return String(sorted[0]);
+    return `${sorted[0]}-${sorted[sorted.length - 1]}`;
+  }
+
+  private extractYear(value: any): number | null {
+    if (!value) return null;
+    const trimmed = String(value).trim();
+    if (!trimmed) return null;
+    const datePart = trimmed.includes('T') ? trimmed.split('T')[0] : trimmed;
+    const match = /^\d{4}/.exec(datePart);
+    if (match) return Number(match[0]);
+    const parsed = new Date(trimmed);
+    return Number.isNaN(parsed.getTime()) ? null : parsed.getFullYear();
+  }
+
+  private drawPdfFooter(doc: jsPDF, page: number, totalPages: number, title: string) {
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
 
@@ -1613,7 +1755,7 @@ export class ActividadesPmGestionComponent implements OnInit {
     doc.setFontSize(9);
     doc.setTextColor(muted[0], muted[1], muted[2]);
 
-    doc.text('Gestión Académica | Reporte de acreditación', margin, pageHeight - 18);
+    doc.text(`Gestión Académica | ${title}`, margin, pageHeight - 18);
     doc.text(`Página ${page} / ${totalPages}`, pageWidth - margin, pageHeight - 18, {
       align: 'right' as any,
     });

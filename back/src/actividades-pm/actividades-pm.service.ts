@@ -353,7 +353,6 @@ export class ActividadesPmService {
       return null;
     }
 
-    //cambiar modelo si encontramos otro mas barato en tokens
     const prompt = this.buildResumenPrompt(actividad);
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key=${apiKey}`;
 
