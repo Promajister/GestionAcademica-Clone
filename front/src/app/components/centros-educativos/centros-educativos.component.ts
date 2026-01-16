@@ -34,6 +34,7 @@ type Convenio   = 'Marco SLEP' | 'Solicitud directa' | 'ADEP' | string;
 interface CentroEducativo {
   id: number;
   nombre: string;
+  rbd?: string | null;
   tipo: TipoCentro;
   region: string;
   comuna: string;
@@ -137,6 +138,7 @@ export class CentrosEducativosComponent implements OnInit {
   editId: number | null = null;
   newCentroEducativo: Partial<CentroEducativo> = {
     nombre: '',
+    rbd: '',
     tipo: 'SLEP',
     region: '',
     comuna: '',
@@ -268,6 +270,7 @@ export class CentrosEducativosComponent implements OnInit {
   private mapDTOtoUI = (dto: CentroEducativoDTO): CentroEducativo => ({
     id: dto.id,
     nombre: dto.nombre,
+    rbd: dto.rbd ?? undefined,
     tipo: (dto.tipo as TipoCentro) ?? 'SLEP',
     region: dto.region,
     comuna: dto.comuna,
@@ -321,6 +324,7 @@ export class CentrosEducativosComponent implements OnInit {
     this.editId = null;
     this.newCentroEducativo = {
       nombre: '',
+      rbd: '',
       tipo: 'SLEP',
       region: '',
       comuna: '',
@@ -369,6 +373,7 @@ export class CentrosEducativosComponent implements OnInit {
 
     const payloadCentro: CreateCentroPayload = {
       nombre: c.nombre!.trim(),
+      rbd: cleanOrNull(c.rbd),
       tipo: c.tipo as any,
       region: c.region!,
       comuna: c.comuna!,

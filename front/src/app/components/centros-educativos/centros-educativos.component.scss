@@ -564,7 +564,14 @@
   align-items:center;
   border-top: 1px solid #eef2f7;
 }
-.workers-row .cell{ min-width: 0; font-size: 13.5px; color: #0f172a; }
+.workers-row .cell{
+  min-width: 0;
+  font-size: 13.5px;
+  color: #0f172a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .workers-row--head{
   border-top: none;
   background: #f8fafc;

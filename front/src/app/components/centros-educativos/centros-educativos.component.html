@@ -12,7 +12,7 @@
 
         <div class="hero__titles">
           <h1>Gestión de Centros Educativos</h1>
-          <p>Registra y administra centros asociados para prácticas profesionales.</p>
+          <p>Registra y administra centros asociados para pr&aacute;cticas profesionales.</p>
 
           <div class="hero__chips">
             <span class="chip">
@@ -50,7 +50,7 @@
             [(ngModel)]="searchTerm"
             name="searchTerm"
             (ngModelChange)="onFiltersChange()"
-            placeholder="Nombre, comuna o región"
+            placeholder="Nombre, comuna o Regi&oacute;n"
           />
         </mat-form-field>
 
@@ -119,7 +119,7 @@
 
           <div class="row-2">
             <mat-form-field appearance="outline" class="w-100">
-              <mat-label>Región *</mat-label>
+              <mat-label>Regi&oacute;n *</mat-label>
               <mat-select
                 [(ngModel)]="newCentroEducativo.region"
                 name="region"
@@ -140,14 +140,20 @@
 
           <div class="row-1">
             <mat-form-field appearance="outline" class="w-100">
-              <mat-label>Dirección</mat-label>
+              <mat-label>Direcci&oacute;n</mat-label>
               <input matInput [(ngModel)]="newCentroEducativo.direccion" name="direccion" />
+            </mat-form-field>
+          </div>
+          <div class="row-1">
+            <mat-form-field appearance="outline" class="w-100">
+              <mat-label>RBD (opcional)</mat-label>
+              <input matInput [(ngModel)]="newCentroEducativo.rbd" name="rbd" placeholder="Ej: 12345" />
             </mat-form-field>
           </div>
 
           <div class="row-3">
             <mat-form-field appearance="outline" class="w-100">
-              <mat-label>Teléfono</mat-label>
+              <mat-label>Tel&eacute;fono</mat-label>
               <input matInput [(ngModel)]="newCentroEducativo.telefono" name="telefono" />
             </mat-form-field>
 
@@ -175,7 +181,7 @@
 
           <div class="row-2">
             <mat-form-field appearance="outline" class="w-100">
-              <mat-label>Fecha inicio de asociación</mat-label>
+              <mat-label>Fecha inicio de asociaci&oacute;n</mat-label>
               <input
                 matInput
                 [matDatepicker]="pickerAsoc"
@@ -263,7 +269,7 @@
               class="mini-ico"
               *ngIf="c.telefono !== null && c.telefono !== undefined"
               [title]="'' + c.telefono"
-              (click)="showField('Teléfono', '' + c.telefono); $event.stopPropagation()">
+              (click)="showField('Tel&eacute;fono', '' + c.telefono); $event.stopPropagation()">
               <mat-icon>call</mat-icon>
             </button>
 
@@ -324,7 +330,7 @@
             <mat-icon>school</mat-icon>
           </div>
           <div class="dialog-titles">
-            <h2>Información del Centro educativo</h2>
+            <h2>Informaci&oacute;n del Centro educativo</h2>
             <div class="dialog-subtitle truncate">
               {{ selectedCentroEducativo.nombre }}
             </div>
@@ -357,24 +363,29 @@
   <div class="details-section">
     <div class="section-head">
       <mat-icon>place</mat-icon>
-      <h3>Ubicación</h3>
+      <h3>Ubicaci&oacute;n</h3>
     </div>
 
     <div class="details-grid details-grid--2">
       <div class="kv">
-        <div class="k">Región</div>
+        <div class="k">Regi&oacute;n</div>
         <div class="v">{{ selectedCentroEducativo.region }}</div>
       </div>
 
-      <div class="kv">
-        <div class="k">Comuna</div>
-        <div class="v">{{ selectedCentroEducativo.comuna }}</div>
-      </div>
+            <div class="kv">
+              <div class="k">Comuna</div>
+              <div class="v">{{ selectedCentroEducativo.comuna }}</div>
+            </div>
 
-      <div class="kv kv--full" *ngIf="selectedCentroEducativo.direccion">
-        <div class="k">Dirección</div>
-        <div class="v">{{ selectedCentroEducativo.direccion }}</div>
-      </div>
+            <div class="kv">
+              <div class="k">RBD</div>
+              <div class="v">{{ selectedCentroEducativo.rbd || 'No especificado' }}</div>
+            </div>
+
+            <div class="kv kv--full" *ngIf="selectedCentroEducativo.direccion">
+              <div class="k">Direcci&oacute;n</div>
+              <div class="v">{{ selectedCentroEducativo.direccion }}</div>
+            </div>
     </div>
   </div>
 
@@ -388,7 +399,7 @@
       <div class="contact-card" *ngIf="selectedCentroEducativo.telefono">
         <mat-icon>call</mat-icon>
         <div class="contact-meta">
-          <div class="contact-label">Teléfono</div>
+          <div class="contact-label">Tel&eacute;fono</div>
           <div class="contact-value truncate">{{ selectedCentroEducativo.telefono }}</div>
         </div>
       </div>
@@ -432,7 +443,7 @@
         <div>Nombre</div>
         <div>RUT</div>
         <div>Correo</div>
-        <div>Teléfono</div>
+        <div>Tel&eacute;fono</div>
       </div>
 
       <div class="workers-row" *ngFor="let t of selectedCentroEducativo.trabajadores">
@@ -499,7 +510,7 @@
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-100 kv">
-              <mat-label>Teléfono</mat-label>
+              <mat-label>Tel&eacute;fono</mat-label>
               <input matInput [(ngModel)]="contactosForm.directorTelefono" name="directorTelefono" />
             </mat-form-field>
 
@@ -529,7 +540,7 @@
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-100 kv">
-              <mat-label>Teléfono</mat-label>
+              <mat-label>Tel&eacute;fono</mat-label>
               <input matInput [(ngModel)]="contactosForm.utpTelefono" name="utpTelefono" />
             </mat-form-field>
 

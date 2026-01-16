@@ -87,6 +87,7 @@ model Practica {
 model CentroEducativo {
   id                      Int        @id @default(autoincrement())
   nombre                  String
+  rbd                     String?
   region                  String?
   comuna                  String?
   direccion               String?

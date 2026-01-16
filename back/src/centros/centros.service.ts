@@ -47,6 +47,7 @@ export class CentrosService {
     return this.prisma.centroEducativo.create({
       data: {
         nombre: dto.nombre,
+        rbd: dto.rbd ?? null,
         tipo: this.toPrismaTipo(dto.tipo),
         region: dto.region,
         comuna: dto.comuna,
@@ -102,6 +103,7 @@ export class CentrosService {
         select: {
           id: true,
           nombre: true,
+          rbd: true,
           region: true,
           comuna: true,
           direccion: true,
@@ -133,6 +135,7 @@ export class CentrosService {
       select: {
         id: true,
         nombre: true,
+        rbd: true,
         region: true,
         comuna: true,
         direccion: true,
@@ -169,6 +172,7 @@ export class CentrosService {
         where: { id },
         data: {
           ...(dto.nombre     !== undefined ? { nombre: dto.nombre } : {}),
+          ...(dto.rbd        !== undefined ? { rbd: dto.rbd ?? null } : {}),
           ...(dto.tipo       !== undefined ? { tipo: this.toPrismaTipo(dto.tipo) } : {}),
           ...(dto.region     !== undefined ? { region: dto.region ?? null } : {}),
           ...(dto.comuna     !== undefined ? { comuna: dto.comuna ?? null } : {}),

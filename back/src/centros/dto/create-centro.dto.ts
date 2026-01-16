@@ -9,6 +9,10 @@ export class CreateCentroDto {
   @IsNotEmpty()
   nombre!: string;
 
+  @IsOptional() @IsString()
+  @MaxLength(20)
+  rbd?: string | null;
+
   @IsString()
   @IsIn(TIPO_CENTRO_VALUES)
   tipo!: TipoCentroDTO;
