@@ -197,9 +197,7 @@
               <mat-select formControlName="tutor1Id">
                 <mat-option [value]="null">Seleccionar tutor...</mat-option>
                 @for (tutor of tutores; track tutor.id) {
-                  <mat-option
-                    [value]="tutor.id"
-                    [disabled]="isTutorSeleccionado(tutor.id, 'tutor1Id')">
+                  <mat-option [value]="tutor.id">
                     {{ tutor.nombre }}
                   </mat-option>
                 }
@@ -219,36 +217,6 @@
               </mat-select>
               @if (formularioPractica.get('tutor1Rol')?.hasError('required')) {
                 <mat-error>Debes indicar un rol para el tutor</mat-error>
-              }
-            </mat-form-field>
-          </div>
-
-          <!-- Tutores (2) -->
-          <div class="row-2">
-            <mat-form-field appearance="outline">
-              <mat-label>Tutor 2 (opcional)</mat-label>
-              <mat-select formControlName="tutor2Id">
-                <mat-option [value]="null">Sin asignar</mat-option>
-                @for (tutor of tutores; track tutor.id) {
-                  <mat-option
-                    [value]="tutor.id"
-                    [disabled]="isTutorSeleccionado(tutor.id, 'tutor2Id')">
-                    {{ tutor.nombre }}
-                  </mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline">
-              <mat-label>Rol Tutor 2</mat-label>
-              <mat-select formControlName="tutor2Rol">
-                <mat-option [value]="''">Sin rol asignado</mat-option>
-                @for (rol of rolesTutor; track rol) {
-                  <mat-option [value]="rol">{{ rol }}</mat-option>
-                }
-              </mat-select>
-              @if (formularioPractica.get('tutor2Rol')?.hasError('required')) {
-                <mat-error>Indica el rol para el tutor seleccionado</mat-error>
               }
             </mat-form-field>
           </div>
