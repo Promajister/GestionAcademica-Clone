@@ -9,6 +9,12 @@ interface QueryFilters {
   fechaTermino?: string;
 }
 
+type IaProvider = {
+  name: string;
+  enabled: boolean;
+  send: (prompt: string) => Promise<string | null>;
+};
+
 @Injectable()
 export class ActividadesPmService {
   constructor(private prisma: PrismaService) {}
@@ -347,43 +353,189 @@ export class ActividadesPmService {
   }
 
   private async generarResumenIa(actividad: any): Promise<string | null> {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      console.warn('[IA] GEMINI_API_KEY no configurada');
+    const prompt = this.buildResumenPrompt(actividad);
+    const providers = this.getProviders();
+    if (providers.length === 0) {
+      console.warn('[IA] No hay proveedores configurados');
       return null;
     }
 
-    const prompt = this.buildResumenPrompt(actividad);
+    for (const provider of providers) {
+      const text = await this.tryProvider(provider, prompt);
+      if (text) return text;
+    }
+
+    return null;
+  }
+
+  private getProviders(): IaProvider[] {
+    const providers: IaProvider[] = [
+      {
+        name: 'groq',
+        enabled: Boolean(process.env.GROQ_API_KEY),
+        send: (prompt: string) => this.callGroq(prompt),
+      },
+      {
+        name: 'gemini',
+        enabled: Boolean(process.env.GEMINI_API_KEY),
+        send: (prompt: string) => this.callGemini(prompt),
+      },
+      {
+        name: 'cerebras',
+        enabled: Boolean(process.env.CEREBRAS_API_KEY),
+        send: (prompt: string) => this.callCerebras(prompt),
+      },
+    ];
+
+    return providers.filter((p) => p.enabled);
+  }
+
+  private async tryProvider(provider: IaProvider, prompt: string): Promise<string | null> {
+    for (let attempt = 1; attempt <= 2; attempt += 1) {
+      const text = await provider.send(prompt);
+      if (text) {
+        console.info(`[IA] proveedor=${provider.name} ok`);
+        return text;
+      }
+      if (attempt === 1) await this.sleep(350);
+    }
+    console.warn(`[IA] proveedor=${provider.name} sin respuesta`);
+    return null;
+  }
+
+  private async callGemini(prompt: string): Promise<string | null> {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) return null;
+
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key=${apiKey}`;
+    const payload = {
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0.2,
+        maxOutputTokens: 200,
+      },
+    };
+
+    const json = await this.postJson(url, payload, { 'Content-Type': 'application/json' }, 'gemini');
+    if (!json) return null;
+    const text = json?.candidates?.[0]?.content?.parts?.map((p: any) => p?.text ?? '').join('').trim();
+    if (!text) {
+      console.warn('[IA] Gemini respuesta vacia');
+    }
+    return text || null;
+  }
+
+  private async callGroq(prompt: string): Promise<string | null> {
+    const apiKey = process.env.GROQ_API_KEY;
+    if (!apiKey) return null;
+
+    const url = 'https://api.groq.com/openai/v1/chat/completions';
+    const payload = {
+      model: 'llama-3.1-8b-instant',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.2,
+      max_tokens: 200,
+    };
+
+    const json = await this.postJson(
+      url,
+      payload,
+      {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      'groq',
+    );
+    if (!json) return null;
+    const text = json?.choices?.[0]?.message?.content?.trim();
+    if (!text) {
+      console.warn('[IA] Groq respuesta vacia');
+    }
+    return text || null;
+  }
+
+  private async callCerebras(prompt: string): Promise<string | null> {
+    const apiKey = process.env.CEREBRAS_API_KEY;
+    if (!apiKey) return null;
+
+    const url = 'https://api.cerebras.ai/v1/chat/completions';
+    const payload = {
+      model: 'llama3.1-8b',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.2,
+      max_tokens: 200,
+    };
+
+    const json = await this.postJson(
+      url,
+      payload,
+      {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      'cerebras',
+    );
+    if (!json) return null;
+    const text = json?.choices?.[0]?.message?.content?.trim();
+    if (!text) {
+      console.warn('[IA] Cerebras respuesta vacia');
+    }
+    return text || null;
+  }
+
+  private async postJson(
+    url: string,
+    payload: any,
+    headers: Record<string, string>,
+    provider: string,
+  ): Promise<any | null> {
+    const res = await this.fetchWithTimeout(
+      url,
+      {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+      },
+      provider,
+    );
+
+    if (!res?.ok) {
+      const errText = await res?.text().catch(() => '');
+      console.warn(`[IA] ${provider} respuesta no OK`, res?.status, errText);
+      return null;
+    }
 
     try {
-      const res = await (globalThis as any).fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.2,
-            maxOutputTokens: 200,
-          },
-        }),
-      });
-
-      if (!res?.ok) {
-        const errText = await res.text().catch(() => '');
-        console.warn('[IA] Respuesta no OK', res?.status, errText);
-        return null;
-      }
-      const json = await res.json();
-      const text = json?.candidates?.[0]?.content?.parts?.map((p: any) => p?.text ?? '').join('').trim();
-      if (!text) {
-        console.warn('[IA] Respuesta vacia');
-      }
-      return text || null;
+      return await res.json();
     } catch {
-      console.warn('[IA] Error al llamar Gemini');
+      console.warn(`[IA] ${provider} respuesta invalida`);
       return null;
     }
+  }
+
+  private async fetchWithTimeout(
+    url: string,
+    options: any,
+    provider: string,
+  ): Promise<any | null> {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+
+    try {
+      return await (globalThis as any).fetch(url, {
+        ...options,
+        signal: controller.signal,
+      });
+    } catch {
+      console.warn(`[IA] Error al llamar ${provider}`);
+      return null;
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  private async sleep(ms: number): Promise<void> {
+    await new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   private buildResumenPrompt(actividad: any): string {
