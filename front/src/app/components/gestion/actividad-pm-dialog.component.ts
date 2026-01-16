@@ -1,13 +1,6 @@
 ﻿import { Component, Inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import {
-  AbstractControl,
-  FormBuilder,
-  FormGroup,
-  ReactiveFormsModule,
-  ValidationErrors,
-  Validators,
-} from '@angular/forms';
+import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { catchError, debounceTime, distinctUntilChanged, of, switchMap } from 'rxjs';
 
@@ -159,6 +152,10 @@ export class ActividadPmDialogComponent implements OnInit {
   asistenciaFile: File[] = [];
   documentosFile: File[] = [];
   fotosFile: File[] = [];
+
+  archivosAsistenciaSrv: any[] = [];
+  archivosDocumentosSrv: any[] = [];
+  archivosFotosSrv: any[] = [];
 
   asistenciaFileName = '';
   documentosFileName = '';
@@ -405,7 +402,7 @@ export class ActividadPmDialogComponent implements OnInit {
     return (archivos ?? []).filter((a) => a?.tipo === tipo);
   }
 
-  private getArchivoNombre(archivo: any): string {
+  getArchivoNombre(archivo: any): string {
     if (!archivo) return '';
     const nombre = String(archivo?.nombre ?? '').trim();
     if (nombre) return nombre;
@@ -413,6 +410,26 @@ export class ActividadPmDialogComponent implements OnInit {
     if (!url) return '';
     const parts = url.split('/');
     return parts[parts.length - 1] ?? '';
+  }
+
+  removeSelectedFile(tipo: 'asistencia' | 'documentos' | 'fotos', index: number): void {
+    if (tipo === 'asistencia') {
+      this.asistenciaFile = this.asistenciaFile.filter((_, i) => i !== index);
+      this.asistenciaFilesCount = this.asistenciaFile.length;
+      this.asistenciaFileName = this.formatFileNames(this.asistenciaFile);
+    }
+
+    if (tipo === 'documentos') {
+      this.documentosFile = this.documentosFile.filter((_, i) => i !== index);
+      this.documentosFilesCount = this.documentosFile.length;
+      this.documentosFileName = this.formatFileNames(this.documentosFile);
+    }
+
+    if (tipo === 'fotos') {
+      this.fotosFile = this.fotosFile.filter((_, i) => i !== index);
+      this.fotosFilesCount = this.fotosFile.length;
+      this.fotosFileName = this.formatFileNames(this.fotosFile);
+    }
   }
 
   private formatArchivoNombres(archivos: any[]): string {
@@ -455,6 +472,21 @@ export class ActividadPmDialogComponent implements OnInit {
     const clean = url.split('?')[0] ?? '';
     const parts = clean.split('/');
     return parts[parts.length - 1] || 'archivo';
+  }
+
+  formatSize(bytes: number): string {
+    if (bytes === null || bytes === undefined) return '';
+    const units = ['B', 'KB', 'MB', 'GB'];
+    let v = bytes;
+    let i = 0;
+
+    while (v >= 1024 && i < units.length - 1) {
+      v /= 1024;
+      i++;
+    }
+
+    const decimals = i === 0 ? 0 : 1;
+    return `${v.toFixed(decimals)} ${units[i]}`;
   }
 
   private fixMojibake(value: string): string {
@@ -675,6 +707,9 @@ export class ActividadPmDialogComponent implements OnInit {
         const archivosAsistencia = this.getArchivosEvidencia(archivos, 'LISTA_ASISTENCIA');
         const archivosDocumentos = this.getArchivosEvidencia(archivos, 'DOCUMENTO');
         const archivosFotos = this.getArchivosEvidencia(archivos, 'FOTOGRAFIA');
+        this.archivosAsistenciaSrv = archivosAsistencia;
+        this.archivosDocumentosSrv = archivosDocumentos;
+        this.archivosFotosSrv = archivosFotos;
 
         this.actividad = { ...root, ...proy };
         this.resumenIa = root?.resumenIa ?? a?.resumenIa ?? null;
@@ -1139,6 +1174,7 @@ export class ActividadPmDialogComponent implements OnInit {
       this.fotosFileName = this.formatFileNames(validFiles);
       this.fotosFilesCount = validFiles.length;
     }
+    input.value = '';
   }
 
   private formatFileNames(files: File[]): string {

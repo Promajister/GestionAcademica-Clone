@@ -285,7 +285,9 @@
   border: 1px solid #e5e7eb;
   background: #fff;
   align-items: flex-start;
+  min-height: 0; /* ✅ */
 }
+
 
 .EvidenceCard--full{ grid-column: 1 / -1; }
 
@@ -301,7 +303,11 @@
   flex: 0 0 auto;
 }
 
-.EvidenceBody{ flex: 1 1 auto; }
+.EvidenceBody{
+  flex: 1 1 auto;
+  min-height: 0; /* ✅ */
+}
+
 .EvidenceBody h4{ margin: 0; font-size: 14px; font-weight: 800; color: #0f172a; }
 .EvidenceBody p{ margin: 4px 0 10px; font-size: 13px; color: #475569; }
 
@@ -360,3 +366,109 @@
 @media (max-width: 820px){
   .FormRow{ grid-template-columns: 1fr; }
 }
+
+.EvidenceTop{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap: 12px;
+}
+
+.EvidenceActions{
+  display:flex;
+  align-items:center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.CountPill{
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.FilesPanel{
+  margin-top: 10px;
+  border: 1px solid #e5e7eb;
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 8px;
+
+  max-height: 110px; /* ✅ prueba 90-120 */
+  overflow: auto;    /* ✅ scroll interno */
+}
+
+.FileList{
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.FileItem{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  padding: 10px 10px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+}
+
+.FileItem__icon{
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+  color: #446BA9;
+  flex: 0 0 auto;
+}
+
+.FileItem__meta{
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.FileItem__name{
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.FileItem__size{
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.FileItem__remove{
+  color: #64748b;
+}
+
+.FileList--compact{
+  gap: 6px;
+}
+
+.FileItem--compact{
+  padding: 8px 10px;
+}
+
+.FileItem--compact .FileItem__name{
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.FileItem--compact .FileItem__meta,
+.FileItem--compact .FileItem__size{
+  display: none; /* por si quedan estilos viejos */
+}
+
+
+

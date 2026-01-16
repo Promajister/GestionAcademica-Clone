@@ -955,15 +955,35 @@
               </div>
 
               <div class="EvidenceBody">
-                <h4>Lista de asistencia</h4>
-                <p>Sube Excel o PDF.</p>
+                <div class="EvidenceTop">
+                  <div>
+                    <h4>Lista de asistencia</h4>
+                    <p>Sube Excel o PDF.</p>
+                  </div>
+
+                  <div class="EvidenceActions">
+                    <span class="CountPill" *ngIf="asistenciaFilesCount > 0">
+                      {{ asistenciaFilesCount }} archivo(s)
+                    </span>
+
+                    <button
+                      *ngIf="form.get('evidencias.listaAsistenciaRef')?.value"
+                      mat-stroked-button
+                      type="button"
+                      class="MiniBtn"
+                      (click)="openUrl(form.get('evidencias.listaAsistenciaRef')?.value)"
+                    >
+                      <mat-icon>download</mat-icon>
+                      Descargar
+                    </button>
+                  </div>
+                </div>
 
                 <input
                   #fileAsistencia
                   type="file"
                   class="FileInputHidden"
                   accept=".pdf,.xls,.xlsx"
-                  multiple
                   (change)="onFileSelected($event, 'asistencia')"
                 />
 
@@ -979,29 +999,41 @@
                   <ng-template #noAsis>
                     <span class="FileName muted">Sin archivo</span>
                   </ng-template>
-
-                  <button
-                    *ngIf="form.get('evidencias.listaAsistenciaRef')?.value"
-                    mat-stroked-button
-                    type="button"
-                    class="MiniBtn"
-                    (click)="openUrl(form.get('evidencias.listaAsistenciaRef')?.value)"
-                  >
-                    <mat-icon>open_in_new</mat-icon>
-                    Ver
-                  </button>
-
-                  <button
-                    *ngIf="asistenciaFilesCount > 0"
-                    mat-stroked-button
-                    type="button"
-                    class="MiniBtn"
-                    (click)="downloadZip('asistencia')"
-                  >
-                    <mat-icon>download</mat-icon>
-                    ZIP
-                  </button>
                 </div>
+
+                <div class="FilesPanel" *ngIf="asistenciaFile.length || archivosAsistenciaSrv.length">
+                  <ul class="FileList FileList--compact">
+                    <!-- Si seleccionó nuevos archivos, muestra esos -->
+                    <ng-container *ngIf="asistenciaFile.length; else AsisSrv">
+                      <li class="FileItem FileItem--compact" *ngFor="let f of asistenciaFile; let i = index">
+                        <mat-icon class="FileItem__icon">description</mat-icon>
+
+                        <div class="FileItem__name" [title]="f.name">{{ f.name }}</div>
+
+                        <button
+                          mat-icon-button
+                          type="button"
+                          class="FileItem__remove"
+                          (click)="removeSelectedFile('asistencia', i)"
+                          *ngIf="!isView"
+                        >
+                          <mat-icon>close</mat-icon>
+                        </button>
+                      </li>
+                    </ng-container>
+
+                    <!-- Si no seleccionó nuevos, muestra los guardados -->
+                    <ng-template #AsisSrv>
+                      <li class="FileItem FileItem--compact" *ngFor="let a of archivosAsistenciaSrv">
+                        <mat-icon class="FileItem__icon">description</mat-icon>
+                        <div class="FileItem__name" [title]="getArchivoNombre(a)">
+                          {{ getArchivoNombre(a) }}
+                        </div>
+                      </li>
+                    </ng-template>
+                  </ul>
+                </div>
+
               </div>
             </div>
 
@@ -1011,8 +1043,29 @@
               </div>
 
               <div class="EvidenceBody">
-                <h4>Documentos</h4>
-                <p>Sube PDF o Excel.</p>
+                <div class="EvidenceTop">
+                  <div>
+                    <h4>Documentos</h4>
+                    <p>Sube PDF o Excel.</p>
+                  </div>
+
+                  <div class="EvidenceActions">
+                    <span class="CountPill" *ngIf="documentosFilesCount > 0">
+                      {{ documentosFilesCount }} archivo(s)
+                    </span>
+
+                    <button
+                      *ngIf="documentosFilesCount > 0"
+                      mat-stroked-button
+                      type="button"
+                      class="MiniBtn"
+                      (click)="downloadZip('documentos')"
+                    >
+                      <mat-icon>download</mat-icon>
+                      ZIP
+                    </button>
+                  </div>
+                </div>
 
                 <input
                   #fileDocs
@@ -1035,29 +1088,38 @@
                   <ng-template #noDoc>
                     <span class="FileName muted">Sin archivo</span>
                   </ng-template>
-
-                  <button
-                    *ngIf="form.get('evidencias.documentosRef')?.value"
-                    mat-stroked-button
-                    type="button"
-                    class="MiniBtn"
-                    (click)="openUrl(form.get('evidencias.documentosRef')?.value)"
-                  >
-                    <mat-icon>open_in_new</mat-icon>
-                    Ver
-                  </button>
-
-                  <button
-                    *ngIf="documentosFilesCount > 0"
-                    mat-stroked-button
-                    type="button"
-                    class="MiniBtn"
-                    (click)="downloadZip('documentos')"
-                  >
-                    <mat-icon>download</mat-icon>
-                    ZIP
-                  </button>
                 </div>
+
+                <div class="FilesPanel" *ngIf="documentosFile.length || archivosDocumentosSrv.length">
+                  <ul class="FileList FileList--compact">
+                    <ng-container *ngIf="documentosFile.length; else DocsSrv">
+                      <li class="FileItem FileItem--compact" *ngFor="let f of documentosFile; let i = index">
+                        <mat-icon class="FileItem__icon">description</mat-icon>
+                        <div class="FileItem__name" [title]="f.name">{{ f.name }}</div>
+
+                        <button
+                          mat-icon-button
+                          type="button"
+                          class="FileItem__remove"
+                          (click)="removeSelectedFile('documentos', i)"
+                          *ngIf="!isView"
+                        >
+                          <mat-icon>close</mat-icon>
+                        </button>
+                      </li>
+                    </ng-container>
+
+                    <ng-template #DocsSrv>
+                      <li class="FileItem FileItem--compact" *ngFor="let a of archivosDocumentosSrv">
+                        <mat-icon class="FileItem__icon">description</mat-icon>
+                        <div class="FileItem__name" [title]="getArchivoNombre(a)">
+                          {{ getArchivoNombre(a) }}
+                        </div>
+                      </li>
+                    </ng-template>
+                  </ul>
+                </div>
+
               </div>
             </div>
 
@@ -1067,8 +1129,29 @@
               </div>
 
               <div class="EvidenceBody">
-                <h4>Fotografías</h4>
-                <p>Sube JPG (también acepta PNG/JPEG).</p>
+                <div class="EvidenceTop">
+                  <div>
+                    <h4>Fotografías</h4>
+                    <p>Sube JPG (también acepta PNG/JPEG).</p>
+                  </div>
+
+                  <div class="EvidenceActions">
+                    <span class="CountPill" *ngIf="fotosFilesCount > 0">
+                      {{ fotosFilesCount }} archivo(s)
+                    </span>
+
+                    <button
+                      *ngIf="fotosFilesCount > 0"
+                      mat-stroked-button
+                      type="button"
+                      class="MiniBtn"
+                      (click)="downloadZip('fotos')"
+                    >
+                      <mat-icon>download</mat-icon>
+                      ZIP
+                    </button>
+                  </div>
+                </div>
 
                 <input
                   #fileFotos
@@ -1091,28 +1174,35 @@
                   <ng-template #noFoto>
                     <span class="FileName muted">Sin archivo</span>
                   </ng-template>
+                </div>
+                <div class="FilesPanel" *ngIf="fotosFile.length || archivosFotosSrv.length">
+                  <ul class="FileList FileList--compact">
+                    <ng-container *ngIf="fotosFile.length; else FotosSrv">
+                      <li class="FileItem FileItem--compact" *ngFor="let f of fotosFile; let i = index">
+                        <mat-icon class="FileItem__icon">photo</mat-icon>
+                        <div class="FileItem__name" [title]="f.name">{{ f.name }}</div>
 
-                  <button
-                    *ngIf="form.get('evidencias.fotosRef')?.value"
-                    mat-stroked-button
-                    type="button"
-                    class="MiniBtn"
-                    (click)="openUrl(form.get('evidencias.fotosRef')?.value)"
-                  >
-                    <mat-icon>open_in_new</mat-icon>
-                    Ver
-                  </button>
+                        <button
+                          mat-icon-button
+                          type="button"
+                          class="FileItem__remove"
+                          (click)="removeSelectedFile('fotos', i)"
+                          *ngIf="!isView"
+                        >
+                          <mat-icon>close</mat-icon>
+                        </button>
+                      </li>
+                    </ng-container>
 
-                  <button
-                    *ngIf="fotosFilesCount > 0"
-                    mat-stroked-button
-                    type="button"
-                    class="MiniBtn"
-                    (click)="downloadZip('fotos')"
-                  >
-                    <mat-icon>download</mat-icon>
-                    ZIP
-                  </button>
+                    <ng-template #FotosSrv>
+                      <li class="FileItem FileItem--compact" *ngFor="let a of archivosFotosSrv">
+                        <mat-icon class="FileItem__icon">photo</mat-icon>
+                        <div class="FileItem__name" [title]="getArchivoNombre(a)">
+                          {{ getArchivoNombre(a) }}
+                        </div>
+                      </li>
+                    </ng-template>
+                  </ul>
                 </div>
               </div>
             </div>

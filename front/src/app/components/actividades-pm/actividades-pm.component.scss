@@ -375,3 +375,58 @@
   max-height: none !important;
   overflow: hidden !important;
 }
+
+.FileList{
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.FileItem{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  background: #f8fafc;
+}
+
+.FileItem__icon{
+  color: #446BA9;
+  background: #eef2ff;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+}
+
+.FileItem__meta{
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.FileItem__name{
+  font-size: 13px;
+  font-weight: 800;
+  color: #0f172a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.FileItem__size{
+  margin-top: 2px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.FileItem__remove{
+  flex: 0 0 auto;
+}
