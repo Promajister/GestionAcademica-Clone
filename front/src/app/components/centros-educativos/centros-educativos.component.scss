@@ -823,6 +823,16 @@
   gap: 10px;
 }
 
+.history-toolbar{
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
+
+.history-select{
+  width: 160px;
+}
+
 .history-row{
   display: flex;
   align-items: center;

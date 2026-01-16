@@ -593,14 +593,24 @@
       </div>
 
       <div class="dialog-body">
+        <div class="history-toolbar" *ngIf="practicasCentroYears.length">
+          <mat-form-field appearance="outline" class="history-select">
+            <mat-label>A&ntilde;o</mat-label>
+            <mat-select [(ngModel)]="practicasCentroYear">
+              <mat-option value="all">Todos</mat-option>
+              <mat-option *ngFor="let y of practicasCentroYears" [value]="y">{{ y }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
         <div class="history-loading muted" *ngIf="practicasCentroLoading">Cargando pr&aacute;cticas...</div>
 
-        <div class="history-empty muted" *ngIf="!practicasCentroLoading && practicasCentro.length === 0">
+        <div class="history-empty muted" *ngIf="!practicasCentroLoading && practicasCentroFiltradas.length === 0">
           No hay pr&aacute;cticas registradas para este centro.
         </div>
 
-        <div class="history-list" *ngIf="!practicasCentroLoading && practicasCentro.length">
-          <div class="history-row" *ngFor="let p of practicasCentro">
+        <div class="history-list" *ngIf="!practicasCentroLoading && practicasCentroFiltradas.length">
+          <div class="history-row" *ngFor="let p of practicasCentroFiltradas">
             <div class="history-main">
               <div class="history-student truncate">{{ p.estudiante?.nombre || 'Sin estudiante' }}</div>
               <div class="history-meta muted">

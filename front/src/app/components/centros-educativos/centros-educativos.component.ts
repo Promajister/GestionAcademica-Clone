@@ -183,6 +183,8 @@ export class CentrosEducativosComponent implements OnInit {
   practicasCentro: Practica[] = [];
   practicasCentroLoading = false;
   practicasCentroTarget: CentroEducativo | null = null;
+  practicasCentroYear: 'all' | number = 'all';
+  practicasCentroYears: number[] = [];
 
   
   constructor() {
@@ -585,6 +587,8 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
     this.practicasCentroTarget = c;
     this.practicasCentro = [];
     this.practicasCentroLoading = true;
+    this.practicasCentroYear = 'all';
+    this.practicasCentroYears = [];
 
     this.practicasApi
       .listarParaJefatura({
@@ -597,6 +601,7 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
       .subscribe({
         next: (res) => {
           this.practicasCentro = res.items ?? [];
+          this.practicasCentroYears = this.buildPracticasYears(this.practicasCentro);
           this.practicasCentroLoading = false;
         },
         error: () => {
@@ -610,6 +615,14 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
 
   closePracticasHistory() {
     this.practicasCentroTarget = null;
+  }
+
+  get practicasCentroFiltradas(): Practica[] {
+    if (this.practicasCentroYear === 'all') return this.practicasCentro;
+    return this.practicasCentro.filter((p) => {
+      const y = this.getYearFromDate(p.fecha_inicio) ?? this.getYearFromDate(p.fecha_termino);
+      return y === this.practicasCentroYear;
+    });
   }
 
   estadoPracticaLabel(estado?: EstadoPractica | null): string {
@@ -639,6 +652,22 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
     const d = new Date(value);
     if (isNaN(d.getTime())) return String(value).slice(0, 10);
     return d.toISOString().slice(0, 10);
+  }
+
+  private getYearFromDate(value?: string | null): number | null {
+    if (!value) return null;
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return null;
+    return d.getFullYear();
+  }
+
+  private buildPracticasYears(items: Practica[]): number[] {
+    const years = new Set<number>();
+    for (const p of items) {
+      const y = this.getYearFromDate(p.fecha_inicio) ?? this.getYearFromDate(p.fecha_termino);
+      if (y) years.add(y);
+    }
+    return Array.from(years).sort((a, b) => b - a);
   }
 
   saveContactsForCentro() {
