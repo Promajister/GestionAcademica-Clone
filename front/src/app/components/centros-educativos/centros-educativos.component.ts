@@ -24,6 +24,7 @@ import {
   UpdateCentroPayload,
 } from '../../services/centros-api.service';
 import { TrabajadoresApiService } from '../../services/trabajadores-api.service';
+import { PracticasService, Practica, EstadoPractica } from '../../services/practicas.service';
 import { OnInit } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 
@@ -77,6 +78,7 @@ export class CentrosEducativosComponent implements OnInit {
   // APIs
   private centrosApi = inject(CentrosApiService);
   private trabajadoresApi = inject(TrabajadoresApiService);
+  private practicasApi = inject(PracticasService);
 
   // ===== UI =====
   showForm = false;
@@ -177,6 +179,10 @@ export class CentrosEducativosComponent implements OnInit {
   // modal contactos (nuevo)
   contactsForCentro: CentroEducativo | null = null;
 
+  // modal historial practicas
+  practicasCentro: Practica[] = [];
+  practicasCentroLoading = false;
+  practicasCentroTarget: CentroEducativo | null = null;
 
   
   constructor() {
@@ -572,6 +578,67 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
 
   closeContacts() {
     this.contactsForCentro = null;
+  }
+
+  // ===== Historial de practicas por centro =====
+  openPracticasHistory(c: CentroEducativo) {
+    this.practicasCentroTarget = c;
+    this.practicasCentro = [];
+    this.practicasCentroLoading = true;
+
+    this.practicasApi
+      .listarParaJefatura({
+        centroId: c.id,
+        page: 1,
+        pageSize: 50,
+        sortBy: 'fecha_inicio',
+        sortOrder: 'desc',
+      })
+      .subscribe({
+        next: (res) => {
+          this.practicasCentro = res.items ?? [];
+          this.practicasCentroLoading = false;
+        },
+        error: () => {
+          this.practicasCentroLoading = false;
+          this.snack.open('No se pudieron cargar las practicas del centro.', 'Cerrar', {
+            duration: 2500,
+          });
+        },
+      });
+  }
+
+  closePracticasHistory() {
+    this.practicasCentroTarget = null;
+  }
+
+  estadoPracticaLabel(estado?: EstadoPractica | null): string {
+    const map: Record<EstadoPractica, string> = {
+      EN_CURSO: 'En curso',
+      APROBADO: 'Aprobado',
+      REPROBADO: 'Reprobado',
+    };
+    return estado ? map[estado] : 'Sin estado';
+  }
+
+  estadoPracticaClass(estado?: EstadoPractica | null): string {
+    switch (estado) {
+      case 'APROBADO':
+        return 'status-pill--ok';
+      case 'REPROBADO':
+        return 'status-pill--bad';
+      case 'EN_CURSO':
+        return 'status-pill--warn';
+      default:
+        return '';
+    }
+  }
+
+  formatFechaPractica(value?: string | null): string {
+    if (!value) return '-';
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return String(value).slice(0, 10);
+    return d.toISOString().slice(0, 10);
   }
 
   saveContactsForCentro() {

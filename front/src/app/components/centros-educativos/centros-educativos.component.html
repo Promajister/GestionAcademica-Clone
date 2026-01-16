@@ -241,25 +241,34 @@
             </div>
 
             <div class="center-card__actions">
-              <button mat-flat-button color="primary" class="action-pill"
-                      (click)="openContacts(c)" title="Anadir trabajador" *ngIf="!esSoloLectura">
-                <mat-icon>person_add</mat-icon>
-                Anadir trabajador
-              </button>
+              <div class="actions-stack">
+                <button mat-flat-button color="primary" class="action-pill"
+                        (click)="openContacts(c)" title="Anadir trabajador" *ngIf="!esSoloLectura">
+                  <mat-icon>person_add</mat-icon>
+                  Anadir trabajador
+                </button>
+              </div>
 
-              <button mat-icon-button class="action-box" (click)="viewCentro(c)" title="Ver">
-                <mat-icon>visibility</mat-icon>
-              </button>
+              <div class="actions-icons">
+                <button mat-icon-button class="action-box action-box--accent"
+                        (click)="openPracticasHistory(c)" title="Historial de pr&aacute;cticas">
+                  <mat-icon>event_note</mat-icon>
+                </button>
 
-              <button mat-icon-button class="action-box action-box--primary"
-                      (click)="editCentro(c)" title="Editar" *ngIf="!esSoloLectura">
-                <mat-icon>edit</mat-icon>
-              </button>
+                <button mat-icon-button class="action-box" (click)="viewCentro(c)" title="Ver">
+                  <mat-icon>visibility</mat-icon>
+                </button>
 
-              <button mat-icon-button class="action-box action-box--warn"
-                      (click)="askDelete(c)" title="Eliminar" *ngIf="!esSoloLectura">
-                <mat-icon>delete</mat-icon>
-              </button>
+                <button mat-icon-button class="action-box action-box--primary"
+                        (click)="editCentro(c)" title="Editar" *ngIf="!esSoloLectura">
+                  <mat-icon>edit</mat-icon>
+                </button>
+
+                <button mat-icon-button class="action-box action-box--warn"
+                        (click)="askDelete(c)" title="Eliminar" *ngIf="!esSoloLectura">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -558,6 +567,57 @@
           <mat-icon>save</mat-icon>
           Guardar
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MODAL HISTORIAL PRACTICAS ===== -->
+  <div class="details-dialog" *ngIf="practicasCentroTarget">
+    <div class="dialog-overlay" (click)="closePracticasHistory()"></div>
+
+    <div class="dialog-content dialog-content--history">
+      <div class="dialog-header dialog-header--details">
+        <div class="dialog-header-left">
+          <div class="dialog-avatar">
+            <mat-icon>history_edu</mat-icon>
+          </div>
+          <div class="dialog-titles">
+            <h2>Historial de pr&aacute;cticas</h2>
+            <div class="dialog-subtitle truncate">{{ practicasCentroTarget.nombre }}</div>
+          </div>
+        </div>
+
+        <button mat-icon-button (click)="closePracticasHistory()" class="close-btn" aria-label="Cerrar historial">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <div class="dialog-body">
+        <div class="history-loading muted" *ngIf="practicasCentroLoading">Cargando pr&aacute;cticas...</div>
+
+        <div class="history-empty muted" *ngIf="!practicasCentroLoading && practicasCentro.length === 0">
+          No hay pr&aacute;cticas registradas para este centro.
+        </div>
+
+        <div class="history-list" *ngIf="!practicasCentroLoading && practicasCentro.length">
+          <div class="history-row" *ngFor="let p of practicasCentro">
+            <div class="history-main">
+              <div class="history-student truncate">{{ p.estudiante?.nombre || 'Sin estudiante' }}</div>
+              <div class="history-meta muted">
+                {{ p.tipo || 'Sin tipo' }}
+                &bull; Inicio: {{ formatFechaPractica(p.fecha_inicio) }}
+                &bull; T&eacute;rmino: {{ formatFechaPractica(p.fecha_termino) }}
+              </div>
+            </div>
+            <span class="status-pill" [ngClass]="estadoPracticaClass(p.estado)">
+              {{ estadoPracticaLabel(p.estado) }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="dialog-actions dialog-actions--details">
+        <button mat-stroked-button (click)="closePracticasHistory()">Cerrar</button>
       </div>
     </div>
   </div>

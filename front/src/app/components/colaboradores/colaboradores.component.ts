@@ -135,7 +135,6 @@ export class ColaboradoresComponent implements OnInit {
     });
   }
 
-  // Validador personalizado para RUT chileno (básico)
   validarRut(control: AbstractControl): ValidationErrors | null {
     const rut = control.value;
     if (!rut) return null;
