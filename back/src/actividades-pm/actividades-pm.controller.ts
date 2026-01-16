@@ -17,7 +17,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
-import { Response } from 'express';
+import type { Response } from 'express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { existsSync } from 'fs';
@@ -44,7 +44,7 @@ export class ActividadesPmController {
   @UseInterceptors(
     FileFieldsInterceptor(
       [
-        { name: 'asistencia', maxCount: 10 },
+        { name: 'asistencia', maxCount: 1 },
         { name: 'documentos', maxCount: 10 },
         { name: 'fotos', maxCount: 10 },
       ],
@@ -141,7 +141,7 @@ export class ActividadesPmController {
   @UseInterceptors(
     FileFieldsInterceptor(
       [
-        { name: 'asistencia', maxCount: 10 },
+        { name: 'asistencia', maxCount: 1 },
         { name: 'documentos', maxCount: 10 },
         { name: 'fotos', maxCount: 10 },
       ],

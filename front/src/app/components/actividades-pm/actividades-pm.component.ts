@@ -731,16 +731,23 @@ export class ActividadesPmComponent implements OnInit {
       return;
     }
 
-    if (tipo == 'asistencia') {
-      this.asistenciaFile = validFiles;
-      this.asistenciaFileName = this.formatFileNames(validFiles);
-    } else if (tipo == 'documentos') {
-      this.documentosFile = validFiles;
-      this.documentosFileName = this.formatFileNames(validFiles);
+    // ✅ regla: asistencia máx 1
+    const picked = (tipo === 'asistencia') ? [validFiles[0]] : validFiles;
+
+    if (tipo === 'asistencia') {
+      this.asistenciaFile = picked;
+      this.asistenciaFileName = this.formatFileNames(picked);
+    } else if (tipo === 'documentos') {
+      this.documentosFile = picked;
+      this.documentosFileName = this.formatFileNames(picked);
     } else {
-      this.fotosFile = validFiles;
-      this.fotosFileName = this.formatFileNames(validFiles);
+      this.fotosFile = picked;
+      this.fotosFileName = this.formatFileNames(picked);
     }
+
+    // opcional: permitir re-seleccionar el mismo archivo dispara change
+    input.value = '';
+
     this.scheduleDraftSave();
   }
 
