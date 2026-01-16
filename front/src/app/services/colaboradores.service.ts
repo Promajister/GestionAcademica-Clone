@@ -7,11 +7,12 @@ const API_URL = `${environment.apiUrl}/colaboradores`;
 
 export interface Colaborador {
   id: number;
-  rut: string;
+  rut?: string | null;
   nombre: string;
   correo?: string;
   telefono?: number;
   cargo?: string;
+  cargos?: { id: number; cargo: string }[];
   universidad_egreso?: string;
   direccion?: string;
   createdAt?: Date;

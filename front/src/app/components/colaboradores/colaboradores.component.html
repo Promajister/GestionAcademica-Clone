@@ -97,7 +97,7 @@
               </mat-form-field>
 
               <mat-form-field appearance="outline" class="FormField">
-                <mat-label>RUT *</mat-label>
+                <mat-label>RUT</mat-label>
                 <input matInput formControlName="rut" placeholder="12.345.678-9" />
                 @if (formularioColaborador.get('rut')?.invalid && formularioColaborador.get('rut')?.touched) {
                   <mat-error>{{ getErrorRut() }}</mat-error>

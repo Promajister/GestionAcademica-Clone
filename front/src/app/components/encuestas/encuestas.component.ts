@@ -256,7 +256,7 @@ downloadEstadisticasColaboradoresExcel(): void {
   // Catálogos para selects
   estudiantes: { rut: string; nombre: string }[] = [];
   centros: { id: number; nombre: string; comuna?: string; region?: string }[] = [];
-  colaboradores: { id: number; nombre: string; rut?: string }[] = [];
+  colaboradores: { id: number; nombre: string; rut?: string | null }[] = [];
   tutores: { id: number; nombre: string }[] = [];
   colaboradoresFiltrados: { id: number; nombre: string }[] = [];
 

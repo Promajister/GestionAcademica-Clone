@@ -3,10 +3,11 @@ import { IsRut } from 'src/validador/rut.validador';
 
 export class CreateColaboradorDto {
 
+  @IsOptional()
   @IsString()
   @Length(3, 20)
   @IsRut({ message: 'El RUT no es válido' })
-  rut: string;
+  rut?: string;
 
   @IsString()
   @Length(3, 120)

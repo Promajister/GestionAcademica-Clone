@@ -19,7 +19,7 @@ import { ColaboradoresService, Colaborador } from '../../services/colaboradores.
 
 // Interfaz local para el formulario (compatible con la API)
 interface ColaboradorForm {
-  rut: string;
+  rut?: string;
   nombre: string;
   correo?: string;
   telefono?: string | number;
@@ -185,7 +185,7 @@ export class ColaboradoresComponent implements OnInit {
   // Inicializar formulario reactivo con validaciones
   inicializarFormulario() {
     this.formularioColaborador = this.fb.group({
-      rut: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(20), this.validarRut]],
+      rut: ['', [Validators.minLength(3), Validators.maxLength(20), this.validarRut]],
       nombre: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(120)]],
       correo: ['', [Validators.email]],
       telefono: ['', [this.validarTelefono]],
@@ -279,9 +279,13 @@ export class ColaboradoresComponent implements OnInit {
 
     // Preparar datos para enviar a la API
     const datosParaEnviar: any = {
-      rut: valores.rut?.trim(),
       nombre: valores.nombre?.trim(),
     };
+
+    const rut = valores.rut?.trim();
+    if (rut) {
+      datosParaEnviar.rut = rut;
+    }
 
     // Agregar campos opcionales solo si tienen valor
     if (valores.correo?.trim()) {
@@ -439,10 +443,16 @@ export class ColaboradoresComponent implements OnInit {
     this.colaboradorSeleccionado = null; // Cerrar modal
     
     // Cargar datos del colaborador al formulario reactivo
-    const [c1, c2] = (colaborador.cargo || '')
+    const cargosList = (colaborador.cargos || [])
+      .map((c) => c.cargo)
+      .filter((c) => !!c && !!c.trim());
+    const cargosFallback = (colaborador.cargo || '')
       .split(',')
       .map((s) => s.trim())
       .filter(Boolean);
+    const cargosUsar = cargosList.length ? cargosList : cargosFallback;
+    const [c1, ...rest] = cargosUsar;
+    const c2 = rest.length ? rest.join(', ') : '';
     this.formularioColaborador.patchValue({
       rut: colaborador.rut || '',
       nombre: colaborador.nombre || '',
@@ -483,8 +493,9 @@ export class ColaboradoresComponent implements OnInit {
     const valores = this.formularioColaborador.value as ColaboradorForm;
 
     // En actualización, enviamos todos los campos (incluyendo null para vaciar)
+    const rut = valores.rut?.trim();
     const datosParaEnviar: any = {
-      rut: valores.rut?.trim(),
+      rut: rut || null,
       nombre: valores.nombre?.trim(),
       correo: valores.correo?.trim() || null,
       telefono: valores.telefono ? Number(valores.telefono) : null,
@@ -543,9 +554,7 @@ export class ColaboradoresComponent implements OnInit {
     const form = this.formularioColaborador;
 
     // RUT
-    if (form.get('rut')?.hasError('required')) {
-      errores.push('El RUT es obligatorio');
-    } else if (form.get('rut')?.hasError('minlength')) {
+    if (form.get('rut')?.hasError('minlength')) {
       errores.push('El RUT debe tener al menos 3 caracteres');
     } else if (form.get('rut')?.hasError('maxlength')) {
       errores.push('El RUT no puede tener más de 20 caracteres');
@@ -580,7 +589,6 @@ export class ColaboradoresComponent implements OnInit {
   // Métodos auxiliares para obtener errores de campos específicos (para mostrar en el template)
   getErrorRut(): string {
     const control = this.formularioColaborador.get('rut');
-    if (control?.hasError('required')) return 'El RUT es obligatorio';
     if (control?.hasError('minlength')) return 'El RUT debe tener al menos 3 caracteres';
     if (control?.hasError('maxlength')) return 'El RUT no puede tener más de 20 caracteres';
     if (control?.hasError('rutInvalido')) return control.errors?.['mensaje'] || 'RUT inválido';
