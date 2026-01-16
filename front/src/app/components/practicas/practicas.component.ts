@@ -217,8 +217,6 @@ export class PracticasComponent {
       colaborador2Id: [null],
       tutor1Id: [null, [Validators.required]],
       tutor1Rol: ['', [Validators.required]],
-      tutor2Id: [null],
-      tutor2Rol: [{value: '', disabled: true}],
       fecha_inicio: ['', Validators.required],
       fecha_termino: [''],
       tipo: [''],
@@ -228,63 +226,6 @@ export class PracticasComponent {
     // Inicializar formulario de observaciones
     this.formularioObservacion = this.fb.group({
       descripcion: ['', [Validators.required, Validators.minLength(3)]]
-    });
-
-    // Validación para evitar que tutor2 sea igual a tutor1
-    this.formularioPractica.get('tutor1Id')?.valueChanges.subscribe((value) => {
-      const tutor2Id = this.formularioPractica.get('tutor2Id')?.value;
-      if (value && tutor2Id && value === tutor2Id) {
-        this.formularioPractica.patchValue({ 
-          tutor2Id: null,
-          tutor2Rol: ''
-        }, { emitEvent: false });
-        this.snack.open('El Tutor 2 no puede ser el mismo que el Tutor 1', 'Cerrar', {
-          duration: 3000,
-          horizontalPosition: 'center',
-          verticalPosition: 'bottom',
-          panelClass: ['warning-snackbar']
-        });
-      }
-    });
-
-    this.formularioPractica.get('tutor2Id')?.valueChanges.subscribe((value) => {
-      const tutor1Id = this.formularioPractica.get('tutor1Id')?.value;
-      
-      // Validar que tutor2 no sea igual a tutor1
-      if (value && tutor1Id && value === tutor1Id) {
-        this.formularioPractica.patchValue({ 
-          tutor2Id: null,
-          tutor2Rol: ''
-        }, { emitEvent: false });
-        this.snack.open('El Tutor 2 no puede ser el mismo que el Tutor 1', 'Cerrar', {
-          duration: 3000,
-          horizontalPosition: 'center',
-          verticalPosition: 'bottom',
-          panelClass: ['warning-snackbar']
-        });
-        return;
-      }
-
-      const rolControl = this.formularioPractica.get('tutor2Rol');
-      if (value !== null && value !== undefined && value !== '') {
-        rolControl?.enable();
-        rolControl?.setValidators([Validators.required]);
-      } else {
-        rolControl?.disable();
-        rolControl?.clearValidators();
-        rolControl?.setValue('', { emitEvent: false });
-      }
-      rolControl?.updateValueAndValidity({ emitEvent: false });
-    });
-
-    this.formularioPractica.get('tutor2Rol')?.valueChanges.subscribe((value) => {
-      const tutorControl = this.formularioPractica.get('tutor2Id');
-      if (value && (value as string).trim()) {
-        tutorControl?.setValidators([Validators.required]);
-      } else {
-        tutorControl?.clearValidators();
-      }
-      tutorControl?.updateValueAndValidity({ emitEvent: false });
     });
 
     // Suscribirse a cambios en fecha_inicio para actualizar fechaMinimaTermino
@@ -559,8 +500,6 @@ export class PracticasComponent {
       colaborador2Id: null,
       tutor1Id: null,
       tutor1Rol: '',
-      tutor2Id: null,
-      tutor2Rol: '',
       fecha_inicio: '',
       fecha_termino: ''
     });
@@ -577,8 +516,6 @@ export class PracticasComponent {
       colaborador2Id: null,
       tutor1Id: null,
       tutor1Rol: '',
-      tutor2Id: null,
-      tutor2Rol: '',
       fecha_inicio: '',
       fecha_termino: ''
     });
@@ -632,12 +569,6 @@ export class PracticasComponent {
     if (colaboradorId === null || colaboradorId === undefined) return false;
     const otroControl = control === 'colaborador1Id' ? 'colaborador2Id' : 'colaborador1Id';
     return this.formularioPractica.get(otroControl)?.value === colaboradorId;
-  }
-
-  isTutorSeleccionado(tutorId: number | null, control: 'tutor1Id' | 'tutor2Id'): boolean {
-    if (tutorId === null || tutorId === undefined) return false;
-    const otroControl = control === 'tutor1Id' ? 'tutor2Id' : 'tutor1Id';
-    return this.formularioPractica.get(otroControl)?.value === tutorId;
   }
 
   formatColaboradores(colaboradores?: Colaborador[]): string {
@@ -731,8 +662,7 @@ export class PracticasComponent {
     }
 
     const tutorEntries = [
-      { id: toNumber(formData.tutor1Id), rol: (formData.tutor1Rol || '').trim() },
-      { id: toNumber(formData.tutor2Id), rol: (formData.tutor2Rol || '').trim() }
+      { id: toNumber(formData.tutor1Id), rol: (formData.tutor1Rol || '').trim() }
     ].filter(entry => entry.id !== null);
 
     if (!tutorEntries.length) {
@@ -981,3 +911,4 @@ export class PracticasComponent {
     return '';
   }
 }
+
