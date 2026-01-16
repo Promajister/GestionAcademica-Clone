@@ -412,7 +412,7 @@ export class ActividadesPmService {
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       generationConfig: {
         temperature: 0.2,
-        maxOutputTokens: 200,
+        maxOutputTokens: 800,
       },
     };
 
@@ -434,7 +434,7 @@ export class ActividadesPmService {
       model: 'llama-3.1-8b-instant',
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.2,
-      max_tokens: 200,
+      max_tokens: 800,
     };
 
     const json = await this.postJson(
@@ -463,7 +463,7 @@ export class ActividadesPmService {
       model: 'llama3.1-8b',
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.2,
-      max_tokens: 200,
+      max_tokens: 800,
     };
 
     const json = await this.postJson(
@@ -548,28 +548,98 @@ export class ActividadesPmService {
       const mapped = items.map(mapFn).filter((x) => x);
       return mapped.length ? mapped.join(', ') : '-';
     };
+    const listOrDash = (items: any[], mapFn: (item: any) => string) => {
+      if (!Array.isArray(items) || items.length === 0) return '-';
+      const mapped = items.map(mapFn).filter((x) => x);
+      return mapped.length ? mapped.join('; ') : '-';
+    };
+    const toInt = (value: any) => {
+      const n = Number(value);
+      return Number.isNaN(n) ? 0 : Math.trunc(n);
+    };
     const tipoActividad = this.formatTipoActividad(actividad?.tipoActividad);
     const unidades = list(actividad?.unidades, (u: any) => u?.unidad?.nombre || u?.unidad?.codigo || u?.nombre || '');
     const responsables = list(actividad?.responsables, (r: any) => r?.responsable?.nombre || r?.nombre || '');
     const equipos = list(actividad?.equiposTrabajo, (e: any) => e?.equipoTrabajo?.nombre || e?.nombre || '');
     const fechas = `${safe(actividad?.fechaInicio)} a ${safe(actividad?.fechaTermino)}`;
     const participantes = this.resumenParticipantes(actividad?.matricesParticipantes ?? []);
+    const financiamientos = listOrDash(actividad?.financiamientos, (f: any) => {
+      const categoria = this.normalizeText(f?.categoria) ?? '-';
+      const tipo = this.normalizeText(f?.tipo) ?? '-';
+      const monto = toInt(f?.monto);
+      return `categoria ${categoria}, tipo ${tipo}, monto ${monto}`;
+    });
+    const totalFinanciamiento = Array.isArray(actividad?.financiamientos)
+      ? actividad.financiamientos.reduce((acc: number, f: any) => acc + toInt(f?.monto), 0)
+      : 0;
+    const centrosCosto = list(actividad?.centrosCosto, (c: any) => c?.nombre || '');
+    const instituciones = listOrDash(actividad?.instituciones, (i: any) => {
+      const tipo = this.normalizeText(i?.tipo) ?? '-';
+      const nombre = this.normalizeText(i?.nombre) ?? '-';
+      return `tipo ${tipo}, nombre ${nombre}`;
+    });
+    const estudiantes = listOrDash(actividad?.estudiantes, (s: any) => {
+      const rut = this.normalizeText(s?.rut) ?? '-';
+      const nombre = this.normalizeText(s?.nombre) ?? '-';
+      return `${nombre} (${rut})`;
+    });
+    const archivos = listOrDash(actividad?.archivosEvidencia, (a: any) => {
+      const tipo = this.normalizeText(a?.tipo) ?? '-';
+      const nombre = this.normalizeText(a?.nombre) ?? '';
+      const url = this.normalizeText(a?.url) ?? '-';
+      return nombre ? `${tipo}: ${nombre} (${url})` : `${tipo}: ${url}`;
+    });
 
     return [ //revisar con claudia los puntos importantes
-      'Resume en 3-4 oraciones, en espanol claro y formal, la siguiente actividad de vinculacion.',
-      'No inventes informacion y usa solo los datos entregados.',
+      'Redacta un resumen de 30 a 40 oraciones, en espanol claro y formal, de la siguiente actividad de vinculacion.',
+      'Usa solo la informacion registrada y no inventes nada.',
       `Nombre: ${safe(actividad?.nombre)}`,
       `Tipo actividad: ${safe(tipoActividad)}`,
       `Objetivo: ${safe(actividad?.objetivo)}`,
       `Descripcion: ${safe(actividad?.descripcion)}`,
+      `Tipo vinculacion: ${safe(actividad?.tipoVinculacion)}`,
       `Area vinculacion: ${safe(actividad?.areaVinculacion)}`,
+      `Area impacto: ${safe(actividad?.areaImpacto)}`,
+      `Medida impacto: ${safe(actividad?.medidaImpacto)}`,
+      `Indicador impacto: ${safe(actividad?.indicadorImpacto)}`,
       `Sede: ${safe(actividad?.sede)}`,
       `Lugar: ${safe(actividad?.lugar)}`,
       `Fechas: ${fechas}`,
+      `Proyecto asociado: ${safe(actividad?.proyecto)}`,
       `Resultados: ${safe(actividad?.resultados)}`,
+      `Medio difusion: ${safe(actividad?.medioDifusion)}`,
+      `URL difusion: ${safe(actividad?.urlDifusion)}`,
+      `Enlace noticia: ${safe(actividad?.enlaceNoticia)}`,
+      `Observaciones: ${safe(actividad?.observaciones)}`,
       `Unidades: ${unidades}`,
       `Responsables: ${responsables}`,
+      `Equipos de trabajo: ${equipos}`,
       `Participantes (resumen): ${participantes}`,
+      `Centros de costo: ${centrosCosto}`,
+      `Instituciones: ${instituciones}`,
+      `Financiamientos: ${financiamientos}`,
+      `Total financiamiento: ${totalFinanciamiento}`,
+      `Estudiantes: ${estudiantes}`,
+      `Archivos evidencia: ${archivos}`,
+      `Institucion visitada: ${safe(actividad?.institucionVisitada)}`,
+      `Jornada tema central: ${safe(actividad?.temaCentral)}`,
+      `Jornada talleres: ${safe(actividad?.talleres)}`,
+      `Jornada responsable taller: ${safe(actividad?.responsableTaller)}`,
+      `Taller asignatura: ${safe(actividad?.asignaturaRemedial)}`,
+      `Taller competencia a reforzar: ${safe(actividad?.competenciaAReforzar)}`,
+      `Taller numero estudiantes beneficiados: ${safe(actividad?.numeroEstudiantesBeneficiados)}`,
+      `Congreso nombre evento: ${safe(actividad?.nombreEvento)}`,
+      `Congreso ponencia presentada: ${safe(actividad?.ponenciaPresentada)}`,
+      `Congreso relator: ${safe(actividad?.relator)}`,
+      `Alternancia colegio asociado: ${safe(actividad?.colegioAsociado)}`,
+      `Alternancia docente colaborador: ${safe(actividad?.docenteColaborador)}`,
+      `Alternancia asignatura: ${safe(actividad?.asignaturaAlternancia)}`,
+      `Alternancia curso: ${safe(actividad?.curso)}`,
+      `Alternancia docente asignatura: ${safe(actividad?.docenteAsignatura)}`,
+      `Alternancia nombre actividad: ${safe(actividad?.nombreActividadAlternancia)}`,
+      `Salida objetivo pedagogico: ${safe(actividad?.objetivoPedagogico)}`,
+      `Salida asignatura vinculada: ${safe(actividad?.asignaturaVinculada)}`,
+      `Salida profesor responsable: ${safe(actividad?.profesorResponsable)}`,
       'Entrega solo el resumen, sin listas ni etiquetas.',
     ].join('\n');
   } // falta el financiamiento, pero solo el total,  
