@@ -311,6 +311,18 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   private buildVinculacionSections(): NavSection[] {
     return [
       {
+        id: 'practicas',
+        title: 'Gestión de prácticas',
+        icon: 'assignment_ind',
+        items: [
+          { label: 'Encuestas', icon: 'assignment', route: '/encuestas' },
+          { label: 'Estudiantes', icon: 'school', route: '/estudiantes' },
+          { label: 'Colaboradores', icon: 'groups', route: '/colaboradores' },
+          { label: 'Centros Educativos', icon: 'domain', route: '/centros-educativos' },
+          { label: 'Tutores', icon: 'supervisor_account', route: '/tutores' },
+        ],
+      },
+      {
         id: 'vinculacion',
         title: 'Vinculación con el medio',
         icon: 'groups',
@@ -326,11 +338,6 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     if (id === 'vinculacion') {
       return [
         { label: 'Mi cuenta', icon: 'person', route: '/mi-cuenta' },
-        { label: 'Encuestas', icon: 'assignment', route: '/encuestas' },
-        { label: 'Estudiantes', icon: 'school', route: '/estudiantes' },
-        { label: 'Colaboradores', icon: 'groups', route: '/colaboradores' },
-        { label: 'Centros Educativos', icon: 'domain', route: '/centros-educativos' },
-        { label: 'Tutores', icon: 'supervisor_account', route: '/tutores' },
       ];
     }
 
