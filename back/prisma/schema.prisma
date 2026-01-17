@@ -452,7 +452,7 @@ model ActividadVinculacion {
 
   // evidencias (texto)
   enlaceNoticia String?
-  observaciones String?
+  observaciones String? @db.Text
   resumenIa     String? @db.Text
 
   // Campos condicionales segun tipoActividad

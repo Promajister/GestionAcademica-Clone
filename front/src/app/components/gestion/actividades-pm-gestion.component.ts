@@ -351,6 +351,20 @@ export class ActividadesPmGestionComponent implements OnInit {
                 columnStyles: { 0: { cellWidth: 170, fontStyle: 'bold' } },
                 alternateRowStyles: { fillColor: colors.zebra as any },
                 showHead: 'never',
+                didParseCell: (cell) => {
+                  if (cell.section !== 'body') return;
+                  if (cell.column.index !== 1) return;
+                  const raw = Array.isArray(cell.row.raw) ? cell.row.raw : [];
+                  const label = String(raw[0] ?? '').trim();
+                  if (
+                    label === 'Objetivo' ||
+                    label === 'Descripción' ||
+                    label === 'DescripciÇün' ||
+                    label === 'Resultados'
+                  ) {
+                    cell.cell.styles.halign = 'justify';
+                  }
+                },
               });
 
               y = (doc as any).lastAutoTable?.finalY + 10 || y + 10;
@@ -1459,6 +1473,16 @@ export class ActividadesPmGestionComponent implements OnInit {
       columnStyles: { 0: { cellWidth: 170, fontStyle: 'bold' } },
       alternateRowStyles: { fillColor: colors.zebra as any },
       showHead: 'never',
+      didParseCell: (cell) => {
+        if (cell.section !== 'body') return;
+        if (cell.column.index !== 1) return;
+        const row = rows[cell.row.index];
+        if (!Array.isArray(row)) return;
+        const label = String(row[0] ?? '').trim();
+        if (label === 'Descripción' || label === 'DescripciÇün') {
+          cell.cell.styles.halign = 'justify';
+        }
+      },
     });
 
     return (doc as any).lastAutoTable?.finalY + sectionGap || y + sectionGap;
