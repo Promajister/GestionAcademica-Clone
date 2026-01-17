@@ -69,37 +69,50 @@
         <p>Selecciona un módulo para acceder a sus funciones.</p>
       </div>
 
-      <div class="modules-grid">
-        @for (c of cards; track c.title) {
-          <mat-card class="module-card elev" (click)="go(c.route)">
-            <div class="module-header">
-              <div class="module-icon">
-                <span class="material-icons">{{ c.icon }}</span>
-              </div>
-              <div class="module-title">
-                <h3>{{ c.title }}</h3>
-                @if (c.desc) {
-                  <p>{{ c.desc }}</p>
-                }
-              </div>
+      @for (g of moduleGroups; track g.title) {
+        <div class="modules-group">
+          <div class="group-header">
+            <div>
+              <h3>{{ g.title }}</h3>
+              @if (g.desc) {
+                <p>{{ g.desc }}</p>
+              }
             </div>
+          </div>
 
-            @if (c.subItems?.length) {
-              <div class="module-subitems">
-                @for (s of c.subItems; track s.title) {
-                  <button
-                    type="button"
-                    class="sub-chip"
-                    (click)="$event.stopPropagation(); go(s.route)"
-                  >
-                    {{ s.title }}
-                  </button>
+          <div class="modules-grid">
+            @for (c of g.items; track c.title) {
+              <mat-card class="module-card elev" (click)="go(c.route)">
+                <div class="module-header">
+                  <div class="module-icon">
+                    <span class="material-icons">{{ c.icon }}</span>
+                  </div>
+                  <div class="module-title">
+                    <h3>{{ c.title }}</h3>
+                    @if (c.desc) {
+                      <p>{{ c.desc }}</p>
+                    }
+                  </div>
+                </div>
+
+                @if (c.subItems?.length) {
+                  <div class="module-subitems">
+                    @for (s of c.subItems; track s.title) {
+                      <button
+                        type="button"
+                        class="sub-chip"
+                        (click)="$event.stopPropagation(); go(s.route)"
+                      >
+                        {{ s.title }}
+                      </button>
+                    }
+                  </div>
                 }
-              </div>
+              </mat-card>
             }
-          </mat-card>
-        }
-      </div>
+          </div>
+        </div>
+      }
     </section>
   </section>
 </div>
