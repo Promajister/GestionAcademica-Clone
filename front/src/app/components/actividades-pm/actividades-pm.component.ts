@@ -770,11 +770,6 @@ export class ActividadesPmComponent implements OnInit {
       estudiantesFeria: this.estudiantesFeria,
       estudiantesSalida: this.estudiantesSalida,
       selectedTabIndex: this.selectedTabIndex,
-      files: {
-        asistenciaFileName: this.asistenciaFileName,
-        documentosFileName: this.documentosFileName,
-        fotosFileName: this.fotosFileName,
-      },
       savedAt: new Date().toISOString(),
     };
     try {
@@ -800,13 +795,9 @@ export class ActividadesPmComponent implements OnInit {
       this.estudiantesFeria = draft?.estudiantesFeria ?? [];
       this.estudiantesSalida = draft?.estudiantesSalida ?? [];
       this.selectedTabIndex = draft?.selectedTabIndex ?? this.selectedTabIndex;
-      this.asistenciaFileName = draft?.files?.asistenciaFileName ?? '';
-      this.documentosFileName = draft?.files?.documentosFileName ?? '';
-      this.fotosFileName = draft?.files?.fotosFileName ?? '';
       this.updateEquipoValidators();
       this.updateInstitucionValidators();
     } catch {
-      // ignore parse errors
     }
   }
 
@@ -814,7 +805,6 @@ export class ActividadesPmComponent implements OnInit {
     try {
       localStorage.removeItem(this.draftKey);
     } catch {
-      // ignore storage errors
     }
   }
 
@@ -1066,6 +1056,7 @@ export class ActividadesPmComponent implements OnInit {
     this.financiamientos = [];
     this.centrosCosto = [];
     this.instituciones = [];
+    this.difusiones = [];
     this.estudiantesFeria = [];
     this.estudiantesSalida = [];
     this.showUnidadError = false;
