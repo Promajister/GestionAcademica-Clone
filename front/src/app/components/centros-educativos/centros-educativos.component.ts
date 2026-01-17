@@ -692,10 +692,25 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
   }
 
   formatFechaPractica(value?: string | null): string {
+    return this.formatFecha(value);
+  }
+
+  formatFecha(value?: string | null): string {
     if (!value) return '-';
-    const d = new Date(value);
-    if (isNaN(d.getTime())) return String(value).slice(0, 10);
-    return d.toISOString().slice(0, 10);
+    const raw = String(value).trim();
+    const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (iso) {
+      const y = Number(iso[1]);
+      const m = Number(iso[2]) - 1;
+      const d = Number(iso[3]);
+      const date = new Date(y, m, d);
+      if (!isNaN(date.getTime())) {
+        return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      }
+    }
+    const date = new Date(raw);
+    if (isNaN(date.getTime())) return raw.slice(0, 10);
+    return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
   }
 
   private getYearFromDate(value?: string | null): number | null {

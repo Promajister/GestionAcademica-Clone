@@ -365,7 +365,7 @@
 
     <span class="chip" *ngIf="selectedCentroEducativo.fecha_inicio_asociacion">
       <mat-icon>event</mat-icon>
-      <span class="truncate">Asociado desde: {{ selectedCentroEducativo.fecha_inicio_asociacion }}</span>
+      <span class="truncate">Asociado desde: {{ formatFecha(selectedCentroEducativo.fecha_inicio_asociacion) }}</span>
     </span>
   </div>
 
