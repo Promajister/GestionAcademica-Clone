@@ -150,7 +150,7 @@
 
               <div class="FormRow">
                 <mat-form-field appearance="outline" class="FormField FullWidth">
-                  <mat-label>Nombre *</mat-label>
+                  <mat-label>Nombre </mat-label>
                   <input matInput formControlName="nombre" maxlength="200" />
                   <mat-hint>Máx 200 caracteres</mat-hint>
                   <mat-error *ngIf="fProy('nombre').touched && fProy('nombre').invalid">Campo obligatorio</mat-error>
@@ -159,7 +159,7 @@
 
               <div class="FormRow">
                 <mat-form-field appearance="outline" class="FormField FullWidth">
-                  <mat-label>Objetivo *</mat-label>
+                  <mat-label>Objetivo </mat-label>
                   <textarea matInput rows="3" formControlName="objetivo" maxlength="400"></textarea>
                   <mat-hint>Máx 400 caracteres</mat-hint>
                   <mat-error *ngIf="fProy('objetivo').touched && fProy('objetivo').invalid">Campo obligatorio</mat-error>
@@ -168,7 +168,7 @@
 
               <div class="FormRow">
                 <mat-form-field appearance="outline" class="FormField FullWidth">
-                  <mat-label>Descripción *</mat-label>
+                  <mat-label>Descripción </mat-label>
                   <textarea matInput rows="5" formControlName="descripcion" maxlength="1000"></textarea>
                   <mat-hint>Máx 1000 caracteres</mat-hint>
                   <mat-error *ngIf="fProy('descripcion').touched && fProy('descripcion').invalid">Campo obligatorio</mat-error>
@@ -197,7 +197,7 @@
               <div *ngIf="fProy('tipoActividad').value === 'FERIA_VOCACIONAL'">
                 <div class="FormRow">
                   <mat-form-field appearance="outline" class="FormField FullWidth">
-                    <mat-label>Institución visitada *</mat-label>
+                    <mat-label>Institución visitada </mat-label>
                     <input matInput formControlName="feriaInstitucionVisitada" maxlength="200" />
                     <mat-error *ngIf="fProy('feriaInstitucionVisitada').touched && fProy('feriaInstitucionVisitada').invalid">Obligatorio</mat-error>
                   </mat-form-field>
@@ -207,7 +207,7 @@
               <div *ngIf="fProy('tipoActividad').value === 'JORNADA_PEDAGOGICA'">
                 <div class="FormRow">
                   <mat-form-field appearance="outline" class="FormField FullWidth">
-                    <mat-label>Tema central *</mat-label>
+                    <mat-label>Tema central </mat-label>
                     <input matInput formControlName="jornadaTemaCentral" maxlength="300" />
                     <mat-error *ngIf="fProy('jornadaTemaCentral').touched && fProy('jornadaTemaCentral').invalid">Obligatorio</mat-error>
                   </mat-form-field>
@@ -215,7 +215,7 @@
 
                 <div class="FormRow">
                   <mat-form-field appearance="outline" class="FormField FullWidth">
-                    <mat-label>Talleres *</mat-label>
+                    <mat-label>Talleres </mat-label>
                     <input matInput formControlName="jornadaTalleres" maxlength="300" />
                     <mat-error *ngIf="fProy('jornadaTalleres').touched && fProy('jornadaTalleres').invalid">Obligatorio</mat-error>
                   </mat-form-field>
@@ -223,7 +223,7 @@
 
                 <div class="FormRow">
                   <mat-form-field appearance="outline" class="FormField FullWidth">
-                    <mat-label>Responsable de taller *</mat-label>
+                    <mat-label>Responsable de taller </mat-label>
                     <input matInput formControlName="jornadaResponsableTaller" maxlength="200" />
                     <mat-error *ngIf="fProy('jornadaResponsableTaller').touched && fProy('jornadaResponsableTaller').invalid">Obligatorio</mat-error>
                   </mat-form-field>
@@ -233,13 +233,13 @@
               <div *ngIf="fProy('tipoActividad').value === 'TALLER_REMEDIAL'">
                 <div class="FormRow">
                   <mat-form-field appearance="outline" class="FormField">
-                    <mat-label>Asignatura *</mat-label>
+                    <mat-label>Asignatura </mat-label>
                     <input matInput formControlName="tallerAsignatura" maxlength="200" />
                     <mat-error *ngIf="fProy('tallerAsignatura').touched && fProy('tallerAsignatura').invalid">Obligatorio</mat-error>
                   </mat-form-field>
 
                   <mat-form-field appearance="outline" class="FormField">
-                    <mat-label>Competencia a reforzar *</mat-label>
+                    <mat-label>Competencia a reforzar </mat-label>
                     <input matInput formControlName="tallerCompetencia" maxlength="300" />
                     <mat-error *ngIf="fProy('tallerCompetencia').touched && fProy('tallerCompetencia').invalid">Obligatorio</mat-error>
                   </mat-form-field>
@@ -247,7 +247,7 @@
 
                 <div class="FormRow">
                   <mat-form-field appearance="outline" class="FormField">
-                    <mat-label>Nº de estudiantes beneficiados *</mat-label>
+                    <mat-label>Nº de estudiantes beneficiados </mat-label>
                     <input matInput type="number" formControlName="tallerNombreEstudiantesBeneficiados" min="0" />
                     <mat-error *ngIf="fProy('tallerNombreEstudiantesBeneficiados').touched && fProy('tallerNombreEstudiantesBeneficiados').invalid">Obligatorio</mat-error>
                   </mat-form-field>
@@ -259,7 +259,7 @@
               <div *ngIf="fProy('tipoActividad').value === 'CONGRESO_ACADEMICO'">
                 <div class="FormRow">
                   <mat-form-field appearance="outline" class="FormField FullWidth">
-                    <mat-label>Nombre del evento *</mat-label>
+                    <mat-label>Nombre del evento </mat-label>
                     <input matInput formControlName="congresoNombreEvento" maxlength="300" />
                     <mat-error *ngIf="fProy('congresoNombreEvento').touched && fProy('congresoNombreEvento').invalid">Obligatorio</mat-error>
                   </mat-form-field>
@@ -267,13 +267,13 @@
 
                 <div class="FormRow">
                   <mat-form-field appearance="outline" class="FormField">
-                    <mat-label>Ponencia presentada *</mat-label>
+                    <mat-label>Ponencia presentada </mat-label>
                     <input matInput formControlName="congresoPonenciaPresentada" maxlength="300" />
                     <mat-error *ngIf="fProy('congresoPonenciaPresentada').touched && fProy('congresoPonenciaPresentada').invalid">Obligatorio</mat-error>
                   </mat-form-field>
 
                   <mat-form-field appearance="outline" class="FormField">
-                    <mat-label>Relator *</mat-label>
+                    <mat-label>Relator </mat-label>
                     <input matInput formControlName="congresoRelator" maxlength="200" />
                     <mat-error *ngIf="fProy('congresoRelator').touched && fProy('congresoRelator').invalid">Obligatorio</mat-error>
                   </mat-form-field>
@@ -283,13 +283,13 @@
               <div *ngIf="fProy('tipoActividad').value === 'ALTERNANCIA_PEDAGOGICA'">
                 <div class="FormRow">
                   <mat-form-field appearance="outline" class="FormField">
-                    <mat-label>Colegio asociado *</mat-label>
+                    <mat-label>Colegio asociado </mat-label>
                     <input matInput formControlName="alternanciaColegioAsociado" maxlength="300" />
                     <mat-error *ngIf="fProy('alternanciaColegioAsociado').touched && fProy('alternanciaColegioAsociado').invalid">Obligatorio</mat-error>
                   </mat-form-field>
 
                   <mat-form-field appearance="outline" class="FormField">
-                    <mat-label>Docente colaborador *</mat-label>
+                    <mat-label>Docente colaborador </mat-label>
                     <input matInput formControlName="alternanciaDocenteColaborador" maxlength="200" />
                     <mat-error *ngIf="fProy('alternanciaDocenteColaborador').touched && fProy('alternanciaDocenteColaborador').invalid">Obligatorio</mat-error>
                   </mat-form-field>
@@ -297,13 +297,13 @@
 
                 <div class="FormRow">
                   <mat-form-field appearance="outline" class="FormField">
-                    <mat-label>Asignatura *</mat-label>
+                    <mat-label>Asignatura </mat-label>
                     <input matInput formControlName="alternanciaAsignatura" maxlength="200" />
                     <mat-error *ngIf="fProy('alternanciaAsignatura').touched && fProy('alternanciaAsignatura').invalid">Obligatorio</mat-error>
                   </mat-form-field>
 
                   <mat-form-field appearance="outline" class="FormField">
-                    <mat-label>Curso *</mat-label>
+                    <mat-label>Curso </mat-label>
                     <input matInput formControlName="alternanciaCurso" maxlength="100" />
                     <mat-error *ngIf="fProy('alternanciaCurso').touched && fProy('alternanciaCurso').invalid">Obligatorio</mat-error>
                   </mat-form-field>
@@ -311,20 +311,20 @@
 
                 <div class="FormRow">
                   <mat-form-field appearance="outline" class="FormField">
-                    <mat-label>Docente asignatura *</mat-label>
+                    <mat-label>Docente asignatura </mat-label>
                     <input matInput formControlName="alternanciaDocenteAsignatura" maxlength="200" />
                     <mat-error *ngIf="fProy('alternanciaDocenteAsignatura').touched && fProy('alternanciaDocenteAsignatura').invalid">Obligatorio</mat-error>
                   </mat-form-field>
 
                   <mat-form-field appearance="outline" class="FormField">
-                    <mat-label>Nombre actividad *</mat-label>
+                    <mat-label>Nombre actividad </mat-label>
                     <input matInput formControlName="alternanciaNombreActividad" maxlength="300" />
                     <mat-error *ngIf="fProy('alternanciaNombreActividad').touched && fProy('alternanciaNombreActividad').invalid">Obligatorio</mat-error>
                   </mat-form-field>
                 </div>
                 <div class="FormRow">
                   <mat-form-field appearance="outline" class="FormField FullWidth">
-                    <mat-label>Estudiantes participantes *</mat-label>
+                    <mat-label>Estudiantes participantes </mat-label>
                     <input matInput formControlName="alternanciaEstudiantesParticipantes" maxlength="250" />
                     <mat-error *ngIf="fProy('alternanciaEstudiantesParticipantes').touched && fProy('alternanciaEstudiantesParticipantes').invalid">Obligatorio</mat-error>
                   </mat-form-field>
@@ -334,13 +334,13 @@
               <div *ngIf="fProy('tipoActividad').value === 'SALIDA_A_TERRENO'">
                 <div class="FormRow">
                   <mat-form-field appearance="outline" class="FormField">
-                    <mat-label>Objetivo pedagógico *</mat-label>
+                    <mat-label>Objetivo pedagógico </mat-label>
                     <input matInput formControlName="salidaObjetivoPedagogico" maxlength="300" />
                     <mat-error *ngIf="fProy('salidaObjetivoPedagogico').touched && fProy('salidaObjetivoPedagogico').invalid">Obligatorio</mat-error>
                   </mat-form-field>
 
                   <mat-form-field appearance="outline" class="FormField">
-                    <mat-label>Asignatura vinculada *</mat-label>
+                    <mat-label>Asignatura vinculada </mat-label>
                     <input matInput formControlName="salidaAsignaturaVinculada" maxlength="200" />
                     <mat-error *ngIf="fProy('salidaAsignaturaVinculada').touched && fProy('salidaAsignaturaVinculada').invalid">Obligatorio</mat-error>
                   </mat-form-field>
@@ -348,7 +348,7 @@
 
                 <div class="FormRow">
                   <mat-form-field appearance="outline" class="FormField FullWidth">
-                    <mat-label>Profesor responsable *</mat-label>
+                    <mat-label>Profesor responsable </mat-label>
                     <input matInput formControlName="salidaProfesorResponsable" maxlength="200" />
                     <mat-error *ngIf="fProy('salidaProfesorResponsable').touched && fProy('salidaProfesorResponsable').invalid">Obligatorio</mat-error>
                   </mat-form-field>
@@ -364,7 +364,7 @@
 
               <div class="FormRow">
                 <mat-form-field appearance="outline" class="FormField">
-                  <mat-label>Tipo Vinculación *</mat-label>
+                  <mat-label>Tipo Vinculación </mat-label>
                   <mat-select formControlName="tipoVinculacion">
                     <mat-option *ngFor="let o of tiposVinculacion" [value]="o">{{ o }}</mat-option>
                   </mat-select>
@@ -372,7 +372,7 @@
                 </mat-form-field>
 
                 <mat-form-field appearance="outline" class="FormField">
-                  <mat-label>Área Vinculación *</mat-label>
+                  <mat-label>Área Vinculación </mat-label>
                   <mat-select formControlName="areaVinculacion">
                     <mat-option *ngFor="let o of areasVinculacion" [value]="o">{{ o }}</mat-option>
                   </mat-select>
@@ -425,14 +425,18 @@
 
                 <div class="FormRow">
                   <mat-form-field appearance="outline" class="FormField">
-                    <mat-label>Fecha Inicio *</mat-label>
-                    <input matInput type="date" formControlName="fechaInicio" (change)="fProy('fechaInicio').markAsTouched()" />
+                    <mat-label>Fecha Inicio </mat-label>
+                    <input matInput [matDatepicker]="pickerInicio" formControlName="fechaInicio" (dateChange)="fProy('fechaInicio').markAsTouched()" />
+                    <mat-datepicker-toggle matIconSuffix [for]="pickerInicio"></mat-datepicker-toggle>
+                    <mat-datepicker #pickerInicio></mat-datepicker>
                     <mat-error *ngIf="fProy('fechaInicio').touched && fProy('fechaInicio').invalid">Obligatorio</mat-error>
                   </mat-form-field>
 
                   <mat-form-field appearance="outline" class="FormField">
-                    <mat-label>Fecha Término *</mat-label>
-                    <input matInput type="date" formControlName="fechaTermino" (change)="fProy('fechaTermino').markAsTouched()" />
+                    <mat-label>Fecha Término </mat-label>
+                    <input matInput [matDatepicker]="pickerTermino" formControlName="fechaTermino" (dateChange)="fProy('fechaTermino').markAsTouched()" />
+                    <mat-datepicker-toggle matIconSuffix [for]="pickerTermino"></mat-datepicker-toggle>
+                    <mat-datepicker #pickerTermino></mat-datepicker>
                     <mat-error *ngIf="fProy('fechaTermino').touched && fProy('fechaTermino').invalid">Obligatorio</mat-error>
                   </mat-form-field>
                 </div>
@@ -561,12 +565,12 @@
             <div class="TabBody" formGroupName="equipoTrabajo" data-tab="2">
               <div class="SectionHead">
                 <mat-icon>groups</mat-icon>
-                <h3>Equipo de Trabajo</h3>
+                <h3>Equipo de Trabajo *</h3>
               </div>
 
               <div class="InlineBar">
                 <mat-form-field appearance="outline" class="InlineField">
-                  <mat-label>RUT *</mat-label>
+                  <mat-label>RUT </mat-label>
                   <input
                     matInput
                     formControlName="rut"
@@ -582,13 +586,13 @@
                 </mat-form-field>
 
                 <mat-form-field appearance="outline" class="InlineField">
-                  <mat-label>Nombre *</mat-label>
+                  <mat-label>Nombre </mat-label>
                   <input matInput formControlName="nombre" placeholder="Nombre completo" maxlength="120" />
                   <mat-error *ngIf="fEq('nombre').touched && fEq('nombre').invalid">Obligatorio</mat-error>
                 </mat-form-field>
 
                 <mat-form-field appearance="outline" class="InlineField small">
-                  <mat-label>Equipo *</mat-label>
+                  <mat-label>Equipo </mat-label>
                   <mat-select formControlName="tipo">
                     <mat-option
                       *ngFor="let e of equiposCatalogo"
@@ -971,7 +975,7 @@
                 </mat-form-field>
 
                 <mat-form-field appearance="outline" class="FormField">
-                  <mat-label>Indicador de Impacto (*)</mat-label>
+                  <mat-label>Indicador de Impacto </mat-label>
                   <input matInput formControlName="indicadorImpacto" />
                   <mat-error *ngIf="fImp('indicadorImpacto').touched && fImp('indicadorImpacto').invalid">Obligatorio</mat-error>
                 </mat-form-field>

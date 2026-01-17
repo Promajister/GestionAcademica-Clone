@@ -320,20 +320,31 @@
   white-space: nowrap;
 }
 
+:host ::ng-deep .ok-dialog .mat-mdc-dialog-container {
+  max-height: none !important;
+  overflow: hidden !important;
+}
+
 :host ::ng-deep .ok-dialog .mat-mdc-dialog-surface {
-  border-radius: 24px;
+  border-radius: 20px;
   padding: 24px;
   max-width: 520px;
   width: calc(100vw - 32px);
+  max-height: none !important;
+  overflow: hidden !important;
+  box-sizing: border-box;
 }
 
 :host ::ng-deep .ok-dialog .mat-mdc-dialog-content {
-  overflow: hidden !important;
   max-height: none !important;
+  overflow: hidden !important;
+  box-sizing: border-box;
 }
 
-:host ::ng-deep .ok-dialog .mat-mdc-dialog-surface {
-  overflow: hidden;
+:host ::ng-deep .ok-dialog .mdc-dialog__content {
+  max-height: none !important;
+  overflow: hidden !important;
+  box-sizing: border-box;
 }
 
 
@@ -364,14 +375,4 @@
 .OkBtn {
   border-radius: 999px;
   padding: 8px 26px;
-}
-
-:host ::ng-deep .ok-dialog .mat-mdc-dialog-surface {
-  padding: 28px 32px;
-  border-radius: 20px;
-}
-
-:host ::ng-deep .ok-dialog .mat-mdc-dialog-content {
-  max-height: none !important;
-  overflow: hidden !important;
 }
