@@ -1124,12 +1124,22 @@
             </div>
 
             <div class="EvidenceBody">
-              <h4>Observaciones</h4>
-              <p>Detalles adicionales sobre las evidencias.</p>
+              <h4>Valoracion</h4>
+              <p>Responde las preguntas abiertas sobre la actividad.</p>
 
               <mat-form-field appearance="outline" class="FullWidth">
-                <mat-label>Observaciones</mat-label>
-                <textarea matInput rows="6" formControlName="observaciones" class="ObsBig"></textarea>
+                <mat-label>Aspectos positivos</mat-label>
+                <textarea matInput rows="4" formControlName="valoracionPositivos" class="ObsBig"></textarea>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="FullWidth">
+                <mat-label>Aspectos negativos</mat-label>
+                <textarea matInput rows="4" formControlName="valoracionNegativos" class="ObsBig"></textarea>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="FullWidth">
+                <mat-label>Aspectos a mejorar</mat-label>
+                <textarea matInput rows="4" formControlName="valoracionMejorar" class="ObsBig"></textarea>
               </mat-form-field>
             </div>
           </div>

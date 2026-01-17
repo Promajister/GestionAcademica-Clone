@@ -1111,40 +1111,31 @@
               </div>
             </div>
 
-            <ng-container *ngIf="isView; else ObservacionesFull">
-              <div class="EvidenceCard EvidenceCard--full">
-                <div class="EvidenceIcon">
-                  <mat-icon>notes</mat-icon>
-                </div>
-
-                <div class="EvidenceBody">
-                  <h4>Observaciones</h4>
-                  <p>Detalles adicionales sobre las evidencias.</p>
-
-                  <mat-form-field appearance="outline" class="FullWidth">
-                    <mat-label>Observaciones</mat-label>
-                    <textarea matInput rows="6" formControlName="observaciones" class="ObsBig" readonly></textarea>
-                  </mat-form-field>
-                </div>
+            <div class="EvidenceCard EvidenceCard--full">
+              <div class="EvidenceIcon">
+                <mat-icon>notes</mat-icon>
               </div>
-            </ng-container>
-            <ng-template #ObservacionesFull>
-              <div class="EvidenceCard EvidenceCard--full">
-                <div class="EvidenceIcon">
-                  <mat-icon>notes</mat-icon>
-                </div>
 
-                <div class="EvidenceBody">
-                  <h4>Observaciones</h4>
-                  <p>Detalles adicionales sobre las evidencias.</p>
+              <div class="EvidenceBody">
+                <h4>Valoracion</h4>
+                <p>Responde las preguntas abiertas sobre la actividad.</p>
 
-                  <mat-form-field appearance="outline" class="FullWidth">
-                    <mat-label>Observaciones</mat-label>
-                    <textarea matInput rows="6" formControlName="observaciones" class="ObsBig" [readonly]="isView"></textarea>
-                  </mat-form-field>
-                </div>
+                <mat-form-field appearance="outline" class="FullWidth">
+                  <mat-label>Aspectos positivos</mat-label>
+                  <textarea matInput rows="4" formControlName="valoracionPositivos" class="ObsBig" [readonly]="isView"></textarea>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="FullWidth">
+                  <mat-label>Aspectos negativos</mat-label>
+                  <textarea matInput rows="4" formControlName="valoracionNegativos" class="ObsBig" [readonly]="isView"></textarea>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="FullWidth">
+                  <mat-label>Aspectos a mejorar</mat-label>
+                  <textarea matInput rows="4" formControlName="valoracionMejorar" class="ObsBig" [readonly]="isView"></textarea>
+                </mat-form-field>
               </div>
-            </ng-template>
+            </div>
 
           </div>
         </div>

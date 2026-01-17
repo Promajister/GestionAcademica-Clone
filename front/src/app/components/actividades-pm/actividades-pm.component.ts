@@ -231,7 +231,9 @@ export class ActividadesPmComponent implements OnInit {
         documentosRef: [''],
         fotosRef: [''],
         enlaceNoticia: [''],
-        observaciones: [''],
+        valoracionPositivos: [''],
+        valoracionNegativos: [''],
+        valoracionMejorar: [''],
       }),
 
       financiamiento: this.fb.group({
@@ -751,6 +753,17 @@ export class ActividadesPmComponent implements OnInit {
     return `${names[0]}, ${names[1]} (+${names.length - 2} mas)`;
   }
 
+  private buildValoracionObservaciones(evidencias: any): string {
+    const positivos = String(evidencias?.valoracionPositivos ?? '').trim();
+    const negativos = String(evidencias?.valoracionNegativos ?? '').trim();
+    const mejorar = String(evidencias?.valoracionMejorar ?? '').trim();
+    const parts: string[] = [];
+    if (positivos) parts.push(`Aspectos positivos: ${positivos}`);
+    if (negativos) parts.push(`Aspectos negativos: ${negativos}`);
+    if (mejorar) parts.push(`Aspectos a mejorar: ${mejorar}`);
+    return parts.join('\n');
+  }
+
   private scheduleDraftSave(): void {
     if (this.draftTimer) clearTimeout(this.draftTimer);
     this.draftTimer = setTimeout(() => this.saveDraft(), 400);
@@ -960,10 +973,14 @@ export class ActividadesPmComponent implements OnInit {
 
     const estudiantes = [...this.estudiantesFeria, ...this.estudiantesSalida];
 
+    const evidencias = this.form.value.evidencias;
     const request = {
       payload: {
         proyecto: this.form.value.proyecto,
-        evidencias: this.form.value.evidencias,
+        evidencias: {
+          ...evidencias,
+          observaciones: this.buildValoracionObservaciones(evidencias),
+        },
         participantes: this.form.value.participantes,
         impacto: this.form.value.impacto,
         difusion: this.form.value.difusion,
@@ -1130,7 +1147,9 @@ export class ActividadesPmComponent implements OnInit {
         documentosRef: '',
         fotosRef: '',
         enlaceNoticia: '',
-        observaciones: '',
+        valoracionPositivos: '',
+        valoracionNegativos: '',
+        valoracionMejorar: '',
       },
       equipoTrabajo: { rut: '', nombre: '', tipo: '' },
       financiamiento: { finCategoria: '', finTipoFinanciamiento: '', finMonto: 0 },

@@ -1464,7 +1464,7 @@ export class ActividadesPmGestionComponent implements OnInit {
       tableWidth: contentW,
       styles: {
         fontSize: 9,
-        cellPadding: 3,
+        cellPadding: 4,
         overflow: 'linebreak',
         textColor: colors.text as any,
         lineColor: colors.line as any,
@@ -1479,7 +1479,11 @@ export class ActividadesPmGestionComponent implements OnInit {
         const row = rows[cell.row.index];
         if (!Array.isArray(row)) return;
         const label = String(row[0] ?? '').trim();
-        if (label === 'Descripción' || label === 'DescripciÇün') {
+        const labelNorm = label
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .toUpperCase();
+        if (labelNorm === 'DESCRIPCION') {
           cell.cell.styles.halign = 'justify';
         }
       },

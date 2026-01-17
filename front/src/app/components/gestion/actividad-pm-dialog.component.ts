@@ -252,7 +252,9 @@ export class ActividadPmDialogComponent implements OnInit {
         documentosRef: [''],
         fotosRef: [''],
         enlaceNoticia: [''],
-        observaciones: [''],
+        valoracionPositivos: [''],
+        valoracionNegativos: [''],
+        valoracionMejorar: [''],
       }),
 
       financiamiento: this.fb.group({
@@ -420,6 +422,43 @@ export class ActividadPmDialogComponent implements OnInit {
     if (!names.length) return '';
     if (names.length <= 2) return names.join(', ');
     return `${names[0]}, ${names[1]} (+${names.length - 2} mas)`;
+  }
+
+  private buildValoracionObservaciones(evidencias: any): string {
+    const positivos = String(evidencias?.valoracionPositivos ?? '').trim();
+    const negativos = String(evidencias?.valoracionNegativos ?? '').trim();
+    const mejorar = String(evidencias?.valoracionMejorar ?? '').trim();
+    const parts: string[] = [];
+    if (positivos) parts.push(`Aspectos positivos: ${positivos}`);
+    if (negativos) parts.push(`Aspectos negativos: ${negativos}`);
+    if (mejorar) parts.push(`Aspectos a mejorar: ${mejorar}`);
+    return parts.join('\n');
+  }
+
+  private parseValoracionObservaciones(raw: any): { positivos: string; negativos: string; mejorar: string } {
+    const text = String(raw ?? '').trim();
+    const empty = { positivos: '', negativos: '', mejorar: '' };
+    if (!text) return empty;
+
+    const hasLabels =
+      /aspectos\s+positivos\s*:/i.test(text) ||
+      /aspectos\s+negativos\s*:/i.test(text) ||
+      /aspectos\s+a\s+mejorar\s*:/i.test(text);
+    if (!hasLabels) {
+      return { positivos: text, negativos: '', mejorar: '' };
+    }
+
+    const extract = (label: string) => {
+      const re = new RegExp(`${label}\\s*:\\s*([\\s\\S]*?)(?=\\n\\s*Aspectos\\s+(positivos|negativos|a\\s+mejorar)\\s*:|$)`, 'i');
+      const match = text.match(re);
+      return match ? match[1].trim() : '';
+    };
+
+    return {
+      positivos: extract('Aspectos positivos'),
+      negativos: extract('Aspectos negativos'),
+      mejorar: extract('Aspectos a mejorar'),
+    };
   }
 
   downloadZip(tipo: 'asistencia' | 'documentos' | 'fotos'): void {
@@ -697,6 +736,10 @@ export class ActividadPmDialogComponent implements OnInit {
           // campos de asistentes/satisfacción se obtienen en otra sección
         }
 
+        const valoracion = this.parseValoracionObservaciones(
+          root?.evidencias?.observaciones ?? root?.observaciones ?? '',
+        );
+
         this.form.patchValue({
           proyecto: proyectoForm,
           evidencias: {
@@ -705,7 +748,9 @@ export class ActividadPmDialogComponent implements OnInit {
             documentosRef: root?.evidencias?.documentosRef ?? archivosDocumentos[0]?.url ?? '',
             fotosRef: root?.evidencias?.fotosRef ?? archivosFotos[0]?.url ?? '',
             enlaceNoticia: root?.evidencias?.enlaceNoticia ?? root?.enlaceNoticia ?? '',
-            observaciones: root?.evidencias?.observaciones ?? root?.observaciones ?? '',
+            valoracionPositivos: valoracion.positivos,
+            valoracionNegativos: valoracion.negativos,
+            valoracionMejorar: valoracion.mejorar,
           },
           participantes: {
             ...(root?.participantes ?? {}),
@@ -882,10 +927,14 @@ export class ActividadPmDialogComponent implements OnInit {
 
     const estudiantes = [...this.estudiantesFeria, ...this.estudiantesSalida];
 
+    const evidencias = this.form.value.evidencias;
     const request = {
       payload: {
         proyecto: this.form.value.proyecto,
-        evidencias: this.form.value.evidencias,
+        evidencias: {
+          ...evidencias,
+          observaciones: this.buildValoracionObservaciones(evidencias),
+        },
         participantes: this.form.value.participantes,
         impacto: this.form.value.impacto,
         difusion: this.form.value.difusion,
