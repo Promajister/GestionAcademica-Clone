@@ -193,21 +193,17 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     this.isJefatura = role.id === 'jefatura';
     this.isVinculacion = role.id === 'vinculacion';
 
-    // ✅ Mantén el nav normal según rol (incluye Encuestas, Estudiantes, etc.)
     this.navSections = [];
 
     if (this.isJefatura) {
-      // Jefatura: nav base + catálogo completo
       this.nav = [
         { label: 'Mi cuenta', icon: 'person', route: '/mi-cuenta' },
         { label: 'Usuarios', icon: 'manage_accounts', route: '/usuarios' },
       ];
       this.navSections = this.buildJefaturaSections();
     } else {
-      // Vinculación y Prácticas: nav normal (el que ya tenías)
       this.nav = this.buildNav(role.id);
 
-      // ✅ Si es vinculación, además muestra catálogo de "Vinculación con el medio"
       if (this.isVinculacion) {
         this.navSections = this.buildVinculacionSections();
       }
@@ -329,6 +325,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
         items: [
           { label: 'Registrar actividad', icon: 'playlist_add', route: '/vinculacion/actividades-pm' },
           { label: 'Gestionar actividades del plan de mejora', icon: 'manage_search', route: '/vinculacion/actividades-pm/gestion' },
+          { label: 'Encuestas', icon: 'assignment_turned_in', route: '/encuestas-jefatura' },
         ],
       },
     ];
@@ -340,6 +337,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
         { label: 'Mi cuenta', icon: 'person', route: '/mi-cuenta' },
       ];
     }
+
 
     return [
       { label: 'Mi cuenta', icon: 'person', route: '/mi-cuenta' },

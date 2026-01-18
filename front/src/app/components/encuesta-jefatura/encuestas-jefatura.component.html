@@ -1,0 +1,361 @@
+<div class="container section">
+  <div class="header hero">
+    <div class="hero__bg"></div>
+    <div class="hero__content">
+      <div class="hero__left">
+        <div class="hero__icon">
+          <mat-icon>assignment</mat-icon>
+        </div>
+        <div class="headline hero__titles">
+          <h1>Registro de encuestas</h1>
+          <p class="muted">Gestion y seguimiento de encuestas de vinculacion.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="registration-grid">
+    <mat-card class="elev registration-card">
+      <mat-card-header>
+        <div mat-card-avatar class="card-icon-container">
+          <mat-icon>school</mat-icon>
+        </div>
+        <mat-card-title>Aulas Abiertas y Recorridos Pedagogicos (PACE / PROPED)</mat-card-title>
+        <mat-card-subtitle>Encuestas para comunidades escolares</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <p>
+          Registra la percepcion de estudiantes escolares sobre su participacion
+          en actividades de aula abierta y recorrido pedagogico.
+        </p>
+      </mat-card-content>
+      <mat-card-actions>
+        <button mat-flat-button color="primary" (click)="openRegistroAulas()">
+          <mat-icon>add</mat-icon>
+          Registrar
+        </button>
+      </mat-card-actions>
+    </mat-card>
+
+    <mat-card class="elev registration-card green-card">
+      <mat-card-header>
+        <div mat-card-avatar class="card-icon-container">
+          <mat-icon>groups</mat-icon>
+        </div>
+        <mat-card-title>Alternancias Pedagogicas (Pregrado / Comunidades escolares)</mat-card-title>
+        <mat-card-subtitle>Encuestas para pregrado y estudiantes receptores</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <p>
+          Registra la experiencia de alternancias pedagogicas en contextos escolares.
+        </p>
+      </mat-card-content>
+      <mat-card-actions>
+        <button mat-flat-button color="accent" (click)="openRegistroAlternancias()">
+          <mat-icon>add</mat-icon>
+          Registrar
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+
+  <mat-card class="elev registered-list-card">
+    <mat-card-title>Encuestas registradas</mat-card-title>
+
+    <div *ngIf="encuestas.length > 0; else noEncuestas">
+      <div *ngFor="let e of encuestas" class="registered-item">
+        <div class="item-content">
+          <mat-icon class="item-icon">
+            {{ e.subtipo === 'AULA_ABIERTA_RECORRIDO_PEDAGOGICO' ? 'school' : 'groups' }}
+          </mat-icon>
+
+          <div class="item-info">
+            <span class="item-title">{{ mapSubtipoLabel(e.subtipo) }}</span>
+            <span class="item-metadata">
+              {{ getIdentificacionLinea1(e) }}<br />
+              {{ getIdentificacionLinea2(e) }}<br />
+              {{ getActividadLabel(e) }}
+            </span>
+          </div>
+        </div>
+
+        <div class="item-actions">
+          <button mat-stroked-button color="primary" (click)="verDetalles(e)">
+            <mat-icon>visibility</mat-icon>
+            Ver
+          </button>
+        </div>
+
+        <div class="item-date" *ngIf="e.fecha">
+          <mat-icon>calendar_today</mat-icon>
+          <span>{{ e.fecha | date: 'yyyy-MM-dd' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <ng-template #noEncuestas>
+      <div class="empty-state">
+        <mat-icon>info</mat-icon>
+        <p>No hay encuestas registradas.</p>
+      </div>
+    </ng-template>
+  </mat-card>
+
+  <mat-card class="elev detail-card custom-modal" *ngIf="registroVisible">
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <mat-card-header>
+        <mat-card-title>Registro de encuesta</mat-card-title>
+        <mat-card-subtitle>{{ currentSurvey.title }}</mat-card-subtitle>
+        <button mat-icon-button class="close-btn" type="button" (click)="cerrarRegistro()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </mat-card-header>
+
+      <mat-card-content class="modal-content">
+        <mat-form-field
+          *ngIf="registroGrupo === 'ALTERNANCIAS'"
+          appearance="outline"
+          class="field full"
+        >
+          <mat-label>Tipo de alternancia</mat-label>
+          <mat-select
+            [value]="selectedSubtipo"
+            (selectionChange)="onChangeSurvey($event.value)"
+          >
+            <mat-option
+              *ngFor="let s of groupAlternancias"
+              [value]="s.subtipo"
+            >
+              {{ s.title }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <ng-container *ngIf="correoContexto as ctx">
+          <div class="info-grid">
+            <mat-card class="elev info-card">
+              <div class="info-row">
+                <div class="info-icon">
+                  <mat-icon>info</mat-icon>
+                </div>
+
+                <div class="info-text">
+                  <div class="info-title">{{ ctx.titulo }}</div>
+                  <div class="info-desc">{{ ctx.descripcion }}</div>
+                </div>
+              </div>
+            </mat-card>
+
+            <mat-card class="elev info-card">
+              <div class="info-row">
+                <div class="info-icon">
+                  <mat-icon>flag</mat-icon>
+                </div>
+
+                <div class="info-text">
+                  <div class="objetivo-text">
+                    <div class="objetivo-title">Objetivo general</div>
+                    <div class="objetivo-desc">{{ currentSurvey.objetivo }}</div>
+                  </div>
+                </div>
+              </div>
+            </mat-card>
+          </div>
+        </ng-container>
+
+        <!-- IDENTIFICACION -->
+        <section formGroupName="identificacion" class="panel">
+          <div class="panel-head">
+            <div class="panel-title">
+              <mat-icon>perm_identity</mat-icon>
+              <h3>Identificacion del participante</h3>
+            </div>
+            <div class="panel-sub">Datos generales y actividad asociada</div>
+          </div>
+
+          <div class="grid-2">
+            <ng-container *ngFor="let f of currentSurvey.identificacion">
+              <mat-form-field *ngIf="f.type === 'activity-select'" appearance="outline" class="field">
+                <mat-label>{{ f.label }}</mat-label>
+
+                <mat-select [formControlName]="f.key" [disabled]="isLoadingActividades">
+                  <mat-option *ngIf="isLoadingActividades" [value]="null" disabled>
+                    Cargando actividades...
+                  </mat-option>
+
+                  <mat-option *ngFor="let a of actividades" [value]="a.id">
+                    {{ a.nombre }}
+                    <span class="muted-opt" *ngIf="a.fechaInicio">- {{ a.fechaInicio | date:'yyyy-MM-dd' }}</span>
+                  </mat-option>
+                </mat-select>
+
+                <mat-hint *ngIf="!isLoadingActividades && !actividades.length">
+                  No hay actividades disponibles.
+                </mat-hint>
+
+                <mat-error *ngIf="form.get('identificacion.' + f.key)?.touched && form.get('identificacion.' + f.key)?.invalid">
+                  Campo obligatorio
+                </mat-error>
+              </mat-form-field>
+
+              <mat-form-field *ngIf="f.type === 'text'" appearance="outline" class="field">
+                <mat-label>{{ f.label }}</mat-label>
+                <input matInput [formControlName]="f.key" />
+                <mat-error *ngIf="form.get('identificacion.' + f.key)?.touched && form.get('identificacion.' + f.key)?.invalid">
+                  Campo obligatorio
+                </mat-error>
+              </mat-form-field>
+
+              <div *ngIf="f.type === 'yesno'" class="question-row full">
+                <p class="question-label">{{ f.label }}</p>
+                <div class="answer-col">
+                  <mat-radio-group class="scale-group" [formControlName]="f.key">
+                    <mat-radio-button class="scale-option" [value]="true">Si</mat-radio-button>
+                    <mat-radio-button class="scale-option" [value]="false">No</mat-radio-button>
+                  </mat-radio-group>
+
+                  <div class="q-error" *ngIf="form.get('identificacion.' + f.key)?.touched && form.get('identificacion.' + f.key)?.invalid">
+                    Selecciona una opcion.
+                  </div>
+                </div>
+              </div>
+            </ng-container>
+          </div>
+        </section>
+
+        <!-- SECCIONES -->
+        <section formGroupName="secciones" class="panel" *ngFor="let sec of currentSurvey.sections">
+          <div [formGroupName]="sec.id">
+            <div class="panel-head">
+              <div class="panel-title">
+                <mat-icon>format_list_bulleted</mat-icon>
+                <h3>{{ sec.title }}</h3>
+              </div>
+              <div class="panel-sub">{{ scaleLabel(sec.scale) }}</div>
+            </div>
+
+            <div class="question-list">
+              <div class="question-row" *ngFor="let q of sec.questions">
+                <p class="question-label">{{ q.text }}</p>
+
+                <div class="answer-col">
+                  <mat-radio-group class="scale-group" [formControlName]="q.key">
+                    <mat-radio-button
+                      class="scale-option"
+                      *ngFor="let n of escala"
+                      [value]="n"
+                    >
+                      {{ n }}
+                    </mat-radio-button>
+                  </mat-radio-group>
+
+                  <div class="q-error" *ngIf="form.get('secciones.' + sec.id + '.' + q.key)?.touched && form.get('secciones.' + sec.id + '.' + q.key)?.invalid">
+                    Selecciona una opcion.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ABIERTAS -->
+        <section formGroupName="abiertas" class="panel">
+          <div class="panel-head">
+            <div class="panel-title">
+              <mat-icon>edit_note</mat-icon>
+              <h3>Preguntas abiertas</h3>
+            </div>
+            <div class="panel-sub">Responde con tus propias palabras (opcional)</div>
+          </div>
+
+          <div class="open-grid">
+            <mat-form-field appearance="outline" class="field full" *ngFor="let a of currentSurvey.abiertas">
+              <mat-label>{{ a.label }}</mat-label>
+              <textarea matInput rows="4" [formControlName]="a.key"></textarea>
+            </mat-form-field>
+          </div>
+        </section>
+      </mat-card-content>
+
+      <mat-card-actions align="end">
+        <button mat-stroked-button type="button" (click)="cerrarRegistro()">
+          <mat-icon>cancel</mat-icon>
+          Cancelar
+        </button>
+
+        <button mat-flat-button color="primary" type="submit" [disabled]="isSaving">
+          <mat-icon>save</mat-icon>
+          {{ isSaving ? 'Enviando...' : 'Guardar' }}
+        </button>
+      </mat-card-actions>
+    </form>
+  </mat-card>
+
+  <mat-card class="elev detail-card custom-modal" *ngIf="selectedEncuesta">
+    <mat-card-header class="modal-head">
+      <div class="modal-head-text">
+        <mat-card-title>Detalle encuesta</mat-card-title>
+        <mat-card-subtitle>
+          {{ mapSubtipoLabel(selectedEncuesta.subtipo) }} - {{ selectedEncuesta.fecha | date: 'dd/MM/yyyy' }}
+        </mat-card-subtitle>
+      </div>
+
+      <button mat-icon-button class="close-btn" (click)="cerrarDetalles()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </mat-card-header>
+
+    <mat-card-content class="modal-body">
+      <div class="detail-summary">
+        <div class="summary-chip">
+          <mat-icon>assignment</mat-icon>
+          <span>{{ mapSubtipoLabel(selectedEncuesta.subtipo) }}</span>
+        </div>
+        <div class="summary-chip">
+          <mat-icon>event</mat-icon>
+          <span>{{ selectedEncuesta.fecha | date: 'yyyy-MM-dd' }}</span>
+        </div>
+      </div>
+
+      <section class="detail-section">
+        <h3 class="section-title">Datos generales</h3>
+        <div class="table-wrapper">
+          <table class="detail-plain-table meta-table">
+            <tbody>
+              <tr *ngFor="let row of getIdentificacionRows(selectedEncuesta)">
+                <th class="meta-k">{{ row.key }}</th>
+                <td class="meta-v">{{ row.value }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="detail-section">
+        <h3 class="section-title">Respuestas</h3>
+        <div class="table-wrapper" *ngIf="selectedEncuesta.respuestas?.length; else noRespuestas">
+          <table class="detail-plain-table answers-table">
+            <thead>
+              <tr>
+                <th>Pregunta</th>
+                <th>Respuesta</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let r of selectedEncuesta.respuestas">
+                <td>{{ r.pregunta?.descripcion }}</td>
+                <td>{{ mapRespuestaValor(r) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <ng-template #noRespuestas>
+          <div class="empty-state compact">
+            <mat-icon>info</mat-icon>
+            <p>No hay respuestas registradas.</p>
+          </div>
+        </ng-template>
+      </section>
+    </mat-card-content>
+  </mat-card>
+</div>
