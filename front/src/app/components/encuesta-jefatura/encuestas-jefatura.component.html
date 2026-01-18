@@ -84,6 +84,10 @@
             <mat-icon>visibility</mat-icon>
             Ver
           </button>
+          <button mat-stroked-button color="accent" (click)="editarEncuesta(e)">
+            <mat-icon>edit</mat-icon>
+            Editar
+          </button>
         </div>
 
         <div class="item-date" *ngIf="e.fecha">
@@ -333,7 +337,10 @@
 
       <section class="detail-section">
         <h3 class="section-title">Respuestas</h3>
-        <div class="table-wrapper" *ngIf="selectedEncuesta.respuestas?.length; else noRespuestas">
+        <div
+          class="table-wrapper"
+          *ngIf="getRespuestasCerradas(selectedEncuesta.respuestas).length; else noRespuestasCerradas"
+        >
           <table class="detail-plain-table answers-table">
             <thead>
               <tr>
@@ -342,20 +349,81 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let r of selectedEncuesta.respuestas">
-                <td>{{ r.pregunta?.descripcion }}</td>
+              <tr *ngFor="let r of getRespuestasCerradas(selectedEncuesta.respuestas)">
+                <td class="numeric-wide">
+                  {{ mapPreguntaDescripcion(r.pregunta?.descripcion) }}
+                </td>
                 <td>{{ mapRespuestaValor(r) }}</td>
               </tr>
             </tbody>
           </table>
         </div>
-        <ng-template #noRespuestas>
+        <ng-template #noRespuestasCerradas>
           <div class="empty-state compact">
             <mat-icon>info</mat-icon>
             <p>No hay respuestas registradas.</p>
           </div>
         </ng-template>
       </section>
+
+      <section
+        class="detail-section"
+        *ngIf="getRespuestasAbiertas(selectedEncuesta.respuestas).length"
+      >
+        <h3 class="section-title">Respuestas abiertas</h3>
+        <div class="open-answer-list">
+          <div class="open-answer-item" *ngFor="let r of getRespuestasAbiertas(selectedEncuesta.respuestas)">
+            <div class="open-answer-title">
+              {{ mapPreguntaDescripcion(r.pregunta?.descripcion) }}
+            </div>
+            <div class="open-answer-text">{{ mapRespuestaValor(r) }}</div>
+          </div>
+        </div>
+      </section>
     </mat-card-content>
+  </mat-card>
+
+  <mat-card class="elev detail-card custom-modal" *ngIf="encuestaEnEdicion">
+    <mat-card-header>
+      <mat-card-title>Editar respuestas abiertas</mat-card-title>
+      <mat-card-subtitle>
+        {{ mapSubtipoLabel(encuestaEnEdicion.subtipo) }} - {{ encuestaEnEdicion.fecha | date: 'dd/MM/yyyy' }}
+      </mat-card-subtitle>
+
+      <button mat-icon-button class="close-btn" (click)="cancelarEdicion()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </mat-card-header>
+
+    <mat-card-content>
+      <div class="table-wrapper" *ngIf="respuestasAbiertasEditables.length; else noAbiertas">
+        <div class="open-edit-list">
+          <div class="open-edit-item" *ngFor="let r of respuestasAbiertasEditables">
+            <div class="open-edit-title">
+              {{ mapPreguntaDescripcion(r.pregunta?.descripcion) }}
+            </div>
+            <mat-form-field appearance="outline" class="full-width open-edit-field">
+              <textarea matInput rows="6" [(ngModel)]="r.respuestaAbierta"></textarea>
+            </mat-form-field>
+          </div>
+        </div>
+      </div>
+
+      <ng-template #noAbiertas>
+        <p>No hay preguntas abiertas para editar.</p>
+      </ng-template>
+    </mat-card-content>
+
+    <mat-card-actions align="end">
+      <button mat-stroked-button type="button" (click)="cancelarEdicion()">
+        <mat-icon>cancel</mat-icon>
+        Cancelar
+      </button>
+
+      <button mat-flat-button color="primary" type="button" (click)="guardarEdicionAbiertas()">
+        <mat-icon>save</mat-icon>
+        Guardar cambios
+      </button>
+    </mat-card-actions>
   </mat-card>
 </div>

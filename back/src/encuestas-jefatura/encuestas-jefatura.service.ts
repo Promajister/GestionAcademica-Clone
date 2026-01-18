@@ -232,4 +232,39 @@ export class EncuestasJefaturaService {
       data: respuestasToCreate,
     });
   }
+
+  async actualizarRespuestasAbiertas(
+    encuestaId: number,
+    body: { respuestas: { preguntaId: number; respuestaAbierta: string }[] },
+  ) {
+    const { respuestas } = body;
+    if (!respuestas || !respuestas.length) {
+      return { updated: 0 };
+    }
+
+    const encuesta = await this.prisma.encuestaJefatura.findUnique({
+      where: { id: encuestaId },
+      select: { id: true },
+    });
+
+    if (!encuesta) {
+      throw new NotFoundException('Encuesta no encontrada');
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      for (const r of respuestas) {
+        await tx.respuestaSeleccionada.updateMany({
+          where: {
+            encuestaJefaturaId: encuestaId,
+            preguntaId: r.preguntaId,
+          },
+          data: {
+            respuestaAbierta: r.respuestaAbierta ?? '',
+          },
+        });
+      }
+    });
+
+    return { updated: respuestas.length };
+  }
 }

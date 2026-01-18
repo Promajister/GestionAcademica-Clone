@@ -33,5 +33,12 @@ export class EncuestaJefaturaService {
   getAll(): Observable<any[]> {
     return this.http.get<any[]>(this.baseUrl);
   }
+
+  actualizarAbiertas(
+    id: number,
+    payload: { respuestas: { preguntaId: number; respuestaAbierta: string }[] }
+  ): Observable<any> {
+    return this.http.patch(`${this.baseUrl}/${id}/abiertas`, payload);
+  }
 }
 

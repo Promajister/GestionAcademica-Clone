@@ -720,6 +720,47 @@
   color: var(--text);
 }
 
+.answers-table .numeric-wide {
+  width: 70%;
+}
+
+.open-answer-list,
+.open-edit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.open-answer-item,
+.open-edit-item {
+  padding: 0.85rem 0.9rem;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.05);
+}
+
+.open-answer-title,
+.open-edit-title {
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 0.6rem;
+}
+
+.open-answer-text {
+  color: var(--muted);
+  line-height: 1.4rem;
+  white-space: pre-wrap;
+}
+
+.open-edit-field {
+  width: 100%;
+}
+
+.open-edit-field textarea {
+  min-height: 160px;
+}
+
 :host {
   --brand: #303880;
   --brand-soft: rgba(48, 56, 128, 0.08);

@@ -1058,7 +1058,7 @@ export class ActividadesPmComponent implements OnInit {
           ? ` (Medio: ${this.difusiones.map((d) => d.medio).join(', ')})`
           : '';
 
-        this.openDialog(true, `Actividad de vinculacion registrada exitosamente.${medios}`);
+        this.openDialog(true, `Actividad de vinculacion registrada exitosamente.`);
         this.limpiar();
       },
       error: (err) => {

@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { HttpClientModule } from '@angular/common/http';
-import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
 import {
   EncuestaJefaturaService,
   EncuestaJefaturaPayload,
@@ -58,6 +58,7 @@ interface SurveyConfig {
   imports: [
     CommonModule,
     HttpClientModule,
+    FormsModule,
     ReactiveFormsModule,
     MatFormFieldModule,
     MatInputModule,
@@ -80,6 +81,7 @@ export class EncuestaJefaturaComponent implements OnInit {
   encuestas: any[] = [];
   isLoadingEncuestas = false;
   selectedEncuesta: any | null = null;
+  encuestaEnEdicion: any | null = null;
 
   actividades: ActividadVinculacionOption[] = [];
   isLoadingActividades = false;
@@ -303,6 +305,14 @@ export class EncuestaJefaturaComponent implements OnInit {
     this.selectedEncuesta = null;
   }
 
+  editarEncuesta(encuesta: any): void {
+    this.encuestaEnEdicion = JSON.parse(JSON.stringify(encuesta));
+  }
+
+  cancelarEdicion(): void {
+    this.encuestaEnEdicion = null;
+  }
+
   mapSubtipoLabel(subtipo: SubtipoEncuestaBidireccional): string {
     switch (subtipo) {
       case 'AULA_ABIERTA_RECORRIDO_PEDAGOGICO':
@@ -343,14 +353,14 @@ export class EncuestaJefaturaComponent implements OnInit {
     const rows: Array<{ key: string; value: string }> = [];
     const push = (key: string, value: any) => {
       if (value !== undefined && value !== null && value !== '') {
-        rows.push({ key, value: String(value) });
+        rows.push({ key, value: this.formatIdentificacionValue(value) });
       }
     };
 
     push('Actividad', this.getActividadLabel(encuesta).replace('Actividad: ', ''));
     for (const [k, v] of Object.entries(ident)) {
       if (k === 'actividadVinculacionId') continue;
-      rows.push({ key: this.mapIdentificacionLabel(k), value: String(v) });
+      rows.push({ key: this.mapIdentificacionLabel(k), value: this.formatIdentificacionValue(v) });
     }
     return rows;
   }
@@ -368,8 +378,78 @@ export class EncuestaJefaturaComponent implements OnInit {
     return labels[key] || key;
   }
 
+  private formatIdentificacionValue(value: any): string {
+    if (typeof value === 'boolean') {
+      return value ? 'Si' : 'No';
+    }
+    return String(value);
+  }
+
   mapRespuestaValor(respuesta: any): string {
     return respuesta?.alternativa?.descripcion ?? respuesta?.respuestaAbierta ?? '';
+  }
+
+  isNumericRespuesta(respuesta: any): boolean {
+    const val = this.mapRespuestaValor(respuesta);
+    return /^(\d+)$/.test(val);
+  }
+
+  getRespuestasCerradas(respuestas: any[] | null | undefined): any[] {
+    return (respuestas || []).filter((r) => this.isNumericRespuesta(r));
+  }
+
+  getRespuestasAbiertas(respuestas: any[] | null | undefined): any[] {
+    return (respuestas || []).filter((r) => !this.isNumericRespuesta(r));
+  }
+
+  get respuestasAbiertasEditables(): any[] {
+    if (!this.encuestaEnEdicion?.respuestas) return [];
+    return this.encuestaEnEdicion.respuestas.filter(
+      (r: any) => r?.respuestaAbierta !== undefined && r?.respuestaAbierta !== null
+    );
+  }
+
+  guardarEdicionAbiertas(): void {
+    if (!this.encuestaEnEdicion) return;
+    const payload = {
+      respuestas: this.respuestasAbiertasEditables.map((r: any) => ({
+        preguntaId: r.preguntaId,
+        respuestaAbierta: r.respuestaAbierta ?? '',
+      })),
+    };
+
+    this.api.actualizarAbiertas(this.encuestaEnEdicion.id, payload).subscribe({
+      next: () => {
+        this.snack.open('Respuestas abiertas actualizadas.', 'OK', { duration: 3000 });
+        this.encuestaEnEdicion = null;
+        this.loadEncuestas();
+      },
+      error: (err) => {
+        console.error(err);
+        this.snack.open('Error al actualizar respuestas abiertas.', 'Cerrar', { duration: 4000 });
+      },
+    });
+  }
+
+  mapPreguntaDescripcion(clave: string | null | undefined): string {
+    if (!clave) return '';
+    for (const survey of this.SURVEYS) {
+      for (const sec of survey.sections) {
+        for (const q of sec.questions) {
+          if (`${sec.id}.${q.key}` === clave) {
+            return q.text;
+          }
+        }
+      }
+
+      for (const abierta of survey.abiertas) {
+        if (`abiertas.${abierta.key}` === clave) {
+          return abierta.label;
+        }
+      }
+    }
+
+    return clave;
   }
 
   get groupAulasAbiertas(): SurveyConfig[] {
