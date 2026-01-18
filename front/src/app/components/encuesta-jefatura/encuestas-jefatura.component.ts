@@ -75,6 +75,8 @@ interface SurveyConfig {
 export class EncuestaJefaturaComponent {
   isSaving = false;
   escala = [1, 2, 3, 4, 5];
+  registroVisible = false;
+  registroGrupo: 'AULAS' | 'ALTERNANCIAS' | null = null;
 
   actividades: ActividadOption[] = [];
   isLoadingActividades = false;
@@ -243,6 +245,29 @@ export class EncuestaJefaturaComponent {
     this.buildForm(subtipo);
   }
 
+  openRegistroAulas(): void {
+    this.registroGrupo = 'AULAS';
+    this.selectedSubtipo = 'AULA_ABIERTA_RECORRIDO_PEDAGOGICO';
+    this.buildForm(this.selectedSubtipo);
+    this.registroVisible = true;
+  }
+
+  openRegistroAlternancias(): void {
+    this.registroGrupo = 'ALTERNANCIAS';
+    if (
+      this.selectedSubtipo !== 'ALTERNANCIAS_PREGRADO' &&
+      this.selectedSubtipo !== 'ALTERNANCIAS_RECEPTORES'
+    ) {
+      this.selectedSubtipo = 'ALTERNANCIAS_PREGRADO';
+    }
+    this.buildForm(this.selectedSubtipo);
+    this.registroVisible = true;
+  }
+
+  cerrarRegistro(): void {
+    this.registroVisible = false;
+  }
+
   get groupAulasAbiertas(): SurveyConfig[] {
     return this.SURVEYS.filter(s =>
         s.subtipo === 'AULA_ABIERTA_RECORRIDO_PEDAGOGICO'
@@ -344,6 +369,7 @@ export class EncuestaJefaturaComponent {
         this.isSaving = false;
         this.snack.open('Encuesta enviada correctamente.', 'OK', { duration: 3000 });
         this.buildForm(this.selectedSubtipo); 
+        this.cerrarRegistro();
       },
       error: (err) => {
         this.isSaving = false;
