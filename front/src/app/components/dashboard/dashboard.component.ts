@@ -258,6 +258,12 @@ export class DashboardComponent implements OnInit {
           route: '/vinculacion/actividades-pm/gestion',
           desc: 'Administrar actividades registradas',
         },
+        {
+          title: 'Encuestas de actividad',
+          icon: 'assignment',
+          route: '/encuestas-vinculacion',
+          desc: 'Registro y seguimiento de encuestas de vinculacion',
+        },
       ];
       return [miCuenta, ...gestionPracticas, ...vinculacionMedio, ...comunes];
     }
@@ -494,6 +500,12 @@ export class DashboardComponent implements OnInit {
               icon: 'manage_search',
               route: '/vinculacion/actividades-pm/gestion',
               desc: 'Administrar actividades registradas',
+            },
+            {
+              title: 'Encuestas de actividad',
+              icon: 'assignment',
+              route: '/encuestas-vinculacion',
+              desc: 'Registro y seguimiento de encuestas de vinculacion',
             },
           ],
         },

@@ -190,13 +190,21 @@
 
 /* items hijos */
 :host ::ng-deep .nav-item--child.mat-mdc-list-item {
-  height: 42px;
+  height: auto;
+  min-height: 42px;
   margin: 0 10px 0 0;
   border-radius: 10px;
 }
 
 :host ::ng-deep .nav-item--child .mdc-list-item__primary-text {
   font-size: 0.92rem;
+  white-space: normal;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  word-break: break-word;
 }
 
 :host ::ng-deep .nav-item--child mat-icon[matListItemIcon] {

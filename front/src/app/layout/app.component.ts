@@ -324,8 +324,8 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
         icon: 'groups',
         items: [
           { label: 'Registrar actividad', icon: 'playlist_add', route: '/vinculacion/actividades-pm' },
-          { label: 'Gestionar actividades del plan de mejora', icon: 'manage_search', route: '/vinculacion/actividades-pm/gestion' },
-          { label: 'Encuestas', icon: 'assignment_turned_in', route: '/encuestas-jefatura' },
+          { label: 'Gestionar actividad', icon: 'manage_search', route: '/vinculacion/actividades-pm/gestion' },
+          { label: 'Encuestas de actividad', icon: 'assignment', route: '/encuestas-vinculacion' },
         ],
       },
     ];

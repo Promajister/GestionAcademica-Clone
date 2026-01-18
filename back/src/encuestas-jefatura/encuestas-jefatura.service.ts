@@ -267,4 +267,18 @@ export class EncuestasJefaturaService {
 
     return { updated: respuestas.length };
   }
+
+  async remove(id: number) {
+    if (!id || Number.isNaN(id)) {
+      throw new BadRequestException('ID invalido');
+    }
+
+    try {
+      await this.prisma.encuestaJefatura.delete({ where: { id } });
+      return { deleted: true };
+    } catch (err) {
+      console.error('EncuestasJefaturaService.remove error', err);
+      throw new NotFoundException('Encuesta no encontrada');
+    }
+  }
 }

@@ -134,6 +134,10 @@
             <mat-icon>edit</mat-icon>
             Editar
           </button>
+          <button mat-stroked-button color="warn" (click)="eliminarEncuesta(e)">
+            <mat-icon>delete</mat-icon>
+            Borrar
+          </button>
         </div>
 
         <div class="item-date" *ngIf="e.fecha">

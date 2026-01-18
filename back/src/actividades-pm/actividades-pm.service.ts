@@ -167,10 +167,15 @@ export class ActividadesPmService {
 
     if (!actividad) throw new NotFoundException('Actividad no encontrada');
 
-    const resumen = await this.generarResumenIa(actividad);
+    const pct = await this.getSatisfaccionPctForActividad(id);
+    const indicadorImpacto = pct !== null ? this.formatPct(pct) : actividad.indicadorImpacto;
+    const resumen = await this.generarResumenIa({ ...actividad, indicadorImpacto });
     return this.prisma.actividadVinculacion.update({
       where: { id },
-      data: { resumenIa: resumen ?? this.getResumenFallback() },
+      data: {
+        resumenIa: resumen ?? this.getResumenFallback(),
+        indicadorImpacto: indicadorImpacto ?? null,
+      },
       include: this.includeAll(),
     });
   }
@@ -377,6 +382,31 @@ export class ActividadesPmService {
     }
 
     return null;
+  }
+
+  private async getSatisfaccionPctForActividad(actividadId: number): Promise<number | null> {
+    const encuestas = await this.prisma.encuestaJefatura.findMany({
+      where: { actividadVinculacionId: actividadId },
+      include: { respuestas: { include: { alternativa: true } } },
+    });
+
+    const values: number[] = [];
+    for (const encuesta of encuestas ?? []) {
+      for (const respuesta of encuesta?.respuestas ?? []) {
+        const raw = respuesta?.alternativa?.puntaje ?? respuesta?.alternativa?.descripcion ?? respuesta?.respuestaAbierta;
+        const n = Number(raw);
+        if (Number.isFinite(n) && n >= 1 && n <= 5) values.push(n);
+      }
+    }
+
+    if (!values.length) return null;
+    const avg = values.reduce((acc, n) => acc + n, 0) / values.length;
+    return (avg / 5) * 100;
+  }
+
+  private formatPct(value: number): string {
+    const rounded = Math.round(value * 10) / 10;
+    return `${rounded}%`;
   }
 
   private getProviders(): IaProvider[] {
@@ -601,8 +631,8 @@ export class ActividadesPmService {
       return nombre ? `${tipo}: ${nombre} (${url})` : `${tipo}: ${url}`;
     });
 
-    return [ //revisar con claudia los puntos importantes
-      'Redacta un resumen de 30 a 40 oraciones, en espanol claro y formal, de la siguiente actividad de vinculacion.',
+    return [ 
+      'Redacta un resumen de 20 a 30 oraciones, en espanol claro y formal, de la siguiente actividad de vinculacion.',
       'Usa solo la informacion registrada y no inventes nada.',
       `Nombre: ${safe(actividad?.nombre)}`,
       `Tipo actividad: ${safe(tipoActividad)}`,
@@ -610,31 +640,20 @@ export class ActividadesPmService {
       `Descripcion: ${safe(actividad?.descripcion)}`,
       `Tipo vinculacion: ${safe(actividad?.tipoVinculacion)}`,
       `Area vinculacion: ${safe(actividad?.areaVinculacion)}`,
-      `Area impacto: ${safe(actividad?.areaImpacto)}`,
       `Medida impacto: ${safe(actividad?.medidaImpacto)}`,
-      `Indicador impacto: ${safe(actividad?.indicadorImpacto)}`,
+      `Porcentaje de satisfacción: ${safe(actividad?.indicadorImpacto)}`,
       `Sede: ${safe(actividad?.sede)}`,
       `Lugar: ${safe(actividad?.lugar)}`,
       `Fechas: ${fechas}`,
-      `Proyecto asociado: ${safe(actividad?.proyecto)}`,
       `Resultados: ${safe(actividad?.resultados)}`,
-      `Medio difusion: ${safe(actividad?.medioDifusion)}`,
-      `URL difusion: ${safe(actividad?.urlDifusion)}`,
-      `Enlace noticia: ${safe(actividad?.enlaceNoticia)}`,
-      `Observaciones: ${safe(actividad?.observaciones)}`,
       `Unidades: ${unidades}`,
       `Responsables: ${responsables}`,
-      `Equipos de trabajo: ${equipos}`,
       `Participantes (resumen): ${participantes}`,
-      `Centros de costo: ${centrosCosto}`,
-      `Instituciones: ${instituciones}`,
       `Financiamientos: ${financiamientos}`,
       `Total financiamiento: ${totalFinanciamiento}`,
       `Estudiantes: ${estudiantes}`,
-      `Archivos evidencia: ${archivos}`,
       `Institucion visitada: ${safe(actividad?.institucionVisitada)}`,
       `Jornada tema central: ${safe(actividad?.temaCentral)}`,
-      `Jornada talleres: ${safe(actividad?.talleres)}`,
       `Jornada responsable taller: ${safe(actividad?.responsableTaller)}`,
       `Taller asignatura: ${safe(actividad?.asignaturaRemedial)}`,
       `Taller competencia a reforzar: ${safe(actividad?.competenciaAReforzar)}`,
@@ -653,7 +672,7 @@ export class ActividadesPmService {
       `Salida profesor responsable: ${safe(actividad?.profesorResponsable)}`,
       'Entrega solo el resumen, sin listas ni etiquetas.',
     ].join('\n');
-  } // falta el financiamiento, pero solo el total,  
+  }
 
   private formatTipoActividad(value?: string | null): string {
     if (!value) return '-';

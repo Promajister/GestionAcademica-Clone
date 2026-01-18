@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Param, BadRequestException, Patch } from '@nestjs/common';
+import { Body, Controller, Get, Post, Param, BadRequestException, Patch, Delete } from '@nestjs/common';
 import { EncuestasJefaturaService } from './encuestas-jefatura.service';
 
 @Controller('encuestas-jefatura')
@@ -36,5 +36,13 @@ export class EncuestasJefaturaController {
     return this.encuestasJefaturaService.actualizarRespuestasAbiertas(id, body);
   }
 
+  @Delete(':id')
+  async remove(@Param('id') idParam: string) {
+    const id = Number(idParam);
+    if (Number.isNaN(id)) {
+      throw new BadRequestException('ID invalido');
+    }
+    return this.encuestasJefaturaService.remove(id);
+  }
 
 }

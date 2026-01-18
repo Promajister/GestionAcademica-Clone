@@ -182,12 +182,17 @@ export const routes: Routes = [
   },
 
   {
-    path: 'encuestas-jefatura',
+    path: 'encuestas-vinculacion',
     canActivate: [authGuard, roleGuard],
     data: { allowedRoles: ['jefatura', 'vinculacion'] },
     loadComponent: () =>
       import('./components/encuesta-jefatura/encuestas-jefatura.component')
         .then(m => m.EncuestaJefaturaComponent),
+  },
+  {
+    path: 'encuestas-jefatura',
+    redirectTo: 'encuestas-vinculacion',
+    pathMatch: 'full',
   },
 
   {

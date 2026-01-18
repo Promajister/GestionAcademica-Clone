@@ -40,5 +40,9 @@ export class EncuestaJefaturaService {
   ): Observable<any> {
     return this.http.patch(`${this.baseUrl}/${id}/abiertas`, payload);
   }
+
+  eliminar(id: number): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/${id}`);
+  }
 }
 

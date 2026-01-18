@@ -18,9 +18,11 @@ import { MatRadioModule } from '@angular/material/radio';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSelectModule } from '@angular/material/select';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
+import { ConfirmDialogComponent } from '../gestion/confirm-dialog.component';
 
 type ScaleType = 'INTERES' | 'ACUERDO' | 'PREPARACION';
 
@@ -68,6 +70,7 @@ interface SurveyConfig {
     MatButtonModule,
     MatDividerModule,
     MatSnackBarModule,
+    MatDialogModule,
     MatSelectModule,
     MatCardModule,
     MatIconModule,
@@ -339,6 +342,7 @@ export class EncuestaJefaturaComponent implements OnInit {
     private fb: FormBuilder,
     private api: EncuestaJefaturaService,
     private actividadService: ActividadVinculacionService,
+    private dialog: MatDialog,
     private snack: MatSnackBar
   ) {
     this.buildForm(this.selectedSubtipo);
@@ -427,6 +431,50 @@ export class EncuestaJefaturaComponent implements OnInit {
 
   cancelarEdicion(): void {
     this.encuestaEnEdicion = null;
+  }
+
+  eliminarEncuesta(encuesta: any): void {
+    const id = Number(encuesta?.id);
+    if (!Number.isFinite(id)) return;
+
+    const actividadLabel = this.getActividadLabel(encuesta).replace('Actividad: ', '');
+    const tipoLabel = this.mapSubtipoLabel(encuesta?.subtipo);
+    const detail =
+      actividadLabel && actividadLabel !== 'Sin dato'
+        ? `${tipoLabel} - ${actividadLabel}`
+        : tipoLabel;
+
+    this.dialog.open(ConfirmDialogComponent, {
+      width: '520px',
+      maxWidth: '92vw',
+      disableClose: true,
+      autoFocus: false,
+      data: {
+        title: 'Eliminar encuesta',
+        message: 'Se eliminara de forma permanente la siguiente encuesta:',
+        detail,
+        confirmText: 'Eliminar',
+        cancelText: 'Cancelar',
+        tone: 'danger',
+      },
+    })
+    .afterClosed()
+    .subscribe((ok: boolean) => {
+      if (!ok) return;
+
+      this.api.eliminar(id).subscribe({
+        next: () => {
+          if (this.selectedEncuesta?.id === id) this.selectedEncuesta = null;
+          if (this.encuestaEnEdicion?.id === id) this.encuestaEnEdicion = null;
+          this.snack.open('Encuesta eliminada.', 'OK', { duration: 3000 });
+          this.loadEncuestas();
+        },
+        error: (err) => {
+          console.error(err);
+          this.snack.open('No se pudo eliminar la encuesta.', 'Cerrar', { duration: 4000 });
+        },
+      });
+    });
   }
 
   mapSubtipoLabel(subtipo: SubtipoEncuestaBidireccional): string {
