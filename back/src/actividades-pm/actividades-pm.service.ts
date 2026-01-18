@@ -111,6 +111,17 @@ export class ActividadesPmService {
     return actividad;
   }
 
+  async findEncuestasPorActividad(id: number) {
+    return this.prisma.encuestaJefatura.findMany({
+      where: { actividadVinculacionId: id },
+      include: {
+        respuestas: { include: { pregunta: true, alternativa: true } },
+        semestre: true,
+      },
+      orderBy: { id: 'desc' },
+    });
+  }
+
   async update(
     id: number,
     payload: any,

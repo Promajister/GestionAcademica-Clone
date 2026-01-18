@@ -180,8 +180,6 @@ export class ActividadesPmComponent implements OnInit {
     'OTROS (EXTERNOS)',
   ];
 
-  medidasImpacto = ['ENCUESTA'];
-
   tipoActividadCatalogo: { value: TipoActividad; label: string }[] = [
     { value: 'FERIA_VOCACIONAL', label: 'Feria Vocacional' },
     { value: 'JORNADA_PEDAGOGICA', label: 'Jornada Pedagógica' },
@@ -296,11 +294,6 @@ export class ActividadesPmComponent implements OnInit {
         ...this.buildParticipantesControls(),
       }),
 
-      impacto: this.fb.group({
-        medidaImpacto: ['ENCUESTA', Validators.required],
-        indicadorImpacto: [''], 
-      }),
-
       difusion: this.fb.group({
         difusionEquipo: ['SELECCIONE'],
         difusionUrl: ['', [this.urlOptionalValidator()]],
@@ -393,10 +386,6 @@ export class ActividadesPmComponent implements OnInit {
 
   fProy(name: string) {
     return (this.form.get('proyecto') as FormGroup).get(name)!;
-  }
-
-  fImp(name: string) {
-    return (this.form.get('impacto') as FormGroup).get(name)!;
   }
 
   fEq(name: string) {
@@ -1029,7 +1018,6 @@ export class ActividadesPmComponent implements OnInit {
           observaciones: this.buildValoracionObservaciones(evidencias),
         },
         participantes: this.form.value.participantes,
-        impacto: this.form.value.impacto,
         difusion: this.form.value.difusion,
       },
       unidades: this.unidades,
@@ -1202,7 +1190,6 @@ export class ActividadesPmComponent implements OnInit {
       financiamiento: { finCategoria: '', finTipoFinanciamiento: '', finMonto: 0 },
       difusion: { difusionEquipo: 'SELECCIONE', difusionUrl: '' },
       participantes: { instTipo: 'INSTITUCIÓN EXTERNA', instNombre: '' },
-      impacto: { medidaImpacto: 'ENCUESTA', indicadorImpacto: '' },
     });
 
     this.form.markAsPristine();

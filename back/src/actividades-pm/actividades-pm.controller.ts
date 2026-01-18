@@ -132,6 +132,11 @@ export class ActividadesPmController {
     return this.service.findOne(id);
   }
 
+  @Get(':id/encuestas')
+  findEncuestas(@Param('id', ParseIntPipe) id: number) {
+    return this.service.findEncuestasPorActividad(id);
+  }
+
   @Post(':id/resumen-ia')
   regenerarResumen(@Param('id', ParseIntPipe) id: number) {
     return this.service.regenerarResumen(id);

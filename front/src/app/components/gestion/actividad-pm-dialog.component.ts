@@ -872,71 +872,53 @@ export class ActividadPmDialogComponent implements OnInit {
   }
 
   private cargarIndicadorImpactoDesdeEncuestas(actividadId: number) {
-   this.api.getEncuestasPorActividadPm(actividadId).subscribe({
+    this.api.getEncuestasPorActividadPm(actividadId).subscribe({
       next: (resp: any) => {
-        console.log('[ENCUESTAS raw]', resp);
-
-        // intenta normalizar distintos formatos comunes
         const encuestas =
           Array.isArray(resp?.payload) ? resp.payload :
           Array.isArray(resp?.data) ? resp.data :
           Array.isArray(resp) ? resp :
           [];
 
-        console.log('[ENCUESTAS list]', encuestas);
-
         if (!encuestas.length) {
           this.fImp('indicadorImpacto').setValue('Sin encuestas', { emitEvent: false });
           return;
         }
 
-        const first = encuestas[0] ?? {};
-        const tipo = first?.tipoEncuesta ?? first?.tipo ?? first?.tipoActividad ?? null;
-
-        console.log('[ENCUESTAS tipo]', tipo);
-
-        const calc = this.calcularIndicador(tipo, encuestas);
-
+        const calc = this.calcularSatisfaccionActividad(encuestas);
         this.indicadorSatisfaccion = calc;
 
         this.fImp('indicadorImpacto').setValue(
-          calc !== null ? this.formatPct(calc) : 'No calculable',
+          calc !== null ? this.formatPct(calc) : 'Sin datos',
           { emitEvent: false },
         );
       },
-      error: (e) => {
-        console.error('[ENCUESTAS error]', e);
+      error: () => {
         this.fImp('indicadorImpacto').setValue('Error al cargar', { emitEvent: false });
       },
     });
   }
 
+  private getClosedAnswerValue(respuesta: any): number | null {
+    const raw = respuesta?.alternativa?.puntaje ?? respuesta?.alternativa?.descripcion ?? respuesta?.respuestaAbierta;
+    const n = Number(raw);
+    if (!Number.isFinite(n) || n < 1 || n > 5) return null;
+    return n;
+  }
 
-  private calcularIndicador(tipo: string, encuestas: any[]): number | null {
-    const safeDiv = (a: number, b: number) => (b > 0 ? (a / b) * 100 : null);
+  private calcularSatisfaccionActividad(encuestas: any[]): number | null {
+    const values: number[] = [];
 
-    if (tipo === 'AULAS_ABIERTAS' || tipo === 'RECORRIDOS_PEDAGOGICOS') {
-      const e = encuestas[0];
-      const obtenido = Number(e?.puntajeObtenido ?? 0);
-      const total = Number(e?.puntajeTotal ?? 0);
-      return safeDiv(obtenido, total);
+    for (const encuesta of encuestas ?? []) {
+      for (const respuesta of encuesta?.respuestas ?? []) {
+        const val = this.getClosedAnswerValue(respuesta);
+        if (val !== null) values.push(val);
+      }
     }
 
-    if (tipo === 'ALTERNANCIAS_PEDAGOGICAS') {
-      const pre = encuestas.find((x) => x?.segmento === 'PREGRADO');
-      const rec = encuestas.find((x) => x?.segmento === 'RECEPTORES');
-
-      const obtenido = Number(pre?.puntajeObtenido ?? 0) + Number(rec?.puntajeObtenido ?? 0);
-
-      // total: usa el total “global” si existe, si no suma totales
-      const totalGlobal = Number(pre?.puntajeTotalGlobal ?? rec?.puntajeTotalGlobal ?? 0);
-      const totalSuma = Number(pre?.puntajeTotal ?? 0) + Number(rec?.puntajeTotal ?? 0);
-
-      const total = totalGlobal > 0 ? totalGlobal : totalSuma;
-      return safeDiv(obtenido, total);
-    }
-
-    return null;
+    if (!values.length) return null;
+    const avg = values.reduce((acc, n) => acc + n, 0) / values.length;
+    return (avg / 5) * 100;
   }
 
   private formatPct(n: number): string {
