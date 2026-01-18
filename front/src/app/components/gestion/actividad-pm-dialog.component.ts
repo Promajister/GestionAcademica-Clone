@@ -167,6 +167,8 @@ export class ActividadPmDialogComponent implements OnInit {
   documentosFilesCount = 0;
   fotosFilesCount = 0;
 
+  indicadorSatisfaccion: number | null = null;
+
   private readonly apiBaseUrl = environment.apiUrl.replace(/\/api$/, '');
 
   showUnidadError = false;
@@ -272,7 +274,7 @@ export class ActividadPmDialogComponent implements OnInit {
 
       impacto: this.fb.group({
         medidaImpacto: ['ENCUESTA', Validators.required],
-        indicadorImpacto: ['', Validators.required],
+        indicadorImpacto: [''],
       }),
 
       difusion: this.fb.group({
@@ -854,6 +856,9 @@ export class ActividadPmDialogComponent implements OnInit {
         this.updateInstitucionValidators();
 
         this.loading = false;
+
+        this.cargarIndicadorImpactoDesdeEncuestas(this.data.id);
+
       },
       error: () => {
         this.errorMsg = 'No se pudo cargar la actividad.';
@@ -864,6 +869,79 @@ export class ActividadPmDialogComponent implements OnInit {
 
   cerrar(): void {
     this.dialogRef.close({ refresh: false });
+  }
+
+  private cargarIndicadorImpactoDesdeEncuestas(actividadId: number) {
+   this.api.getEncuestasPorActividadPm(actividadId).subscribe({
+      next: (resp: any) => {
+        console.log('[ENCUESTAS raw]', resp);
+
+        // intenta normalizar distintos formatos comunes
+        const encuestas =
+          Array.isArray(resp?.payload) ? resp.payload :
+          Array.isArray(resp?.data) ? resp.data :
+          Array.isArray(resp) ? resp :
+          [];
+
+        console.log('[ENCUESTAS list]', encuestas);
+
+        if (!encuestas.length) {
+          this.fImp('indicadorImpacto').setValue('Sin encuestas', { emitEvent: false });
+          return;
+        }
+
+        const first = encuestas[0] ?? {};
+        const tipo = first?.tipoEncuesta ?? first?.tipo ?? first?.tipoActividad ?? null;
+
+        console.log('[ENCUESTAS tipo]', tipo);
+
+        const calc = this.calcularIndicador(tipo, encuestas);
+
+        this.indicadorSatisfaccion = calc;
+
+        this.fImp('indicadorImpacto').setValue(
+          calc !== null ? this.formatPct(calc) : 'No calculable',
+          { emitEvent: false },
+        );
+      },
+      error: (e) => {
+        console.error('[ENCUESTAS error]', e);
+        this.fImp('indicadorImpacto').setValue('Error al cargar', { emitEvent: false });
+      },
+    });
+  }
+
+
+  private calcularIndicador(tipo: string, encuestas: any[]): number | null {
+    const safeDiv = (a: number, b: number) => (b > 0 ? (a / b) * 100 : null);
+
+    if (tipo === 'AULAS_ABIERTAS' || tipo === 'RECORRIDOS_PEDAGOGICOS') {
+      const e = encuestas[0];
+      const obtenido = Number(e?.puntajeObtenido ?? 0);
+      const total = Number(e?.puntajeTotal ?? 0);
+      return safeDiv(obtenido, total);
+    }
+
+    if (tipo === 'ALTERNANCIAS_PEDAGOGICAS') {
+      const pre = encuestas.find((x) => x?.segmento === 'PREGRADO');
+      const rec = encuestas.find((x) => x?.segmento === 'RECEPTORES');
+
+      const obtenido = Number(pre?.puntajeObtenido ?? 0) + Number(rec?.puntajeObtenido ?? 0);
+
+      // total: usa el total “global” si existe, si no suma totales
+      const totalGlobal = Number(pre?.puntajeTotalGlobal ?? rec?.puntajeTotalGlobal ?? 0);
+      const totalSuma = Number(pre?.puntajeTotal ?? 0) + Number(rec?.puntajeTotal ?? 0);
+
+      const total = totalGlobal > 0 ? totalGlobal : totalSuma;
+      return safeDiv(obtenido, total);
+    }
+
+    return null;
+  }
+
+  private formatPct(n: number): string {
+    const v = Math.round(n * 10) / 10; // 1 decimal
+    return `${v}%`;
   }
 
   regenerarResumenIa(): void {

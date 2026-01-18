@@ -132,4 +132,7 @@ export class ActividadesPmService {
     return this.http.delete(`${this.baseUrl}/${id}`);
   }
 
+  getEncuestasPorActividadPm(actividadId: number | string): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/${actividadId}/encuestas`);
+  }
 }

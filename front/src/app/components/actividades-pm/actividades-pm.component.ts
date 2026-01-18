@@ -298,7 +298,7 @@ export class ActividadesPmComponent implements OnInit {
 
       impacto: this.fb.group({
         medidaImpacto: ['ENCUESTA', Validators.required],
-        indicadorImpacto: ['', Validators.required],
+        indicadorImpacto: [''], 
       }),
 
       difusion: this.fb.group({

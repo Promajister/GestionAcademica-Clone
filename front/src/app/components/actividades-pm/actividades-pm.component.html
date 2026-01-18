@@ -954,35 +954,7 @@
 
             </div>
           </mat-tab>
-
-          <mat-tab>
-            <ng-template mat-tab-label>
-              <mat-icon class="TabIcon">analytics</mat-icon>
-              Evaluación de Impacto
-            </ng-template>
-
-            <div class="TabBody" formGroupName="impacto" data-tab="6">
-              <div class="SectionHead">
-                <mat-icon>analytics</mat-icon>
-                <h3>Evaluación de Impacto</h3>
-              </div>
-
-              <div class="FormRow">
-                <mat-form-field appearance="outline" class="FormField">
-                  <mat-label>Medida de impacto</mat-label>
-                  <input matInput formControlName="medidaImpacto" readonly />
-                </mat-form-field>
-
-                <mat-form-field appearance="outline" class="FormField">
-                  <mat-label>Indicador de Impacto </mat-label>
-                  <input matInput formControlName="indicadorImpacto" />
-                  <mat-error *ngIf="fImp('indicadorImpacto').touched && fImp('indicadorImpacto').invalid">Obligatorio</mat-error>
-                </mat-form-field>
-              </div>
-
-            </div>
-          </mat-tab>
-
+          
       <mat-tab>
         <ng-template mat-tab-label>
           <mat-icon class="TabIcon">verified</mat-icon>

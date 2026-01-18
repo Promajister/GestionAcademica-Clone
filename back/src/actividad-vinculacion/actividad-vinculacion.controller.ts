@@ -14,4 +14,5 @@ export class ActividadVinculacionController {
   listarParaSelect() {
     return this.service.listarParaSelect();
   }
+  
 }

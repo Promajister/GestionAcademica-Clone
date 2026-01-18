@@ -91,7 +91,7 @@
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="field search">
-        <mat-label>Búsqueda (nombre / escuela / actividad)</mat-label>
+        <mat-label>Búsqueda (nombre / escuela)</mat-label>
         <input matInput [(ngModel)]="filtroBusqueda" placeholder="Escribe para filtrar..." />
         <button mat-icon-button matSuffix type="button" (click)="filtroBusqueda=''" *ngIf="filtroBusqueda">
           <mat-icon>close</mat-icon>
@@ -396,7 +396,6 @@
                 <th class="meta-k">Satisfacción</th>
                 <td class="meta-v">
                   <b>{{ pct | number:'1.2-2' }}%</b>
-                  <span class="muted"> ({{ getPromedioEncuesta(selectedEncuesta) | number:'1.2-2' }}/5)</span>
                 </td>
               </tr>
             </tbody>
