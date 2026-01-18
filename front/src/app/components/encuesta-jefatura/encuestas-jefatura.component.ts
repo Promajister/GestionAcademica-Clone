@@ -1,11 +1,16 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { HttpClientModule } from '@angular/common/http';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   EncuestaJefaturaService,
   EncuestaJefaturaPayload,
   SubtipoEncuestaBidireccional
 } from '../../services/encuesta-jefatura.service';
+import {
+  ActividadVinculacionService,
+  ActividadOption as ActividadVinculacionOption,
+} from '../../services/actividades-pm.service';
 
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -18,12 +23,6 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 
 type ScaleType = 'INTERES' | 'ACUERDO' | 'PREPARACION';
-
-interface ActividadOption {
-  id: number;
-  nombre: string;
-  fechaInicio?: string; 
-}
 
 interface SurveyQuestion {
   key: string;
@@ -58,6 +57,7 @@ interface SurveyConfig {
   standalone: true,
   imports: [
     CommonModule,
+    HttpClientModule,
     ReactiveFormsModule,
     MatFormFieldModule,
     MatInputModule,
@@ -72,13 +72,16 @@ interface SurveyConfig {
   templateUrl: './encuestas-jefatura.component.html',
   styleUrls: ['./encuestas-jefatura.component.scss'],
 })
-export class EncuestaJefaturaComponent {
+export class EncuestaJefaturaComponent implements OnInit {
   isSaving = false;
   escala = [1, 2, 3, 4, 5];
   registroVisible = false;
   registroGrupo: 'AULAS' | 'ALTERNANCIAS' | null = null;
+  encuestas: any[] = [];
+  isLoadingEncuestas = false;
+  selectedEncuesta: any | null = null;
 
-  actividades: ActividadOption[] = [];
+  actividades: ActividadVinculacionOption[] = [];
   isLoadingActividades = false;
 
   readonly SURVEYS: SurveyConfig[] = [
@@ -217,23 +220,47 @@ export class EncuestaJefaturaComponent {
   constructor(
     private fb: FormBuilder,
     private api: EncuestaJefaturaService,
+    private actividadService: ActividadVinculacionService,
     private snack: MatSnackBar
   ) {
     this.buildForm(this.selectedSubtipo);
     this.loadActividades();
   }
 
+  ngOnInit(): void {
+    this.loadEncuestas();
+  }
+
+  private loadEncuestas(): void {
+    this.isLoadingEncuestas = true;
+    this.api.getAll().subscribe({
+      next: (data) => {
+        this.encuestas = (data || []).map((e) => ({
+          ...e,
+          fecha: e.fecha ? new Date(e.fecha) : null,
+        }));
+        this.isLoadingEncuestas = false;
+      },
+      error: (err) => {
+        console.error(err);
+        this.isLoadingEncuestas = false;
+      },
+    });
+  }
+
   private loadActividades(): void {
     this.isLoadingActividades = true;
-
-    setTimeout(() => {
-      this.actividades = [
-        { id: 1, nombre: 'Alternancia Pedagógica - Liceo San José' },
-        { id: 2, nombre: 'Aula Abierta - Colegio Andino' },
-        { id: 3, nombre: 'Salida a Terreno - Parque Nacional' },
-      ];
-      this.isLoadingActividades = false;
-    }, 600);
+    this.actividadService.listarParaSelect().subscribe({
+      next: (data) => {
+        this.actividades = data || [];
+        this.isLoadingActividades = false;
+      },
+      error: (err) => {
+        console.error(err);
+        this.actividades = [];
+        this.isLoadingActividades = false;
+      },
+    });
   }
 
   get currentSurvey(): SurveyConfig {
@@ -266,6 +293,83 @@ export class EncuestaJefaturaComponent {
 
   cerrarRegistro(): void {
     this.registroVisible = false;
+  }
+
+  verDetalles(encuesta: any): void {
+    this.selectedEncuesta = encuesta;
+  }
+
+  cerrarDetalles(): void {
+    this.selectedEncuesta = null;
+  }
+
+  mapSubtipoLabel(subtipo: SubtipoEncuestaBidireccional): string {
+    switch (subtipo) {
+      case 'AULA_ABIERTA_RECORRIDO_PEDAGOGICO':
+        return 'Aulas Abiertas y Recorridos Pedagogicos';
+      case 'ALTERNANCIAS_PREGRADO':
+        return 'Alternancias Pedagogicas - Pregrado';
+      case 'ALTERNANCIAS_RECEPTORES':
+        return 'Alternancias Pedagogicas - Estudiantes Receptores';
+      default:
+        return 'Encuesta';
+    }
+  }
+
+  getIdentificacionLinea1(encuesta: any): string {
+    const ident = encuesta?.identificacion || {};
+    if (encuesta?.subtipo === 'ALTERNANCIAS_PREGRADO') {
+      return `Nombre: ${ident.nombre ?? 'Sin dato'}`;
+    }
+    return `Escuela/Liceo: ${ident.escuelaOLiceo ?? 'Sin dato'}`;
+  }
+
+  getIdentificacionLinea2(encuesta: any): string {
+    const ident = encuesta?.identificacion || {};
+    const nivel = ident.nivelEducacional || ident.nivel || 'Sin dato';
+    return `Nivel: ${nivel}`;
+  }
+
+  getActividadLabel(encuesta: any): string {
+    const ident = encuesta?.identificacion || {};
+    const actividadId = ident.actividadVinculacionId;
+    if (!actividadId) return 'Actividad: Sin dato';
+    const actividad = this.actividades.find((a) => a.id === Number(actividadId));
+    return `Actividad: ${actividad ? actividad.nombre : actividadId}`;
+  }
+
+  getIdentificacionRows(encuesta: any): Array<{ key: string; value: string }> {
+    const ident = encuesta?.identificacion || {};
+    const rows: Array<{ key: string; value: string }> = [];
+    const push = (key: string, value: any) => {
+      if (value !== undefined && value !== null && value !== '') {
+        rows.push({ key, value: String(value) });
+      }
+    };
+
+    push('Actividad', this.getActividadLabel(encuesta).replace('Actividad: ', ''));
+    for (const [k, v] of Object.entries(ident)) {
+      if (k === 'actividadVinculacionId') continue;
+      rows.push({ key: this.mapIdentificacionLabel(k), value: String(v) });
+    }
+    return rows;
+  }
+
+  mapIdentificacionLabel(key: string): string {
+    const labels: Record<string, string> = {
+      actividadVinculacionId: 'Actividad',
+      escuelaOLiceo: 'Escuela o liceo',
+      nivelEducacional: 'Nivel educacional',
+      haVisitadoAntes: 'Ha visitado antes la universidad',
+      nombre: 'Nombre',
+      nivel: 'Nivel',
+      haParticipadoAntes: 'Ha participado antes en alternancias',
+    };
+    return labels[key] || key;
+  }
+
+  mapRespuestaValor(respuesta: any): string {
+    return respuesta?.alternativa?.descripcion ?? respuesta?.respuestaAbierta ?? '';
   }
 
   get groupAulasAbiertas(): SurveyConfig[] {
@@ -370,6 +474,7 @@ export class EncuestaJefaturaComponent {
         this.snack.open('Encuesta enviada correctamente.', 'OK', { duration: 3000 });
         this.buildForm(this.selectedSubtipo); 
         this.cerrarRegistro();
+        this.loadEncuestas();
       },
       error: (err) => {
         this.isSaving = false;
@@ -387,3 +492,4 @@ export class EncuestaJefaturaComponent {
     }
   }
 }
+

@@ -2,8 +2,6 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { of } from 'rxjs';
-import { delay } from 'rxjs/operators';
 
 export type SubtipoEncuestaBidireccional =
   | 'AULA_ABIERTA_RECORRIDO_PEDAGOGICO'
@@ -28,11 +26,12 @@ export class EncuestaJefaturaService {
 
   constructor(private http: HttpClient) {}
 
-    crear(payload: EncuestaJefaturaPayload) {
-    console.log('PAYLOAD ENVIADO', payload);
+  crear(payload: EncuestaJefaturaPayload): Observable<any> {
+    return this.http.post(this.baseUrl, payload);
+  }
 
-    // Simula respuesta exitosa del backend
-    return of({ ok: true }).pipe(delay(1000));
-    }
+  getAll(): Observable<any[]> {
+    return this.http.get<any[]>(this.baseUrl);
+  }
 }
 

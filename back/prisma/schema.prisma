@@ -193,6 +193,7 @@ model EncuestaSemestre {
 
   encuestasEstudiantes   EncuestaEstudiante[]
   encuestasColaboradores EncuestaColaborador[]
+  encuestasJefatura      EncuestaJefatura[]
 
   @@map("encuesta_semestre")
   @@unique([anio, semestre], name: "anio_semestre_unique")
@@ -273,8 +274,26 @@ model EncuestaColaborador {
 }
 
 /////////////////////////////////////
+//   ENCUESTAS JEFATURA (VINCULACION)
+/////////////////////////////////////
+
+model EncuestaJefatura {
+  id                       Int      @id @default(autoincrement())
+  subtipo                  String
+  fecha                    DateTime?
+  actividadVinculacionId   Int?
+  identificacion           Json?
+
+  semestreId Int?
+  semestre   EncuestaSemestre? @relation(fields: [semestreId], references: [id], onDelete: Cascade)
+
+  respuestas RespuestaSeleccionada[]
+
+  @@map("encuesta_jefatura")
+}
+
+/////////////////////////////////////
 //   PREGUNTAS, ALTERNATIVAS Y RESPUESTAS
-//   ✅ Cambios: Pregunta ya NO se relaciona a Items ni a Encuesta
 /////////////////////////////////////
 
 model Pregunta {
@@ -310,6 +329,9 @@ model RespuestaSeleccionada {
 
   encuestaColaboradorId Int?
   encuestaColaborador   EncuestaColaborador? @relation(fields: [encuestaColaboradorId], references: [id], onDelete: Cascade)
+
+  encuestaJefaturaId Int?
+  encuestaJefatura   EncuestaJefatura? @relation(fields: [encuestaJefaturaId], references: [id], onDelete: Cascade)
 
   preguntaId  Int
   pregunta    Pregunta @relation(fields: [preguntaId], references: [id])

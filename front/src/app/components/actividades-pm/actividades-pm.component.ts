@@ -997,20 +997,20 @@ export class ActividadesPmComponent implements OnInit {
       next: (res) => {
         const id = Number(res?.id ?? 0);
         if (!Number.isFinite(id) || id <= 0) {
-          this.openDialog(false, 'No se pudo registrar la actividad de vinculaci¢n. Intenta nuevamente.');
+          this.openDialog(false, 'No se pudo registrar la actividad de vinculacion. Intenta nuevamente.');
           return;
         }
         const medios = this.difusiones?.length
           ? ` (Medio: ${this.difusiones.map((d) => d.medio).join(', ')})`
           : '';
 
-        this.openDialog(true, `Actividad de vinculaci¢n registrada exitosamente.${medios}`);
+        this.openDialog(true, `Actividad de vinculacion registrada exitosamente.${medios}`);
         this.limpiar();
       },
       error: (err) => {
         console.error('Error guardando actividad', err);
         const apiMessage = err?.error?.message || err?.message;
-        const fallback = 'No se pudo registrar la actividad de vinculaci¢n. Intenta nuevamente.';
+        const fallback = 'No se pudo registrar la actividad de vinculacion. Intenta nuevamente.';
         this.openDialog(false, apiMessage || fallback);
       },
     });

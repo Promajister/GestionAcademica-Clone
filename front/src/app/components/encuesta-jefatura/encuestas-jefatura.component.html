@@ -59,6 +59,48 @@
     </mat-card>
   </div>
 
+  <mat-card class="elev registered-list-card">
+    <mat-card-title>Encuestas registradas</mat-card-title>
+
+    <div *ngIf="encuestas.length > 0; else noEncuestas">
+      <div *ngFor="let e of encuestas" class="registered-item">
+        <div class="item-content">
+          <mat-icon class="item-icon">
+            {{ e.subtipo === 'AULA_ABIERTA_RECORRIDO_PEDAGOGICO' ? 'school' : 'groups' }}
+          </mat-icon>
+
+          <div class="item-info">
+            <span class="item-title">{{ mapSubtipoLabel(e.subtipo) }}</span>
+            <span class="item-metadata">
+              {{ getIdentificacionLinea1(e) }}<br />
+              {{ getIdentificacionLinea2(e) }}<br />
+              {{ getActividadLabel(e) }}
+            </span>
+          </div>
+        </div>
+
+        <div class="item-actions">
+          <button mat-stroked-button color="primary" (click)="verDetalles(e)">
+            <mat-icon>visibility</mat-icon>
+            Ver
+          </button>
+        </div>
+
+        <div class="item-date" *ngIf="e.fecha">
+          <mat-icon>calendar_today</mat-icon>
+          <span>{{ e.fecha | date: 'yyyy-MM-dd' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <ng-template #noEncuestas>
+      <div class="empty-state">
+        <mat-icon>info</mat-icon>
+        <p>No hay encuestas registradas.</p>
+      </div>
+    </ng-template>
+  </mat-card>
+
   <mat-card class="elev detail-card custom-modal" *ngIf="registroVisible">
     <form [formGroup]="form" (ngSubmit)="submit()">
       <mat-card-header>
@@ -247,5 +289,73 @@
         </button>
       </mat-card-actions>
     </form>
+  </mat-card>
+
+  <mat-card class="elev detail-card custom-modal" *ngIf="selectedEncuesta">
+    <mat-card-header class="modal-head">
+      <div class="modal-head-text">
+        <mat-card-title>Detalle encuesta</mat-card-title>
+        <mat-card-subtitle>
+          {{ mapSubtipoLabel(selectedEncuesta.subtipo) }} - {{ selectedEncuesta.fecha | date: 'dd/MM/yyyy' }}
+        </mat-card-subtitle>
+      </div>
+
+      <button mat-icon-button class="close-btn" (click)="cerrarDetalles()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </mat-card-header>
+
+    <mat-card-content class="modal-body">
+      <div class="detail-summary">
+        <div class="summary-chip">
+          <mat-icon>assignment</mat-icon>
+          <span>{{ mapSubtipoLabel(selectedEncuesta.subtipo) }}</span>
+        </div>
+        <div class="summary-chip">
+          <mat-icon>event</mat-icon>
+          <span>{{ selectedEncuesta.fecha | date: 'yyyy-MM-dd' }}</span>
+        </div>
+      </div>
+
+      <section class="detail-section">
+        <h3 class="section-title">Datos generales</h3>
+        <div class="table-wrapper">
+          <table class="detail-plain-table meta-table">
+            <tbody>
+              <tr *ngFor="let row of getIdentificacionRows(selectedEncuesta)">
+                <th class="meta-k">{{ row.key }}</th>
+                <td class="meta-v">{{ row.value }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="detail-section">
+        <h3 class="section-title">Respuestas</h3>
+        <div class="table-wrapper" *ngIf="selectedEncuesta.respuestas?.length; else noRespuestas">
+          <table class="detail-plain-table answers-table">
+            <thead>
+              <tr>
+                <th>Pregunta</th>
+                <th>Respuesta</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let r of selectedEncuesta.respuestas">
+                <td>{{ r.pregunta?.descripcion }}</td>
+                <td>{{ mapRespuestaValor(r) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <ng-template #noRespuestas>
+          <div class="empty-state compact">
+            <mat-icon>info</mat-icon>
+            <p>No hay respuestas registradas.</p>
+          </div>
+        </ng-template>
+      </section>
+    </mat-card-content>
   </mat-card>
 </div>
