@@ -24,6 +24,7 @@ import { MatIconModule } from '@angular/material/icon';
 
 type ScaleType = 'INTERES' | 'ACUERDO' | 'PREPARACION';
 
+
 interface SurveyQuestion {
   key: string;
   text: string;
@@ -45,6 +46,7 @@ interface SurveyConfig {
     | { key: string; label: string; type: 'text'; required?: boolean }
     | { key: string; label: string; type: 'yesno'; required?: boolean }
     | { key: string; label: string; type: 'activity-select'; required?: boolean }
+    | { key: string; label: string; type: 'select'; required?: boolean }   // ✅ nuevo
   >;
 
   sections: SurveySection[];
@@ -86,6 +88,120 @@ export class EncuestaJefaturaComponent implements OnInit {
   actividades: ActividadVinculacionOption[] = [];
   isLoadingActividades = false;
 
+  filtroSubtipo: SubtipoEncuestaBidireccional | 'ALL' = 'ALL';
+  filtroActividadId: number | 'ALL' = 'ALL';
+  filtroNivel = '';     
+  filtroBusqueda = '';
+
+  readonly NIVELES_ESCOLARES = [
+    '5to básico',
+    '6to básico',
+    '7mo básico',
+    '8vo básico',
+    '1ro medio',
+    '2do medio',
+    '3ro medio',
+    '4to medio',
+  ];
+
+  readonly NIVELES_PREGRADO = [
+    '1er año',
+    '2do año',
+    '3er año',
+    '4to año',
+    '5to año',
+  ];
+
+  get nivelesRegistro(): string[] {
+    return this.selectedSubtipo === 'ALTERNANCIAS_PREGRADO'
+      ? this.NIVELES_PREGRADO
+      : this.NIVELES_ESCOLARES;
+  }
+
+  private normalize(v: any): string {
+    return (v ?? '')
+      .toString()
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+  }
+
+  private getIdent(encuesta: any): any {
+    return encuesta?.identificacion || {};
+  }
+
+  private getActividadId(encuesta: any): number | null {
+    const ident = this.getIdent(encuesta);
+    const id = ident.actividadVinculacionId;
+    if (id === undefined || id === null || id === '') return null;
+    const n = Number(id);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  private getNivel(encuesta: any): string {
+    const ident = this.getIdent(encuesta);
+    return String(ident.nivelEducacional ?? ident.nivel ?? '');
+  }
+
+  private getNombreOEscuela(encuesta: any): string {
+    const ident = this.getIdent(encuesta);
+    // Alternancias pregrado: nombre
+    if (encuesta?.subtipo === 'ALTERNANCIAS_PREGRADO') {
+      return String(ident.nombre ?? '');
+    }
+    // Otros: escuela/liceo
+    return String(ident.escuelaOLiceo ?? '');
+  }
+
+  private getActividadNombreById(id: number | null): string {
+    if (!id) return '';
+    const a = this.actividades.find(x => x.id === id);
+    return a?.nombre ?? '';
+  }
+
+  get encuestasFiltradas(): any[] {
+    const q = this.normalize(this.filtroBusqueda);
+    const nivelQ = this.normalize(this.filtroNivel);
+
+    return (this.encuestas || []).filter((e) => {
+      // 1) filtro subtipo
+      if (this.filtroSubtipo !== 'ALL' && e.subtipo !== this.filtroSubtipo) return false;
+
+      // 2) filtro actividad
+      const actId = this.getActividadId(e);
+      if (this.filtroActividadId !== 'ALL' && actId !== this.filtroActividadId) return false;
+
+      // 3) filtro nivel (nivelEducacional o nivel)
+      if (this.filtroNivel) {
+        const nivel = this.normalize(this.getNivel(e));
+        if (this.normalize(this.filtroNivel) !== nivel) return false;
+      }
+      // 4) búsqueda libre (nombre/escuela + actividad)
+      if (q) {
+        const nombreEscuela = this.normalize(this.getNombreOEscuela(e));
+        const actividadNombre = this.normalize(this.getActividadNombreById(actId));
+        const actividadLabel = this.normalize(this.getActividadLabel(e)); // ya lo tienes
+
+        const hayMatch =
+          nombreEscuela.includes(q) ||
+          actividadNombre.includes(q) ||
+          actividadLabel.includes(q);
+
+        if (!hayMatch) return false;
+      }
+
+      return true;
+    });
+  }
+
+  limpiarFiltros(): void {
+    this.filtroSubtipo = 'ALL';
+    this.filtroActividadId = 'ALL';
+    this.filtroNivel = '';
+    this.filtroBusqueda = '';
+  }
+
   readonly SURVEYS: SurveyConfig[] = [
     {
       subtipo: 'AULA_ABIERTA_RECORRIDO_PEDAGOGICO',
@@ -94,7 +210,7 @@ export class EncuestaJefaturaComponent implements OnInit {
       identificacion: [
         { key: 'actividadVinculacionId', label: 'Actividad asociada', type: 'activity-select', required: true },
         { key: 'escuelaOLiceo', label: 'Escuela o liceo', type: 'text', required: true },
-        { key: 'nivelEducacional', label: 'Nivel educacional', type: 'text', required: true },
+        { key: 'nivelEducacional', label: 'Nivel educacional', type: 'select', required: true },
         { key: 'haVisitadoAntes', label: '¿Has visitado antes la universidad?', type: 'yesno', required: true },
       ],
       sections: [
@@ -135,7 +251,7 @@ export class EncuestaJefaturaComponent implements OnInit {
       identificacion: [
         { key: 'actividadVinculacionId', label: 'Actividad asociada', type: 'activity-select', required: true },
         { key: 'nombre', label: 'Nombre', type: 'text', required: true },
-        { key: 'nivel', label: 'Nivel', type: 'text', required: true },
+        { key: 'nivel', label: 'Nivel', type: 'select', required: true },
         { key: 'haParticipadoAntes', label: '¿Has participado antes en alternancias?', type: 'yesno', required: true },
       ],
       sections: [
@@ -178,7 +294,7 @@ export class EncuestaJefaturaComponent implements OnInit {
       identificacion: [
         { key: 'actividadVinculacionId', label: 'Actividad asociada', type: 'activity-select', required: true },
         { key: 'escuelaOLiceo', label: 'Escuela o liceo', type: 'text', required: true },
-        { key: 'nivelEducacional', label: 'Nivel educacional', type: 'text', required: true },
+        { key: 'nivelEducacional', label: 'Nivel educacional', type: 'select', required: true },
         { key: 'haParticipadoAntes', label: '¿Has participado antes en una actividad con estudiantes universitarios?', type: 'yesno', required: true },
       ],
       sections: [
@@ -571,5 +687,55 @@ export class EncuestaJefaturaComponent implements OnInit {
       case 'ACUERDO': return 'Escala 1-5 (1 totalmente en desacuerdo / 5 totalmente de acuerdo)';
     }
   }
+
+  private toNumberOrNull(val: any): number | null {
+    const n = Number(val);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  private clamp(n: number, min: number, max: number): number {
+    return Math.max(min, Math.min(max, n));
+  }
+
+  /** Retorna [1..5] desde la respuesta cerrada; null si no aplica */
+  private getClosedAnswerValue(respuesta: any): number | null {
+    const raw = this.mapRespuestaValor(respuesta); // tu función
+    const n = this.toNumberOrNull(raw);
+    if (n === null) return null;
+    // Solo consideramos escala 1..5
+    if (n < 1 || n > 5) return null;
+    return n;
+  }
+
+  /** Promedio de respuestas cerradas (1..5) */
+  getPromedioEncuesta(encuesta: any): number | null {
+    const cerradas = this.getRespuestasCerradas(encuesta?.respuestas); // ya filtra "numéricas"
+    const values = cerradas
+      .map(r => this.getClosedAnswerValue(r))
+      .filter((v): v is number => v !== null);
+
+    if (!values.length) return null;
+
+    const sum = values.reduce((a, b) => a + b, 0);
+    return sum / values.length;
+  }
+
+  /** % satisfacción basado en promedio/5 */
+  getSatisfaccionEncuestaPct(encuesta: any): number | null {
+    const avg = this.getPromedioEncuesta(encuesta);
+    if (avg === null) return null;
+    return this.clamp((avg / 5) * 100, 0, 100);
+  }
+
+  get nivelesFiltro(): string[] {
+    if (this.filtroSubtipo === 'ALL') {
+      // Si no eligieron tipo, mostramos todos
+      return [...this.NIVELES_ESCOLARES, ...this.NIVELES_PREGRADO];
+    }
+    return this.filtroSubtipo === 'ALTERNANCIAS_PREGRADO'
+      ? this.NIVELES_PREGRADO
+      : this.NIVELES_ESCOLARES;
+  }
+
 }
 

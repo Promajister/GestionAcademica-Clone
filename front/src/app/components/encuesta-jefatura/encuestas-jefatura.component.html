@@ -61,9 +61,51 @@
 
   <mat-card class="elev registered-list-card">
     <mat-card-title>Encuestas registradas</mat-card-title>
+    <div class="filters">
+      <mat-form-field appearance="outline" class="field">
+        <mat-label>Tipo de encuesta</mat-label>
+        <mat-select [(ngModel)]="filtroSubtipo">
+          <mat-option [value]="'ALL'">Todas</mat-option>
+          <mat-option [value]="'AULA_ABIERTA_RECORRIDO_PEDAGOGICO'">Aulas Abiertas</mat-option>
+          <mat-option [value]="'ALTERNANCIAS_PREGRADO'">Alternancias - Pregrado</mat-option>
+          <mat-option [value]="'ALTERNANCIAS_RECEPTORES'">Alternancias - Receptores</mat-option>
+        </mat-select>
+      </mat-form-field>
 
-    <div *ngIf="encuestas.length > 0; else noEncuestas">
-      <div *ngFor="let e of encuestas" class="registered-item">
+      <mat-form-field appearance="outline" class="field">
+        <mat-label>Actividad</mat-label>
+        <mat-select [(ngModel)]="filtroActividadId">
+          <mat-option [value]="'ALL'">Todas</mat-option>
+          <mat-option *ngFor="let a of actividades" [value]="a.id">
+            {{ a.nombre }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="field">
+        <mat-label>Nivel</mat-label>
+        <mat-select [(ngModel)]="filtroNivel">
+          <mat-option value="">Todos</mat-option>
+          <mat-option *ngFor="let n of nivelesFiltro" [value]="n">{{ n }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="field search">
+        <mat-label>Búsqueda (nombre / escuela / actividad)</mat-label>
+        <input matInput [(ngModel)]="filtroBusqueda" placeholder="Escribe para filtrar..." />
+        <button mat-icon-button matSuffix type="button" (click)="filtroBusqueda=''" *ngIf="filtroBusqueda">
+          <mat-icon>close</mat-icon>
+        </button>
+      </mat-form-field>
+
+      <button mat-stroked-button type="button" class="filters-clear" (click)="limpiarFiltros()">
+        <mat-icon>restart_alt</mat-icon>
+        Limpiar
+      </button>
+    </div>
+
+    <div *ngIf="encuestasFiltradas.length > 0; else noEncuestas">
+      <div *ngFor="let e of encuestasFiltradas" class="registered-item">
         <div class="item-content">
           <mat-icon class="item-icon">
             {{ e.subtipo === 'AULA_ABIERTA_RECORRIDO_PEDAGOGICO' ? 'school' : 'groups' }}
@@ -74,7 +116,11 @@
             <span class="item-metadata">
               {{ getIdentificacionLinea1(e) }}<br />
               {{ getIdentificacionLinea2(e) }}<br />
-              {{ getActividadLabel(e) }}
+              {{ getActividadLabel(e) }}<br />
+              <ng-container *ngIf="getSatisfaccionEncuestaPct(e) as pct; else sinPct">
+                Satisfacción: <b>{{ pct | number:'1.2-2' }}%</b>
+              </ng-container>
+              <ng-template #sinPct> Satisfacción: Sin datos </ng-template>
             </span>
           </div>
         </div>
@@ -210,6 +256,20 @@
                 </mat-error>
               </mat-form-field>
 
+              <mat-form-field *ngIf="f.type === 'select'" appearance="outline" class="field">
+                <mat-label>{{ f.label }}</mat-label>
+
+                <mat-select [formControlName]="f.key">
+                  <mat-option *ngFor="let n of nivelesRegistro" [value]="n">
+                    {{ n }}
+                  </mat-option>
+                </mat-select>
+
+                <mat-error *ngIf="form.get('identificacion.' + f.key)?.touched && form.get('identificacion.' + f.key)?.invalid">
+                  Campo obligatorio
+                </mat-error>
+              </mat-form-field>
+
               <div *ngIf="f.type === 'yesno'" class="question-row full">
                 <p class="question-label">{{ f.label }}</p>
                 <div class="answer-col">
@@ -330,10 +390,20 @@
                 <th class="meta-k">{{ row.key }}</th>
                 <td class="meta-v">{{ row.value }}</td>
               </tr>
+
+              <!-- FILA SATISFACCIÓN -->
+              <tr *ngIf="getSatisfaccionEncuestaPct(selectedEncuesta) as pct">
+                <th class="meta-k">Satisfacción</th>
+                <td class="meta-v">
+                  <b>{{ pct | number:'1.2-2' }}%</b>
+                  <span class="muted"> ({{ getPromedioEncuesta(selectedEncuesta) | number:'1.2-2' }}/5)</span>
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
       </section>
+
 
       <section class="detail-section">
         <h3 class="section-title">Respuestas</h3>

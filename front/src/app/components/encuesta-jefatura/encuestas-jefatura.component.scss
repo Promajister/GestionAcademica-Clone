@@ -869,3 +869,47 @@
   .page { padding-inline: 12px; }
 }
 
+.filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+  align-items: end;
+
+  margin: 0.75rem 0 1rem;
+  padding: 0.85rem 0.9rem;
+  border: 1px solid rgba(48, 56, 128, 0.10);
+  border-radius: 16px;
+  background: linear-gradient(90deg, rgba(48, 56, 128, 0.04), #fff 60%);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.05);
+}
+
+.filters .field {
+  width: 100%;
+}
+
+.filters .filters-clear {
+  grid-column: 1 / -1;
+  justify-self: end;
+
+  border-radius: 999px !important;
+  height: 40px;
+  padding: 0 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.filters ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+  display: none;
+}
+
+@media (max-width: 960px) {
+  .filters {
+    grid-template-columns: 1fr;
+  }
+
+  .filters .filters-clear {
+    justify-self: stretch; 
+  }
+}
+
