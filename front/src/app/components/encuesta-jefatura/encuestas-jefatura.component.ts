@@ -46,7 +46,7 @@ interface SurveyConfig {
     | { key: string; label: string; type: 'text'; required?: boolean }
     | { key: string; label: string; type: 'yesno'; required?: boolean }
     | { key: string; label: string; type: 'activity-select'; required?: boolean }
-    | { key: string; label: string; type: 'select'; required?: boolean }   // ✅ nuevo
+    | { key: string; label: string; type: 'select'; required?: boolean }   
   >;
 
   sections: SurveySection[];
@@ -697,34 +697,38 @@ export class EncuestaJefaturaComponent implements OnInit {
     return Math.max(min, Math.min(max, n));
   }
 
-  /** Retorna [1..5] desde la respuesta cerrada; null si no aplica */
-  private getClosedAnswerValue(respuesta: any): number | null {
-    const raw = this.mapRespuestaValor(respuesta); // tu función
+  /** Retorna [0..4] desde la respuesta cerrada (1..5); null si no aplica */
+  private getClosedAnswerScore0to4(respuesta: any): number | null {
+    const raw = this.mapRespuestaValor(respuesta);
     const n = this.toNumberOrNull(raw);
     if (n === null) return null;
-    // Solo consideramos escala 1..5
+
+    // Validamos que venga en 1..5
     if (n < 1 || n > 5) return null;
-    return n;
+
+    // Reescalamos: 1->0, 2->1, 3->2, 4->3, 5->4
+    return n - 1;
   }
 
-  /** Promedio de respuestas cerradas (1..5) */
+  /** Promedio reescalado (0..4) */
   getPromedioEncuesta(encuesta: any): number | null {
-    const cerradas = this.getRespuestasCerradas(encuesta?.respuestas); // ya filtra "numéricas"
+    const cerradas = this.getRespuestasCerradas(encuesta?.respuestas);
     const values = cerradas
-      .map(r => this.getClosedAnswerValue(r))
+      .map(r => this.getClosedAnswerScore0to4(r))
       .filter((v): v is number => v !== null);
 
     if (!values.length) return null;
 
     const sum = values.reduce((a, b) => a + b, 0);
-    return sum / values.length;
+    return sum / values.length; // 0..4
   }
 
-  /** % satisfacción basado en promedio/5 */
+  /** % satisfacción basado en promedio/4 (porque ahora el máximo es 4) */
   getSatisfaccionEncuestaPct(encuesta: any): number | null {
-    const avg = this.getPromedioEncuesta(encuesta);
-    if (avg === null) return null;
-    return this.clamp((avg / 5) * 100, 0, 100);
+    const avg0to4 = this.getPromedioEncuesta(encuesta);
+    if (avg0to4 === null) return null;
+
+    return this.clamp((avg0to4 / 4) * 100, 0, 100);
   }
 
   get nivelesFiltro(): string[] {
