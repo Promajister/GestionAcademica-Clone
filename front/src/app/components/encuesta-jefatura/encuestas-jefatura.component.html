@@ -1,0 +1,205 @@
+<div class="container section">
+
+<!-- Selector de encuesta (agrupado por bloque) -->
+<mat-form-field appearance="outline" class="w">
+  <mat-label>Tipo de encuesta</mat-label>
+  <mat-select
+    [value]="selectedSubtipo"
+    (selectionChange)="onChangeSurvey($event.value)"
+  >
+    <mat-optgroup label="Aulas Abiertas y Recorridos Pedagógicos (PACE / PROPED)">
+      <mat-option
+        *ngFor="let s of groupAulasAbiertas"
+        [value]="s.subtipo"
+      >
+        {{ s.title }}
+      </mat-option>
+    </mat-optgroup>
+
+    <mat-optgroup label="Alternancias Pedagógicas (Pregrado / Comunidades escolares)">
+      <mat-option
+        *ngFor="let s of groupAlternancias"
+        [value]="s.subtipo"
+      >
+        {{ s.title }}
+      </mat-option>
+    </mat-optgroup>
+  </mat-select>
+</mat-form-field>
+
+<!-- Contexto (como el correo) -->
+<mat-card class="elev info-card" *ngIf="correoContexto as ctx">
+  <div class="info-row">
+    <div class="info-icon">
+      <mat-icon>info</mat-icon>
+    </div>
+
+    <div class="info-text">
+      <div class="info-title">{{ ctx.titulo }}</div>
+      <div class="info-desc">{{ ctx.descripcion }}</div>
+    </div>
+  </div>
+</mat-card>
+
+<mat-card class="elev info-card" *ngIf="correoContexto as ctx">
+    <div class="info-row">
+        <div class="info-icon">
+            <mat-icon>flag</mat-icon>
+        </div>
+
+        <div class="info-text">
+            <div class="objetivo-text">
+                <div class="objetivo-title">Objetivo general</div>
+                <div class="objetivo-desc">{{ currentSurvey.objetivo }}</div>
+            </div>
+        </div>
+    </div>
+</mat-card>
+
+
+  <!-- CARD PRINCIPAL (FORM) -->
+  <mat-card class="elev form-shell">
+    <mat-card-header class="form-head">
+      <mat-card-subtitle>COMPLETA LOS CAMPOS OBLIGATORIOS (*).</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content class="form-body">
+
+      <form [formGroup]="form" (ngSubmit)="submit()">
+
+        <!-- IDENTIFICACION -->
+        <section formGroupName="identificacion" class="panel">
+          <div class="panel-head">
+            <div class="panel-title">
+              <mat-icon>perm_identity</mat-icon>
+              <h3>Identificación del participante</h3>
+            </div>
+            <div class="panel-sub">Datos generales y actividad asociada</div>
+          </div>
+
+          <div class="grid-2">
+            <ng-container *ngFor="let f of currentSurvey.identificacion">
+
+              <!-- activity-select -->
+              <mat-form-field *ngIf="f.type === 'activity-select'" appearance="outline" class="field">
+                <mat-label>{{ f.label }}</mat-label>
+
+                <mat-select [formControlName]="f.key" [disabled]="isLoadingActividades">
+                  <mat-option *ngIf="isLoadingActividades" [value]="null" disabled>
+                    Cargando actividades...
+                  </mat-option>
+
+                  <mat-option *ngFor="let a of actividades" [value]="a.id">
+                      {{ a.nombre }} <span class="muted-opt" *ngIf="a.fechaInicio">— {{ a.fechaInicio | date:'yyyy-MM-dd' }}</span>
+                  </mat-option>
+                </mat-select>
+
+                <mat-hint *ngIf="!isLoadingActividades && !actividades.length">
+                  No hay actividades disponibles.
+                </mat-hint>
+
+                <mat-error *ngIf="form.get('identificacion.' + f.key)?.touched && form.get('identificacion.' + f.key)?.invalid">
+                  Campo obligatorio
+                </mat-error>
+              </mat-form-field>
+
+              <!-- text -->
+              <mat-form-field *ngIf="f.type === 'text'" appearance="outline" class="field">
+                <mat-label>{{ f.label }}</mat-label>
+                <input matInput [formControlName]="f.key" />
+                <mat-error *ngIf="form.get('identificacion.' + f.key)?.touched && form.get('identificacion.' + f.key)?.invalid">
+                  Campo obligatorio
+                </mat-error>
+              </mat-form-field>
+
+              <!-- yes/no -->
+              <div *ngIf="f.type === 'yesno'" class="question-row full">
+                <p class="question-label">{{ f.label }}</p>
+                <div class="answer-col">
+                  <mat-radio-group class="scale-group" [formControlName]="f.key">
+                    <mat-radio-button class="scale-option" [value]="true">Sí</mat-radio-button>
+                    <mat-radio-button class="scale-option" [value]="false">No</mat-radio-button>
+                  </mat-radio-group>
+
+                  <div class="q-error" *ngIf="form.get('identificacion.' + f.key)?.touched && form.get('identificacion.' + f.key)?.invalid">
+                    Selecciona una opción.
+                  </div>
+                </div>
+              </div>
+
+            </ng-container>
+          </div>
+        </section>
+
+        <!-- SECCIONES -->
+        <section formGroupName="secciones" class="panel" *ngFor="let sec of currentSurvey.sections">
+          <div [formGroupName]="sec.id">
+
+            <div class="panel-head">
+              <div class="panel-title">
+                <mat-icon>format_list_bulleted</mat-icon>
+                <h3>{{ sec.title }}</h3>
+              </div>
+              <div class="panel-sub">{{ scaleLabel(sec.scale) }}</div>
+            </div>
+
+            <div class="question-list">
+              <div class="question-row" *ngFor="let q of sec.questions">
+                <p class="question-label">{{ q.text }}</p>
+
+                <div class="answer-col">
+                  <mat-radio-group class="scale-group" [formControlName]="q.key">
+                    <mat-radio-button
+                      class="scale-option"
+                      *ngFor="let n of escala"
+                      [value]="n">
+                      {{ n }}
+                    </mat-radio-button>
+                  </mat-radio-group>
+
+                  <div class="q-error" *ngIf="form.get('secciones.' + sec.id + '.' + q.key)?.touched && form.get('secciones.' + sec.id + '.' + q.key)?.invalid">
+                    Selecciona una opción.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- ABIERTAS -->
+        <section formGroupName="abiertas" class="panel">
+          <div class="panel-head">
+            <div class="panel-title">
+              <mat-icon>edit_note</mat-icon>
+              <h3>Preguntas abiertas</h3>
+            </div>
+            <div class="panel-sub">Responde con tus propias palabras (opcional)</div>
+          </div>
+
+          <div class="open-grid">
+            <mat-form-field appearance="outline" class="field full" *ngFor="let a of currentSurvey.abiertas">
+              <mat-label>{{ a.label }}</mat-label>
+              <textarea matInput rows="4" [formControlName]="a.key"></textarea>
+            </mat-form-field>
+          </div>
+        </section>
+
+        <!-- ACCIONES -->
+        <div class="actions">
+          <button mat-stroked-button type="button" (click)="buildForm(selectedSubtipo)" [disabled]="isSaving">
+            <mat-icon>refresh</mat-icon>
+            Limpiar
+          </button>
+
+          <button mat-flat-button color="primary" type="submit" [disabled]="isSaving">
+            <mat-icon>send</mat-icon>
+            {{ isSaving ? 'Enviando...' : 'Enviar' }}
+          </button>
+        </div>
+
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+</div>

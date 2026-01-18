@@ -9,6 +9,24 @@ export interface EvidenciasFiles {
   fotos?: File[];
 }
 
+export interface ActividadOption {
+  id: number;
+  nombre: string;
+  fechaInicio?: string;
+  tipoActividad?: string;
+}
+
+@Injectable({ providedIn: 'root' })
+export class ActividadVinculacionService {
+  private baseUrl = `${environment.apiUrl}/actividad-vinculacion`;
+
+  constructor(private http: HttpClient) {}
+
+  listarParaSelect(): Observable<ActividadOption[]> {
+    return this.http.get<ActividadOption[]>(`${this.baseUrl}/listado`);
+  }
+}
+
 export interface DifusionItem {
   medio: string;
   url?: string;

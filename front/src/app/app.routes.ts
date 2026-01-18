@@ -182,6 +182,15 @@ export const routes: Routes = [
   },
 
   {
+    path: 'encuestas-jefatura',
+    canActivate: [authGuard, roleGuard],
+    data: { allowedRoles: ['jefatura', 'vinculacion'] },
+    loadComponent: () =>
+      import('./components/encuesta-jefatura/encuestas-jefatura.component')
+        .then(m => m.EncuestaJefaturaComponent),
+  },
+
+  {
     path: '**',
     redirectTo: 'dashboard',
   },
