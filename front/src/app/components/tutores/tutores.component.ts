@@ -103,7 +103,7 @@ export class TutoresComponent implements OnInit {
 
   // ===== paginación =====
   pageIndex = 0;
-  pageSize = 5;
+  pageSize = 10;
   totalItems = 0;
   readonly pageSizeOptions = [5, 10, 20, 50];
 
