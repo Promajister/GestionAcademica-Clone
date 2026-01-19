@@ -848,10 +848,6 @@ export class ActividadPmDialogComponent implements OnInit {
         this.estudiantesFeria = est ?? [];
         this.estudiantesSalida = [];
 
-        if (this.isView) {
-          this.form.disable({ emitEvent: false });
-        }
-
         this.updateEquipoValidators();
         this.updateInstitucionValidators();
 
@@ -920,8 +916,6 @@ export class ActividadPmDialogComponent implements OnInit {
 
     const avg = values.reduce((acc, n) => acc + n, 0) / values.length;
 
-    // ✅ MISMA LÓGICA QUE EN "porcentaje de satisfacción":
-    // 1 => 0%, 5 => 100%
     return ((avg - 1) / 4) * 100;
   }
 
