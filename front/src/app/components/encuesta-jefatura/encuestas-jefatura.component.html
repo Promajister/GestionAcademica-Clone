@@ -117,10 +117,11 @@
               {{ getIdentificacionLinea1(e) }}<br />
               {{ getIdentificacionLinea2(e) }}<br />
               {{ getActividadLabel(e) }}<br />
-              <ng-container *ngIf="getSatisfaccionEncuestaPct(e) as pct; else sinPct">
-                Satisfacción: <b>{{ pct | number:'1.2-2' }}%</b>
-              </ng-container>
-              <ng-template #sinPct> Satisfacción: Sin datos </ng-template>
+            <ng-container *ngIf="getSatisfaccionEncuestaPct(e) !== null; else sinPct">
+              Satisfacción: <b>{{ getSatisfaccionEncuestaPct(e)! | number:'1.2-2' }}%</b>
+            </ng-container>
+            <ng-template #sinPct> Satisfacción: Sin datos </ng-template>
+
             </span>
           </div>
         </div>
@@ -396,10 +397,10 @@
               </tr>
 
               <!-- FILA SATISFACCIÓN -->
-              <tr *ngIf="getSatisfaccionEncuestaPct(selectedEncuesta) as pct">
+              <tr *ngIf="getSatisfaccionEncuestaPct(selectedEncuesta) !== null">
                 <th class="meta-k">Satisfacción</th>
                 <td class="meta-v">
-                  <b>{{ pct | number:'1.2-2' }}%</b>
+                  <b>{{ getSatisfaccionEncuestaPct(selectedEncuesta)! | number:'1.2-2' }}%</b>
                 </td>
               </tr>
             </tbody>

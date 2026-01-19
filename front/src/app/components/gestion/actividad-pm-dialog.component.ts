@@ -917,9 +917,14 @@ export class ActividadPmDialogComponent implements OnInit {
     }
 
     if (!values.length) return null;
+
     const avg = values.reduce((acc, n) => acc + n, 0) / values.length;
-    return (avg / 5) * 100;
+
+    // ✅ MISMA LÓGICA QUE EN "porcentaje de satisfacción":
+    // 1 => 0%, 5 => 100%
+    return ((avg - 1) / 4) * 100;
   }
+
 
   private formatPct(n: number): string {
     const v = Math.round(n * 10) / 10; // 1 decimal
