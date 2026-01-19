@@ -833,7 +833,7 @@ export class ActividadesPmGestionComponent implements OnInit {
     this.exportError = null;
     this.exporting = true;
 
-    this.fetchDetalles()
+    this.fetchDetalles(this.getSelectedIdsOrAll())
       .pipe(finalize(() => (this.exporting = false)))
       .subscribe({
         next: (items) => {
