@@ -11,17 +11,17 @@
 
         <div class="hero__titles">
           <h1>Gestión de Actividades</h1>
-          <p>Filtrar y administrar actividades del plan de mejora (ver, editar y eliminar)</p>
+          <p>Registra y administra actividades del plan de mejora.</p>
 
           <div class="hero__chips">
             <span class="chip">
               <mat-icon>layers</mat-icon>
-              <span>Total: {{ rows.length }}</span>
+              <span>Total: {{ totalItems || 0 }}</span>
             </span>
 
             <span class="chip chip--soft" *ngIf="!loading">
               <mat-icon>visibility</mat-icon>
-              <span>{{ rows.length }} en pantalla</span>
+              <span>{{ rowsPaginadas.length }} en pantalla</span>
             </span>
 
             <span class="chip" *ngIf="exporting">
@@ -125,7 +125,7 @@
       </mat-card-title>
 
       <div class="panel__meta muted">
-        {{ rows.length }} resultado(s)
+        {{ totalItems }} resultado(s)
       </div>
     </mat-card-header>
 
@@ -180,8 +180,8 @@
             </thead>
 
             <tbody>
-              @for (r of rows; track r.id) {
-                <tr>
+          @for (r of rowsPaginadas; track r.id) {
+            <tr>
                   <td class="col-select">
                     <mat-checkbox
                       [checked]="isRowSelected(r)"
@@ -227,6 +227,18 @@
               }
             </tbody>
           </table>
+        </div>
+      }
+
+      @if (!loading && rows && rows.length > 0) {
+        <div class="list-paginator">
+          <mat-paginator
+            [length]="totalItems"
+            [pageIndex]="pageIndex"
+            [pageSize]="pageSize"
+            [pageSizeOptions]="pageSizeOptions"
+            (page)="onPageChange($event)">
+          </mat-paginator>
         </div>
       }
     </mat-card-content>

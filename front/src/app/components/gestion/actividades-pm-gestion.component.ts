@@ -12,6 +12,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 
 import { ActividadesPmService } from '../../services/actividades-pm.service';
 import { ActividadPmDialogComponent } from './actividad-pm-dialog.component';
@@ -42,7 +43,8 @@ import { environment } from '../../../environments/environment';
     MatDialogModule,
     MatTooltipModule,
     MatProgressSpinnerModule,
-    MatCheckboxModule
+    MatCheckboxModule,
+    MatPaginatorModule
 ],
   templateUrl: './actividades-pm-gestion.component.html',
   styleUrls: ['./actividades-pm-gestion.component.scss'],
@@ -61,6 +63,10 @@ export class ActividadesPmGestionComponent implements OnInit {
   selectedIds = new Set<number>();
   exporting = false;
   exportError: string | null = null;
+  pageIndex = 0;
+  pageSize = 10;
+  totalItems = 0;
+  readonly pageSizeOptions = [5, 10, 20, 50];
 
   filtroForm = this.fb.group({
     tipo: [''],
@@ -118,6 +124,7 @@ export class ActividadesPmGestionComponent implements OnInit {
       .subscribe({
         next: (data) => {
           this.rows = data ?? [];
+          this.actualizarPaginacion();
           const ids = new Set((this.rows ?? []).map((r) => Number(r?.id)).filter((id) => !Number.isNaN(id)));
           for (const id of Array.from(this.selectedIds)) {
             if (!ids.has(id)) this.selectedIds.delete(id);
@@ -127,6 +134,7 @@ export class ActividadesPmGestionComponent implements OnInit {
         error: (err) => {
           console.error(err);
           this.errorMsg = 'No se pudo cargar el listado.';
+          this.totalItems = 0;
           this.loading = false;
         },
       });
@@ -230,6 +238,25 @@ export class ActividadesPmGestionComponent implements OnInit {
 
     if (!inicio && !termino) return '-';
     return `${f(inicio)} - ${f(termino)}`;
+  }
+
+  get rowsPaginadas(): any[] {
+    const startIndex = this.pageIndex * this.pageSize;
+    const endIndex = startIndex + this.pageSize;
+    return (this.rows ?? []).slice(startIndex, endIndex);
+  }
+
+  actualizarPaginacion(): void {
+    this.totalItems = this.rows?.length ?? 0;
+    const maxPage = Math.max(0, Math.ceil(this.totalItems / this.pageSize) - 1);
+    if (this.pageIndex > maxPage) {
+      this.pageIndex = maxPage;
+    }
+  }
+
+  onPageChange(event: PageEvent): void {
+    this.pageIndex = event.pageIndex;
+    this.pageSize = event.pageSize;
   }
 
   eliminar(row: any): void {

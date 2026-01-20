@@ -149,10 +149,10 @@ export class DashboardComponent implements OnInit {
           desc: 'Roles y permisos',
         },
         {
-          title: 'Estudiantes en práctica',
-          icon: 'school',
+          title: 'Prácticas',
+          icon: 'assignment',
           route: '/estudiantes-en-practica',
-          desc: 'Visualización de estudiantes en práctica',
+          desc: 'Gestión de estudiantes en práctica',
         },
         {
           title: 'Tutores',
@@ -168,7 +168,7 @@ export class DashboardComponent implements OnInit {
         },
         {
           title: 'Actividades',
-          icon: 'assignment',
+          icon: 'event_note',
           route: '/actividades-estudiantes',
           desc: 'Visualización de actividades',
         },
@@ -290,7 +290,7 @@ export class DashboardComponent implements OnInit {
         },
         {
           title: 'Prácticas',
-          icon: 'event_note',
+          icon: 'assignment',
           route: '/practicas',
           desc: 'Gestión de prácticas',
         },
@@ -308,7 +308,7 @@ export class DashboardComponent implements OnInit {
         },
         {
           title: 'Actividades',
-          icon: 'assignment',
+          icon: 'event_note',
           route: '/actividades-estudiantes',
           desc: 'Visualización de actividades',
         },
@@ -359,10 +359,10 @@ export class DashboardComponent implements OnInit {
           desc: 'Funcionalidades asociadas a la gestión de prácticas profesionales',
           items: [
             {
-              title: 'Estudiantes en práctica',
-              icon: 'school',
+              title: 'Prácticas',
+              icon: 'assignment',
               route: '/estudiantes-en-practica',
-              desc: 'Visualización de estudiantes en práctica',
+              desc: 'Gestión de estudiantes en práctica',
             },
             {
               title: 'Estudiantes',
@@ -396,7 +396,7 @@ export class DashboardComponent implements OnInit {
             },
             {
               title: 'Actividades',
-              icon: 'assignment',
+              icon: 'event_note',
               route: '/actividades-estudiantes',
               desc: 'Visualización de actividades',
             },
@@ -574,13 +574,13 @@ export class DashboardComponent implements OnInit {
             },
             {
               title: 'Prácticas',
-              icon: 'event_note',
+              icon: 'assignment',
               route: '/practicas',
               desc: 'Gestión de prácticas',
             },
             {
               title: 'Actividades',
-              icon: 'assignment',
+              icon: 'event_note',
               route: '/actividades-estudiantes',
               desc: 'Visualización de actividades',
             },

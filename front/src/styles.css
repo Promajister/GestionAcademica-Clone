@@ -107,3 +107,22 @@ body.student-modal-open .mat-sidenav-content {
   border-radius: 22px !important;
 }
 
+/* Scrollbar global */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #9ca3af transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: #9ca3af;
+  border-radius: 999px;
+}

@@ -66,8 +66,6 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   private auth = inject(AuthService);
   private notifications = inject(NotificationsService);
 
-  private readonly photoKey = 'app.profilePhoto';
-
   @ViewChild(MatSidenav) sidenav?: MatSidenav;
 
   private navigationSub?: Subscription;
@@ -82,8 +80,6 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
 
   user!: { name: string; roleLabel: string; icon: string };
   rolePermissions: string[] = [];
-
-  profilePhoto: string | null = null;
 
   nav: NavItem[] = [];
 
@@ -104,7 +100,6 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     this.isAuthRoute = this.isAuthUrl(this.router.url);
 
     this.loadRoleFromStorage();  
-    this.loadProfilePhoto();
     this.notifications.start();
 
     this.navigationSub = this.router.events
@@ -114,7 +109,6 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
         this.isAuthRoute = this.isAuthUrl(url);
 
         this.loadRoleFromStorage();
-        this.loadProfilePhoto();
       });
   }
 
@@ -123,7 +117,6 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
 
     queueMicrotask(() => {
       this.loadRoleFromStorage();
-      this.loadProfilePhoto();
     });
   }
 
@@ -175,11 +168,6 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     this.applyRole(role);
-  }
-
-  private loadProfilePhoto() {
-    if (!isPlatformBrowser(this.platformId)) return;
-    this.profilePhoto = localStorage.getItem(this.photoKey);
   }
 
   private applyRole(role: SavedRole) {
@@ -276,7 +264,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
         items: [
           { label: 'Estudiantes', icon: 'school', route: '/estudiantes' },
           { label: 'Importar estudiantes', icon: 'upload_file', route: '/importar-estudiantes' },
-          { label: 'Estudiantes en Práctica', icon: 'school', route: '/estudiantes-en-practica' },
+          { label: 'Prácticas', icon: 'assignment', route: '/estudiantes-en-practica' },
           { label: 'Tutores', icon: 'supervisor_account', route: '/tutores' },
           { label: 'Colaboradores', icon: 'groups', route: '/colaboradores' },
           { label: 'Centros Educativos', icon: 'domain', route: '/centros-educativos' },
@@ -296,7 +284,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
             route: '/vinculacion/actividades-pm',
           },
           {
-            label: 'Gestionar actividades del plan de mejora',
+            label: 'Gestionar actividad',
             icon: 'manage_search',
             route: '/vinculacion/actividades-pm/gestion',
           },
@@ -313,7 +301,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
             route: '/egresados/ficha-digital',
           },
           {
-            label: 'Registrar datos de empleabilidad',
+            label: 'Registrar empleabilidad',
             icon: 'how_to_reg',
             route: '/egresados/empleabilidad',
           },
@@ -363,8 +351,8 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
       { label: 'Tutores', icon: 'supervisor_account', route: '/tutores' },
       { label: 'Colaboradores', icon: 'groups', route: '/colaboradores' },
       { label: 'Centros Educativos', icon: 'domain', route: '/centros-educativos' },
-      { label: 'Prácticas', icon: 'event_note', route: '/practicas' },
-      { label: 'Actividades', icon: 'assignment', route: '/actividades-estudiantes' },
+      { label: 'Prácticas', icon: 'assignment', route: '/practicas' },
+      { label: 'Actividades', icon: 'event_note', route: '/actividades-estudiantes' },
       { label: 'Supervisión General', icon: 'analytics', route: '/reportes' },
     ];
   }
