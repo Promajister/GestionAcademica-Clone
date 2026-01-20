@@ -69,6 +69,17 @@ body.student-modal-open .mat-sidenav-content {
   transform: none !important;
 }
 
+body.student-modal-open mat-sidenav,
+body.student-modal-open .mat-drawer-side {
+  z-index: 0 !important;
+}
+
+body.student-modal-open mat-sidenav-content,
+body.student-modal-open .mat-drawer-content {
+  position: relative;
+  z-index: 1;
+}
+
 .ga-dialog-backdrop{
   background: rgba(2, 6, 23, .45) !important;
   backdrop-filter: blur(2px);

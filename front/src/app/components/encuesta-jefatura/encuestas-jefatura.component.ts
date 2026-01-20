@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { CommonModule, DOCUMENT } from '@angular/common';
+import { Component, Inject, OnInit, OnDestroy, Renderer2 } from '@angular/core';
 import { HttpClientModule } from '@angular/common/http';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
 import {
@@ -78,7 +78,7 @@ interface SurveyConfig {
   templateUrl: './encuestas-jefatura.component.html',
   styleUrls: ['./encuestas-jefatura.component.scss'],
 })
-export class EncuestaJefaturaComponent implements OnInit {
+export class EncuestaJefaturaComponent implements OnInit, OnDestroy {
   isSaving = false;
   escala = [1, 2, 3, 4, 5];
   registroVisible = false;
@@ -343,7 +343,9 @@ export class EncuestaJefaturaComponent implements OnInit {
     private api: EncuestaJefaturaService,
     private actividadService: ActividadVinculacionService,
     private dialog: MatDialog,
-    private snack: MatSnackBar
+    private snack: MatSnackBar,
+    private renderer: Renderer2,
+    @Inject(DOCUMENT) private doc: Document
   ) {
     this.buildForm(this.selectedSubtipo);
     this.loadActividades();
@@ -351,6 +353,19 @@ export class EncuestaJefaturaComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadEncuestas();
+  }
+
+  ngOnDestroy(): void {
+    this.renderer.removeClass(this.doc.body, 'student-modal-open');
+  }
+
+  private syncModalBodyClass(): void {
+    const isOpen = !!(this.registroVisible || this.selectedEncuesta || this.encuestaEnEdicion);
+    if (isOpen) {
+      this.renderer.addClass(this.doc.body, 'student-modal-open');
+      return;
+    }
+    this.renderer.removeClass(this.doc.body, 'student-modal-open');
   }
 
   private loadEncuestas(): void {
@@ -399,6 +414,7 @@ export class EncuestaJefaturaComponent implements OnInit {
     this.selectedSubtipo = 'AULA_ABIERTA_RECORRIDO_PEDAGOGICO';
     this.buildForm(this.selectedSubtipo);
     this.registroVisible = true;
+    this.syncModalBodyClass();
   }
 
   openRegistroAlternancias(): void {
@@ -411,26 +427,32 @@ export class EncuestaJefaturaComponent implements OnInit {
     }
     this.buildForm(this.selectedSubtipo);
     this.registroVisible = true;
+    this.syncModalBodyClass();
   }
 
   cerrarRegistro(): void {
     this.registroVisible = false;
+    this.syncModalBodyClass();
   }
 
   verDetalles(encuesta: any): void {
     this.selectedEncuesta = encuesta;
+    this.syncModalBodyClass();
   }
 
   cerrarDetalles(): void {
     this.selectedEncuesta = null;
+    this.syncModalBodyClass();
   }
 
   editarEncuesta(encuesta: any): void {
     this.encuestaEnEdicion = JSON.parse(JSON.stringify(encuesta));
+    this.syncModalBodyClass();
   }
 
   cancelarEdicion(): void {
     this.encuestaEnEdicion = null;
+    this.syncModalBodyClass();
   }
 
   eliminarEncuesta(encuesta: any): void {

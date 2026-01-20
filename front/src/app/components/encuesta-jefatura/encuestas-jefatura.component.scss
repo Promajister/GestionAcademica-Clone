@@ -367,7 +367,7 @@
   max-width: 1200px;
   max-height: 90vh;
   margin: 0 auto;
-  z-index: 1000;
+  z-index: 1300;
   display: flex;
   flex-direction: column;
   border-radius: 1.2rem;
@@ -450,7 +450,7 @@
   background: rgba(0, 0, 0, 0.35);
   opacity: 0;
   pointer-events: none;
-  z-index: 900;
+  z-index: 1200;
   transition: opacity 0.2s ease;
 }
 
