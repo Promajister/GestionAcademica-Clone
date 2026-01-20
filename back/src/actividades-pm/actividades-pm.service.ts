@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'prisma/prisma.service';
 
 interface QueryFilters {
@@ -51,6 +51,10 @@ export class ActividadesPmService {
     documentos?: Express.Multer.File[];
     fotos?: Express.Multer.File[];
   }) {
+    
+  if ((files?.asistencia?.length ?? 0) > 1) {
+    throw new BadRequestException('Solo se permite 1 archivo de asistencia');
+  }
     const data = this.buildData(payload, files);
 
     const created = await this.prisma.actividadVinculacion.create({

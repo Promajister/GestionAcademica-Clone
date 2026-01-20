@@ -457,7 +457,7 @@
                   </mat-form-field>
 
                   <mat-form-field appearance="outline" class="FormField">
-                    <mat-label>Proyecto</mat-label>
+                    <mat-label>Proyecto **</mat-label>
                     <mat-select formControlName="proyectoAsociado">
                       <mat-option *ngFor="let o of proyectos" [value]="o">{{ o }}</mat-option>
                     </mat-select>
@@ -989,7 +989,6 @@
                 type="file"
                 class="FileInputHidden"
                 accept=".pdf,.xls,.xlsx"
-                multiple
                 (change)="onFileSelected($event, 'asistencia')"
               />
 
@@ -999,13 +998,37 @@
                   Subir archivo
                 </button>
 
-                <span class="FileName" *ngIf="asistenciaFileName; else noAsis">
-                  {{ asistenciaFileName }}
+                <!-- ✅ si NO hay archivo, muestra "Sin archivo" / si hay, muestra contador -->
+                <span class="FileName" *ngIf="!asistenciaFile.length; else hasAsis">
+                  {{ asistenciaFileName || 'Sin archivo' }}
                 </span>
-                <ng-template #noAsis>
-                  <span class="FileName muted">Sin archivo</span>
+
+                <ng-template #hasAsis>
+                  <span class="FileName muted">
+                    {{ asistenciaFile.length }} archivo(s) seleccionado(s)
+                  </span>
                 </ng-template>
               </div>
+
+              <ul class="FileList" *ngIf="asistenciaFile.length">
+                <li class="FileItem" *ngFor="let f of asistenciaFile; let i = index">
+                  <mat-icon class="FileItem__icon">description</mat-icon>
+
+                  <div class="FileItem__meta">
+                    <div class="FileItem__name" [title]="f.name">{{ f.name }}</div>
+                    <div class="FileItem__size">{{ formatSize(f.size) }}</div>
+                  </div>
+
+                  <button
+                    mat-icon-button
+                    type="button"
+                    class="FileItem__remove"
+                    (click)="removeSelectedFile('asistencia', i)"
+                  >
+                    <mat-icon>close</mat-icon>
+                  </button>
+                </li>
+              </ul>
             </div>
           </div>
 
@@ -1033,13 +1056,37 @@
                   Subir archivo
                 </button>
 
-                <span class="FileName" *ngIf="documentosFileName; else noDoc">
-                  {{ documentosFileName }}
+                <!-- ✅ si NO hay archivos, muestra "Sin archivo"/nombre; si hay, muestra contador -->
+                <span class="FileName" *ngIf="!documentosFile.length; else hasDocs">
+                  {{ documentosFileName || 'Sin archivo' }}
                 </span>
-                <ng-template #noDoc>
-                  <span class="FileName muted">Sin archivo</span>
+
+                <ng-template #hasDocs>
+                  <span class="FileName muted">
+                    {{ documentosFile.length }} archivo(s) seleccionado(s)
+                  </span>
                 </ng-template>
               </div>
+
+              <ul class="FileList" *ngIf="documentosFile.length">
+                <li class="FileItem" *ngFor="let f of documentosFile; let i = index">
+                  <mat-icon class="FileItem__icon">description</mat-icon>
+
+                  <div class="FileItem__meta">
+                    <div class="FileItem__name" [title]="f.name">{{ f.name }}</div>
+                    <div class="FileItem__size">{{ formatSize(f.size) }}</div>
+                  </div>
+
+                  <button
+                    mat-icon-button
+                    type="button"
+                    class="FileItem__remove"
+                    (click)="removeSelectedFile('documentos', i)"
+                  >
+                    <mat-icon>close</mat-icon>
+                  </button>
+                </li>
+              </ul>
             </div>
           </div>
 
@@ -1067,13 +1114,37 @@
                   Subir foto
                 </button>
 
-                <span class="FileName" *ngIf="fotosFileName; else noFoto">
-                  {{ fotosFileName }}
+                <!-- ✅ si NO hay archivos, muestra "Sin archivo"/nombre; si hay, muestra contador -->
+                <span class="FileName" *ngIf="!fotosFile.length; else hasFotos">
+                  {{ fotosFileName || 'Sin archivo' }}
                 </span>
-                <ng-template #noFoto>
-                  <span class="FileName muted">Sin archivo</span>
+
+                <ng-template #hasFotos>
+                  <span class="FileName muted">
+                    {{ fotosFile.length }} archivo(s) seleccionado(s)
+                  </span>
                 </ng-template>
               </div>
+
+              <ul class="FileList" *ngIf="fotosFile.length">
+                <li class="FileItem" *ngFor="let f of fotosFile; let i = index">
+                  <mat-icon class="FileItem__icon">photo</mat-icon>
+
+                  <div class="FileItem__meta">
+                    <div class="FileItem__name" [title]="f.name">{{ f.name }}</div>
+                    <div class="FileItem__size">{{ formatSize(f.size) }}</div>
+                  </div>
+
+                  <button
+                    mat-icon-button
+                    type="button"
+                    class="FileItem__remove"
+                    (click)="removeSelectedFile('fotos', i)"
+                  >
+                    <mat-icon>close</mat-icon>
+                  </button>
+                </li>
+              </ul>
             </div>
           </div>
 
