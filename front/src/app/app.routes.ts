@@ -194,6 +194,22 @@ export const routes: Routes = [
     redirectTo: 'encuestas-vinculacion',
     pathMatch: 'full',
   },
+  {
+    path: 'egresados/ficha-digital',
+    canActivate: [authGuard, roleGuard],
+    data: { allowedRoles: ['jefatura'] },
+    loadComponent: () =>
+      import('./components/egresados-ficha-digital/egresados-ficha-digital.component')
+        .then(m => m.EgresadosFichaDigitalComponent),
+  },
+  {
+    path: 'egresados/empleabilidad',
+    canActivate: [authGuard, roleGuard],
+    data: { allowedRoles: ['jefatura'] },
+    loadComponent: () =>
+      import('./components/egresados-empleabilidad/egresados-empleabilidad.component')
+        .then(m => m.EgresadosEmpleabilidadComponent),
+  },
 
   {
     path: '**',

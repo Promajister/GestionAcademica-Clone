@@ -38,7 +38,7 @@ interface NavItem {
 }
 
 interface NavSection {
-  id: 'practicas' | 'vinculacion';
+  id: 'practicas' | 'vinculacion' | 'egresados';
   title: string;
   icon: string;
   items: NavItem[];
@@ -90,9 +90,10 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   isJefatura = false;
   isVinculacion = false;
   navSections: NavSection[] = [];
-  openSections: Record<'practicas' | 'vinculacion', boolean> = {
+  openSections: Record<'practicas' | 'vinculacion' | 'egresados', boolean> = {
     practicas: true,
-    vinculacion: true, 
+    vinculacion: true,
+    egresados: true,
   };
 
   ngOnInit(): void {
@@ -222,7 +223,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     this.router.navigate(['/dashboard']);
   }
 
-  toggleSection(id: 'practicas' | 'vinculacion') {
+  toggleSection(id: 'practicas' | 'vinculacion' | 'egresados') {
     this.openSections[id] = !this.openSections[id];
   }
 
@@ -298,6 +299,23 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
             label: 'Gestionar actividades del plan de mejora',
             icon: 'manage_search',
             route: '/vinculacion/actividades-pm/gestion',
+          },
+        ],
+      },
+      {
+        id: 'egresados',
+        title: 'Egresados y Empleabilidad',
+        icon: 'work',
+        items: [
+          {
+            label: 'Ficha digital',
+            icon: 'badge',
+            route: '/egresados/ficha-digital',
+          },
+          {
+            label: 'Registrar datos de empleabilidad',
+            icon: 'how_to_reg',
+            route: '/egresados/empleabilidad',
           },
         ],
       },

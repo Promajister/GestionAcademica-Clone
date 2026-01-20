@@ -432,6 +432,24 @@ export class DashboardComponent implements OnInit {
             },
           ],
         },
+        {
+          title: 'Egresados y Empleabilidad',
+          desc: 'Funcionalidades para el seguimiento de egresados y empleabilidad',
+          items: [
+            {
+              title: 'Ficha digital',
+              icon: 'badge',
+              route: '/egresados/ficha-digital',
+              desc: 'Registro y consulta de ficha digital',
+            },
+            {
+              title: 'Registrar datos de empleabilidad',
+              icon: 'how_to_reg',
+              route: '/egresados/empleabilidad',
+              desc: 'Carga de datos de empleabilidad',
+            },
+          ],
+        },
       ];
     }
 
