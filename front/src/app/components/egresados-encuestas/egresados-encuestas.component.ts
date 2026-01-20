@@ -1,7 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -24,6 +24,12 @@ interface SurveyCard {
   description: string;
   icon: string;
   cardClass?: string;
+}
+
+interface AcreditacionSection {
+  id: string;
+  title: string;
+  questions: Array<{ key: string; text: string }>;
 }
 
 @Component({
@@ -69,7 +75,7 @@ export class EgresadosEncuestasComponent implements OnInit {
     },
     {
       id: 'ACREDITACION',
-      title: 'Encuesta de acreditacion',
+      title: 'Encuesta de egresados',
       subtitle: 'Evidencia para procesos de autoevaluacion.',
       description:
         'Recoge la opinion de egresados para fortalecer la acreditacion.',
@@ -113,6 +119,13 @@ export class EgresadosEncuestasComponent implements OnInit {
     'De acuerdo',
     'Muy de acuerdo',
   ];
+  readonly escalaLikert = [
+    'Muy en desacuerdo',
+    'En desacuerdo',
+    'Ni de acuerdo ni en desacuerdo',
+    'De acuerdo',
+    'Muy de acuerdo',
+  ];
   readonly opcionesPregunta9 = [
     'Practicas profesionales / practicas pedagogicas',
     'Formacion disciplinar en historia y geografia',
@@ -129,6 +142,64 @@ export class EgresadosEncuestasComponent implements OnInit {
     'Fortalecer ingles u otros idiomas',
     'Mejor orientacion laboral / talleres de empleabilidad',
     'Otros (respuestas no clasificables)',
+  ];
+
+  readonly acreditacionSections: AcreditacionSection[] = [
+    {
+      id: 'perfilEgreso',
+      title: 'Seccion II: Perfil de egreso',
+      questions: [
+        { key: 'p1', text: 'Conoci el perfil de egreso de la carrera.' },
+        { key: 'p2', text: 'La formacion recibida corresponde al perfil de egreso declarado.' },
+      ],
+    },
+    {
+      id: 'planEstudios',
+      title: 'Seccion III: Plan de estudios y formacion',
+      questions: [
+        { key: 'p3', text: 'El plan de estudios fue consistente con el perfil de egreso.' },
+        { key: 'p4', text: 'Las asignaturas ofrecidas ayudaron al logro del perfil de egreso.' },
+        { key: 'p5', text: 'Las evaluaciones eran pertinentes y coherentes con los objetivos de aprendizaje.' },
+        { key: 'p6', text: 'Participe en actividades sobre etica, inclusion, diversidad y responsabilidad social.' },
+      ],
+    },
+    {
+      id: 'formacionPractica',
+      title: 'Seccion IV: Formacion practica',
+      questions: [
+        { key: 'p7', text: 'Las practicas profesionales se realizaron con instituciones pertinentes.' },
+        { key: 'p8', text: 'Existio acompanamiento y supervision formal en la formacion practica.' },
+        { key: 'p9', text: 'Las actividades de practica fueron evaluadas con pautas claras.' },
+      ],
+    },
+    {
+      id: 'cuerpoAcademico',
+      title: 'Seccion V: Cuerpo academico',
+      questions: [
+        { key: 'p10', text: 'Los profesores tenian conocimientos actualizados y metodologias adecuadas.' },
+        { key: 'p11', text: 'Existia un equipo docente que lideraba el proyecto formativo.' },
+        { key: 'p12', text: 'Recibi material y herramientas elaboradas por mis docentes.' },
+      ],
+    },
+    {
+      id: 'gestionRecursos',
+      title: 'Seccion VI: Gestion institucional y recursos',
+      questions: [
+        { key: 'p13', text: 'La infraestructura y equipamiento eran adecuados para el aprendizaje.' },
+        { key: 'p14', text: 'La biblioteca y recursos digitales eran suficientes.' },
+        { key: 'p15', text: 'Existian mecanismos formalizados para atender solicitudes de estudiantes.' },
+        { key: 'p16', text: 'La gestion del cuerpo directivo permitia una conduccion eficaz.' },
+      ],
+    },
+    {
+      id: 'autorregulacion',
+      title: 'Seccion VII: Autorregulacion y mejora continua',
+      questions: [
+        { key: 'p17', text: 'Participe en procesos de autoevaluacion de la carrera.' },
+        { key: 'p18', text: 'Observe mejoras durante mi formacion por aseguramiento de calidad.' },
+        { key: 'p19', text: 'La carrera apoya insercion profesional y seguimiento de titulados.' },
+      ],
+    },
   ];
 
   readonly form = this.fb.group({
@@ -160,6 +231,8 @@ export class EgresadosEncuestasComponent implements OnInit {
     }),
   });
 
+  readonly acreditacionForm = this.buildAcreditacionForm();
+
   ngOnInit(): void {
     this.initDynamicRules();
     this.applyInitialControlState();
@@ -167,11 +240,15 @@ export class EgresadosEncuestasComponent implements OnInit {
   }
 
   openRegistro(survey: SurveyCard): void {
+    this.selectedEncuesta = null;
     this.selectedSurvey = survey;
     this.registroVisible = true;
     if (survey.id === 'EMPLEABILIDAD') {
       this.form.reset({}, { emitEvent: false });
       this.applyInitialControlState();
+    }
+    if (survey.id === 'ACREDITACION') {
+      this.acreditacionForm.reset({}, { emitEvent: false });
     }
   }
 
@@ -189,8 +266,13 @@ export class EgresadosEncuestasComponent implements OnInit {
   }
 
   submit(): void {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
+    const isAcreditacion = this.selectedSurvey?.id === 'ACREDITACION';
+    const currentForm = (isAcreditacion
+      ? this.acreditacionForm
+      : this.form) as FormGroup;
+
+    if (currentForm.invalid) {
+      currentForm.markAllAsTouched();
       this.snack.open('Completa los campos obligatorios.', 'Cerrar', { duration: 3000 });
       return;
     }
@@ -202,11 +284,12 @@ export class EgresadosEncuestasComponent implements OnInit {
       semestreEncuesta: this.computeSemestre(now),
       data: {
         encuestaTipo: this.selectedSurvey?.id ?? 'EMPLEABILIDAD',
-        generales: this.form.get('generales')?.value ?? {},
-        insercion: this.form.get('insercion')?.value ?? {},
-        condiciones: this.form.get('condiciones')?.value ?? {},
-        percepcion: this.form.get('percepcion')?.value ?? {},
-        abiertas: this.form.get('abiertas')?.value ?? {},
+        generales: currentForm.get('generales')?.value ?? {},
+        insercion: isAcreditacion ? undefined : this.form.get('insercion')?.value ?? {},
+        condiciones: isAcreditacion ? undefined : this.form.get('condiciones')?.value ?? {},
+        percepcion: isAcreditacion ? undefined : this.form.get('percepcion')?.value ?? {},
+        secciones: isAcreditacion ? this.acreditacionForm.get('secciones')?.value ?? {} : undefined,
+        abiertas: isAcreditacion ? this.acreditacionForm.get('abiertas')?.value ?? {} : this.form.get('abiertas')?.value ?? {},
       },
     };
 
@@ -215,8 +298,10 @@ export class EgresadosEncuestasComponent implements OnInit {
       next: () => {
         this.isSaving = false;
         this.snack.open('Encuesta enviada correctamente.', 'OK', { duration: 3000 });
-        this.form.reset({}, { emitEvent: false });
-        this.applyInitialControlState();
+        currentForm.reset({}, { emitEvent: false });
+        if (!isAcreditacion) {
+          this.applyInitialControlState();
+        }
         this.cerrarRegistro();
         this.loadEncuestas();
       },
@@ -253,7 +338,7 @@ export class EgresadosEncuestasComponent implements OnInit {
 
   mapTipoLabel(tipo: SurveyId | string | null | undefined): string {
     if (tipo === 'EMPLEABILIDAD') return 'Encuesta de empleabilidad';
-    if (tipo === 'ACREDITACION') return 'Encuesta de acreditacion';
+    if (tipo === 'ACREDITACION') return 'Encuesta de egresados';
     return 'Encuesta de egresados';
   }
 
@@ -261,7 +346,7 @@ export class EgresadosEncuestasComponent implements OnInit {
     const generales = encuesta?.generales || {};
     const anio = generales?.anioEgreso ?? 'Sin dato';
     const edad = generales?.edad ?? 'Sin dato';
-    return `Año egreso: ${anio} - Edad: ${edad}`;
+    return `Ano egreso: ${anio} - Edad: ${edad}`;
   }
 
   getGeneralesLinea2(encuesta: any): string {
@@ -293,29 +378,91 @@ export class EgresadosEncuestasComponent implements OnInit {
     if (!clave) return '';
 
     const labels: Record<string, string> = {
-      'insercion.trabajaActualmente': '1. Actualmente se encuentra trabajando?',
+      'insercion.trabajaActualmente': 'Actualmente se encuentra trabajando?',
       'insercion.tiempoPrimerTrabajo':
-        '2. Cuanto tiempo demoro en encontrar su primer trabajo?',
-      'insercion.situacionLaboral': '3. Cual es su situacion laboral actual?',
-      'insercion.sectorTrabajo': '4. Sector en el que trabaja',
-      'condiciones.renta': '5. Nivel de renta liquida mensual',
+        'Cuanto tiempo demoro en encontrar su primer trabajo?',
+      'insercion.situacionLaboral': 'Cual es su situacion laboral actual?',
+      'insercion.sectorTrabajo': 'Sector en el que trabaja',
+      'condiciones.renta': 'Nivel de renta liquida mensual',
       'condiciones.tipoInstitucion':
-        '6. Tipo de institucion educativa (si trabaja en educacion)',
+        'Tipo de institucion educativa (si trabaja en educacion)',
       'percepcion.pertinencia':
-        '7. La formacion recibida fue pertinente para su desempeno laboral?',
+        'La formacion recibida fue pertinente para su desempeno laboral?',
       'percepcion.postgrado':
-        '8a. Ha realizado estudios de postgrado desde que egreso?',
-      'percepcion.postgradoDetalle': '8a. Tipo e institucion (postgrado)',
+        'Ha realizado estudios de postgrado desde que egreso?',
+      'percepcion.postgradoDetalle': 'Tipo e institucion (postgrado)',
       'percepcion.capacitacion':
-        '8b. Ha realizado cursos de capacitacion adicional?',
-      'percepcion.capacitacionDetalle': '8b. Tipo e institucion (capacitacion)',
+        'Ha realizado cursos de capacitacion adicional?',
+      'percepcion.capacitacionDetalle': 'Tipo e institucion (capacitacion)',
       'abiertas.aspectosAyuda':
-        '9. Aspectos que ayudaron mas en la insercion laboral',
+        'Aspectos que ayudaron mas en la insercion laboral',
       'abiertas.mejoras':
-        '10. Mejoras sugeridas para fortalecer la empleabilidad',
+        'Mejoras sugeridas para fortalecer la empleabilidad',
+      'secciones.perfilEgreso.p1': 'Conoci el perfil de egreso de la carrera.',
+      'secciones.perfilEgreso.p2':
+        'La formacion recibida corresponde al perfil de egreso declarado.',
+      'secciones.planEstudios.p3': 'El plan de estudios fue consistente con el perfil de egreso.',
+      'secciones.planEstudios.p4': 'Las asignaturas ofrecidas ayudaron al logro del perfil de egreso.',
+      'secciones.planEstudios.p5':
+        'Las evaluaciones eran pertinentes y coherentes con los objetivos de aprendizaje.',
+      'secciones.planEstudios.p6':
+        'Participe en actividades sobre etica, inclusion, diversidad y responsabilidad social.',
+      'secciones.formacionPractica.p7':
+        'Las practicas profesionales se realizaron con instituciones pertinentes.',
+      'secciones.formacionPractica.p8':
+        'Existio acompanamiento y supervision formal en la formacion practica.',
+      'secciones.formacionPractica.p9':
+        'Las actividades de practica fueron evaluadas con pautas claras.',
+      'secciones.cuerpoAcademico.p10':
+        'Los profesores tenian conocimientos actualizados y metodologias adecuadas.',
+      'secciones.cuerpoAcademico.p11':
+        'Existia un equipo docente que lideraba el proyecto formativo.',
+      'secciones.cuerpoAcademico.p12':
+        'Recibi material y herramientas elaboradas por mis docentes.',
+      'secciones.gestionRecursos.p13':
+        'La infraestructura y equipamiento eran adecuados para el aprendizaje.',
+      'secciones.gestionRecursos.p14': 'La biblioteca y recursos digitales eran suficientes.',
+      'secciones.gestionRecursos.p15':
+        'Existian mecanismos formalizados para atender solicitudes de estudiantes.',
+      'secciones.gestionRecursos.p16':
+        'La gestion del cuerpo directivo permitia una conduccion eficaz.',
+      'secciones.autorregulacion.p17':
+        'Participe en procesos de autoevaluacion de la carrera.',
+      'secciones.autorregulacion.p18':
+        'Observe mejoras durante mi formacion por aseguramiento de calidad.',
+      'secciones.autorregulacion.p19':
+        'La carrera apoya insercion profesional y seguimiento de titulados.',
+      'abiertas.fortalezas': 'Fortalezas de la carrera',
+      'abiertas.debilidades': 'Debilidades o aspectos a mejorar',
+      'abiertas.sugerencias': 'Sugerencias adicionales',
     };
 
     return labels[clave] || clave;
+  }
+
+  private buildAcreditacionForm() {
+    const seccionesGroup: Record<string, any> = {};
+    for (const sec of this.acreditacionSections) {
+      const qCtrls: Record<string, any> = {};
+      for (const q of sec.questions) {
+        qCtrls[q.key] = ['', Validators.required];
+      }
+      seccionesGroup[sec.id] = this.fb.group(qCtrls);
+    }
+
+    return this.fb.group({
+      generales: this.fb.group({
+        anioEgreso: ['', Validators.required],
+        edad: ['', Validators.required],
+        sexo: ['', Validators.required],
+      }),
+      secciones: this.fb.group(seccionesGroup),
+      abiertas: this.fb.group({
+        fortalezas: [''],
+        debilidades: [''],
+        sugerencias: [''],
+      }),
+    });
   }
 
   get showPostgradoDetalle(): boolean {
@@ -410,4 +557,7 @@ export class EgresadosEncuestasComponent implements OnInit {
     this.form.get('condiciones.tipoInstitucion')?.clearValidators();
   }
 }
+
+
+
 

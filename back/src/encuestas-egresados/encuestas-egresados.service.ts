@@ -63,6 +63,7 @@ export class EncuestasEgresadosService {
       insercion?: Record<string, any>;
       condiciones?: Record<string, any>;
       percepcion?: Record<string, any>;
+      secciones?: Record<string, any>;
       abiertas?: Record<string, any>;
     };
   }): Promise<any> {
@@ -131,9 +132,11 @@ export class EncuestasEgresadosService {
     tx: any,
     encuestaId: number,
     data: {
+      encuestaTipo: TipoEncuestaEgresados;
       insercion?: Record<string, any>;
       condiciones?: Record<string, any>;
       percepcion?: Record<string, any>;
+      secciones?: Record<string, any>;
       abiertas?: Record<string, any>;
     },
   ) {
@@ -147,6 +150,9 @@ export class EncuestasEgresadosService {
     }
     if (data.percepcion) {
       this.flattenRespuestas('percepcion', data.percepcion, raw);
+    }
+    if (data.secciones) {
+      this.flattenRespuestas('secciones', data.secciones, raw);
     }
     if (data.abiertas) {
       this.flattenRespuestas('abiertas', data.abiertas, raw);
@@ -168,7 +174,9 @@ export class EncuestasEgresadosService {
       if (valor === null || valor === undefined || valor === '') continue;
 
       const valStr = String(valor).trim();
-      const esAbierta = openKeys.has(clave);
+      const esAbierta =
+        openKeys.has(clave) ||
+        (data.encuestaTipo === 'ACREDITACION' && clave.startsWith('abiertas.'));
 
       let pregunta = await tx.pregunta.findFirst({
         where: { descripcion: clave },

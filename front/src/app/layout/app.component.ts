@@ -305,6 +305,11 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
             icon: 'assignment',
             route: '/egresados/encuestas',
           },
+          {
+            label: 'Analisis de datos',
+            icon: 'analytics',
+            route: '/egresados/analisis',
+          },
         ],
       },
     ];

@@ -15,6 +15,7 @@ export interface EncuestaEgresadosPayload {
     insercion?: Record<string, any>;
     condiciones?: Record<string, any>;
     percepcion?: Record<string, any>;
+    secciones?: Record<string, any>;
     abiertas?: Record<string, any>;
   };
 }

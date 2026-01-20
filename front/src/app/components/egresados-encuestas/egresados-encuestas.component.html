@@ -141,7 +141,7 @@
   </mat-card>
 
   <mat-card class="elev detail-card custom-modal" *ngIf="registroVisible">
-    <ng-container *ngIf="selectedSurvey?.id === 'EMPLEABILIDAD'; else encuestaEnDefinicion">
+    <ng-container *ngIf="selectedSurvey?.id === 'EMPLEABILIDAD'; else encuestaAcreditacion">
       <form [formGroup]="form" (ngSubmit)="submit()">
         <mat-card-header>
           <mat-card-title>Registro de encuesta</mat-card-title>
@@ -216,7 +216,7 @@
 
             <div class="question-list">
               <div class="question-row">
-                <p class="question-label">1. Actualmente se encuentra trabajando?</p>
+                <p class="question-label">Actualmente se encuentra trabajando?</p>
                 <div class="answer-col">
                   <mat-radio-group class="scale-group" formControlName="trabajaActualmente">
                     <mat-radio-button *ngFor="let opcion of opcionesSiNo" class="scale-option" [value]="opcion">
@@ -232,7 +232,7 @@
 
             <div class="grid-2">
               <mat-form-field appearance="outline" class="field">
-                <mat-label>2. Tiempo para el primer trabajo</mat-label>
+                <mat-label>Tiempo para el primer trabajo</mat-label>
                 <mat-select formControlName="tiempoPrimerTrabajo">
                   <mat-option *ngFor="let item of tiemposPrimerTrabajo" [value]="item">{{ item }}</mat-option>
                 </mat-select>
@@ -242,7 +242,7 @@
               </mat-form-field>
 
               <mat-form-field appearance="outline" class="field">
-                <mat-label>3. Situacion laboral actual</mat-label>
+                <mat-label>Situacion laboral actual</mat-label>
                 <mat-select formControlName="situacionLaboral">
                   <mat-option *ngFor="let item of situacionesLaborales" [value]="item">{{ item }}</mat-option>
                 </mat-select>
@@ -252,7 +252,7 @@
               </mat-form-field>
 
               <mat-form-field appearance="outline" class="field">
-                <mat-label>4. Sector en el que trabaja</mat-label>
+                <mat-label>Sector en el que trabaja</mat-label>
                 <mat-select formControlName="sectorTrabajo">
                   <mat-option *ngFor="let item of sectoresTrabajo" [value]="item">{{ item }}</mat-option>
                 </mat-select>
@@ -274,7 +274,7 @@
 
             <div class="grid-2">
               <mat-form-field appearance="outline" class="field">
-                <mat-label>5. Nivel de renta liquida mensual</mat-label>
+                <mat-label>Nivel de renta liquida mensual</mat-label>
                 <mat-select formControlName="renta">
                   <mat-option *ngFor="let item of rentas" [value]="item">{{ item }}</mat-option>
                 </mat-select>
@@ -284,7 +284,7 @@
               </mat-form-field>
 
               <mat-form-field appearance="outline" class="field">
-                <mat-label>6. Tipo de institucion educativa</mat-label>
+                <mat-label>Tipo de institucion educativa</mat-label>
                 <mat-select formControlName="tipoInstitucion">
                   <mat-option *ngFor="let item of tiposInstitucion" [value]="item">{{ item }}</mat-option>
                 </mat-select>
@@ -307,7 +307,7 @@
             <div class="question-list">
               <div class="question-row">
                 <p class="question-label">
-                  7. Considera que la formacion recibida fue pertinente para su desempeno laboral?
+                  Considera que la formacion recibida fue pertinente para su desempeno laboral?
                 </p>
                 <div class="answer-col">
                   <mat-radio-group class="scale-group" formControlName="pertinencia">
@@ -326,7 +326,7 @@
               </div>
 
               <div class="question-row">
-                <p class="question-label">8a. Ha realizado estudios de postgrado desde que egreso?</p>
+                <p class="question-label">Ha realizado estudios de postgrado desde que egreso?</p>
                 <div class="answer-col">
                   <mat-radio-group class="scale-group" formControlName="postgrado">
                     <mat-radio-button *ngFor="let opcion of opcionesSiNo" class="scale-option" [value]="opcion">
@@ -345,7 +345,7 @@
               </mat-form-field>
 
               <div class="question-row">
-                <p class="question-label">8b. Ha realizado cursos de capacitacion adicional?</p>
+                <p class="question-label">Ha realizado cursos de capacitacion adicional?</p>
                 <div class="answer-col">
                   <mat-radio-group class="scale-group" formControlName="capacitacion">
                     <mat-radio-button *ngFor="let opcion of opcionesSiNo" class="scale-option" [value]="opcion">
@@ -376,7 +376,7 @@
 
             <div class="open-grid">
               <mat-form-field appearance="outline" class="field full">
-                <mat-label>9. Aspectos que ayudaron mas en la insercion laboral</mat-label>
+                <mat-label>Aspectos que ayudaron mas en la insercion laboral</mat-label>
                 <mat-select formControlName="aspectosAyuda">
                   <mat-option *ngFor="let item of opcionesPregunta9" [value]="item">{{ item }}</mat-option>
                 </mat-select>
@@ -386,7 +386,7 @@
               </mat-form-field>
 
               <mat-form-field appearance="outline" class="field full">
-                <mat-label>10. Mejoras sugeridas para fortalecer la empleabilidad</mat-label>
+                <mat-label>Mejoras sugeridas para fortalecer la empleabilidad</mat-label>
                 <mat-select formControlName="mejoras">
                   <mat-option *ngFor="let item of opcionesPregunta10" [value]="item">{{ item }}</mat-option>
                 </mat-select>
@@ -412,31 +412,141 @@
       </form>
     </ng-container>
 
-    <ng-template #encuestaEnDefinicion>
-      <mat-card-header>
-        <mat-card-title>Registro de encuesta</mat-card-title>
-        <mat-card-subtitle>{{ selectedSurvey?.title }}</mat-card-subtitle>
-        <button mat-icon-button class="close-btn" type="button" (click)="cerrarRegistro()">
-          <mat-icon>close</mat-icon>
-        </button>
-      </mat-card-header>
+    <ng-template #encuestaAcreditacion>
+      <form [formGroup]="acreditacionForm" (ngSubmit)="submit()">
+        <mat-card-header>
+          <mat-card-title>Registro de encuesta</mat-card-title>
+          <mat-card-subtitle>{{ selectedSurvey?.title }}</mat-card-subtitle>
+          <button mat-icon-button class="close-btn" type="button" (click)="cerrarRegistro()">
+            <mat-icon>close</mat-icon>
+          </button>
+        </mat-card-header>
 
-      <mat-card-content class="modal-content">
-        <div class="empty-state">
-          <mat-icon>hourglass_empty</mat-icon>
-          <div>
-            <div class="empty-title">Encuesta en definicion</div>
-            <div class="muted">El formulario se publicara proximamente.</div>
+        <mat-card-content class="modal-content">
+          <div class="objetivo-card">
+            <div class="objetivo-icon">
+              <mat-icon>flag</mat-icon>
+            </div>
+            <div>
+              <div class="objetivo-title">Objetivo de la encuesta</div>
+              <div class="objetivo-desc">
+                Esta encuesta recoge la opinion de egresados sobre formacion, recursos y
+                mejora continua. Las respuestas son anonimas y se usan como evidencia para
+                la autoevaluacion y acreditacion.
+              </div>
+            </div>
           </div>
-        </div>
-      </mat-card-content>
 
-      <mat-card-actions align="end">
-        <button mat-stroked-button type="button" (click)="cerrarRegistro()">
-          <mat-icon>close</mat-icon>
-          Cerrar
-        </button>
-      </mat-card-actions>
+          <section class="panel" formGroupName="generales">
+            <div class="panel-head">
+              <div class="panel-title">
+                <mat-icon>perm_identity</mat-icon>
+                <h3>Seccion I: Datos generales</h3>
+              </div>
+              <div class="panel-sub">Datos basicos del egresado</div>
+            </div>
+
+            <div class="grid-2">
+              <mat-form-field appearance="outline" class="field">
+                <mat-label>Ano de egreso</mat-label>
+                <input matInput type="number" formControlName="anioEgreso" />
+                <mat-error *ngIf="acreditacionForm.get('generales.anioEgreso')?.touched && acreditacionForm.get('generales.anioEgreso')?.invalid">
+                  Campo obligatorio
+                </mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="field">
+                <mat-label>Edad</mat-label>
+                <input matInput type="number" formControlName="edad" />
+                <mat-error *ngIf="acreditacionForm.get('generales.edad')?.touched && acreditacionForm.get('generales.edad')?.invalid">
+                  Campo obligatorio
+                </mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="field">
+                <mat-label>Sexo</mat-label>
+                <mat-select formControlName="sexo">
+                  <mat-option *ngFor="let item of opcionesSexo" [value]="item">{{ item }}</mat-option>
+                </mat-select>
+                <mat-error *ngIf="acreditacionForm.get('generales.sexo')?.touched && acreditacionForm.get('generales.sexo')?.invalid">
+                  Campo obligatorio
+                </mat-error>
+              </mat-form-field>
+            </div>
+          </section>
+
+          <section class="panel" formGroupName="secciones" *ngFor="let sec of acreditacionSections">
+            <div [formGroupName]="sec.id">
+              <div class="panel-head">
+                <div class="panel-title">
+                  <mat-icon>format_list_bulleted</mat-icon>
+                  <h3>{{ sec.title }}</h3>
+                </div>
+              </div>
+
+              <div class="question-list">
+                <div class="question-row" *ngFor="let q of sec.questions">
+                  <p class="question-label">{{ q.text }}</p>
+
+                  <div class="answer-col">
+                    <mat-radio-group class="scale-group" [formControlName]="q.key">
+                      <mat-radio-button
+                        class="scale-option"
+                        *ngFor="let item of escalaLikert"
+                        [value]="item"
+                      >
+                        {{ item }}
+                      </mat-radio-button>
+                    </mat-radio-group>
+
+                    <div class="q-error" *ngIf="acreditacionForm.get('secciones.' + sec.id + '.' + q.key)?.touched && acreditacionForm.get('secciones.' + sec.id + '.' + q.key)?.invalid">
+                      Selecciona una opcion.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel" formGroupName="abiertas">
+            <div class="panel-head">
+              <div class="panel-title">
+                <mat-icon>edit_note</mat-icon>
+                <h3>Seccion VIII: Comentarios abiertos</h3>
+              </div>
+              <div class="panel-sub">Respuestas abiertas (opcional)</div>
+            </div>
+
+            <div class="open-grid">
+              <mat-form-field appearance="outline" class="field full">
+                <mat-label>Fortalezas de la carrera</mat-label>
+                <textarea matInput rows="4" formControlName="fortalezas"></textarea>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="field full">
+                <mat-label>Debilidades o aspectos a mejorar</mat-label>
+                <textarea matInput rows="4" formControlName="debilidades"></textarea>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="field full">
+                <mat-label>Sugerencias adicionales</mat-label>
+                <textarea matInput rows="4" formControlName="sugerencias"></textarea>
+              </mat-form-field>
+            </div>
+          </section>
+        </mat-card-content>
+
+        <mat-card-actions align="end">
+          <button mat-stroked-button type="button" (click)="cerrarRegistro()">
+            <mat-icon>cancel</mat-icon>
+            Cancelar
+          </button>
+          <button mat-flat-button color="primary" type="submit" [disabled]="isSaving">
+            <mat-icon>save</mat-icon>
+            {{ isSaving ? 'Enviando...' : 'Guardar' }}
+          </button>
+        </mat-card-actions>
+      </form>
     </ng-template>
   </mat-card>
 </div>

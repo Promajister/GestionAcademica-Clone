@@ -210,6 +210,14 @@ export const routes: Routes = [
       import('./components/egresados-encuestas/egresados-encuestas.component')
         .then(m => m.EgresadosEncuestasComponent),
   },
+  {
+    path: 'egresados/analisis',
+    canActivate: [authGuard, roleGuard],
+    data: { allowedRoles: ['jefatura'] },
+    loadComponent: () =>
+      import('./components/egresados-analisis/egresados-analisis.component')
+        .then(m => m.EgresadosAnalisisComponent),
+  },
 
   {
     path: '**',

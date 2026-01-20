@@ -586,19 +586,25 @@
 .answer-col {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: 0.35rem;
 }
 
 .scale-group {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  justify-content: flex-end;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: flex-start;
+  width: 100%;
 }
 
 .scale-option {
   min-width: 36px;
+  white-space: nowrap;
+}
+
+.scale-option ::ng-deep .mdc-form-field {
+  align-items: center;
 }
 
 .q-error {
@@ -648,12 +654,8 @@
     grid-template-columns: 1fr;
   }
 
-  .answer-col {
-    align-items: flex-start;
-  }
-
   .scale-group {
-    justify-content: flex-start;
+    width: 100%;
   }
 
   .note-panel .note-columns {
