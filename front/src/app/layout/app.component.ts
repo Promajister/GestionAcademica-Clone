@@ -301,6 +301,11 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
             route: '/egresados/ficha-digital',
           },
           {
+            label: 'Registro de egresados',
+            icon: 'how_to_reg',
+            route: '/egresados/registro',
+          },
+          {
             label: 'Registrar empleabilidad',
             icon: 'how_to_reg',
             route: '/egresados/empleabilidad',

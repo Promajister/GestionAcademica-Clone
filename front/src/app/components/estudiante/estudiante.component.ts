@@ -89,7 +89,7 @@ export class EstudiantesComponent implements OnInit {
     this.mensajeError = null;
     this.service.listar(this.filtros()).subscribe({
       next: (items) => {
-        this.estudiantes = items;
+        this.estudiantes = (items || []).filter((e) => e.egresado !== true);
         this.actualizarPaginacion();
         this.carreras = Array.from(
           new Set(

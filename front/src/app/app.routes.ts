@@ -203,6 +203,14 @@ export const routes: Routes = [
         .then(m => m.EgresadosFichaDigitalComponent),
   },
   {
+    path: 'egresados/registro',
+    canActivate: [authGuard, roleGuard],
+    data: { allowedRoles: ['jefatura'] },
+    loadComponent: () =>
+      import('./components/egresados-registro/egresados-registro.component')
+        .then(m => m.EgresadosRegistroComponent),
+  },
+  {
     path: 'egresados/empleabilidad',
     canActivate: [authGuard, roleGuard],
     data: { allowedRoles: ['jefatura'] },

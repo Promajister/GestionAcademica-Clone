@@ -20,6 +20,7 @@ export interface EstudianteResumen {
   plan?: string | null;
   email?: string | null;
   fono?: number | null;
+  egresado?: boolean | null;
   estadoPractica?: EstadoPractica | null;
   ultimaPractica?: UltimaPractica | null;
 }
@@ -77,6 +78,7 @@ export interface EstudianteQuery {
   semestre?: number;
   anio?: number;
   anioIngreso?: number;
+  egresado?: boolean;
   page?: number;
   limit?: number;
 }
@@ -114,5 +116,9 @@ export class EstudiantesService {
     const formData = new FormData();
     formData.append('file', file);
     return this.http.post<ImportSummary>(`${API_URL}/import`, formData);
+  }
+
+  actualizarEgresado(rut: string, egresado: boolean): Observable<EstudianteResumen> {
+    return this.http.patch<EstudianteResumen>(`${API_URL}/${rut}/egresado`, { egresado });
   }
 }

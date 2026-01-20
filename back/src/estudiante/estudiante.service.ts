@@ -68,6 +68,7 @@ export class EstudianteService {
     const where: Prisma.EstudianteWhereInput = {
       ...(orFilters.length ? { OR: orFilters } : {}),
       ...(q.carrera ? { plan: { contains: q.carrera } } : {}),
+      ...(q.egresado !== undefined ? { egresado: q.egresado } : {}),
       ...(q.anioIngreso ? { anio_ingreso: q.anioIngreso } : {}),
       ...(Object.keys(practicaFilter).length
         ? { practicas: { some: practicaFilter } }
@@ -94,15 +95,16 @@ export class EstudianteService {
 
     const estudiantes = await this.prisma.estudiante.findMany(query);
 
-    return estudiantes.map((e) => ({
-      rut: e.rut,
-      nombre: e.nombre,
-      plan: e.plan,
-      email: e.email,
-      fono: e.fono,
-      estadoPractica: e.practicas[0]?.estado ?? null,
-      ultimaPractica: e.practicas[0]
-        ? {
+      return estudiantes.map((e) => ({
+        rut: e.rut,
+        nombre: e.nombre,
+        plan: e.plan,
+        email: e.email,
+        fono: e.fono,
+        egresado: e.egresado,
+        estadoPractica: e.practicas[0]?.estado ?? null,
+        ultimaPractica: e.practicas[0]
+          ? {
             fecha_inicio: e.practicas[0].fecha_inicio,
             fecha_termino: e.practicas[0].fecha_termino,
             tipo: e.practicas[0].tipo,
@@ -175,6 +177,26 @@ export class EstudianteService {
     }
 
     return { ...estudiante, actividades };
+  }
+
+  /* ============================
+     EGRESADOS
+  ============================ */
+  async updateEgresado(rut: string, egresado: boolean) {
+    const normalizedRut = this.normalizeRut(rut);
+    const estudiante = await this.prisma.estudiante.findFirst({
+      where: { OR: [{ rut }, { rut: normalizedRut }] },
+    });
+
+    if (!estudiante) {
+      throw new NotFoundException('Estudiante no encontrado');
+    }
+
+    return this.prisma.estudiante.update({
+      where: { rut: estudiante.rut },
+      data: { egresado },
+      select: { rut: true, nombre: true, egresado: true },
+    });
   }
 
   /* ============================

@@ -1,8 +1,10 @@
 import {
   BadRequestException,
+  Body,
   Controller,
   Get,
   Param,
+  Patch,
   Post,
   Query,
   UploadedFile,
@@ -13,6 +15,7 @@ import {
 } from '@nestjs/common';
 import { EstudianteService } from './estudiante.service';
 import { QueryEstudianteDto } from './dto/query-estudiante.dto';
+import { UpdateEgresadoDto } from './dto/update-egresado.dto';
 import { JwtCookieAuthGuard } from '../auth/guards/jwt-cookie-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -34,6 +37,12 @@ export class EstudianteController {
   @Get(':rut')
   findOne(@Param('rut') rut: string) {
     return this.service.findOne(rut);
+  }
+
+  @Patch(':rut/egresado')
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  updateEgresado(@Param('rut') rut: string, @Body() body: UpdateEgresadoDto) {
+    return this.service.updateEgresado(rut, body.egresado);
   }
 
   @Post('import')

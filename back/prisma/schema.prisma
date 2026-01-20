@@ -56,6 +56,7 @@ model Estudiante {
   direccion            String?
   sistema_ingreso      String?
   numero_inscripciones Int?
+  egresado             Boolean  @default(false)
 
   practicas  Practica[]
   historial  HistorialEvento[]
