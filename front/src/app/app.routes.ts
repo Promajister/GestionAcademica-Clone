@@ -203,12 +203,12 @@ export const routes: Routes = [
         .then(m => m.EgresadosRegistroComponent),
   },
   {
-    path: 'egresados/empleabilidad',
+    path: 'egresados/encuestas',
     canActivate: [authGuard, roleGuard],
     data: { allowedRoles: ['jefatura'] },
     loadComponent: () =>
-      import('./components/egresados-empleabilidad/egresados-empleabilidad.component')
-        .then(m => m.EgresadosEmpleabilidadComponent),
+      import('./components/egresados-encuestas/egresados-encuestas.component')
+        .then(m => m.EgresadosEncuestasComponent),
   },
 
   {

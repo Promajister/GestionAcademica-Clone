@@ -1,0 +1,63 @@
+<div class="container section">
+  <div class="header hero">
+    <div class="hero__bg"></div>
+    <div class="hero__content">
+      <div class="hero__left">
+        <div class="hero__icon">
+          <mat-icon>assignment</mat-icon>
+        </div>
+
+        <div class="hero__titles">
+          <h1>Encuestas de egresados</h1>
+          <p class="muted">Gestiona encuestas y seguimiento para egresados.</p>
+        </div>
+      </div>
+
+      <div class="hero__right">
+        <button mat-flat-button color="primary" class="btn-cta">
+          <mat-icon>playlist_add</mat-icon>
+          Crear encuesta
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="registration-grid">
+    <mat-card class="registration-card">
+      <mat-card-header>
+        <div mat-card-avatar class="card-icon-container">
+          <mat-icon>history_edu</mat-icon>
+        </div>
+        <mat-card-title>Encuesta de trayectoria</mat-card-title>
+        <mat-card-subtitle>Seguimiento de trayectoria y formacion.</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-actions>
+        <button mat-stroked-button color="primary">Registrar</button>
+      </mat-card-actions>
+    </mat-card>
+
+    <mat-card class="registration-card green-card">
+      <mat-card-header>
+        <div mat-card-avatar class="card-icon-container">
+          <mat-icon>work_outline</mat-icon>
+        </div>
+        <mat-card-title>Encuesta de empleabilidad</mat-card-title>
+        <mat-card-subtitle>Indicadores laborales y satisfaccion.</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-actions>
+        <button mat-stroked-button color="primary">Registrar</button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+
+  <mat-card class="registered-list-card elev">
+    <mat-card-title>Encuestas registradas</mat-card-title>
+    <div class="empty-state">
+      <mat-icon>inbox</mat-icon>
+      <div>
+        <div class="empty-title">Sin registros</div>
+        <div class="muted">Cuando registres encuestas apareceran aqui.</div>
+      </div>
+    </div>
+  </mat-card>
+</div>

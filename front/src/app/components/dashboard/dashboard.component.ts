@@ -437,10 +437,16 @@ export class DashboardComponent implements OnInit {
           desc: 'Funcionalidades para el seguimiento de egresados y empleabilidad',
           items: [
             {
-              title: 'Registrar datos de empleabilidad',
+              title: 'Registro de egresados',
               icon: 'how_to_reg',
-              route: '/egresados/empleabilidad',
-              desc: 'Carga de datos de empleabilidad',
+              route: '/egresados/registro',
+              desc: 'Marca estudiantes como egresados',
+            },
+            {
+              title: 'Encuestas',
+              icon: 'assignment',
+              route: '/egresados/encuestas',
+              desc: 'Encuestas para egresados',
             },
           ],
         },

@@ -301,9 +301,9 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
             route: '/egresados/registro',
           },
           {
-            label: 'Registrar empleabilidad',
-            icon: 'how_to_reg',
-            route: '/egresados/empleabilidad',
+            label: 'Encuestas',
+            icon: 'assignment',
+            route: '/egresados/encuestas',
           },
         ],
       },
