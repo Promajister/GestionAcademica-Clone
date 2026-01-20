@@ -60,8 +60,26 @@ model Estudiante {
 
   practicas  Practica[]
   historial  HistorialEvento[]
+  empleabilidad Empleabilidad?
 
   @@map("estudiante")
+}
+
+model Empleabilidad {
+  id            Int       @id @default(autoincrement())
+  estudianteRut String    @unique
+  estudiante    Estudiante @relation(fields: [estudianteRut], references: [rut], onDelete: Cascade)
+
+  lugarTrabajo String
+  sector       String
+  sectorOtro   String?
+  cargo        String
+  cargoOtro    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("empleabilidad")
 }
 
 model Practica {

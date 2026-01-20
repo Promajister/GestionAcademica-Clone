@@ -5,6 +5,7 @@ import {
   Get,
   Patch,
   Post,
+  Put,
   Query,
   UploadedFile,
   UseGuards,
@@ -15,6 +16,7 @@ import {
 import { EstudianteService } from './estudiante.service';
 import { QueryEstudianteDto } from './dto/query-estudiante.dto';
 import { UpdateEgresadoDto } from './dto/update-egresado.dto';
+import { UpdateEmpleabilidadDto } from './dto/update-empleabilidad.dto';
 import { Param } from '@nestjs/common';
 import { JwtCookieAuthGuard } from '../auth/guards/jwt-cookie-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -43,6 +45,12 @@ export class EstudiantesAliasController {
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   updateEgresado(@Param('rut') rut: string, @Body() body: UpdateEgresadoDto) {
     return this.service.updateEgresado(rut, body.egresado);
+  }
+
+  @Put(':rut/empleabilidad')
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  upsertEmpleabilidad(@Param('rut') rut: string, @Body() body: UpdateEmpleabilidadDto) {
+    return this.service.upsertEmpleabilidad(rut, body);
   }
 
   @Post('import')

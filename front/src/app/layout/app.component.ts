@@ -296,11 +296,6 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
         icon: 'work',
         items: [
           {
-            label: 'Ficha digital',
-            icon: 'badge',
-            route: '/egresados/ficha-digital',
-          },
-          {
             label: 'Registro de egresados',
             icon: 'how_to_reg',
             route: '/egresados/registro',

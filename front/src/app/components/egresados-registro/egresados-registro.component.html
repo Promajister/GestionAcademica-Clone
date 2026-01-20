@@ -90,6 +90,10 @@
             <mat-icon>picture_as_pdf</mat-icon>
             Exportar PDF
           </button>
+          <button mat-stroked-button class="btn-pill" type="button" (click)="abrirEmpleabilidadModal()">
+            <mat-icon>work</mat-icon>
+            Registrar empleabilidad
+          </button>
         </div>
       </mat-card-header>
 
@@ -376,6 +380,100 @@
         (click)="marcarComoEgresados()">
         <mat-icon>how_to_reg</mat-icon>
         Marcar como egresados
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EMPLEABILIDAD -->
+<div class="modal-overlay" *ngIf="empleabilidadModalOpen" (click)="cerrarEmpleabilidadModal()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-head">
+      <div class="modal-title">
+        <span class="modal-icon">
+          <mat-icon>work</mat-icon>
+        </span>
+        <div>
+          <div class="modal-title-text">Registrar empleabilidad</div>
+          <div class="modal-title-sub">Datos laborales basicos del egresado</div>
+        </div>
+      </div>
+      <button mat-icon-button (click)="cerrarEmpleabilidadModal()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="modal-subhead">
+        <div class="modal-subtitle">Egresado seleccionado</div>
+        <div class="modal-subtext">
+          {{ seleccionado?.nombre }} - {{ formatearRut(seleccionado?.rut) }}
+        </div>
+        <div class="modal-subchips">
+          <span class="modal-chip">
+            <mat-icon>badge</mat-icon>
+            Egresado
+          </span>
+          <span class="modal-chip modal-chip--soft">
+            <mat-icon>domain</mat-icon>
+            Vinculacion laboral
+          </span>
+        </div>
+      </div>
+
+      <div class="grid modal-grid">
+        <mat-form-field appearance="outline" class="field full">
+          <mat-label>Lugar de trabajo</mat-label>
+          <input matInput [(ngModel)]="empleabilidadForm.lugarTrabajo" placeholder="Ej: Colegio San Marcos" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="field">
+          <mat-label>Sector laboral</mat-label>
+          <mat-select [(ngModel)]="empleabilidadForm.sector">
+            @for (opt of sectorOptions; track opt.value) {
+              <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        @if (empleabilidadForm.sector === 'otro') {
+          <mat-form-field appearance="outline" class="field">
+            <mat-label>Especificar sector</mat-label>
+            <input matInput [(ngModel)]="empleabilidadForm.sectorOtro" placeholder="Indica el sector" />
+          </mat-form-field>
+        }
+
+        <mat-form-field appearance="outline" class="field">
+          <mat-label>Cargo actual</mat-label>
+          <mat-select [(ngModel)]="empleabilidadForm.cargo">
+            @for (opt of cargoOptions; track opt.value) {
+              <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        @if (empleabilidadForm.cargo === 'otro') {
+          <mat-form-field appearance="outline" class="field">
+            <mat-label>Especificar cargo</mat-label>
+            <input matInput [(ngModel)]="empleabilidadForm.cargoOtro" placeholder="Indica el cargo" />
+          </mat-form-field>
+        }
+      </div>
+      <div class="modal-note">
+        Completa todos los campos para habilitar el guardado.
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button mat-stroked-button type="button" (click)="cerrarEmpleabilidadModal()">
+        Cancelar
+      </button>
+      <button
+        mat-flat-button
+        color="primary"
+        [disabled]="!empleabilidadValida() || empleabilidadSaving"
+        (click)="guardarEmpleabilidad()">
+        Guardar empleabilidad
       </button>
     </div>
   </div>

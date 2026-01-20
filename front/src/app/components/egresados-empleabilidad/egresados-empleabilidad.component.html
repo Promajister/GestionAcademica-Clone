@@ -1,22 +1,118 @@
 <div class="container section">
-  <div class="header">
-    <div>
-      <p class="eyebrow">Jefatura - Egresados y Empleabilidad</p>
-      <h1>Registrar datos de empleabilidad</h1>
-      <p class="muted">Registra el estado laboral y la trayectoria de egresados.</p>
+  <div class="hero">
+    <div class="hero__bg"></div>
+    <div class="hero__content">
+      <div class="hero__left">
+        <div class="hero__icon">
+          <mat-icon>work</mat-icon>
+        </div>
+
+        <div class="hero__titles">
+          <h1>Registrar datos de empleabilidad</h1>
+          <p class="muted">Registra el estado laboral y la trayectoria de egresados.</p>
+
+          <div class="hero__chips">
+            <span class="chip">
+              <mat-icon>how_to_reg</mat-icon>
+              <span>Total egresados: {{ egresados.length || 0 }}</span>
+            </span>
+
+            <span class="chip chip--soft">
+              <mat-icon>business_center</mat-icon>
+              <span>Registro laboral</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero__actions">
+        <button mat-flat-button color="primary" class="btn-cta" type="button" (click)="cargarEgresados()">
+          <mat-icon>refresh</mat-icon>
+          Actualizar
+        </button>
+      </div>
     </div>
   </div>
 
   <mat-card class="elev">
-    <mat-card-content>
-      <div class="empty-state">
-        <mat-icon>how_to_reg</mat-icon>
+    <mat-card-content class="form-shell">
+      <div class="form-head">
         <div>
-          <h3>Formulario en preparacion</h3>
-          <p class="muted">
-            Aqui se habilitara el registro de datos de empleabilidad.
-          </p>
+          <div class="form-title">Datos laborales basicos</div>
+          <div class="muted">Asocia un egresado y completa su informacion laboral.</div>
         </div>
+        <button mat-stroked-button class="btn-ghost" type="button" (click)="cargarEgresados()">
+          <mat-icon>refresh</mat-icon>
+          Actualizar egresados
+        </button>
+      </div>
+
+      <div class="form-body">
+        @if (cargandoEgresados) {
+          <div class="loader">
+            <mat-spinner diameter="28"></mat-spinner>
+            <span class="muted">Cargando egresados...</span>
+          </div>
+        }
+
+        @if (!cargandoEgresados) {
+          <div class="grid">
+            <mat-form-field appearance="outline" class="field full">
+              <mat-label>Egresado</mat-label>
+              <mat-select [(ngModel)]="form.egresadoRut">
+                @for (e of egresados; track e.rut) {
+                  <mat-option [value]="e.rut">
+                    {{ e.nombre }} - {{ e.rut }}
+                  </mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="field full">
+              <mat-label>Lugar de trabajo</mat-label>
+              <input matInput [(ngModel)]="form.lugarTrabajo" placeholder="Ej: Colegio San Marcos" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="field">
+              <mat-label>Sector laboral</mat-label>
+              <mat-select [(ngModel)]="form.sector">
+                @for (opt of sectorOptions; track opt.value) {
+                  <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            @if (form.sector === 'otro') {
+              <mat-form-field appearance="outline" class="field">
+                <mat-label>Especificar sector</mat-label>
+                <input matInput [(ngModel)]="form.sectorOtro" placeholder="Indica el sector" />
+              </mat-form-field>
+            }
+
+            <mat-form-field appearance="outline" class="field">
+              <mat-label>Cargo actual</mat-label>
+              <mat-select [(ngModel)]="form.cargo">
+                @for (opt of cargoOptions; track opt.value) {
+                  <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            @if (form.cargo === 'otro') {
+              <mat-form-field appearance="outline" class="field">
+                <mat-label>Especificar cargo</mat-label>
+                <input matInput [(ngModel)]="form.cargoOtro" placeholder="Indica el cargo" />
+              </mat-form-field>
+            }
+          </div>
+
+          <div class="actions">
+            <button mat-stroked-button type="button" (click)="limpiar()">Limpiar</button>
+            <button mat-flat-button color="primary" [disabled]="!formValido()" (click)="guardar()">
+              Guardar
+            </button>
+          </div>
+        }
       </div>
     </mat-card-content>
   </mat-card>

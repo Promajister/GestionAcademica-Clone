@@ -69,6 +69,14 @@ export interface EstudianteDetalle extends EstudianteResumen {
   actividades: Actividad[];
 }
 
+export interface EmpleabilidadPayload {
+  lugarTrabajo: string;
+  sector: string;
+  sectorOtro?: string | null;
+  cargo: string;
+  cargoOtro?: string | null;
+}
+
 export interface EstudianteQuery {
   nombre?: string;
   rut?: string;
@@ -120,5 +128,9 @@ export class EstudiantesService {
 
   actualizarEgresado(rut: string, egresado: boolean): Observable<EstudianteResumen> {
     return this.http.patch<EstudianteResumen>(`${API_URL}/${rut}/egresado`, { egresado });
+  }
+
+  guardarEmpleabilidad(rut: string, payload: EmpleabilidadPayload): Observable<any> {
+    return this.http.put(`${API_URL}/${rut}/empleabilidad`, payload);
   }
 }

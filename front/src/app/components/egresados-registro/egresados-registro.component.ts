@@ -15,7 +15,9 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { jsPDF } from 'jspdf';
 import {
   EstudiantesService,
@@ -36,15 +38,18 @@ import {
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
+    MatSelectModule,
     MatPaginatorModule,
     MatCheckboxModule,
     MatProgressSpinnerModule,
+    MatSnackBarModule,
   ],
 })
 export class EgresadosRegistroComponent implements OnInit, OnDestroy {
   private estudiantesService = inject(EstudiantesService);
   private renderer = inject(Renderer2);
   private doc = inject(DOCUMENT);
+  private snack = inject(MatSnackBar);
 
   egresados: EstudianteResumen[] = [];
   seleccionado: EstudianteResumen | null = null;
@@ -67,6 +72,30 @@ export class EgresadosRegistroComponent implements OnInit, OnDestroy {
   estudiantesModal: EstudianteResumen[] = [];
   seleccionados = new Set<string>();
 
+  empleabilidadModalOpen = false;
+  empleabilidadSaving = false;
+  empleabilidadForm = {
+    egresadoRut: '',
+    lugarTrabajo: '',
+    sector: '',
+    sectorOtro: '',
+    cargo: '',
+    cargoOtro: '',
+  };
+
+  readonly sectorOptions = [
+    { value: 'publico', label: 'Publico' },
+    { value: 'privado', label: 'Privado' },
+    { value: 'otro', label: 'Otro' },
+  ];
+
+  readonly cargoOptions = [
+    { value: 'jefatura', label: 'Jefatura' },
+    { value: 'dependiente', label: 'Dependiente' },
+    { value: 'independiente', label: 'Independiente' },
+    { value: 'otro', label: 'Otro' },
+  ];
+
   ngOnInit(): void {
     this.cargarEgresados();
   }
@@ -76,7 +105,7 @@ export class EgresadosRegistroComponent implements OnInit, OnDestroy {
   }
 
   private syncModalBodyClass(): void {
-    if (this.modalOpen) {
+    if (this.modalOpen || this.empleabilidadModalOpen) {
       this.renderer.addClass(this.doc.body, 'student-modal-open');
       return;
     }
@@ -187,6 +216,70 @@ export class EgresadosRegistroComponent implements OnInit, OnDestroy {
     this.filtroModal = '';
     this.seleccionados.clear();
     this.syncModalBodyClass();
+  }
+
+  abrirEmpleabilidadModal(): void {
+    if (!this.seleccionado) return;
+    this.empleabilidadForm = {
+      egresadoRut: this.seleccionado.rut,
+      lugarTrabajo: '',
+      sector: '',
+      sectorOtro: '',
+      cargo: '',
+      cargoOtro: '',
+    };
+    this.empleabilidadModalOpen = true;
+    this.syncModalBodyClass();
+  }
+
+  cerrarEmpleabilidadModal(): void {
+    this.empleabilidadModalOpen = false;
+    this.syncModalBodyClass();
+  }
+
+  empleabilidadValida(): boolean {
+    if (!this.empleabilidadForm.egresadoRut) return false;
+    if (!this.empleabilidadForm.lugarTrabajo.trim()) return false;
+    if (!this.empleabilidadForm.sector) return false;
+    if (this.empleabilidadForm.sector === 'otro' && !this.empleabilidadForm.sectorOtro.trim()) {
+      return false;
+    }
+    if (!this.empleabilidadForm.cargo) return false;
+    if (this.empleabilidadForm.cargo === 'otro' && !this.empleabilidadForm.cargoOtro.trim()) {
+      return false;
+    }
+    return true;
+  }
+
+  guardarEmpleabilidad(): void {
+    if (!this.empleabilidadValida()) return;
+    const rut = this.empleabilidadForm.egresadoRut;
+    const payload = {
+      lugarTrabajo: this.empleabilidadForm.lugarTrabajo.trim(),
+      sector: this.empleabilidadForm.sector,
+      sectorOtro: this.empleabilidadForm.sector === 'otro'
+        ? this.empleabilidadForm.sectorOtro.trim()
+        : null,
+      cargo: this.empleabilidadForm.cargo,
+      cargoOtro: this.empleabilidadForm.cargo === 'otro'
+        ? this.empleabilidadForm.cargoOtro.trim()
+        : null,
+    };
+
+    this.empleabilidadSaving = true;
+    this.estudiantesService.guardarEmpleabilidad(rut, payload).subscribe({
+      next: () => {
+        this.empleabilidadSaving = false;
+        this.snack.open('Empleabilidad guardada.', 'OK', { duration: 3000 });
+        this.cerrarEmpleabilidadModal();
+      },
+      error: () => {
+        this.empleabilidadSaving = false;
+        this.snack.open('No se pudo guardar la empleabilidad.', 'Cerrar', {
+          duration: 4000,
+        });
+      },
+    });
   }
 
   cargarModal(): void {

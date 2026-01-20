@@ -199,6 +199,42 @@ export class EstudianteService {
     });
   }
 
+  async upsertEmpleabilidad(rut: string, payload: {
+    lugarTrabajo: string;
+    sector: string;
+    sectorOtro?: string | null;
+    cargo: string;
+    cargoOtro?: string | null;
+  }) {
+    const normalizedRut = this.normalizeRut(rut);
+    const estudiante = await this.prisma.estudiante.findFirst({
+      where: { OR: [{ rut }, { rut: normalizedRut }] },
+      select: { rut: true, egresado: true },
+    });
+
+    if (!estudiante) {
+      throw new NotFoundException('Estudiante no encontrado');
+    }
+
+    if (!estudiante.egresado) {
+      throw new BadRequestException('El estudiante no esta marcado como egresado');
+    }
+
+    const data = {
+      lugarTrabajo: payload.lugarTrabajo.trim(),
+      sector: payload.sector.trim(),
+      sectorOtro: payload.sectorOtro?.trim() || null,
+      cargo: payload.cargo.trim(),
+      cargoOtro: payload.cargoOtro?.trim() || null,
+    };
+
+    return this.prisma.empleabilidad.upsert({
+      where: { estudianteRut: estudiante.rut },
+      update: data,
+      create: { estudianteRut: estudiante.rut, ...data },
+    });
+  }
+
   /* ============================
      IMPORTACIÓN XLSX (SOLUCIONADA)
   ============================ */
