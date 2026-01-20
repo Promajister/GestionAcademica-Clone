@@ -185,6 +185,12 @@ export class ActividadPmDialogComponent implements OnInit {
     return this.data.mode === 'view';
   }
 
+  blockIfView(ev: Event): void {
+    if (!this.isView) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+  }
+
   ngOnInit(): void {
     this.setTableCols();
 
@@ -282,8 +288,9 @@ export class ActividadPmDialogComponent implements OnInit {
         difusionUrl: ['', [this.urlOptionalValidator()]],
       }),
     });
-
+    
     this.fProy('tipoVinculacion').valueChanges.subscribe((v: string) => {
+      if (this.isView) return;
       const otroCtrl = this.fProy('tipoVinculacionOtro');
       if (v === 'Otro') {
         otroCtrl.enable({ emitEvent: false });
@@ -297,6 +304,7 @@ export class ActividadPmDialogComponent implements OnInit {
     });
 
     this.fProy('tipoActividad').valueChanges.subscribe((t: TipoActividad) => {
+      if (this.isView) return;
       this.aplicarValidadoresTipoActividad(t);
     });
 
@@ -316,6 +324,7 @@ export class ActividadPmDialogComponent implements OnInit {
         }),
       )
       .subscribe((unidad) => {
+        if (this.isView) return;
         if (unidad?.nombre) {
           this.fProy('unidadNombre').setValue(unidad.nombre, { emitEvent: false });
         }
@@ -332,6 +341,7 @@ export class ActividadPmDialogComponent implements OnInit {
         }),
       )
       .subscribe((resp) => {
+        if (this.isView) return;
         if (resp?.nombre) {
           this.fProy('responsableNombre').setValue(resp.nombre, { emitEvent: false });
         }
@@ -348,12 +358,30 @@ export class ActividadPmDialogComponent implements OnInit {
         }),
       )
       .subscribe((equipo) => {
+        if (this.isView) return;
         if (equipo?.nombre) {
           this.fEq('nombre').setValue(equipo.nombre, { emitEvent: false });
         }
       });
 
     this.cargar();
+  }
+
+  private disableEditOnlyControls(): void {
+    // 1) Deshabilita “barras de ingreso” (aunque en view están ocultas)
+    (this.form.get('equipoTrabajo') as FormGroup)?.disable({ emitEvent: false });
+    (this.form.get('financiamiento') as FormGroup)?.disable({ emitEvent: false });
+    (this.form.get('difusion') as FormGroup)?.disable({ emitEvent: false });
+
+    // 2) Asegura que el “Otro” quede deshabilitado siempre en vista
+    this.fProy('tipoVinculacionOtro')?.disable({ emitEvent: false });
+
+    // 3) Instituciones inline (oculto en view), igual lo bloqueamos
+    this.form.get('participantes.instTipo')?.disable({ emitEvent: false });
+    this.form.get('participantes.instNombre')?.disable({ emitEvent: false });
+
+    // 4) No deshabilitamos “proyecto / evidencias / impacto” porque se verían grises.
+    //    Esos quedan bloqueados por readonly + reemplazo de mat-select por input readonly en el HTML.
   }
 
   private setTableCols(): void {
@@ -383,6 +411,11 @@ export class ActividadPmDialogComponent implements OnInit {
     const hit = this.tipoActividadCatalogo.find((x) => x.value === value);
     const label = hit?.label ?? value.replaceAll('_', ' ');
     return this.fixMojibake(label);
+  }
+
+  getSelectLabel(value: any, fallback = '-'): string {
+    const v = String(value ?? '').trim();
+    return v ? v : fallback;
   }
 
   private toDateLabel(v?: any): string {
@@ -848,6 +881,10 @@ export class ActividadPmDialogComponent implements OnInit {
         this.estudiantesFeria = est ?? [];
         this.estudiantesSalida = [];
 
+        if (this.isView) {
+          this.disableEditOnlyControls();
+        }
+
         this.updateEquipoValidators();
         this.updateInstitucionValidators();
 
@@ -921,8 +958,8 @@ export class ActividadPmDialogComponent implements OnInit {
 
 
   private formatPct(n: number): string {
-    const v = Math.round(n * 10) / 10; // 1 decimal
-    return `${v}%`;
+    const v = Math.round(n * 100) / 100;
+    return `${v.toFixed(2)}%`
   }
 
   regenerarResumenIa(): void {
