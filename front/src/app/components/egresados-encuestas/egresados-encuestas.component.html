@@ -7,57 +7,436 @@
           <mat-icon>assignment</mat-icon>
         </div>
 
-        <div class="hero__titles">
+        <div class="headline hero__titles">
           <h1>Encuestas de egresados</h1>
-          <p class="muted">Gestiona encuestas y seguimiento para egresados.</p>
+          <p class="muted">Registro y seguimiento de encuestas para egresados.</p>
         </div>
-      </div>
-
-      <div class="hero__right">
-        <button mat-flat-button color="primary" class="btn-cta">
-          <mat-icon>playlist_add</mat-icon>
-          Crear encuesta
-        </button>
       </div>
     </div>
   </div>
 
   <div class="registration-grid">
-    <mat-card class="registration-card">
+    <mat-card
+      *ngFor="let encuesta of encuestasDisponibles"
+      class="elev registration-card"
+      [ngClass]="encuesta.cardClass"
+    >
       <mat-card-header>
         <div mat-card-avatar class="card-icon-container">
-          <mat-icon>history_edu</mat-icon>
+          <mat-icon>{{ encuesta.icon }}</mat-icon>
         </div>
-        <mat-card-title>Encuesta de trayectoria</mat-card-title>
-        <mat-card-subtitle>Seguimiento de trayectoria y formacion.</mat-card-subtitle>
+        <mat-card-title>{{ encuesta.title }}</mat-card-title>
+        <mat-card-subtitle>{{ encuesta.subtitle }}</mat-card-subtitle>
       </mat-card-header>
+      <mat-card-content>
+        <p>{{ encuesta.description }}</p>
+      </mat-card-content>
       <mat-card-actions>
-        <button mat-stroked-button color="primary">Registrar</button>
-      </mat-card-actions>
-    </mat-card>
-
-    <mat-card class="registration-card green-card">
-      <mat-card-header>
-        <div mat-card-avatar class="card-icon-container">
-          <mat-icon>work_outline</mat-icon>
-        </div>
-        <mat-card-title>Encuesta de empleabilidad</mat-card-title>
-        <mat-card-subtitle>Indicadores laborales y satisfaccion.</mat-card-subtitle>
-      </mat-card-header>
-      <mat-card-actions>
-        <button mat-stroked-button color="primary">Registrar</button>
+        <button mat-flat-button color="primary" (click)="openRegistro(encuesta)">
+          <mat-icon>add</mat-icon>
+          Registrar
+        </button>
       </mat-card-actions>
     </mat-card>
   </div>
 
-  <mat-card class="registered-list-card elev">
+  <mat-card class="elev registered-list-card">
     <mat-card-title>Encuestas registradas</mat-card-title>
-    <div class="empty-state">
-      <mat-icon>inbox</mat-icon>
-      <div>
-        <div class="empty-title">Sin registros</div>
-        <div class="muted">Cuando registres encuestas apareceran aqui.</div>
+    <div *ngIf="encuestas.length > 0; else noEncuestas">
+      <div *ngFor="let e of encuestas" class="registered-item">
+        <div class="item-content">
+          <mat-icon class="item-icon">assignment</mat-icon>
+          <div class="item-info">
+            <span class="item-title">{{ mapTipoLabel(e.tipo) }}</span>
+            <span class="item-metadata">
+              {{ getGeneralesLinea1(e) }}<br />
+              {{ getGeneralesLinea2(e) }}
+            </span>
+          </div>
+        </div>
+
+        <div class="item-actions">
+          <button mat-stroked-button color="primary" (click)="verDetalles(e)">
+            <mat-icon>visibility</mat-icon>
+            Ver
+          </button>
+        </div>
+
+        <div class="item-date" *ngIf="e.fecha">
+          <mat-icon>calendar_today</mat-icon>
+          <span>{{ e.fecha | date: 'yyyy-MM-dd' }}</span>
+        </div>
       </div>
     </div>
+
+    <ng-template #noEncuestas>
+      <div class="empty-state">
+        <mat-icon>inbox</mat-icon>
+        <div>
+          <div class="empty-title">Sin registros</div>
+          <div class="muted">Cuando registres encuestas apareceran aqui.</div>
+        </div>
+      </div>
+    </ng-template>
+  </mat-card>
+
+  <mat-card class="elev detail-card custom-modal" *ngIf="selectedEncuesta">
+    <mat-card-header class="modal-head">
+      <div class="modal-head-text">
+        <mat-card-title>Detalle encuesta</mat-card-title>
+        <mat-card-subtitle>
+          {{ mapTipoLabel(selectedEncuesta.tipo) }}
+          <ng-container *ngIf="selectedEncuesta.fecha">- {{ selectedEncuesta.fecha | date: 'dd/MM/yyyy' }}</ng-container>
+        </mat-card-subtitle>
+      </div>
+
+      <button mat-icon-button class="close-btn" (click)="cerrarDetalles()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </mat-card-header>
+
+    <mat-card-content class="modal-body">
+      <section class="detail-section">
+        <h3 class="section-title">Datos generales</h3>
+        <div class="table-wrapper">
+          <table class="detail-plain-table meta-table">
+            <tbody>
+              <tr *ngFor="let row of getGeneralesRows(selectedEncuesta)">
+                <th class="meta-k">{{ row.key }}</th>
+                <td class="meta-v">{{ row.value }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="detail-section">
+        <h3 class="section-title">Respuestas</h3>
+        <div class="table-wrapper" *ngIf="selectedEncuesta?.respuestas?.length; else noRespuestas">
+          <table class="detail-plain-table answers-table">
+            <thead>
+              <tr>
+                <th>Pregunta</th>
+                <th>Respuesta</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let r of selectedEncuesta.respuestas">
+                <td class="numeric-wide">
+                  {{ mapPreguntaDescripcion(r.pregunta?.descripcion) }}
+                </td>
+                <td>{{ mapRespuestaValor(r) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <ng-template #noRespuestas>
+          <div class="empty-state compact">
+            <mat-icon>info</mat-icon>
+            <p>No hay respuestas registradas.</p>
+          </div>
+        </ng-template>
+      </section>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="elev detail-card custom-modal" *ngIf="registroVisible">
+    <ng-container *ngIf="selectedSurvey?.id === 'EMPLEABILIDAD'; else encuestaEnDefinicion">
+      <form [formGroup]="form" (ngSubmit)="submit()">
+        <mat-card-header>
+          <mat-card-title>Registro de encuesta</mat-card-title>
+          <mat-card-subtitle>{{ selectedSurvey?.title }}</mat-card-subtitle>
+          <button mat-icon-button class="close-btn" type="button" (click)="cerrarRegistro()">
+            <mat-icon>close</mat-icon>
+          </button>
+        </mat-card-header>
+
+        <mat-card-content class="modal-content">
+          <div class="objetivo-card">
+            <div class="objetivo-icon">
+              <mat-icon>flag</mat-icon>
+            </div>
+            <div>
+              <div class="objetivo-title">Objetivo de la encuesta</div>
+              <div class="objetivo-desc">
+                El objetivo de esta encuesta es conocer la situacion laboral de nuestros egresados
+                y evaluar la pertinencia de la formacion en relacion con su insercion profesional.
+                La informacion recogida es anonima y se utilizara solo para acciones de apoyo y
+                seguimiento de titulados, ademas de aportar evidencia en procesos de acreditacion.
+              </div>
+            </div>
+          </div>
+
+          <section class="panel" formGroupName="generales">
+            <div class="panel-head">
+              <div class="panel-title">
+                <mat-icon>perm_identity</mat-icon>
+                <h3>Seccion I: Datos generales</h3>
+              </div>
+              <div class="panel-sub">Datos basicos del egresado</div>
+            </div>
+
+            <div class="grid-2">
+              <mat-form-field appearance="outline" class="field">
+                <mat-label>Ano de egreso</mat-label>
+                <input matInput type="number" formControlName="anioEgreso" />
+                <mat-error *ngIf="form.get('generales.anioEgreso')?.touched && form.get('generales.anioEgreso')?.invalid">
+                  Campo obligatorio
+                </mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="field">
+                <mat-label>Edad</mat-label>
+                <input matInput type="number" formControlName="edad" />
+                <mat-error *ngIf="form.get('generales.edad')?.touched && form.get('generales.edad')?.invalid">
+                  Campo obligatorio
+                </mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="field">
+                <mat-label>Sexo</mat-label>
+                <mat-select formControlName="sexo">
+                  <mat-option *ngFor="let item of opcionesSexo" [value]="item">{{ item }}</mat-option>
+                </mat-select>
+                <mat-error *ngIf="form.get('generales.sexo')?.touched && form.get('generales.sexo')?.invalid">
+                  Campo obligatorio
+                </mat-error>
+              </mat-form-field>
+            </div>
+          </section>
+
+          <section class="panel" formGroupName="insercion">
+            <div class="panel-head">
+              <div class="panel-title">
+                <mat-icon>work_outline</mat-icon>
+                <h3>Seccion II: Insercion laboral</h3>
+              </div>
+              <div class="panel-sub">Situacion laboral actual</div>
+            </div>
+
+            <div class="question-list">
+              <div class="question-row">
+                <p class="question-label">1. Actualmente se encuentra trabajando?</p>
+                <div class="answer-col">
+                  <mat-radio-group class="scale-group" formControlName="trabajaActualmente">
+                    <mat-radio-button *ngFor="let opcion of opcionesSiNo" class="scale-option" [value]="opcion">
+                      {{ opcion }}
+                    </mat-radio-button>
+                  </mat-radio-group>
+                  <div class="q-error" *ngIf="form.get('insercion.trabajaActualmente')?.touched && form.get('insercion.trabajaActualmente')?.invalid">
+                    Selecciona una opcion.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <mat-form-field appearance="outline" class="field">
+                <mat-label>2. Tiempo para el primer trabajo</mat-label>
+                <mat-select formControlName="tiempoPrimerTrabajo">
+                  <mat-option *ngFor="let item of tiemposPrimerTrabajo" [value]="item">{{ item }}</mat-option>
+                </mat-select>
+                <mat-error *ngIf="form.get('insercion.tiempoPrimerTrabajo')?.touched && form.get('insercion.tiempoPrimerTrabajo')?.invalid">
+                  Campo obligatorio
+                </mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="field">
+                <mat-label>3. Situacion laboral actual</mat-label>
+                <mat-select formControlName="situacionLaboral">
+                  <mat-option *ngFor="let item of situacionesLaborales" [value]="item">{{ item }}</mat-option>
+                </mat-select>
+                <mat-error *ngIf="form.get('insercion.situacionLaboral')?.touched && form.get('insercion.situacionLaboral')?.invalid">
+                  Campo obligatorio
+                </mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="field">
+                <mat-label>4. Sector en el que trabaja</mat-label>
+                <mat-select formControlName="sectorTrabajo">
+                  <mat-option *ngFor="let item of sectoresTrabajo" [value]="item">{{ item }}</mat-option>
+                </mat-select>
+                <mat-error *ngIf="form.get('insercion.sectorTrabajo')?.touched && form.get('insercion.sectorTrabajo')?.invalid">
+                  Campo obligatorio
+                </mat-error>
+              </mat-form-field>
+            </div>
+          </section>
+
+          <section class="panel" formGroupName="condiciones">
+            <div class="panel-head">
+              <div class="panel-title">
+                <mat-icon>payments</mat-icon>
+                <h3>Seccion III: Condiciones laborales</h3>
+              </div>
+              <div class="panel-sub">Renta y tipo de institucion</div>
+            </div>
+
+            <div class="grid-2">
+              <mat-form-field appearance="outline" class="field">
+                <mat-label>5. Nivel de renta liquida mensual</mat-label>
+                <mat-select formControlName="renta">
+                  <mat-option *ngFor="let item of rentas" [value]="item">{{ item }}</mat-option>
+                </mat-select>
+                <mat-error *ngIf="form.get('condiciones.renta')?.touched && form.get('condiciones.renta')?.invalid">
+                  Campo obligatorio
+                </mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="field">
+                <mat-label>6. Tipo de institucion educativa</mat-label>
+                <mat-select formControlName="tipoInstitucion">
+                  <mat-option *ngFor="let item of tiposInstitucion" [value]="item">{{ item }}</mat-option>
+                </mat-select>
+                <mat-error *ngIf="form.get('condiciones.tipoInstitucion')?.touched && form.get('condiciones.tipoInstitucion')?.invalid">
+                  Campo obligatorio
+                </mat-error>
+              </mat-form-field>
+            </div>
+          </section>
+
+          <section class="panel" formGroupName="percepcion">
+            <div class="panel-head">
+              <div class="panel-title">
+                <mat-icon>insights</mat-icon>
+                <h3>Seccion IV: Percepcion de empleabilidad</h3>
+              </div>
+              <div class="panel-sub">Pertinencia y desarrollo profesional</div>
+            </div>
+
+            <div class="question-list">
+              <div class="question-row">
+                <p class="question-label">
+                  7. Considera que la formacion recibida fue pertinente para su desempeno laboral?
+                </p>
+                <div class="answer-col">
+                  <mat-radio-group class="scale-group" formControlName="pertinencia">
+                    <mat-radio-button
+                      *ngFor="let item of escalaPertinencia"
+                      class="scale-option"
+                      [value]="item"
+                    >
+                      {{ item }}
+                    </mat-radio-button>
+                  </mat-radio-group>
+                  <div class="q-error" *ngIf="form.get('percepcion.pertinencia')?.touched && form.get('percepcion.pertinencia')?.invalid">
+                    Selecciona una opcion.
+                  </div>
+                </div>
+              </div>
+
+              <div class="question-row">
+                <p class="question-label">8a. Ha realizado estudios de postgrado desde que egreso?</p>
+                <div class="answer-col">
+                  <mat-radio-group class="scale-group" formControlName="postgrado">
+                    <mat-radio-button *ngFor="let opcion of opcionesSiNo" class="scale-option" [value]="opcion">
+                      {{ opcion }}
+                    </mat-radio-button>
+                  </mat-radio-group>
+                  <div class="q-error" *ngIf="form.get('percepcion.postgrado')?.touched && form.get('percepcion.postgrado')?.invalid">
+                    Selecciona una opcion.
+                  </div>
+                </div>
+              </div>
+
+              <mat-form-field appearance="outline" class="field full" *ngIf="showPostgradoDetalle">
+                <mat-label>Indica tipo e institucion (opcional)</mat-label>
+                <input matInput formControlName="postgradoDetalle" />
+              </mat-form-field>
+
+              <div class="question-row">
+                <p class="question-label">8b. Ha realizado cursos de capacitacion adicional?</p>
+                <div class="answer-col">
+                  <mat-radio-group class="scale-group" formControlName="capacitacion">
+                    <mat-radio-button *ngFor="let opcion of opcionesSiNo" class="scale-option" [value]="opcion">
+                      {{ opcion }}
+                    </mat-radio-button>
+                  </mat-radio-group>
+                  <div class="q-error" *ngIf="form.get('percepcion.capacitacion')?.touched && form.get('percepcion.capacitacion')?.invalid">
+                    Selecciona una opcion.
+                  </div>
+                </div>
+              </div>
+
+              <mat-form-field appearance="outline" class="field full" *ngIf="showCapacitacionDetalle">
+                <mat-label>Indica tipo e institucion (opcional)</mat-label>
+                <input matInput formControlName="capacitacionDetalle" />
+              </mat-form-field>
+            </div>
+          </section>
+
+          <section class="panel" formGroupName="abiertas">
+            <div class="panel-head">
+              <div class="panel-title">
+                <mat-icon>edit_note</mat-icon>
+                <h3>Preguntas de seleccion</h3>
+              </div>
+              <div class="panel-sub">Selecciona una alternativa</div>
+            </div>
+
+            <div class="open-grid">
+              <mat-form-field appearance="outline" class="field full">
+                <mat-label>9. Aspectos que ayudaron mas en la insercion laboral</mat-label>
+                <mat-select formControlName="aspectosAyuda">
+                  <mat-option *ngFor="let item of opcionesPregunta9" [value]="item">{{ item }}</mat-option>
+                </mat-select>
+                <mat-error *ngIf="form.get('abiertas.aspectosAyuda')?.touched && form.get('abiertas.aspectosAyuda')?.invalid">
+                  Selecciona una opcion.
+                </mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="field full">
+                <mat-label>10. Mejoras sugeridas para fortalecer la empleabilidad</mat-label>
+                <mat-select formControlName="mejoras">
+                  <mat-option *ngFor="let item of opcionesPregunta10" [value]="item">{{ item }}</mat-option>
+                </mat-select>
+                <mat-error *ngIf="form.get('abiertas.mejoras')?.touched && form.get('abiertas.mejoras')?.invalid">
+                  Selecciona una opcion.
+                </mat-error>
+              </mat-form-field>
+            </div>
+          </section>
+
+        </mat-card-content>
+
+        <mat-card-actions align="end">
+          <button mat-stroked-button type="button" (click)="cerrarRegistro()">
+            <mat-icon>cancel</mat-icon>
+            Cancelar
+          </button>
+          <button mat-flat-button color="primary" type="submit" [disabled]="isSaving">
+            <mat-icon>save</mat-icon>
+            {{ isSaving ? 'Enviando...' : 'Guardar' }}
+          </button>
+        </mat-card-actions>
+      </form>
+    </ng-container>
+
+    <ng-template #encuestaEnDefinicion>
+      <mat-card-header>
+        <mat-card-title>Registro de encuesta</mat-card-title>
+        <mat-card-subtitle>{{ selectedSurvey?.title }}</mat-card-subtitle>
+        <button mat-icon-button class="close-btn" type="button" (click)="cerrarRegistro()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </mat-card-header>
+
+      <mat-card-content class="modal-content">
+        <div class="empty-state">
+          <mat-icon>hourglass_empty</mat-icon>
+          <div>
+            <div class="empty-title">Encuesta en definicion</div>
+            <div class="muted">El formulario se publicara proximamente.</div>
+          </div>
+        </div>
+      </mat-card-content>
+
+      <mat-card-actions align="end">
+        <button mat-stroked-button type="button" (click)="cerrarRegistro()">
+          <mat-icon>close</mat-icon>
+          Cerrar
+        </button>
+      </mat-card-actions>
+    </ng-template>
   </mat-card>
 </div>
