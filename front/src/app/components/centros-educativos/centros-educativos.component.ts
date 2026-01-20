@@ -1,5 +1,5 @@
-import { Component, inject, PLATFORM_ID, Injectable } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, inject, PLATFORM_ID, Injectable, OnDestroy, Renderer2 } from '@angular/core';
+import { CommonModule, DOCUMENT } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 // Angular Material
@@ -115,9 +115,11 @@ export const MY_DATE_FORMATS = {
     { provide: MAT_DATE_LOCALE, useValue: 'es-ES' },
   ],
 })
-export class CentrosEducativosComponent implements OnInit {
+export class CentrosEducativosComponent implements OnInit, OnDestroy {
   private snack = inject(MatSnackBar);
   private platformId = inject(PLATFORM_ID);
+  private renderer = inject(Renderer2);
+  private doc = inject(DOCUMENT);
 
   // APIs
   private centrosApi = inject(CentrosApiService);
@@ -241,6 +243,24 @@ export class CentrosEducativosComponent implements OnInit {
       this.showForm = false;
       this.isEditing = false;
     }
+  }
+
+  ngOnDestroy(): void {
+    this.renderer.removeClass(this.doc.body, 'student-modal-open');
+  }
+
+  private syncModalBodyClass(): void {
+    const isOpen = !!(
+      this.selectedCentroEducativo ||
+      this.pendingDelete ||
+      this.contactsForCentro ||
+      this.practicasCentroTarget
+    );
+    if (isOpen) {
+      this.renderer.addClass(this.doc.body, 'student-modal-open');
+      return;
+    }
+    this.renderer.removeClass(this.doc.body, 'student-modal-open');
   }
 
   showField(label: string, value: string) {
@@ -510,10 +530,12 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
   askDelete(c: CentroEducativo) {
     if (this.esSoloLectura) return;
     this.pendingDelete = c;
+    this.syncModalBodyClass();
   }
 
   cancelDelete() {
     this.pendingDelete = null;
+    this.syncModalBodyClass();
   }
 
   confirmDelete() {
@@ -530,6 +552,7 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
           panelClass: ['success-snackbar'],
         });
         this.pendingDelete = null;
+        this.syncModalBodyClass();
         if (this.centrosEducativos.length === 1 && this.pageIndex > 0) {
           this.pageIndex--;
         }
@@ -538,6 +561,7 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
       error: () => {
         this.snack.open('No se pudo eliminar.', 'Cerrar', { duration: 2500 });
         this.pendingDelete = null;
+        this.syncModalBodyClass();
       },
     });
   }
@@ -546,6 +570,7 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
   viewCentro(c: CentroEducativo) {
     this.detalleCargando = true;
     this.selectedCentroEducativo = null;
+    this.syncModalBodyClass();
 
     this.centrosApi.getById(c.id).subscribe({
       next: (full) => {
@@ -555,24 +580,28 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
           trabajadores: full.trabajadores ?? [],
         };
         this.detalleCargando = false;
+        this.syncModalBodyClass();
       },
       error: () => {
         this.detalleCargando = false;
         this.snack.open('No se pudo cargar el detalle.', 'Cerrar', {
           duration: 2500,
         });
+        this.syncModalBodyClass();
       },
     });
   }
 
   closeDetails() {
     this.selectedCentroEducativo = null;
+    this.syncModalBodyClass();
   }
 
   // ===== Añadir/Editar contactos (modal) =====
   openContacts(c: CentroEducativo) {
     if (this.esSoloLectura) return;
     this.contactsForCentro = c;
+    this.syncModalBodyClass();
 
     this.contactoDirectorId = null;
     this.contactoUtpId = null;
@@ -624,6 +653,7 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
 
   closeContacts() {
     this.contactsForCentro = null;
+    this.syncModalBodyClass();
   }
 
   // ===== Historial de practicas por centro =====
@@ -633,6 +663,7 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
     this.practicasCentroLoading = true;
     this.practicasCentroYear = 'all';
     this.practicasCentroYears = [];
+    this.syncModalBodyClass();
 
     this.practicasApi
       .listarParaJefatura({
@@ -644,21 +675,24 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
       })
       .subscribe({
         next: (res) => {
-          this.practicasCentro = res.items ?? [];
-          this.practicasCentroYears = this.buildPracticasYears(this.practicasCentro);
-          this.practicasCentroLoading = false;
-        },
-        error: () => {
-          this.practicasCentroLoading = false;
-          this.snack.open('No se pudieron cargar las practicas del centro.', 'Cerrar', {
-            duration: 2500,
-          });
-        },
-      });
+        this.practicasCentro = res.items ?? [];
+        this.practicasCentroYears = this.buildPracticasYears(this.practicasCentro);
+        this.practicasCentroLoading = false;
+        this.syncModalBodyClass();
+      },
+      error: () => {
+        this.practicasCentroLoading = false;
+        this.snack.open('No se pudieron cargar las practicas del centro.', 'Cerrar', {
+          duration: 2500,
+        });
+        this.syncModalBodyClass();
+      },
+    });
   }
 
   closePracticasHistory() {
     this.practicasCentroTarget = null;
+    this.syncModalBodyClass();
   }
 
   get practicasCentroFiltradas(): Practica[] {
