@@ -8,7 +8,7 @@
         </div>
 
         <div class="headline hero__titles">
-          <h1>Analisis de datos</h1>
+          <h1>Análisis de datos</h1>
           <p class="muted">
             Indicadores de empleabilidad y encuesta de egresados.
           </p>
@@ -23,12 +23,12 @@
         <mat-icon>work_outline</mat-icon>
         <div>
           <h2>Empleabilidad</h2>
-          <span class="muted">Indicadores laborales y formacion profesional.</span>
+          <span class="muted">Indicadores laborales y formación profesional.</span>
         </div>
       </div>
       <div class="section-tools">
         <mat-form-field appearance="outline" class="filter-field">
-          <mat-label>Ano de egreso</mat-label>
+          <mat-label>Año de egreso</mat-label>
           <mat-select
             [value]="anioEgresoFiltro"
             (selectionChange)="onAnioEgresoChange($event.value)"
@@ -93,7 +93,7 @@
       </div>
 
       <div class="chart-card chart-card--pie">
-        <div class="chart-title">Empleo por genero</div>
+        <div class="chart-title">Empleo por género</div>
         <div class="pie" [style.background]="buildPieGradient(empleabilidad.empleoGenero.segments)"></div>
         <div class="legend">
           <div class="legend-item" *ngFor="let item of empleabilidad.empleoGenero.segments">
@@ -135,7 +135,7 @@
       </div>
 
       <div class="chart-card chart-card--pie">
-        <div class="chart-title">Renta liquida mensual</div>
+        <div class="chart-title">Renta líquida mensual</div>
         <div class="pie" [style.background]="buildPieGradient(empleabilidad.renta.segments)"></div>
         <div class="legend">
           <div class="legend-item" *ngFor="let item of empleabilidad.renta.segments">
@@ -149,7 +149,7 @@
       </div>
 
       <div class="chart-card chart-card--pie">
-        <div class="chart-title">Tipo de institucion educativa</div>
+        <div class="chart-title">Tipo de institución educativa</div>
         <div class="pie" [style.background]="buildPieGradient(empleabilidad.tipoInstitucion.segments)"></div>
         <div class="legend">
           <div class="legend-item" *ngFor="let item of empleabilidad.tipoInstitucion.segments">
@@ -163,7 +163,7 @@
       </div>
 
       <div class="chart-card chart-card--pie">
-        <div class="chart-title">Pertinencia de la formacion</div>
+        <div class="chart-title">Pertinencia de la formación</div>
         <div class="pie" [style.background]="buildPieGradient(empleabilidad.pertinencia.segments)"></div>
         <div class="legend">
           <div class="legend-item" *ngFor="let item of empleabilidad.pertinencia.segments">
@@ -191,7 +191,7 @@
       </div>
 
       <div class="chart-card chart-card--pie">
-        <div class="chart-title">Capacitacion adicional</div>
+        <div class="chart-title">Capacitación adicional</div>
         <div class="pie" [style.background]="buildPieGradient(empleabilidad.capacitacion.segments)"></div>
         <div class="legend">
           <div class="legend-item" *ngFor="let item of empleabilidad.capacitacion.segments">
@@ -255,11 +255,11 @@
       </div>
 
       <div class="chart-card">
-        <div class="chart-title">Autoevaluacion</div>
+        <div class="chart-title">Autoevaluación</div>
         <div class="disk" [style.--value]="acreditacion.pctAutoevaluacion" [style.--color]="'#22c55e'">
           <span>{{ acreditacion.pctAutoevaluacion }}%</span>
         </div>
-        <div class="chart-note">Participacion</div>
+        <div class="chart-note">Participación</div>
         <div class="chart-count">{{ acreditacion.countAutoevaluacion }} de {{ acreditacion.total }}</div>
       </div>
 
@@ -283,3 +283,4 @@
     </div>
   </mat-card>
 </div>
+

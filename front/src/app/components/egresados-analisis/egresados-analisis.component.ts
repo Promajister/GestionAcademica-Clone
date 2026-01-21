@@ -523,7 +523,7 @@ export class EgresadosAnalisisComponent implements OnInit {
     const anioLabel = this.anioEgresoFiltro === 'ALL' ? 'Todos' : String(this.anioEgresoFiltro);
 
     const headerData = {
-      title: 'AN\u00c1LISIS DE EGRESADOS',
+      title: 'ANÁLISIS DE EGRESADOS',
       subtitle: 'Empleabilidad',
       generatedText,
       logoLeft: logoUta,
@@ -551,12 +551,12 @@ export class EgresadosAnalisisComponent implements OnInit {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
     doc.setTextColor(...colors.text);
-    doc.text('Par\u00e1metros del reporte', margin + 14, y + 24);
+    doc.text('Parámetros del reporte', margin + 14, y + 24);
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
     doc.setTextColor(...colors.muted);
-    doc.text(`A\u00f1o de egreso: ${anioLabel}`, margin + 14, y + 44);
+    doc.text(`Año de egreso: ${anioLabel}`, margin + 14, y + 44);
     doc.text(`Total encuestas: ${this.empleabilidad.total}`, margin + 200, y + 44);
 
     y += 92;
@@ -574,14 +574,14 @@ export class EgresadosAnalisisComponent implements OnInit {
     const charts = [
       { title: 'Con empleo vs sin empleo', data: this.empleabilidad.estadoLaboral },
       { title: 'Tiempo para encontrar trabajo', data: this.empleabilidad.tiempoEmpleo },
-      { title: 'Empleo por g\u00e9nero', data: this.empleabilidad.empleoGenero },
+      { title: 'Empleo por género', data: this.empleabilidad.empleoGenero },
       { title: 'Sector laboral', data: this.empleabilidad.sector },
       { title: 'Tipo de cargo', data: this.empleabilidad.cargo },
-      { title: 'Renta l\u00edquida mensual', data: this.empleabilidad.renta },
-      { title: 'Tipo de instituci\u00f3n educativa', data: this.empleabilidad.tipoInstitucion },
-      { title: 'Pertinencia de la formaci\u00f3n', data: this.empleabilidad.pertinencia },
+      { title: 'Renta líquida mensual', data: this.empleabilidad.renta },
+      { title: 'Tipo de institución educativa', data: this.empleabilidad.tipoInstitucion },
+      { title: 'Pertinencia de la formación', data: this.empleabilidad.pertinencia },
       { title: 'Postgrado realizado', data: this.empleabilidad.postgrado },
-      { title: 'Capacitaci\u00f3n adicional', data: this.empleabilidad.capacitacion },
+      { title: 'Capacitación adicional', data: this.empleabilidad.capacitacion },
     ];
 
     const chartSize = 140;
@@ -718,12 +718,12 @@ export class EgresadosAnalisisComponent implements OnInit {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
     doc.setTextColor(...colors.text);
-    doc.text('Par\u00e1metros del reporte', margin + 14, y + 24);
+    doc.text('Parámetros del reporte', margin + 14, y + 24);
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
     doc.setTextColor(...colors.muted);
-    doc.text(`A\u00f1o de egreso: ${anioLabel}`, margin + 14, y + 44);
+    doc.text(`Año de egreso: ${anioLabel}`, margin + 14, y + 44);
     doc.text(`Total encuestas: ${this.empleabilidad.total}`, margin + 200, y + 44);
 
     y += 92;
@@ -741,14 +741,14 @@ export class EgresadosAnalisisComponent implements OnInit {
     const charts = [
       { title: 'Con empleo vs sin empleo', data: this.empleabilidad.estadoLaboral },
       { title: 'Tiempo para encontrar trabajo', data: this.empleabilidad.tiempoEmpleo },
-      { title: 'Empleo por g\u00e9nero', data: this.empleabilidad.empleoGenero },
+      { title: 'Empleo por género', data: this.empleabilidad.empleoGenero },
       { title: 'Sector laboral', data: this.empleabilidad.sector },
       { title: 'Tipo de cargo', data: this.empleabilidad.cargo },
-      { title: 'Renta l\u00edquida mensual', data: this.empleabilidad.renta },
-      { title: 'Tipo de instituci\u00f3n educativa', data: this.empleabilidad.tipoInstitucion },
-      { title: 'Pertinencia de la formaci\u00f3n', data: this.empleabilidad.pertinencia },
+      { title: 'Renta líquida mensual', data: this.empleabilidad.renta },
+      { title: 'Tipo de institución educativa', data: this.empleabilidad.tipoInstitucion },
+      { title: 'Pertinencia de la formación', data: this.empleabilidad.pertinencia },
       { title: 'Postgrado realizado', data: this.empleabilidad.postgrado },
-      { title: 'Capacitaci\u00f3n adicional', data: this.empleabilidad.capacitacion },
+      { title: 'Capacitación adicional', data: this.empleabilidad.capacitacion },
     ];
 
     const rows = charts.flatMap((chart) =>
