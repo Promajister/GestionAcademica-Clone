@@ -212,11 +212,17 @@
                             formControlName="tercero_rut"
                             placeholder="Ej: 12.345.678-9"
                             (blur)="buscarTerceroPorRut()" />
+                          @if (formularioActividad.get('tercero_rut')?.hasError('required') && formularioActividad.get('tercero_rut')?.touched) {
+                            <mat-error>El RUT del tercero es requerido</mat-error>
+                          }
                         </mat-form-field>
 
                         <mat-form-field appearance="outline" class="FormField">
                           <mat-label>Nombre tercero</mat-label>
                           <input matInput formControlName="tercero_nombre" placeholder="Nombre completo" />
+                          @if (formularioActividad.get('tercero_nombre')?.hasError('required') && formularioActividad.get('tercero_nombre')?.touched) {
+                            <mat-error>El nombre del tercero es requerido</mat-error>
+                          }
                         </mat-form-field>
 
                         <button
@@ -247,6 +253,9 @@
                           }
                         }
                       </div>
+                      @if (tercerosListaInvalida && tercerosSeleccionados.length === 0) {
+                        <div class="StudentsError">Debes agregar al menos un tercero</div>
+                      }
                     </div>
                   }
 

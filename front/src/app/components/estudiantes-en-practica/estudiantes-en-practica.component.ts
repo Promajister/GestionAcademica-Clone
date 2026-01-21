@@ -94,6 +94,7 @@ export class EstudiantesEnPracticaComponent implements OnInit {
   practicaSeleccionada: PracticaEstudiante | null = null;
   observaciones: Observacion[] = [];
   notaFinalEditada: number | null = null;
+  notaFinalError: string | null = null;
   guardandoNotaFinal = false;
 
   // Opciones de filtros
@@ -271,6 +272,7 @@ export class EstudiantesEnPracticaComponent implements OnInit {
   abrirDialogoCambioEstado(practica: PracticaEstudiante) {
     this.practicaANotar = practica;
     this.notaFinalEditada = practica.notaFinal ?? null;
+    this.notaFinalError = null;
     this.mostrarDialogoNotaFinal = true;
   }
 
@@ -278,6 +280,7 @@ export class EstudiantesEnPracticaComponent implements OnInit {
     this.mostrarDialogoNotaFinal = false;
     this.practicaANotar = null;
     this.notaFinalEditada = null;
+    this.notaFinalError = null;
   }
 
   confirmarCambioEstado() {
@@ -293,6 +296,7 @@ export class EstudiantesEnPracticaComponent implements OnInit {
     this.mostrarModalDetalles = true;
     this.cargarObservaciones(practica.id);
     this.notaFinalEditada = practica.notaFinal ?? null;
+    this.notaFinalError = null;
   }
 
   cerrarDetalles() {
@@ -300,25 +304,30 @@ export class EstudiantesEnPracticaComponent implements OnInit {
     this.mostrarModalDetalles = false;
     this.observaciones = [];
     this.notaFinalEditada = null;
+    this.notaFinalError = null;
     this.guardandoNotaFinal = false;
   }
 
   guardarNotaFinal() {
     const practica = this.obtenerPracticaParaNota();
     if (!practica || this.notaFinalEditada === null) {
+      this.notaFinalError = 'Ingresa una nota final válida.';
       this.snack.open('Ingresa una nota final valida.', 'Cerrar', { duration: 3000 });
       return;
     }
 
     const notaFinal = Number(this.notaFinalEditada);
     if (!Number.isFinite(notaFinal)) {
+      this.notaFinalError = 'Ingresa una nota final válida.';
       this.snack.open('Ingresa una nota final valida.', 'Cerrar', { duration: 3000 });
       return;
     }
     if (notaFinal < 1 || notaFinal > 7) {
+      this.notaFinalError = 'La nota final debe estar entre 1 y 7.';
       this.snack.open('La nota final debe estar entre 1 y 7.', 'Cerrar', { duration: 3000 });
       return;
     }
+    this.notaFinalError = null;
 
     if (practica.notaFinal === notaFinal) {
       return;

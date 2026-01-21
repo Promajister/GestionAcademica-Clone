@@ -127,6 +127,8 @@
 
               @if (formularioPractica.get('estudianteRut')?.hasError('required')) {
                 <mat-error>Debe seleccionar un estudiante</mat-error>
+              } @else if (formularioPractica.get('estudianteRut')?.hasError('invalido')) {
+                <mat-error>Selecciona un estudiante válido</mat-error>
               }
             </mat-form-field>
 
@@ -153,6 +155,8 @@
 
               @if (formularioPractica.get('centroId')?.hasError('required')) {
                 <mat-error>Debe seleccionar un centro educativo</mat-error>
+              } @else if (formularioPractica.get('centroId')?.hasError('invalido')) {
+                <mat-error>Selecciona un centro educativo válido</mat-error>
               }
             </mat-form-field>
           </div>
@@ -257,6 +261,8 @@
               <input matInput type="number" formControlName="anio" min="2000" step="1" />
               @if (formularioPractica.get('anio')?.hasError('required')) {
                 <mat-error>Debe indicar el a&ntilde;o</mat-error>
+              } @else if (formularioPractica.get('anio')?.hasError('min')) {
+                <mat-error>El a&ntilde;o debe ser mayor o igual a 2000</mat-error>
               }
             </mat-form-field>
 

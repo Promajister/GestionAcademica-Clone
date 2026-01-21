@@ -119,6 +119,7 @@ export class ActividadesEstudiantesComponent implements OnInit {
   estudiantesFiltro: string = '';
   readonly estudiantesLimit: number = 5;
   tercerosSeleccionados: Tercero[] = [];
+  tercerosListaInvalida: boolean = false;
   
   // Lista de meses disponibles
   readonly meses = [
@@ -196,6 +197,16 @@ export class ActividadesEstudiantesComponent implements OnInit {
       if (!value) {
         this.tercerosSeleccionados = [];
         this.formularioActividad.patchValue({ tercero_rut: '', tercero_nombre: '' });
+        this.formularioActividad.get('tercero_rut')?.clearValidators();
+        this.formularioActividad.get('tercero_nombre')?.clearValidators();
+        this.formularioActividad.get('tercero_rut')?.updateValueAndValidity({ emitEvent: false });
+        this.formularioActividad.get('tercero_nombre')?.updateValueAndValidity({ emitEvent: false });
+        this.tercerosListaInvalida = false;
+      } else {
+        this.formularioActividad.get('tercero_rut')?.setValidators([Validators.required]);
+        this.formularioActividad.get('tercero_nombre')?.setValidators([Validators.required]);
+        this.formularioActividad.get('tercero_rut')?.updateValueAndValidity({ emitEvent: false });
+        this.formularioActividad.get('tercero_nombre')?.updateValueAndValidity({ emitEvent: false });
       }
     });
   }
@@ -465,6 +476,8 @@ export class ActividadesEstudiantesComponent implements OnInit {
     const nombre = (this.formularioActividad.get('tercero_nombre')?.value || '').trim();
 
     if (!rut || !nombre) {
+      this.formularioActividad.get('tercero_rut')?.markAsTouched();
+      this.formularioActividad.get('tercero_nombre')?.markAsTouched();
       this.snack.open('Debes ingresar RUT y nombre del tercero.', 'Cerrar', {
         duration: 3000,
         horizontalPosition: 'center',
@@ -480,6 +493,7 @@ export class ActividadesEstudiantesComponent implements OnInit {
     } else {
       this.tercerosSeleccionados = [...this.tercerosSeleccionados, { rut, nombre }];
     }
+    this.tercerosListaInvalida = false;
 
     this.formularioActividad.patchValue({ tercero_rut: '', tercero_nombre: '' });
   }
@@ -501,6 +515,7 @@ export class ActividadesEstudiantesComponent implements OnInit {
       archivo_adjunto: ''
     });
     this.tercerosSeleccionados = [];
+    this.tercerosListaInvalida = false;
   }
 
   getEstudianteEtiqueta(estudiante: EstudianteResumen): string {
@@ -672,6 +687,7 @@ export class ActividadesEstudiantesComponent implements OnInit {
     };
 
     if (actividadData.terceros_asistieron && (!actividadData.terceros || actividadData.terceros.length === 0)) {
+      this.tercerosListaInvalida = true;
       this.snack.open('Debes agregar al menos un tercero.', 'Cerrar', {
         duration: 3000,
         horizontalPosition: 'center',
@@ -680,6 +696,7 @@ export class ActividadesEstudiantesComponent implements OnInit {
       });
       return;
     }
+    this.tercerosListaInvalida = false;
 
     // Determinar qué archivo enviar (el ZIP comprimido)
     let archivoParaEnviar: File | undefined = undefined;
@@ -837,6 +854,7 @@ export class ActividadesEstudiantesComponent implements OnInit {
     });
 
     this.tercerosSeleccionados = actividad.terceros ? [...actividad.terceros] : [];
+    this.tercerosListaInvalida = false;
     
     this.mostrarFormulario = true;
   }

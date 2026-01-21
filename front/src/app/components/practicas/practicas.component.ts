@@ -1,6 +1,6 @@
 import { Component, inject, PLATFORM_ID, Injectable } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule, AbstractControl, ValidationErrors } from '@angular/forms';
 
 // Angular Material
 import { MatButtonModule } from '@angular/material/button';
@@ -252,11 +252,27 @@ export class PracticasComponent {
     return null;
   }
 
+  validarEstudianteSeleccionado = (control: AbstractControl): ValidationErrors | null => {
+    const value = control.value;
+    if (!value) return null;
+    const rut = typeof value === 'string' ? value : value?.rut;
+    if (!rut) return { invalido: true };
+    return this.estudiantes.some((e) => e.rut === rut) ? null : { invalido: true };
+  };
+
+  validarCentroSeleccionado = (control: AbstractControl): ValidationErrors | null => {
+    const value = control.value;
+    if (value === null || value === undefined || value === '') return null;
+    const id = typeof value === 'number' ? value : value?.id ?? Number(value);
+    if (!id || Number.isNaN(id)) return { invalido: true };
+    return this.centros.some((c) => c.id === id) ? null : { invalido: true };
+  };
+
   constructor() {
     // Inicializar formulario con validaciones personalizadas
     this.formularioPractica = this.fb.group({
-      estudianteRut: ['', [Validators.required]],
-      centroId: ['', [Validators.required]],
+      estudianteRut: ['', [Validators.required, this.validarEstudianteSeleccionado]],
+      centroId: ['', [Validators.required, this.validarCentroSeleccionado]],
       colaborador1Id: [null, [Validators.required]],
       colaborador2Id: [null],
       tutor1Id: [null, [Validators.required]],
@@ -310,6 +326,7 @@ export class PracticasComponent {
           next: (estudiantes) => {
             this.estudiantes = estudiantes.filter(est => !rutConPracticasEnCurso.has(est.rut));
             this.estudianteFiltrado = this.estudiantes.slice(0, 5);
+            this.formularioPractica.get('estudianteRut')?.updateValueAndValidity({ emitEvent: false });
           },
           error: (err) => { console.error('Error al cargar estudiantes:', err); }
         });
@@ -329,6 +346,7 @@ export class PracticasComponent {
       next: (estudiantes) => {
         this.estudiantes = estudiantes;
         this.estudianteFiltrado = this.estudiantes.slice(0, 5);
+        this.formularioPractica.get('estudianteRut')?.updateValueAndValidity({ emitEvent: false });
       },
       error: (err) => { console.error('Error al cargar estudiantes:', err); }
     });
@@ -346,6 +364,7 @@ export class PracticasComponent {
           if (t) setTipos.add(t); 
         });
         this.tiposCentro = Array.from(setTipos).sort((a, b) => a.localeCompare(b));
+        this.formularioPractica.get('centroId')?.updateValueAndValidity({ emitEvent: false });
       },
       error: (err) => { console.error('Error al cargar centros:', err); }
     });
