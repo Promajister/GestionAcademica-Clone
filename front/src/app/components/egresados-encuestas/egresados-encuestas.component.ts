@@ -7,6 +7,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
@@ -44,6 +45,7 @@ interface AcreditacionSection {
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
+    MatPaginatorModule,
     MatRadioModule,
     MatSelectModule,
     MatSnackBarModule,
@@ -64,6 +66,10 @@ export class EgresadosEncuestasComponent implements OnInit, OnDestroy {
   isSaving = false;
   isLoadingEncuestas = false;
   encuestas: any[] = [];
+  pagedEncuestas: any[] = [];
+  pageSize = 10;
+  pageIndex = 0;
+  pageSizeOptions = [5, 10, 25];
 
   readonly encuestasDisponibles: SurveyCard[] = [
     {
@@ -71,7 +77,7 @@ export class EgresadosEncuestasComponent implements OnInit, OnDestroy {
       title: 'Encuesta de empleabilidad',
       subtitle: 'Indicadores laborales y percepcion de la formacion.',
       description:
-        'Explora la insercion laboral y la pertinencia de la formacion profesional.',
+        'Esta encuesta busca conocer la situación laboral de los egresados y evaluar la pertinencia de la formación para su inserción profesional. La información es anónima y se utilizará como apoyo al seguimiento de titulados y a los procesos de autoevaluación y acreditación.',
       icon: 'work_outline',
       cardClass: 'green-card',
     },
@@ -80,7 +86,7 @@ export class EgresadosEncuestasComponent implements OnInit, OnDestroy {
       title: 'Encuesta de egresados',
       subtitle: 'Evidencia para procesos de autoevaluacion.',
       description:
-        'Recoge la opinion de egresados para fortalecer la acreditacion.',
+        'Esta encuesta recoge la opinión de los egresados sobre la formación, los recursos y las oportunidades de mejora continua. Las respuestas son anónimas y se utilizan como evidencia en los procesos de autoevaluación y acreditación.',
       icon: 'verified',
     },
   ];
@@ -346,11 +352,14 @@ export class EgresadosEncuestasComponent implements OnInit, OnDestroy {
           fecha: e.fecha ? new Date(e.fecha) : null,
         }));
         this.isLoadingEncuestas = false;
+        this.pageIndex = 0;
+        this.updatePagedEncuestas();
       },
       error: (err) => {
         console.error(err);
         this.encuestas = [];
         this.isLoadingEncuestas = false;
+        this.updatePagedEncuestas();
       },
     });
   }
@@ -457,6 +466,17 @@ export class EgresadosEncuestasComponent implements OnInit, OnDestroy {
     };
 
     return labels[clave] || clave;
+  }
+
+  onPageChange(event: PageEvent): void {
+    this.pageSize = event.pageSize;
+    this.pageIndex = event.pageIndex;
+    this.updatePagedEncuestas();
+  }
+
+  private updatePagedEncuestas(): void {
+    const start = this.pageIndex * this.pageSize;
+    this.pagedEncuestas = this.encuestas.slice(start, start + this.pageSize);
   }
 
   private buildAcreditacionForm() {

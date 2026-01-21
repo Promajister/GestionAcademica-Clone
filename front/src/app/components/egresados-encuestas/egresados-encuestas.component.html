@@ -43,7 +43,7 @@
   <mat-card class="elev registered-list-card">
     <mat-card-title>Encuestas registradas</mat-card-title>
     <div *ngIf="encuestas.length > 0; else noEncuestas">
-      <div *ngFor="let e of encuestas" class="registered-item">
+      <div *ngFor="let e of pagedEncuestas" class="registered-item">
         <div class="item-content">
           <mat-icon class="item-icon">assignment</mat-icon>
           <div class="item-info">
@@ -67,6 +67,17 @@
           <span>{{ e.fecha | date: 'yyyy-MM-dd' }}</span>
         </div>
       </div>
+      <div class="paginator-wrap">
+        <mat-paginator
+          [length]="encuestas.length"
+          [pageSize]="pageSize"
+          [pageIndex]="pageIndex"
+          [pageSizeOptions]="pageSizeOptions"
+          (page)="onPageChange($event)"
+          aria-label="Paginador de encuestas"
+        >
+        </mat-paginator>
+      </div>
     </div>
 
     <ng-template #noEncuestas>
@@ -74,7 +85,7 @@
         <mat-icon>inbox</mat-icon>
         <div>
           <div class="empty-title">Sin registros</div>
-          <div class="muted">Cuando registres encuestas apareceran aqui.</div>
+          <div class="muted">Cuando registres encuestas aparecerán aquí.</div>
         </div>
       </div>
     </ng-template>
@@ -159,10 +170,10 @@
             <div>
               <div class="objetivo-title">Objetivo de la encuesta</div>
               <div class="objetivo-desc">
-                El objetivo de esta encuesta es conocer la situacion laboral de nuestros egresados
-                y evaluar la pertinencia de la formacion en relacion con su insercion profesional.
-                La informacion recogida es anonima y se utilizara solo para acciones de apoyo y
-                seguimiento de titulados, ademas de aportar evidencia en procesos de acreditacion.
+                El objetivo de esta encuesta es conocer la situación laboral de nuestros egresados
+                y evaluar la pertinencia de la formación en relación con su inserción profesional.
+                La información recogida es anónima y se utilizará solo para acciones de apoyo y
+                seguimiento de titulados, además de aportar evidencia en procesos de acreditación.
               </div>
             </div>
           </div>
@@ -171,14 +182,14 @@
             <div class="panel-head">
               <div class="panel-title">
                 <mat-icon>perm_identity</mat-icon>
-                <h3>Seccion I: Datos generales</h3>
+                <h3>Sección I: Datos generales</h3>
               </div>
-              <div class="panel-sub">Datos basicos del egresado</div>
+              <div class="panel-sub">Datos básicos del egresado</div>
             </div>
 
             <div class="grid-2">
               <mat-form-field appearance="outline" class="field">
-                <mat-label>Ano de egreso</mat-label>
+                <mat-label>Año de egreso</mat-label>
                 <input matInput type="number" formControlName="anioEgreso" />
                 <mat-error *ngIf="form.get('generales.anioEgreso')?.touched && form.get('generales.anioEgreso')?.invalid">
                   Campo obligatorio
@@ -209,9 +220,9 @@
             <div class="panel-head">
               <div class="panel-title">
                 <mat-icon>work_outline</mat-icon>
-                <h3>Seccion II: Insercion laboral</h3>
+                <h3>Sección II: Inserción laboral</h3>
               </div>
-              <div class="panel-sub">Situacion laboral actual</div>
+              <div class="panel-sub">Situación laboral actual</div>
             </div>
 
             <div class="question-list">
@@ -242,7 +253,7 @@
               </mat-form-field>
 
               <mat-form-field appearance="outline" class="field">
-                <mat-label>Situacion laboral actual</mat-label>
+                <mat-label>Situación laboral actual</mat-label>
                 <mat-select formControlName="situacionLaboral">
                   <mat-option *ngFor="let item of situacionesLaborales" [value]="item">{{ item }}</mat-option>
                 </mat-select>
@@ -267,9 +278,9 @@
             <div class="panel-head">
               <div class="panel-title">
                 <mat-icon>payments</mat-icon>
-                <h3>Seccion III: Condiciones laborales</h3>
+                <h3>Sección III: Condiciones laborales</h3>
               </div>
-              <div class="panel-sub">Renta y tipo de institucion</div>
+              <div class="panel-sub">Renta y tipo de institución</div>
             </div>
 
             <div class="grid-2">
@@ -284,7 +295,7 @@
               </mat-form-field>
 
               <mat-form-field appearance="outline" class="field">
-                <mat-label>Tipo de institucion educativa</mat-label>
+                <mat-label>Tipo de institución educativa</mat-label>
                 <mat-select formControlName="tipoInstitucion">
                   <mat-option *ngFor="let item of tiposInstitucion" [value]="item">{{ item }}</mat-option>
                 </mat-select>
@@ -299,7 +310,7 @@
             <div class="panel-head">
               <div class="panel-title">
                 <mat-icon>insights</mat-icon>
-                <h3>Seccion IV: Percepcion de empleabilidad</h3>
+                <h3>Sección IV: Percepción de empleabilidad</h3>
               </div>
               <div class="panel-sub">Pertinencia y desarrollo profesional</div>
             </div>
@@ -307,7 +318,7 @@
             <div class="question-list">
               <div class="question-row">
                 <p class="question-label">
-                  Considera que la formacion recibida fue pertinente para su desempeno laboral?
+                  Considera que la formación recibida fue pertinente para su desempeño laboral?
                 </p>
                 <div class="answer-col">
                   <mat-radio-group class="scale-group" formControlName="pertinencia">
@@ -326,7 +337,7 @@
               </div>
 
               <div class="question-row">
-                <p class="question-label">Ha realizado estudios de postgrado desde que egreso?</p>
+                <p class="question-label">Ha realizado estudios de postgrado desde que egresó?</p>
                 <div class="answer-col">
                   <mat-radio-group class="scale-group" formControlName="postgrado">
                     <mat-radio-button *ngFor="let opcion of opcionesSiNo" class="scale-option" [value]="opcion">
@@ -340,12 +351,12 @@
               </div>
 
               <mat-form-field appearance="outline" class="field full" *ngIf="showPostgradoDetalle">
-                <mat-label>Indica tipo e institucion (opcional)</mat-label>
+                <mat-label>Indica tipo e institución (opcional)</mat-label>
                 <input matInput formControlName="postgradoDetalle" />
               </mat-form-field>
 
               <div class="question-row">
-                <p class="question-label">Ha realizado cursos de capacitacion adicional?</p>
+                <p class="question-label">Ha realizado cursos de capacitación adicional?</p>
                 <div class="answer-col">
                   <mat-radio-group class="scale-group" formControlName="capacitacion">
                     <mat-radio-button *ngFor="let opcion of opcionesSiNo" class="scale-option" [value]="opcion">
@@ -359,7 +370,7 @@
               </div>
 
               <mat-form-field appearance="outline" class="field full" *ngIf="showCapacitacionDetalle">
-                <mat-label>Indica tipo e institucion (opcional)</mat-label>
+                <mat-label>Indica tipo e institución (opcional)</mat-label>
                 <input matInput formControlName="capacitacionDetalle" />
               </mat-form-field>
             </div>
@@ -376,7 +387,7 @@
 
             <div class="open-grid">
               <mat-form-field appearance="outline" class="field full">
-                <mat-label>Aspectos que ayudaron mas en la insercion laboral</mat-label>
+                <mat-label>Aspectos que ayudaron más en la inserción laboral</mat-label>
                 <mat-select formControlName="aspectosAyuda">
                   <mat-option *ngFor="let item of opcionesPregunta9" [value]="item">{{ item }}</mat-option>
                 </mat-select>
@@ -430,9 +441,9 @@
             <div>
               <div class="objetivo-title">Objetivo de la encuesta</div>
               <div class="objetivo-desc">
-                Esta encuesta recoge la opinion de egresados sobre formacion, recursos y
-                mejora continua. Las respuestas son anonimas y se usan como evidencia para
-                la autoevaluacion y acreditacion.
+                Esta encuesta recoge la opinión de egresados sobre formación, recursos y
+                mejora continua. Las respuestas son anónimas y se usan como evidencia para
+                la autoevaluación y acreditación.
               </div>
             </div>
           </div>
@@ -441,14 +452,14 @@
             <div class="panel-head">
               <div class="panel-title">
                 <mat-icon>perm_identity</mat-icon>
-                <h3>Seccion I: Datos generales</h3>
+                <h3>Sección I: Datos generales</h3>
               </div>
-              <div class="panel-sub">Datos basicos del egresado</div>
+              <div class="panel-sub">Datos básicos del egresado</div>
             </div>
 
             <div class="grid-2">
               <mat-form-field appearance="outline" class="field">
-                <mat-label>Ano de egreso</mat-label>
+                <mat-label>Año de egreso</mat-label>
                 <input matInput type="number" formControlName="anioEgreso" />
                 <mat-error *ngIf="acreditacionForm.get('generales.anioEgreso')?.touched && acreditacionForm.get('generales.anioEgreso')?.invalid">
                   Campo obligatorio
@@ -512,7 +523,7 @@
             <div class="panel-head">
               <div class="panel-title">
                 <mat-icon>edit_note</mat-icon>
-                <h3>Seccion VIII: Comentarios abiertos</h3>
+                <h3>Sección VIII: Comentarios abiertos</h3>
               </div>
               <div class="panel-sub">Respuestas abiertas (opcional)</div>
             </div>

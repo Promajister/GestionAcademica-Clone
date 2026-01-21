@@ -26,133 +26,182 @@
           <span class="muted">Indicadores laborales y formacion profesional.</span>
         </div>
       </div>
-      <div class="chip">
-        <mat-icon>assignment</mat-icon>
-        <span>{{ empleabilidad.total }} encuestas</span>
+      <div class="section-tools">
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Ano de egreso</mat-label>
+          <mat-select
+            [value]="anioEgresoFiltro"
+            (selectionChange)="onAnioEgresoChange($event.value)"
+          >
+            <mat-option value="ALL">Todos</mat-option>
+            <mat-option *ngFor="let anio of aniosEgreso" [value]="anio">{{ anio }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <button
+          mat-flat-button
+          color="primary"
+          class="export-btn"
+          [matMenuTriggerFor]="exportMenu"
+        >
+          <mat-icon>picture_as_pdf</mat-icon>
+          Exportar PDF
+        </button>
+        <mat-menu #exportMenu="matMenu">
+          <button mat-menu-item (click)="exportarPdfConGraficos()">
+            <mat-icon>pie_chart</mat-icon>
+            Con gráficos
+          </button>
+          <button mat-menu-item (click)="exportarPdfTabla()">
+            <mat-icon>table_chart</mat-icon>
+            Solo tabla
+          </button>
+        </mat-menu>
+        <div class="chip">
+          <mat-icon>assignment</mat-icon>
+          <span>{{ empleabilidad.total }} encuestas</span>
+        </div>
       </div>
     </div>
 
-    <div class="kpi-grid">
-      <div class="kpi-card">
-        <div class="kpi-label">Trabajando actualmente</div>
-        <div class="kpi-value">{{ empleabilidad.pctTrabajando }}%</div>
-        <div class="kpi-sub">{{ empleabilidad.countTrabajando }} de {{ empleabilidad.total }}</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">Postgrado realizado</div>
-        <div class="kpi-value">{{ empleabilidad.pctPostgrado }}%</div>
-        <div class="kpi-sub">{{ empleabilidad.countPostgrado }} de {{ empleabilidad.total }}</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">Capacitacion adicional</div>
-        <div class="kpi-value">{{ empleabilidad.pctCapacitacion }}%</div>
-        <div class="kpi-sub">{{ empleabilidad.countCapacitacion }} de {{ empleabilidad.total }}</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">Formacion pertinente</div>
-        <div class="kpi-value">{{ empleabilidad.pctPertinenciaAlta }}%</div>
-        <div class="kpi-sub">{{ empleabilidad.countPertinenciaAlta }} de {{ empleabilidad.total }}</div>
-      </div>
-    </div>
-
-    <div class="chart-grid">
-      <div class="chart-card">
-        <div class="chart-title">Empleabilidad global</div>
-        <div class="disk" [style.--value]="empleabilidad.pctTrabajando" [style.--color]="'#1f7a3f'">
-          <span>{{ empleabilidad.pctTrabajando }}%</span>
+    <div class="chart-grid chart-grid--wide">
+      <div class="chart-card chart-card--pie">
+        <div class="chart-title">Con empleo vs sin empleo</div>
+        <div class="pie" [style.background]="buildPieGradient(empleabilidad.estadoLaboral.segments)"></div>
+        <div class="legend">
+          <div class="legend-item" *ngFor="let item of empleabilidad.estadoLaboral.segments">
+            <span class="legend-swatch" [style.background]="item.color"></span>
+            <span class="legend-label">{{ item.label }}</span>
+            <span class="legend-value">{{ item.pct }}%</span>
+            <span class="legend-count">({{ item.count }})</span>
+          </div>
         </div>
-        <div class="chart-note">Trabajando</div>
-        <div class="chart-count">{{ empleabilidad.countTrabajando }} de {{ empleabilidad.total }}</div>
+        <div class="chart-count">Total encuestas: {{ empleabilidad.estadoLaboral.total }}</div>
       </div>
 
-      <div class="chart-card">
-        <div class="chart-title">Genero (Mujer)</div>
-        <div class="disk" [style.--value]="empleabilidad.genero.mujer" [style.--color]="'#0f52ba'">
-          <span>{{ empleabilidad.genero.mujer }}%</span>
+      <div class="chart-card chart-card--pie">
+        <div class="chart-title">Tiempo para encontrar trabajo</div>
+        <div class="pie" [style.background]="buildPieGradient(empleabilidad.tiempoEmpleo.segments)"></div>
+        <div class="legend">
+          <div class="legend-item" *ngFor="let item of empleabilidad.tiempoEmpleo.segments">
+            <span class="legend-swatch" [style.background]="item.color"></span>
+            <span class="legend-label">{{ item.label }}</span>
+            <span class="legend-value">{{ item.pct }}%</span>
+            <span class="legend-count">({{ item.count }})</span>
+          </div>
         </div>
-        <div class="chart-note">Participacion en encuestas</div>
-        <div class="chart-count">{{ empleabilidad.generoCounts.mujer }} de {{ empleabilidad.total }}</div>
+        <div class="chart-count">Total encuestas: {{ empleabilidad.tiempoEmpleo.total }}</div>
       </div>
 
-      <div class="chart-card">
-        <div class="chart-title">Genero (Hombre)</div>
-        <div class="disk" [style.--value]="empleabilidad.genero.hombre" [style.--color]="'#d97706'">
-          <span>{{ empleabilidad.genero.hombre }}%</span>
+      <div class="chart-card chart-card--pie">
+        <div class="chart-title">Empleo por genero</div>
+        <div class="pie" [style.background]="buildPieGradient(empleabilidad.empleoGenero.segments)"></div>
+        <div class="legend">
+          <div class="legend-item" *ngFor="let item of empleabilidad.empleoGenero.segments">
+            <span class="legend-swatch" [style.background]="item.color"></span>
+            <span class="legend-label">{{ item.label }}</span>
+            <span class="legend-value">{{ item.pct }}%</span>
+            <span class="legend-count">({{ item.count }})</span>
+          </div>
         </div>
-        <div class="chart-note">Participacion en encuestas</div>
-        <div class="chart-count">{{ empleabilidad.generoCounts.hombre }} de {{ empleabilidad.total }}</div>
+        <div class="chart-count">Total encuestas: {{ empleabilidad.empleoGenero.total }}</div>
       </div>
 
-      <div class="chart-card">
-        <div class="chart-title">Mujer con empleo</div>
-        <div class="disk" [style.--value]="empleabilidad.trabajandoGenero.mujer" [style.--color]="'#2563eb'">
-          <span>{{ empleabilidad.trabajandoGenero.mujer }}%</span>
+      <div class="chart-card chart-card--pie">
+        <div class="chart-title">Sector laboral</div>
+        <div class="pie" [style.background]="buildPieGradient(empleabilidad.sector.segments)"></div>
+        <div class="legend">
+          <div class="legend-item" *ngFor="let item of empleabilidad.sector.segments">
+            <span class="legend-swatch" [style.background]="item.color"></span>
+            <span class="legend-label">{{ item.label }}</span>
+            <span class="legend-value">{{ item.pct }}%</span>
+            <span class="legend-count">({{ item.count }})</span>
+          </div>
         </div>
-        <div class="chart-note">Tasa dentro del genero</div>
-        <div class="chart-count">{{ empleabilidad.trabajandoGeneroCounts.mujer }} de {{ empleabilidad.generoCounts.mujer }}</div>
+        <div class="chart-count">Total encuestas: {{ empleabilidad.sector.total }}</div>
       </div>
 
-      <div class="chart-card">
-        <div class="chart-title">Hombre con empleo</div>
-        <div class="disk" [style.--value]="empleabilidad.trabajandoGenero.hombre" [style.--color]="'#9333ea'">
-          <span>{{ empleabilidad.trabajandoGenero.hombre }}%</span>
+      <div class="chart-card chart-card--pie">
+        <div class="chart-title">Tipo de cargo</div>
+        <div class="pie" [style.background]="buildPieGradient(empleabilidad.cargo.segments)"></div>
+        <div class="legend">
+          <div class="legend-item" *ngFor="let item of empleabilidad.cargo.segments">
+            <span class="legend-swatch" [style.background]="item.color"></span>
+            <span class="legend-label">{{ item.label }}</span>
+            <span class="legend-value">{{ item.pct }}%</span>
+            <span class="legend-count">({{ item.count }})</span>
+          </div>
         </div>
-        <div class="chart-note">Tasa dentro del genero</div>
-        <div class="chart-count">{{ empleabilidad.trabajandoGeneroCounts.hombre }} de {{ empleabilidad.generoCounts.hombre }}</div>
+        <div class="chart-count">Total encuestas: {{ empleabilidad.cargo.total }}</div>
       </div>
 
-      <div class="chart-card">
-        <div class="chart-title">Sector publico</div>
-        <div class="disk" [style.--value]="empleabilidad.sector.publico" [style.--color]="'#0f766e'">
-          <span>{{ empleabilidad.sector.publico }}%</span>
+      <div class="chart-card chart-card--pie">
+        <div class="chart-title">Renta liquida mensual</div>
+        <div class="pie" [style.background]="buildPieGradient(empleabilidad.renta.segments)"></div>
+        <div class="legend">
+          <div class="legend-item" *ngFor="let item of empleabilidad.renta.segments">
+            <span class="legend-swatch" [style.background]="item.color"></span>
+            <span class="legend-label">{{ item.label }}</span>
+            <span class="legend-value">{{ item.pct }}%</span>
+            <span class="legend-count">({{ item.count }})</span>
+          </div>
         </div>
-        <div class="chart-note">Entre quienes trabajan</div>
-        <div class="chart-count">{{ empleabilidad.sectorCounts.publico }} de {{ empleabilidad.totalTrabajando }}</div>
+        <div class="chart-count">Total encuestas: {{ empleabilidad.renta.total }}</div>
       </div>
 
-      <div class="chart-card">
-        <div class="chart-title">Sector privado</div>
-        <div class="disk" [style.--value]="empleabilidad.sector.privado" [style.--color]="'#f97316'">
-          <span>{{ empleabilidad.sector.privado }}%</span>
+      <div class="chart-card chart-card--pie">
+        <div class="chart-title">Tipo de institucion educativa</div>
+        <div class="pie" [style.background]="buildPieGradient(empleabilidad.tipoInstitucion.segments)"></div>
+        <div class="legend">
+          <div class="legend-item" *ngFor="let item of empleabilidad.tipoInstitucion.segments">
+            <span class="legend-swatch" [style.background]="item.color"></span>
+            <span class="legend-label">{{ item.label }}</span>
+            <span class="legend-value">{{ item.pct }}%</span>
+            <span class="legend-count">({{ item.count }})</span>
+          </div>
         </div>
-        <div class="chart-note">Entre quienes trabajan</div>
-        <div class="chart-count">{{ empleabilidad.sectorCounts.privado }} de {{ empleabilidad.totalTrabajando }}</div>
+        <div class="chart-count">Total encuestas: {{ empleabilidad.tipoInstitucion.total }}</div>
       </div>
 
-      <div class="chart-card">
-        <div class="chart-title">Sector otro</div>
-        <div class="disk" [style.--value]="empleabilidad.sector.otro" [style.--color]="'#0ea5e9'">
-          <span>{{ empleabilidad.sector.otro }}%</span>
+      <div class="chart-card chart-card--pie">
+        <div class="chart-title">Pertinencia de la formacion</div>
+        <div class="pie" [style.background]="buildPieGradient(empleabilidad.pertinencia.segments)"></div>
+        <div class="legend">
+          <div class="legend-item" *ngFor="let item of empleabilidad.pertinencia.segments">
+            <span class="legend-swatch" [style.background]="item.color"></span>
+            <span class="legend-label">{{ item.label }}</span>
+            <span class="legend-value">{{ item.pct }}%</span>
+            <span class="legend-count">({{ item.count }})</span>
+          </div>
         </div>
-        <div class="chart-note">Entre quienes trabajan</div>
-        <div class="chart-count">{{ empleabilidad.sectorCounts.otro }} de {{ empleabilidad.totalTrabajando }}</div>
+        <div class="chart-count">Total encuestas: {{ empleabilidad.pertinencia.total }}</div>
       </div>
 
-      <div class="chart-card">
-        <div class="chart-title">Empleo rapido</div>
-        <div class="disk" [style.--value]="empleabilidad.pctEmpleoRapido" [style.--color]="'#15803d'">
-          <span>{{ empleabilidad.pctEmpleoRapido }}%</span>
+      <div class="chart-card chart-card--pie">
+        <div class="chart-title">Postgrado realizado</div>
+        <div class="pie" [style.background]="buildPieGradient(empleabilidad.postgrado.segments)"></div>
+        <div class="legend">
+          <div class="legend-item" *ngFor="let item of empleabilidad.postgrado.segments">
+            <span class="legend-swatch" [style.background]="item.color"></span>
+            <span class="legend-label">{{ item.label }}</span>
+            <span class="legend-value">{{ item.pct }}%</span>
+            <span class="legend-count">({{ item.count }})</span>
+          </div>
         </div>
-        <div class="chart-note">Menos de 6 meses</div>
-        <div class="chart-count">{{ empleabilidad.countEmpleoRapido }} de {{ empleabilidad.total }}</div>
+        <div class="chart-count">Total encuestas: {{ empleabilidad.postgrado.total }}</div>
       </div>
 
-      <div class="chart-card">
-        <div class="chart-title">Renta alta</div>
-        <div class="disk" [style.--value]="empleabilidad.pctRentaAlta" [style.--color]="'#1d4ed8'">
-          <span>{{ empleabilidad.pctRentaAlta }}%</span>
+      <div class="chart-card chart-card--pie">
+        <div class="chart-title">Capacitacion adicional</div>
+        <div class="pie" [style.background]="buildPieGradient(empleabilidad.capacitacion.segments)"></div>
+        <div class="legend">
+          <div class="legend-item" *ngFor="let item of empleabilidad.capacitacion.segments">
+            <span class="legend-swatch" [style.background]="item.color"></span>
+            <span class="legend-label">{{ item.label }}</span>
+            <span class="legend-value">{{ item.pct }}%</span>
+            <span class="legend-count">({{ item.count }})</span>
+          </div>
         </div>
-        <div class="chart-note">Sobre $1.000.001</div>
-        <div class="chart-count">{{ empleabilidad.countRentaAlta }} de {{ empleabilidad.total }}</div>
-      </div>
-
-      <div class="chart-card">
-        <div class="chart-title">Jefatura</div>
-        <div class="disk" [style.--value]="empleabilidad.pctJefatura" [style.--color]="'#c2410c'">
-          <span>{{ empleabilidad.pctJefatura }}%</span>
-        </div>
-        <div class="chart-note">Situacion laboral</div>
-        <div class="chart-count">{{ empleabilidad.countJefatura }} de {{ empleabilidad.total }}</div>
+        <div class="chart-count">Total encuestas: {{ empleabilidad.capacitacion.total }}</div>
       </div>
     </div>
   </mat-card>
