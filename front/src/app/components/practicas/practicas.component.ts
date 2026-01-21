@@ -204,6 +204,7 @@ export class PracticasComponent {
   ];
 
   rolesTutor: TutorRol[] = ['Supervisor', 'Tallerista'];
+  semestres: number[] = [1, 2];
 
   // Función para formatear el estado para mostrar al usuario
   formatearEstado(estado: EstadoPractica): string {
@@ -264,6 +265,8 @@ export class PracticasComponent {
       fecha_inicio: ['', Validators.required],
       fecha_termino: [''],
       tipo: [''],
+      anio: [null, [Validators.required, Validators.min(2000)]],
+      semestre: [null, [Validators.required]],
       estado: ['PENDIENTE']
     }, { validators: this.validarFechas });
 
@@ -545,7 +548,9 @@ export class PracticasComponent {
       tutor1Id: null,
       tutor1Rol: '',
       fecha_inicio: '',
-      fecha_termino: ''
+      fecha_termino: '',
+      anio: null,
+      semestre: null
     });
     this.fechaMinimaTermino = null;
     this.estudianteFiltrado = [...this.estudiantes];
@@ -561,7 +566,9 @@ export class PracticasComponent {
       tutor1Id: null,
       tutor1Rol: '',
       fecha_inicio: '',
-      fecha_termino: ''
+      fecha_termino: '',
+      anio: null,
+      semestre: null
     });
     this.fechaMinimaTermino = null;
   }
@@ -762,6 +769,28 @@ export class PracticasComponent {
       return;
     }
 
+    const anio = toNumber(formData.anio);
+    const semestre = toNumber(formData.semestre);
+    if (!anio) {
+      this.snack.open('El a\u00f1o es obligatorio.', 'Cerrar', {
+        duration: 3000,
+        horizontalPosition: 'center',
+        verticalPosition: 'bottom',
+        panelClass: ['warning-snackbar']
+      });
+      return;
+    }
+
+    if (semestre !== 1 && semestre !== 2) {
+      this.snack.open('Debes seleccionar un semestre v\u00e1lido.', 'Cerrar', {
+        duration: 3000,
+        horizontalPosition: 'center',
+        verticalPosition: 'bottom',
+        panelClass: ['warning-snackbar']
+      });
+      return;
+    }
+
     const dto = {
       estudianteRut: formData.estudianteRut,
       centroId,
@@ -771,6 +800,8 @@ export class PracticasComponent {
       fecha_inicio: fechaInicio,
       fecha_termino: formData.fecha_termino ? this.formatearFechaISO(formData.fecha_termino) : undefined,
       tipo: formData.tipo || undefined,
+      anio,
+      semestre,
       estado: formData.estado || 'EN_CURSO'
     };
 

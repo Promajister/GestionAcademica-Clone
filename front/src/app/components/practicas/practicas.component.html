@@ -248,6 +248,30 @@
             </mat-form-field>
           </div>
 
+          <!-- Periodo -->
+          <div class="row-2">
+            <mat-form-field appearance="outline">
+              <mat-label>A&ntilde;o *</mat-label>
+              <input matInput type="number" formControlName="anio" min="2000" step="1" />
+              @if (formularioPractica.get('anio')?.hasError('required')) {
+                <mat-error>Debe indicar el a&ntilde;o</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Semestre *</mat-label>
+              <mat-select formControlName="semestre">
+                <mat-option [value]="null">Seleccionar semestre</mat-option>
+                @for (s of semestres; track s) {
+                  <mat-option [value]="s">{{ s }}</mat-option>
+                }
+              </mat-select>
+              @if (formularioPractica.get('semestre')?.hasError('required')) {
+                <mat-error>Debe indicar el semestre</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
           <!-- Tipo + Estado -->
           <div class="row-2">
             <mat-form-field appearance="outline">

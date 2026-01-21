@@ -67,6 +67,8 @@ export interface CreatePracticaDto {
   fecha_inicio: string;
   fecha_termino?: string;
   tipo?: string;
+  anio: number;
+  semestre: number;
   estado?: EstadoPractica;
   colaboradorId?: number;
   tutorId?: number;

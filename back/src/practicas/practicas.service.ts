@@ -117,6 +117,8 @@ export class PracticasService {
         fecha_inicio: start,
         fecha_termino: end,
         tipo: dto.tipo ?? null,
+        anio: dto.anio,
+        semestre: dto.semestre,
         estado: estado as any,
         practicaColaboradores: {
           create: colaboradorIds.map((id) => ({ colaborador: { connect: { id } } })),

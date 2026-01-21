@@ -44,6 +44,12 @@ export class CreatePracticaDto {
   @IsOptional() @IsString()
   tipo?: string;
 
+  @IsInt() @IsPositive()
+  anio!: number;
+
+  @IsInt() @IsIn([1, 2])
+  semestre!: number;
+
   @IsOptional() @IsEnum(EstadoPractica)
   estado?: EstadoPractica; // default = EN_CURSO
 }

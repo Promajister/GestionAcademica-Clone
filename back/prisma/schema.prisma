@@ -89,6 +89,8 @@ model Practica {
   fecha_inicio  DateTime
   fecha_termino DateTime?
   tipo          String?
+  anio          Int
+  semestre      Int
 
   estudianteRut String
   estudiante    Estudiante @relation(fields: [estudianteRut], references: [rut])
