@@ -209,6 +209,11 @@ export class CentrosEducativosComponent implements OnInit, OnDestroy {
     utpCorreo: '',
     utpTelefono: '',
   };
+  showContactErrors = false;
+  contactErrors = {
+    director: { nombre: '', rut: '', telefono: '', correo: '' },
+    utp: { nombre: '', rut: '', telefono: '', correo: '' },
+  };
   private contactoDirectorId: number | null = null;
   private contactoUtpId: number | null = null;
 
@@ -653,6 +658,8 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
 
   closeContacts() {
     this.contactsForCentro = null;
+    this.showContactErrors = false;
+    this.resetContactErrors();
     this.syncModalBodyClass();
   }
 
@@ -767,6 +774,32 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
     if (this.esSoloLectura) return;
     if (!this.contactsForCentro) return;
     const centroId = this.contactsForCentro.id;
+    this.showContactErrors = true;
+    this.resetContactErrors();
+
+    const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+    const validateContact = (
+      contacto: 'director' | 'utp',
+      data: { nombre?: string; rut?: string; telefono?: string; correo?: string }
+    ) => {
+      const nombre = (data.nombre || '').trim();
+      const rut = (data.rut || '').trim();
+      const telefono = (data.telefono || '').toString().trim();
+      const correo = (data.correo || '').trim();
+      const hasAny = !!(nombre || rut || telefono || correo);
+      if (!hasAny) return true;
+
+      const errs = this.contactErrors[contacto];
+      if (!nombre) errs.nombre = 'Nombre es obligatorio';
+      if (!rut) errs.rut = 'RUT es obligatorio';
+      if (telefono && !/^\d{6,13}$/.test(telefono)) {
+        errs.telefono = 'Teléfono debe tener entre 6 y 13 dígitos';
+      }
+      if (correo && !isValidEmail(correo)) {
+        errs.correo = 'Correo no tiene formato válido';
+      }
+      return !(errs.nombre || errs.rut || errs.telefono || errs.correo);
+    };
 
     const toNum = (v?: string | number | null) => {
       const s = (v ?? '').toString().trim();
@@ -774,6 +807,26 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
     };
 
     const ops: Promise<any>[] = [];
+    const directorOk = validateContact('director', {
+      nombre: this.contactosForm.directorNombre,
+      rut: this.contactosForm.directorRut,
+      telefono: this.contactosForm.directorTelefono,
+      correo: this.contactosForm.directorCorreo,
+    });
+    const utpOk = validateContact('utp', {
+      nombre: this.contactosForm.utpNombre,
+      rut: this.contactosForm.utpRut,
+      telefono: this.contactosForm.utpTelefono,
+      correo: this.contactosForm.utpCorreo,
+    });
+    if (!directorOk || !utpOk) {
+      this.snack.open(
+        'Revisa los campos marcados en rojo antes de guardar',
+        'Cerrar',
+        { duration: 3500 }
+      );
+      return;
+    }
 
     // DIRECTOR
     if ((this.contactosForm.directorNombre || '').trim() !== '') {
@@ -826,11 +879,26 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
         this.closeContacts();
         this.load();
       })
-      .catch(() => {
-        this.snack.open('✗ Error al guardar contactos', 'Cerrar', {
-          duration: 3500,
+      .catch((err) => {
+        let mensajeError = 'Error al guardar contactos';
+        if (Array.isArray(err?.error?.message)) {
+          mensajeError = err.error.message.join(', ');
+        } else if (err?.error?.message) {
+          mensajeError = err.error.message;
+        } else if (err?.message) {
+          mensajeError = err.message;
+        }
+        this.snack.open(`✗ Error al guardar contactos: ${mensajeError}`, 'Cerrar', {
+          duration: 4500,
         });
       });
+  }
+
+  private resetContactErrors() {
+    this.contactErrors = {
+      director: { nombre: '', rut: '', telefono: '', correo: '' },
+      utp: { nombre: '', rut: '', telefono: '', correo: '' },
+    };
   }
 
   // ===== orden, filtros y paginador =====
