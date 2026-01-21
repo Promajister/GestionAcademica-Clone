@@ -155,7 +155,7 @@ export class ColaboradoresComponent implements OnInit {
     return null;
   }
 
-  // Validador personalizado para teléfono (debe ser numérico y máximo 8 dígitos)
+  // Validador personalizado para telefono (debe ser numerico y entre 6 y 13 digitos)
   validarTelefono(control: AbstractControl): ValidationErrors | null {
     const telefono = control.value;
     if (!telefono) return null;
@@ -167,9 +167,9 @@ export class ColaboradoresComponent implements OnInit {
       return { telefonoInvalido: true, mensaje: 'El teléfono debe contener solo números' };
     }
 
-    // Verificar máximo 8 dígitos
-    if (telefonoStr.length > 8) {
-      return { telefonoInvalido: true, mensaje: 'El teléfono debe tener máximo 8 dígitos' };
+    // Verificar rango 6-13 digitos
+    if (telefonoStr.length < 6 || telefonoStr.length > 13) {
+      return { telefonoInvalido: true, mensaje: 'El telefono debe tener entre 6 y 13 digitos' };
     }
 
     // Verificar que sea un número positivo

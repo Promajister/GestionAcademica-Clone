@@ -1,4 +1,4 @@
-import { IsArray, IsEmail, IsNumber, IsOptional, IsString, Length } from 'class-validator';
+import { IsArray, IsEmail, IsNumber, IsOptional, IsString, Length, Max, Min } from 'class-validator';
 import { IsRut } from 'src/validador/rut.validador';
 
 
@@ -19,6 +19,8 @@ export class CreateTutorDto {
   direccion?: string;
 
   @IsOptional() @IsNumber()
+  @Min(100000, { message: 'El telefono debe tener entre 6 y 13 digitos' })
+  @Max(9999999999999, { message: 'El telefono debe tener entre 6 y 13 digitos' })
   telefono?: number;
 
   @IsOptional() @IsString()
