@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreatePracticaDto, EstadoPractica } from './dto/crear-practica.dto';
+import { UpdatePracticaDto } from './dto/actualizar-practica.dto';
 import { Prisma } from '@prisma/client';
 import { Subject } from 'rxjs';
 import { ConsultasJefaturaDto } from './dto/consultar-jefatura.dto';
@@ -150,6 +151,113 @@ export class PracticasService {
   }
 
   // Listado para “Gestión de prácticas” 
+  async update(id: number, dto: UpdatePracticaDto) {
+    const existente = await this.prisma.practica.findUnique({
+      where: { id },
+      select: { id: true, estado: true, estudianteRut: true },
+    });
+    if (!existente) {
+      throw new NotFoundException('PrÇ­ctica no encontrada');
+    }
+
+    const start = new Date(dto.fecha_inicio);
+    const end = dto.fecha_termino ? new Date(dto.fecha_termino) : null;
+
+    if (isNaN(start.getTime()) || (end && isNaN(end.getTime()))) {
+      throw new BadRequestException('Debe completar todos los campos requeridos.');
+    }
+    if (end && end < start) {
+      throw new BadRequestException('Debe completar todos los campos requeridos.');
+    }
+
+    const colaboradorIds = Array.from(new Set(dto.colaboradorIds ?? []));
+    const tutorIds = Array.from(new Set(dto.tutorIds ?? []));
+    const rolesInput = Array.isArray(dto.tutorRoles) ? dto.tutorRoles : [];
+
+    if (colaboradorIds.length === 0 || tutorIds.length === 0) {
+      throw new BadRequestException('Debe indicar al menos un colaborador y un tutor.');
+    }
+    if (rolesInput.length !== tutorIds.length) {
+      throw new BadRequestException('La cantidad de tutorRoles debe coincidir con tutorIds.');
+    }
+
+    const [estudiante, centro, colaboradores, tutores] = await Promise.all([
+      this.prisma.estudiante.findUnique({ where: { rut: dto.estudianteRut } }),
+      this.prisma.centroEducativo.findUnique({ where: { id: dto.centroId } }),
+      this.prisma.colaborador.findMany({ where: { id: { in: colaboradorIds } } }),
+      this.prisma.tutor.findMany({ where: { id: { in: tutorIds } } }),
+    ]);
+    if (!estudiante || !centro) {
+      throw new BadRequestException('Debe completar todos los campos requeridos.');
+    }
+    if (colaboradores.length !== colaboradorIds.length) {
+      throw new BadRequestException('Uno o mÇ­s colaboradores no existen.');
+    }
+    if (tutores.length !== tutorIds.length) {
+      throw new BadRequestException('Uno o mÇ­s tutores no existen.');
+    }
+
+    if (existente.estado === EstadoPractica.EN_CURSO) {
+      const posiblesActivas = await this.prisma.practica.findMany({
+        where: {
+          id: { not: id },
+          estudianteRut: dto.estudianteRut,
+          estado: { in: [EstadoPractica.EN_CURSO] as any },
+        },
+        select: { id: true, fecha_inicio: true, fecha_termino: true },
+      });
+
+      if (posiblesActivas.length > 0) {
+        throw new BadRequestException('No se puede asignar mÇ­s de una prÇ­ctica activa simultÇ­neamente para este estudiante.');
+      }
+
+      for (const p of posiblesActivas) {
+        if (PracticasService.overlap(new Date(p.fecha_inicio), p.fecha_termino, start, end)) {
+          throw new BadRequestException('No se puede asignar mÇ­s de una prÇ­ctica activa simultÇ­neamente para este estudiante.');
+        }
+      }
+    }
+
+    const updated = await this.prisma.practica.update({
+      where: { id },
+      data: {
+        estudianteRut: dto.estudianteRut,
+        centroId: dto.centroId,
+        fecha_inicio: start,
+        fecha_termino: end,
+        tipo: dto.tipo ?? null,
+        anio: dto.anio,
+        semestre: dto.semestre,
+        practicaColaboradores: {
+          deleteMany: {},
+          create: colaboradorIds.map((colaboradorId) => ({
+            colaborador: { connect: { id: colaboradorId } },
+          })),
+        },
+        practicaTutores: {
+          deleteMany: {},
+          create: tutorIds.map((tutorId, idx) => ({
+            tutor: { connect: { id: tutorId } },
+            rol: ((rolesInput[idx] ?? 'Supervisor') as any),
+          })),
+        },
+      },
+      include: {
+        estudiante: true,
+        centro: true,
+        practicaColaboradores: { include: { colaborador: true } },
+        practicaTutores: { include: { tutor: true } },
+      },
+    });
+
+    this.notifyChange('updated', updated);
+
+    return {
+      message: 'PrÇ­ctica actualizada exitosamente.',
+      data: updated,
+    };
+  }
+
   async list(params: { estado?: EstadoPractica; estudianteRut?: string }) {
     return this.prisma.practica.findMany({
       where: {

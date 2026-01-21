@@ -75,6 +75,19 @@ export interface CreatePracticaDto {
   tutorRole?: TutorRol;
 }
 
+export interface UpdatePracticaDto {
+  estudianteRut: string;
+  centroId: number;
+  colaboradorIds: number[];
+  tutorIds: number[];
+  tutorRoles: TutorRol[];
+  fecha_inicio: string;
+  fecha_termino?: string;
+  tipo?: string;
+  anio: number;
+  semestre: number;
+}
+
 export interface QueryPracticasParams {
   estado?: EstadoPractica;
   estudianteRut?: string;
@@ -113,6 +126,10 @@ export class PracticasService {
 
   crear(practica: CreatePracticaDto): Observable<{ message: string; data: Practica }> {
     return this.http.post<{ message: string; data: Practica }>(API_URL, practica);
+  }
+
+  actualizar(id: number, practica: UpdatePracticaDto): Observable<{ message: string; data: Practica }> {
+    return this.http.patch<{ message: string; data: Practica }>(`${API_URL}/${id}`, practica);
   }
 
   obtenerPorId(id: number): Observable<Practica> {

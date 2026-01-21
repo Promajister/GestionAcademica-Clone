@@ -87,8 +87,10 @@
           </div>
 
           <div>
-            <div class="form-title">Asignar Nueva Práctica</div>
-            <div class="form-subtitle">Completa los datos para asignar una práctica a un estudiante</div>
+            <div class="form-title">{{ practicaEditando ? 'Editar Práctica' : 'Asignar Nueva Práctica' }}</div>
+            <div class="form-subtitle">
+              {{ practicaEditando ? 'Actualiza los datos de la asignación.' : 'Completa los datos para asignar una práctica a un estudiante' }}
+            </div>
           </div>
         </div>
 
@@ -272,7 +274,7 @@
             </mat-form-field>
           </div>
 
-          <!-- Tipo + Estado -->
+          <!-- Tipo -->
           <div class="row-2">
             <mat-form-field appearance="outline">
               <mat-label>Tipo de Práctica</mat-label>
@@ -283,17 +285,6 @@
                 }
               </mat-select>
             </mat-form-field>
-
-            <mat-form-field appearance="outline">
-              <mat-label>Estado</mat-label>
-              <mat-select formControlName="estado">
-                @for (estado of estadosPractica; track estado) {
-                  <mat-option [value]="estado">
-                    {{ formatearEstado(estado) }}
-                  </mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
           </div>
 
           <!-- Acciones -->
@@ -301,7 +292,7 @@
             <button mat-stroked-button (click)="cerrarFormulario()">Cancelar</button>
             <button mat-flat-button color="primary" (click)="guardarPractica()">
               <mat-icon>person_add</mat-icon>
-              Asignar Práctica
+              {{ practicaEditando ? 'Guardar cambios' : 'Asignar Práctica' }}
             </button>
           </div>
         </form>
@@ -383,6 +374,12 @@
         <span class="status-pill" [ngClass]="assignment.estado.toLowerCase()">
           {{ formatearEstado(assignment.estado) }}
         </span>
+
+        @if (esCoordinadoraPracticas) {
+          <button mat-stroked-button class="btn-details" (click)="abrirEdicion(assignment)">
+            Editar
+          </button>
+        }
 
         <button mat-stroked-button class="btn-details" (click)="verDetalles(assignment)">
           Ver detalles
