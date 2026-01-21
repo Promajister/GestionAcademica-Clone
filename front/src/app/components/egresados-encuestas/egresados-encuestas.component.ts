@@ -1,5 +1,5 @@
-import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, OnDestroy, Renderer2, inject } from '@angular/core';
+import { CommonModule, DOCUMENT } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -51,10 +51,12 @@ interface AcreditacionSection {
   templateUrl: './egresados-encuestas.component.html',
   styleUrls: ['./egresados-encuestas.component.scss'],
 })
-export class EgresadosEncuestasComponent implements OnInit {
+export class EgresadosEncuestasComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   private api = inject(EncuestasEgresadosService);
   private snack = inject(MatSnackBar);
+  private renderer = inject(Renderer2);
+  private doc = inject(DOCUMENT);
 
   registroVisible = false;
   selectedSurvey: SurveyCard | null = null;
@@ -239,10 +241,15 @@ export class EgresadosEncuestasComponent implements OnInit {
     this.loadEncuestas();
   }
 
+  ngOnDestroy(): void {
+    this.renderer.removeClass(this.doc.body, 'student-modal-open');
+  }
+
   openRegistro(survey: SurveyCard): void {
     this.selectedEncuesta = null;
     this.selectedSurvey = survey;
     this.registroVisible = true;
+    this.syncModalBodyClass();
     if (survey.id === 'EMPLEABILIDAD') {
       this.form.reset({}, { emitEvent: false });
       this.applyInitialControlState();
@@ -255,14 +262,17 @@ export class EgresadosEncuestasComponent implements OnInit {
   cerrarRegistro(): void {
     this.registroVisible = false;
     this.selectedSurvey = null;
+    this.syncModalBodyClass();
   }
 
   verDetalles(encuesta: any): void {
     this.selectedEncuesta = encuesta;
+    this.syncModalBodyClass();
   }
 
   cerrarDetalles(): void {
     this.selectedEncuesta = null;
+    this.syncModalBodyClass();
   }
 
   submit(): void {
@@ -316,6 +326,15 @@ export class EgresadosEncuestasComponent implements OnInit {
   private computeSemestre(d = new Date()): 1 | 2 {
     const month = d.getMonth();
     return month <= 5 ? 1 : 2;
+  }
+
+  private syncModalBodyClass(): void {
+    const isOpen = !!(this.registroVisible || this.selectedEncuesta);
+    if (isOpen) {
+      this.renderer.addClass(this.doc.body, 'student-modal-open');
+      return;
+    }
+    this.renderer.removeClass(this.doc.body, 'student-modal-open');
   }
 
   private loadEncuestas(): void {
