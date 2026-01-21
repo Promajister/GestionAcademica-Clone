@@ -85,6 +85,11 @@ export class ActividadPracticaController {
     return this.service.findAll(q);
   }
 
+  @Get('terceros/:rut')
+  findTerceroByRut(@Param('rut') rut: string) {
+    return this.service.findTerceroByRut(rut);
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.service.findOne(id);

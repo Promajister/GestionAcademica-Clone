@@ -148,13 +148,6 @@
                     }
                     </mat-form-field>
 
-                    <div class="TicketField">
-                      <label class="FormLabel">Terceros</label>
-                      <mat-checkbox formControlName="terceros_asistieron">Asistieron terceros</mat-checkbox>
-                      @if (formularioActividad.get('terceros_asistieron')?.value) {
-                        <span class="TicketBadge">TERCEROS</span>
-                      }
-                    </div>
                   </div>
 
                   <div class="StudentsPanel">
@@ -200,6 +193,62 @@
                       <div class="StudentsError">Selecciona al menos un estudiante</div>
                     }
                   </div>
+
+                  <div class="TercerosToggle">
+                    <label class="FormLabel">Terceros</label>
+                    <mat-checkbox formControlName="terceros_asistieron">Asistieron terceros</mat-checkbox>
+                    @if (formularioActividad.get('terceros_asistieron')?.value) {
+                      <span class="TicketBadge">TERCEROS</span>
+                    }
+                  </div>
+
+                  @if (formularioActividad.get('terceros_asistieron')?.value) {
+                    <div class="StudentsPanel">
+                      <div class="FormRow FormRow--terceros">
+                        <mat-form-field appearance="outline" class="FormField">
+                          <mat-label>RUT tercero</mat-label>
+                          <input
+                            matInput
+                            formControlName="tercero_rut"
+                            placeholder="Ej: 12.345.678-9"
+                            (blur)="buscarTerceroPorRut()" />
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline" class="FormField">
+                          <mat-label>Nombre tercero</mat-label>
+                          <input matInput formControlName="tercero_nombre" placeholder="Nombre completo" />
+                        </mat-form-field>
+
+                        <button
+                          mat-stroked-button
+                          type="button"
+                          class="AddTerceroBtn"
+                          (click)="agregarTercero()">
+                          <mat-icon>add</mat-icon>
+                          Agregar
+                        </button>
+                      </div>
+
+                      <div class="StudentsSelected">
+                        @if (tercerosSeleccionados.length === 0) {
+                          <div class="StudentsHint">Sin terceros agregados</div>
+                        } @else {
+                          @for (tercero of tercerosSeleccionados; track tercero.rut) {
+                            <span class="StudentChip">
+                              <span class="StudentChipText">{{ tercero.nombre }} ({{ tercero.rut }})</span>
+                              <button
+                                type="button"
+                                class="StudentChipRemove"
+                                (click)="quitarTercero(tercero.rut)"
+                                aria-label="Quitar tercero">
+                                <mat-icon>close</mat-icon>
+                              </button>
+                            </span>
+                          }
+                        }
+                      </div>
+                    </div>
+                  }
 
                 </div>
 
@@ -517,6 +566,15 @@
                 <div class="K">Terceros</div>
                 <div class="V">{{ actividadSeleccionada.terceros_asistieron ? 'Si' : 'No' }}</div>
               </div>
+
+              @if (actividadSeleccionada.terceros_asistieron && actividadSeleccionada.terceros?.length) {
+                <div class="KV KV--full">
+                  <div class="K">Listado de terceros</div>
+                  <div class="V">
+                    {{ getTercerosLabel(actividadSeleccionada) }}
+                  </div>
+                </div>
+              }
             </div>
           </div>
 

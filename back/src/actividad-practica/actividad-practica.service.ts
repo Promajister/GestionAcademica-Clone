@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'prisma/prisma.service';
 import { CreateActividadPracticaDto } from './dto/crear-act-practica.dto';
 import { UpdateActividadPracticaDto } from './dto/actualizar-act-practica.dto';
@@ -7,6 +7,22 @@ import { QueryActividadPracticaDto } from './dto/consulta-act-practica.dto';
 @Injectable()
 export class ActividadPracticaService {
   constructor(private prisma: PrismaService) {}
+
+  private parseTerceros(raw?: string): { rut: string; nombre: string }[] {
+    if (!raw) return [];
+    try {
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+      return parsed
+        .map((item) => ({
+          rut: typeof item?.rut === 'string' ? item.rut.trim() : '',
+          nombre: typeof item?.nombre === 'string' ? item.nombre.trim() : '',
+        }))
+        .filter((item) => item.rut && item.nombre);
+    } catch {
+      return [];
+    }
+  }
 
   private obtenerMesDesdeFecha(fecha: Date): string {
     const meses = [
@@ -19,6 +35,10 @@ export class ActividadPracticaService {
   async create(dto: CreateActividadPracticaDto) {
     const fecha = dto.fechaRegistro ? new Date(dto.fechaRegistro) : new Date();
     const mes = this.obtenerMesDesdeFecha(fecha); 
+    const terceros = dto.tercerosAsistieron ? this.parseTerceros(dto.terceros) : [];
+    if (dto.tercerosAsistieron && terceros.length === 0) {
+      throw new BadRequestException('Debe indicar los terceros asistentes.');
+    }
 
     const actividad = await this.prisma.actividad.create({
       data: {
@@ -30,6 +50,21 @@ export class ActividadPracticaService {
         fecha,
         mes, 
         archivo_adjunto: dto.evidenciaUrl ?? null,
+        terceros: terceros.length
+          ? {
+              create: terceros.map((tercero) => ({
+                tercero: {
+                  connectOrCreate: {
+                    where: { rut: tercero.rut },
+                    create: { rut: tercero.rut, nombre: tercero.nombre },
+                  },
+                },
+              })),
+            }
+          : undefined,
+      },
+      include: {
+        terceros: { include: { tercero: true } },
       },
     });
 
@@ -59,6 +94,7 @@ export class ActividadPracticaService {
         orderBy: { fecha: 'desc' },
         skip: (page - 1) * limit,
         take: limit,
+        include: { terceros: { include: { tercero: true } } },
       }),
       this.prisma.actividad.count({ where }),
     ]);
@@ -75,6 +111,7 @@ export class ActividadPracticaService {
   async findOne(id: number) {
     const actividad = await this.prisma.actividad.findUnique({
       where: { id },
+      include: { terceros: { include: { tercero: true } } },
     });
     if (!actividad) throw new NotFoundException('Actividad no encontrada');
     return actividad;
@@ -82,6 +119,7 @@ export class ActividadPracticaService {
 
   async update(id: number, dto: UpdateActividadPracticaDto) {
     const data: any = {};
+    const terceros = dto.terceros !== undefined ? this.parseTerceros(dto.terceros) : null;
 
     if (dto.titulo !== undefined) data.nombre_actividad = dto.titulo;
     if (dto.descripcion !== undefined) data.lugar = dto.descripcion;
@@ -96,14 +134,40 @@ export class ActividadPracticaService {
       data.mes = this.obtenerMesDesdeFecha(fecha);
     }
 
+    if (dto.tercerosAsistieron === true && terceros !== null && terceros.length === 0) {
+      throw new BadRequestException('Debe indicar los terceros asistentes.');
+    }
+
+    if (dto.tercerosAsistieron === false) {
+      data.terceros = { deleteMany: {} };
+    } else if (terceros !== null) {
+      data.terceros = {
+        deleteMany: {},
+        create: terceros.map((tercero) => ({
+          tercero: {
+            connectOrCreate: {
+              where: { rut: tercero.rut },
+              create: { rut: tercero.rut, nombre: tercero.nombre },
+            },
+          },
+        })),
+      };
+    }
+
     try {
       return await this.prisma.actividad.update({
         where: { id },
         data,
+        include: { terceros: { include: { tercero: true } } },
       });
     } catch {
       throw new NotFoundException('Actividad no encontrada');
     }
+  }
+
+  async findTerceroByRut(rut: string) {
+    const tercero = await this.prisma.tercero.findUnique({ where: { rut } });
+    return tercero ?? null;
   }
 
   async remove(id: number) {

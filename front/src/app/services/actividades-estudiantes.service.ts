@@ -13,6 +13,7 @@ export interface Actividad {
   nombre_actividad: string;
   estudiantes?: string;
   terceros_asistieron?: boolean;
+  terceros?: { rut: string; nombre: string }[];
   fecha: Date | string;
   horario?: string;
   lugar?: string;
@@ -113,6 +114,9 @@ export class ActividadesEstudiantesService {
     formData.append('tallerista', actividad.horario || '');
     formData.append('estudiante', actividad.estudiantes || '');
     formData.append('tercerosAsistieron', (actividad.terceros_asistieron ?? false).toString());
+    if (actividad.terceros) {
+      formData.append('terceros', JSON.stringify(actividad.terceros));
+    }
     formData.append('fechaRegistro', fechaRegistro);
     
     // Si hay una URL de evidencia (base64 convertido a URL o URL directa)
@@ -157,6 +161,9 @@ export class ActividadesEstudiantesService {
     if (actividad.terceros_asistieron !== undefined) {
       formData.append('tercerosAsistieron', actividad.terceros_asistieron.toString());
     }
+    if (actividad.terceros !== undefined) {
+      formData.append('terceros', JSON.stringify(actividad.terceros));
+    }
     
     if (actividad.fecha) {
       const fecha = typeof actividad.fecha === 'string' 
@@ -179,6 +186,10 @@ export class ActividadesEstudiantesService {
     }
 
     return this.http.patch<Actividad>(`${API_URL}/${id}`, formData);
+  }
+
+  obtenerTerceroPorRut(rut: string): Observable<{ rut: string; nombre: string } | null> {
+    return this.http.get<{ rut: string; nombre: string } | null>(`${API_URL}/terceros/${rut}`);
   }
 
   /**

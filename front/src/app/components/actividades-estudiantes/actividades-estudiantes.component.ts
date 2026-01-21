@@ -22,6 +22,11 @@ import { ActividadesEstudiantesService, Actividad } from '../../services/activid
 import { EstudiantesService, EstudianteResumen } from '../../services/estudiantes.service';
 import JSZip from 'jszip';
 
+interface Tercero {
+  rut: string;
+  nombre: string;
+}
+
 // DateAdapter personalizado para formato DD/MM/YYYY
 @Injectable()
 export class CustomDateAdapter extends NativeDateAdapter {
@@ -113,6 +118,7 @@ export class ActividadesEstudiantesComponent implements OnInit {
   estudiantesDisponibles: EstudianteResumen[] = [];
   estudiantesFiltro: string = '';
   readonly estudiantesLimit: number = 5;
+  tercerosSeleccionados: Tercero[] = [];
   
   // Lista de meses disponibles
   readonly meses = [
@@ -176,6 +182,8 @@ export class ActividadesEstudiantesComponent implements OnInit {
     lugar: [''],
     estudiantes: [[], [Validators.required]],
     terceros_asistieron: [false],
+    tercero_rut: [''],
+    tercero_nombre: [''],
     archivo_adjunto: ['']
   });
   
@@ -184,6 +192,12 @@ export class ActividadesEstudiantesComponent implements OnInit {
   ngOnInit(): void {
     this.cargarActividades();
     this.cargarEstudiantes();
+    this.formularioActividad.get('terceros_asistieron')?.valueChanges.subscribe((value) => {
+      if (!value) {
+        this.tercerosSeleccionados = [];
+        this.formularioActividad.patchValue({ tercero_rut: '', tercero_nombre: '' });
+      }
+    });
   }
 
   cargarEstudiantes(): void {
@@ -242,7 +256,7 @@ export class ActividadesEstudiantesComponent implements OnInit {
     
     this.actividadesService.listar(params).subscribe({
       next: (response) => {
-        this.actividades = response.items || [];
+        this.actividades = (response.items || []).map((item) => this.normalizarActividad(item));
         this.cargando = false;
         this.actualizarPaginacion();
       },
@@ -252,6 +266,23 @@ export class ActividadesEstudiantesComponent implements OnInit {
         this.cargando = false;
       }
     });
+  }
+
+  private normalizarActividad(raw: any): Actividad {
+    const terceros = Array.isArray(raw?.terceros)
+      ? raw.terceros
+          .map((item: any) => item?.tercero ?? item)
+          .map((item: any) => ({
+            rut: typeof item?.rut === 'string' ? item.rut : '',
+            nombre: typeof item?.nombre === 'string' ? item.nombre : '',
+          }))
+          .filter((item: Tercero) => item.rut && item.nombre)
+      : [];
+
+    return {
+      ...raw,
+      terceros,
+    };
   }
 
   // ===== filtros - aplicados localmente =====
@@ -380,6 +411,12 @@ export class ActividadesEstudiantesComponent implements OnInit {
     return this.formatTime(actividad.fecha);
   }
 
+  getTercerosLabel(actividad?: Actividad | null): string {
+    const terceros = actividad?.terceros ?? [];
+    if (!terceros.length) return '';
+    return terceros.map((t) => `${t.nombre} (${t.rut})`).join(', ');
+  }
+
   alternarFormulario(): void {
     // Si es jefatura, no permitir abrir el formulario
     if (this.esJefatura) return;
@@ -407,6 +444,50 @@ export class ActividadesEstudiantesComponent implements OnInit {
     }
   }
 
+  buscarTerceroPorRut(): void {
+    const rut = (this.formularioActividad.get('tercero_rut')?.value || '').trim();
+    if (!rut) return;
+
+    this.actividadesService.obtenerTerceroPorRut(rut).subscribe({
+      next: (tercero) => {
+        if (tercero?.nombre) {
+          this.formularioActividad.patchValue({ tercero_nombre: tercero.nombre });
+        }
+      },
+      error: () => {
+        // Si no existe, no bloquear el flujo
+      },
+    });
+  }
+
+  agregarTercero(): void {
+    const rut = (this.formularioActividad.get('tercero_rut')?.value || '').trim();
+    const nombre = (this.formularioActividad.get('tercero_nombre')?.value || '').trim();
+
+    if (!rut || !nombre) {
+      this.snack.open('Debes ingresar RUT y nombre del tercero.', 'Cerrar', {
+        duration: 3000,
+        horizontalPosition: 'center',
+        verticalPosition: 'bottom',
+        panelClass: ['warning-snackbar'],
+      });
+      return;
+    }
+
+    const index = this.tercerosSeleccionados.findIndex((t) => t.rut === rut);
+    if (index >= 0) {
+      this.tercerosSeleccionados[index] = { rut, nombre };
+    } else {
+      this.tercerosSeleccionados = [...this.tercerosSeleccionados, { rut, nombre }];
+    }
+
+    this.formularioActividad.patchValue({ tercero_rut: '', tercero_nombre: '' });
+  }
+
+  quitarTercero(rut: string): void {
+    this.tercerosSeleccionados = this.tercerosSeleccionados.filter((t) => t.rut !== rut);
+  }
+
   private resetFormularioActividad(): void {
     this.formularioActividad.reset({
       nombre_actividad: '',
@@ -415,8 +496,11 @@ export class ActividadesEstudiantesComponent implements OnInit {
       lugar: '',
       estudiantes: [],
       terceros_asistieron: false,
+      tercero_rut: '',
+      tercero_nombre: '',
       archivo_adjunto: ''
     });
+    this.tercerosSeleccionados = [];
   }
 
   getEstudianteEtiqueta(estudiante: EstudianteResumen): string {
@@ -584,7 +668,18 @@ export class ActividadesEstudiantesComponent implements OnInit {
       lugar: formValue.lugar || undefined,
       estudiantes: this.serializarEstudiantes(formValue.estudiantes),
       terceros_asistieron: formValue.terceros_asistieron === true,
+      terceros: formValue.terceros_asistieron ? this.tercerosSeleccionados : [],
     };
+
+    if (actividadData.terceros_asistieron && (!actividadData.terceros || actividadData.terceros.length === 0)) {
+      this.snack.open('Debes agregar al menos un tercero.', 'Cerrar', {
+        duration: 3000,
+        horizontalPosition: 'center',
+        verticalPosition: 'bottom',
+        panelClass: ['warning-snackbar'],
+      });
+      return;
+    }
 
     // Determinar qué archivo enviar (el ZIP comprimido)
     let archivoParaEnviar: File | undefined = undefined;
@@ -613,12 +708,13 @@ export class ActividadesEstudiantesComponent implements OnInit {
         undefined // No enviar archivo nuevo al editar
       ).subscribe({
         next: (actividadActualizada) => {
-          const index = this.actividades.findIndex(a => a.id === actividadActualizada.id);
+          const actualizada = this.normalizarActividad(actividadActualizada);
+          const index = this.actividades.findIndex(a => a.id === actualizada.id);
           if (index !== -1) {
-            this.actividades[index] = actividadActualizada;
+            this.actividades[index] = actualizada;
           }
           this.snack.open(
-            `✓ ${actividadActualizada.nombre_actividad} actualizada correctamente`,
+            `✓ ${actualizada.nombre_actividad} actualizada correctamente`,
             'Cerrar',
             {
               duration: 4000,
@@ -648,9 +744,10 @@ export class ActividadesEstudiantesComponent implements OnInit {
       this.cargando = true;
       this.actividadesService.crear(actividadData, archivoParaEnviar).subscribe({
         next: (nuevaActividad) => {
-          this.actividades.push(nuevaActividad);
+          const creada = this.normalizarActividad(nuevaActividad);
+          this.actividades.push(creada);
           this.snack.open(
-            `✓ ${nuevaActividad.nombre_actividad} agregada correctamente`,
+            `✓ ${creada.nombre_actividad} agregada correctamente`,
             'Cerrar',
             {
               duration: 4000,
@@ -682,7 +779,7 @@ export class ActividadesEstudiantesComponent implements OnInit {
     // Cargar detalles completos desde el backend
     this.actividadesService.obtenerPorId(actividad.id).subscribe({
       next: (actividadCompleta) => {
-        this.actividadSeleccionada = actividadCompleta;
+        this.actividadSeleccionada = this.normalizarActividad(actividadCompleta);
       },
       error: (err) => {
         console.error('Error al cargar detalles de actividad:', err);
@@ -734,8 +831,12 @@ export class ActividadesEstudiantesComponent implements OnInit {
       lugar: actividad.lugar || '',
       estudiantes: this.parsearEstudiantes(actividad.estudiantes),
       terceros_asistieron: actividad.terceros_asistieron === true,
+      tercero_rut: '',
+      tercero_nombre: '',
       archivo_adjunto: actividad.archivo_adjunto || ''
     });
+
+    this.tercerosSeleccionados = actividad.terceros ? [...actividad.terceros] : [];
     
     this.mostrarFormulario = true;
   }
