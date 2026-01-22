@@ -357,7 +357,8 @@ export class EncuestasEgresadosService {
 
     if (payload.tipo === 'EMPLEABILIDAD') {
       const stats = payload?.stats ?? {};
-      const anio = payload?.anioEgreso ?? 'ALL';
+      const rawAnio = payload?.anioEgreso;
+      const anio = rawAnio && rawAnio !== 'ALL' ? rawAnio : 'Todos';
       return [
         'Eres un analista de datos educativos. Redacta una conclusion relevante (10 a 15 oraciones) en espanol formal.',
         'No enumeres todos los graficos ni repitas datos crudos. Prioriza hallazgos, riesgos y oportunidades.',
