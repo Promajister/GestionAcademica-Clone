@@ -87,6 +87,12 @@ export class EgresadosAnalisisComponent implements OnInit {
   private api = inject(EncuestasEgresadosService);
 
   isLoading = false;
+  generatingEmpleabilidad = false;
+  generatingAcreditacion = false;
+  showEmpleabilidadConclusion = false;
+  showAcreditacionConclusion = false;
+  conclusionEmpleabilidadText = '';
+  conclusionAcreditacionText = '';
   encuestas: EgresadoEncuestaRow[] = [];
   aniosEgreso: number[] = [];
   anioEgresoFiltro: number | 'ALL' = 'ALL';
@@ -160,6 +166,8 @@ export class EgresadosAnalisisComponent implements OnInit {
 
     this.empleabilidad = this.buildEmpleabilidadStats(empleabilidadFiltrada);
     this.acreditacion = this.buildAcreditacionStats(acreditacion);
+
+    this.cargarConclusionesGuardadas();
   }
 
   onAnioEgresoChange(value: number | 'ALL'): void {
@@ -916,6 +924,206 @@ export class EgresadosAnalisisComponent implements OnInit {
     }
 
     return { total, segments };
+  }
+
+  private getTopSegment(stat: PieStat): PieSegment | null {
+    if (!stat.segments.length) return null;
+    return stat.segments.reduce((best, current) => {
+      if (!best) return current;
+      if (current.pct > best.pct) return current;
+      if (current.pct === best.pct && current.count > best.count) return current;
+      return best;
+    }, null as PieSegment | null);
+  }
+
+  private getSecondSegment(stat: PieStat): PieSegment | null {
+    if (stat.segments.length < 2) return null;
+    const sorted = [...stat.segments].sort((a, b) => {
+      if (b.pct !== a.pct) return b.pct - a.pct;
+      return b.count - a.count;
+    });
+    return sorted[1] ?? null;
+  }
+
+  private buildConclusionEmpleabilidad(): string {
+    if (!this.empleabilidad.total) {
+      return 'No hay encuestas de empleabilidad disponibles para generar una conclusion.';
+    }
+
+    const total = this.empleabilidad.total;
+    const estado = this.getTopSegment(this.empleabilidad.estadoLaboral);
+    const estadoAlt = this.getSecondSegment(this.empleabilidad.estadoLaboral);
+    const tiempo = this.getTopSegment(this.empleabilidad.tiempoEmpleo);
+    const sector = this.getTopSegment(this.empleabilidad.sector);
+    const cargo = this.getTopSegment(this.empleabilidad.cargo);
+    const renta = this.getTopSegment(this.empleabilidad.renta);
+    const pertinencia = this.getTopSegment(this.empleabilidad.pertinencia);
+    const postgrado = this.getTopSegment(this.empleabilidad.postgrado);
+    const capacitacion = this.getTopSegment(this.empleabilidad.capacitacion);
+
+    const partes: string[] = [];
+    if (estado) {
+      const lead = estado.pct >= 60 ? 'una insercion laboral consolidada' : 'un escenario laboral heterogeneo';
+      const gap = estadoAlt ? Math.max(0, estado.pct - estadoAlt.pct) : 0;
+      const gapTxt = estadoAlt && gap >= 15 ? `, con una brecha relevante de ${gap} pts` : '';
+      partes.push(
+        `El panorama general muestra ${lead}${gapTxt}, lo que sugiere ${estado.label === 'Con empleo'
+          ? 'buen nivel de empleabilidad para la cohorte analizada'
+          : 'la necesidad de fortalecer la vinculacion con el medio'}.`,
+      );
+    }
+    if (tiempo) {
+      const rapidez = tiempo.label.includes('Menos de 2') || tiempo.label.includes('Menos de 6')
+        ? 'accesible'
+        : 'lenta';
+      partes.push(
+        `La velocidad de insercion se percibe ${rapidez}, lo que indica que el acceso al primer empleo ${rapidez === 'accesible'
+          ? 'ocurre en plazos razonables para una parte importante de los egresados'
+          : 'podria requerir apoyos adicionales de empleabilidad'}.`,
+      );
+    }
+    if (sector && cargo) {
+      partes.push(
+        `La concentracion en el sector "${sector.label}" y en cargos "${cargo.label}" sugiere un perfil ocupacional dominante, util para ajustar el curriculum y las alianzas con empleadores.`,
+      );
+    }
+    if (renta) {
+      partes.push(
+        `La renta mas frecuente permite dimensionar la calidad de insercion economica y sirve como referencia para metas de mejora en empleabilidad.`,
+      );
+    }
+    if (pertinencia) {
+      const positiva = pertinencia.label.includes('De acuerdo') || pertinencia.label.includes('Muy de acuerdo');
+      partes.push(
+        `La pertinencia percibida del plan formativo es ${positiva ? 'favorable' : 'dispersa'}, lo que ${positiva
+          ? 'respalda la alineacion entre formacion y trabajo'
+          : 'abre oportunidades para reforzar competencias clave'}.`,
+      );
+    }
+    if (postgrado && capacitacion) {
+      const desarrollo = postgrado.label === 'Si' || capacitacion.label === 'Si'
+        ? 'una actitud activa de actualizacion'
+        : 'una oportunidad para impulsar rutas de especializacion';
+      partes.push(
+        `En desarrollo profesional se observa ${desarrollo}, lo que orienta acciones de continuidad de estudios.`,
+      );
+    }
+
+    return partes.join(' ');
+  }
+
+  private buildConclusionAcreditacion(): string {
+    if (!this.acreditacion.total) {
+      return 'No hay encuestas de egresados para generar una conclusion de calidad formativa.';
+    }
+
+    const total = this.acreditacion.total;
+    const promedio = this.acreditacion.promedioLikert;
+    const fortalezas = [
+      { label: 'Perfil de egreso', pct: this.acreditacion.pctPerfilEgreso },
+      { label: 'Recursos e infraestructura', pct: this.acreditacion.pctRecursos },
+      { label: 'Mejora continua', pct: this.acreditacion.pctMejora },
+      { label: 'Autoevaluacion', pct: this.acreditacion.pctAutoevaluacion },
+    ].sort((a, b) => b.pct - a.pct);
+
+    const top = fortalezas[0];
+    const bottom = fortalezas[fortalezas.length - 1];
+    const brecha = Math.max(0, top.pct - bottom.pct);
+
+    const nivel = promedio >= 80 ? 'muy alto' : promedio >= 60 ? 'adecuado' : 'debil';
+    const partes = [
+      `El nivel de satisfaccion global es ${nivel}, lo que indica que la experiencia formativa ${nivel === 'muy alto'
+        ? 'cumple ampliamente las expectativas'
+        : nivel === 'adecuado'
+          ? 'es positiva pero con espacios claros de mejora'
+          : 'requiere intervenciones prioritarias'
+      }.`,
+      `La principal fortaleza se concentra en "${top.label}", mientras que "${bottom.label}" aparece como el foco mas debil; la brecha de ${brecha} pts sugiere donde focalizar recursos.`,
+      `Los indicadores de mejora continua y autoevaluacion muestran el grado de cultura de calidad, y ayudan a priorizar acciones institucionales.`,
+      `La presencia de comentarios abiertos aporta evidencia cualitativa clave para complementar los indicadores cuantitativos.`,
+    ];
+
+    return partes.join(' ');
+  }
+
+  generarConclusionEmpleabilidad(): void {
+    if (this.generatingEmpleabilidad) return;
+    this.generatingEmpleabilidad = true;
+    this.showEmpleabilidadConclusion = true;
+    this.api.generarConclusion({
+      tipo: 'EMPLEABILIDAD',
+      anioEgreso: this.anioEgresoFiltro,
+      stats: this.empleabilidad,
+    }).subscribe({
+      next: (data) => {
+        const text = (data?.texto ?? '').trim();
+        this.conclusionEmpleabilidadText = text || this.buildConclusionEmpleabilidad();
+        this.generatingEmpleabilidad = false;
+      },
+      error: () => {
+        this.conclusionEmpleabilidadText = this.buildConclusionEmpleabilidad();
+        this.generatingEmpleabilidad = false;
+      },
+    });
+  }
+
+  generarConclusionAcreditacion(): void {
+    if (this.generatingAcreditacion) return;
+    this.generatingAcreditacion = true;
+    this.showAcreditacionConclusion = true;
+    this.api.generarConclusion({
+      tipo: 'ACREDITACION',
+      stats: this.acreditacion,
+    }).subscribe({
+      next: (data) => {
+        const text = (data?.texto ?? '').trim();
+        this.conclusionAcreditacionText = text || this.buildConclusionAcreditacion();
+        this.generatingAcreditacion = false;
+      },
+      error: () => {
+        this.conclusionAcreditacionText = this.buildConclusionAcreditacion();
+        this.generatingAcreditacion = false;
+      },
+    });
+  }
+
+  private cargarConclusionesGuardadas(): void {
+    if (!this.generatingEmpleabilidad) {
+      this.conclusionEmpleabilidadText = '';
+      this.showEmpleabilidadConclusion = false;
+    }
+    if (!this.generatingAcreditacion) {
+      this.conclusionAcreditacionText = '';
+      this.showAcreditacionConclusion = false;
+    }
+
+    this.api.obtenerConclusion('EMPLEABILIDAD', this.anioEgresoFiltro).subscribe({
+      next: (data) => {
+        const text = (data?.texto ?? '').trim();
+        if (text) {
+          this.conclusionEmpleabilidadText = text;
+          this.showEmpleabilidadConclusion = true;
+        }
+      },
+    });
+
+    this.api.obtenerConclusion('ACREDITACION').subscribe({
+      next: (data) => {
+        const text = (data?.texto ?? '').trim();
+        if (text) {
+          this.conclusionAcreditacionText = text;
+          this.showAcreditacionConclusion = true;
+        }
+      },
+    });
+  }
+
+  get conclusionEmpleabilidad(): string {
+    return this.conclusionEmpleabilidadText || this.buildConclusionEmpleabilidad();
+  }
+
+  get conclusionAcreditacion(): string {
+    return this.conclusionAcreditacionText || this.buildConclusionAcreditacion();
   }
 
   buildPieGradient(segments: PieSegment[]): string {

@@ -63,6 +63,30 @@
       </div>
     </div>
 
+    <div class="ai-summary">
+      <div class="ai-summary__head">
+        <div class="ai-summary__title">
+          <mat-icon>auto_awesome</mat-icon>
+          <span>Conclusion IA · Empleabilidad</span>
+        </div>
+        <button
+          mat-stroked-button
+          color="primary"
+          type="button"
+          (click)="generarConclusionEmpleabilidad()"
+          [disabled]="generatingEmpleabilidad || !empleabilidad.total">
+          <mat-icon>auto_awesome</mat-icon>
+          {{ generatingEmpleabilidad ? 'Generando...' : 'Generar' }}
+        </button>
+      </div>
+      <div class="ai-summary__body" *ngIf="showEmpleabilidadConclusion">
+        {{ conclusionEmpleabilidad }}
+      </div>
+      <div class="ai-summary__empty muted" *ngIf="!showEmpleabilidadConclusion">
+        Presiona "Generar" para obtener una conclusion basada en los indicadores de empleabilidad.
+      </div>
+    </div>
+
     <div class="chart-grid chart-grid--wide">
       <div class="chart-card chart-card--pie">
         <div class="chart-title">Con empleo vs sin empleo</div>
@@ -218,6 +242,30 @@
       <div class="chip">
         <mat-icon>assignment</mat-icon>
         <span>{{ acreditacion.total }} encuestas</span>
+      </div>
+    </div>
+
+    <div class="ai-summary">
+      <div class="ai-summary__head">
+        <div class="ai-summary__title">
+          <mat-icon>auto_awesome</mat-icon>
+          <span>Conclusion IA · Egresados</span>
+        </div>
+        <button
+          mat-stroked-button
+          color="primary"
+          type="button"
+          (click)="generarConclusionAcreditacion()"
+          [disabled]="generatingAcreditacion || !acreditacion.total">
+          <mat-icon>auto_awesome</mat-icon>
+          {{ generatingAcreditacion ? 'Generando...' : 'Generar' }}
+        </button>
+      </div>
+      <div class="ai-summary__body" *ngIf="showAcreditacionConclusion">
+        {{ conclusionAcreditacion }}
+      </div>
+      <div class="ai-summary__empty muted" *ngIf="!showAcreditacionConclusion">
+        Presiona "Generar" para obtener una conclusion basada en la encuesta de egresados.
       </div>
     </div>
 

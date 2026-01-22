@@ -331,6 +331,18 @@ model EncuestaEgresado {
   @@map("encuesta_egresado")
 }
 
+model EgresadosConclusion {
+  id         Int      @id @default(autoincrement())
+  tipo       String
+  anioEgreso Int      @default(0)
+  texto      String   @db.Text
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([tipo, anioEgreso], name: "egresados_conclusion_unique")
+  @@map("egresados_conclusion")
+}
+
 /////////////////////////////////////
 //   PREGUNTAS, ALTERNATIVAS Y RESPUESTAS
 /////////////////////////////////////

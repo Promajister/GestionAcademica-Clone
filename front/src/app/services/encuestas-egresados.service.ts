@@ -33,4 +33,20 @@ export class EncuestasEgresadosService {
   getAll(): Observable<any[]> {
     return this.http.get<any[]>(this.baseUrl);
   }
+
+  generarConclusion(payload: {
+    tipo: TipoEncuestaEgresados;
+    anioEgreso?: number | 'ALL';
+    stats?: any;
+  }): Observable<{ texto: string }> {
+    return this.http.post<{ texto: string }>(`${this.baseUrl}/conclusion`, payload);
+  }
+
+  obtenerConclusion(tipo: TipoEncuestaEgresados, anioEgreso?: number | 'ALL'): Observable<{ texto: string | null }> {
+    const params: any = { tipo };
+    if (anioEgreso !== undefined) {
+      params.anioEgreso = anioEgreso;
+    }
+    return this.http.get<{ texto: string | null }>(`${this.baseUrl}/conclusion`, { params });
+  }
 }

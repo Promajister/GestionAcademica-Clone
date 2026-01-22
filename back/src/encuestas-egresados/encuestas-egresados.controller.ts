@@ -7,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { EncuestasEgresadosService } from './encuestas-egresados.service';
 
@@ -17,6 +18,24 @@ export class EncuestasEgresadosController {
   @Get()
   async findAll() {
     return this.encuestasEgresadosService.findAll();
+  }
+
+  @Get('conclusion')
+  async obtenerConclusion(
+    @Query('tipo') tipo: string,
+    @Query('anioEgreso') anioEgreso?: string,
+  ) {
+    let anioValue: number | 'ALL' | undefined;
+    if (anioEgreso === undefined) {
+      anioValue = undefined;
+    } else if (anioEgreso === 'ALL') {
+      anioValue = 'ALL';
+    } else {
+      const parsed = Number(anioEgreso);
+      anioValue = Number.isNaN(parsed) ? undefined : parsed;
+    }
+
+    return this.encuestasEgresadosService.obtenerConclusion(tipo as any, anioValue);
   }
 
   @Get(':id')
@@ -31,6 +50,11 @@ export class EncuestasEgresadosController {
   @Post()
   async create(@Body() payload: any) {
     return this.encuestasEgresadosService.create(payload);
+  }
+
+  @Post('conclusion')
+  async generarConclusion(@Body() payload: any) {
+    return this.encuestasEgresadosService.generarConclusion(payload);
   }
 
   @Patch(':id/abiertas')
