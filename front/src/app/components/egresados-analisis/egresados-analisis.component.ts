@@ -852,44 +852,51 @@ export class EgresadosAnalisisComponent implements OnInit {
       { title: 'Capacitación adicional', data: this.empleabilidad.capacitacion },
     ];
 
-    const rows = charts.flatMap((chart) =>
-      chart.data.segments.map((seg) => [
-        chart.title,
+    for (const chart of charts) {
+      ensureSpace(40);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(...colors.text);
+      doc.text(chart.title, margin, y);
+      y += 8;
+
+      const rows = chart.data.segments.map((seg) => [
         seg.label,
         `${seg.pct}%`,
         `${seg.count}`,
-      ]),
-    );
+      ]);
 
-    autoTable(doc, {
-      startY: y,
-      head: [['Indicador', 'Categor\u00eda', 'Porcentaje', 'Respuestas']],
-      body: rows as any,
-      margin: { left: margin, right: margin, top, bottom },
-      tableWidth: contentW,
-      styles: {
-        font: 'helvetica',
-        fontSize: 9,
-        cellPadding: 6,
-        textColor: colors.text as any,
-        lineColor: colors.line as any,
-        lineWidth: 0.8,
-      },
-      headStyles: {
-        fillColor: colors.tableHead as any,
-        textColor: colors.text as any,
-        fontStyle: 'bold',
-        lineColor: colors.border as any,
-        lineWidth: 1,
-      },
-      alternateRowStyles: { fillColor: [248, 250, 252] as any },
-      columnStyles: {
-        0: { cellWidth: Math.floor(contentW * 0.38) },
-        1: { cellWidth: Math.floor(contentW * 0.32) },
-        2: { cellWidth: Math.floor(contentW * 0.15), halign: 'right' as any },
-        3: { cellWidth: Math.floor(contentW * 0.15), halign: 'right' as any },
-      },
-    });
+      autoTable(doc, {
+        startY: y,
+        head: [['Categor\u00eda', 'Porcentaje', 'Respuestas']],
+        body: rows as any,
+        margin: { left: margin, right: margin, top, bottom },
+        tableWidth: contentW,
+        styles: {
+          font: 'helvetica',
+          fontSize: 9,
+          cellPadding: 6,
+          textColor: colors.text as any,
+          lineColor: colors.line as any,
+          lineWidth: 0.8,
+        },
+        headStyles: {
+          fillColor: colors.tableHead as any,
+          textColor: colors.text as any,
+          fontStyle: 'bold',
+          lineColor: colors.border as any,
+          lineWidth: 1,
+        },
+        alternateRowStyles: { fillColor: [248, 250, 252] as any },
+        columnStyles: {
+          0: { cellWidth: Math.floor(contentW * 0.5) },
+          1: { cellWidth: Math.floor(contentW * 0.25), halign: 'right' as any },
+          2: { cellWidth: Math.floor(contentW * 0.25), halign: 'right' as any },
+        },
+      });
+
+      y = (doc as any).lastAutoTable?.finalY ? (doc as any).lastAutoTable.finalY + 14 : y + 14;
+    }
 
     const totalPages = (doc as any).getNumberOfPages();
     for (let i = 1; i <= totalPages; i++) {
@@ -1154,44 +1161,51 @@ export class EgresadosAnalisisComponent implements OnInit {
     doc.line(margin, y, margin + 240, y);
     y += 16;
 
-    const rows = this.acreditacion.preguntas.flatMap((chart) =>
-      chart.stat.segments.map((seg) => [
-        chart.label,
+    for (const chart of this.acreditacion.preguntas) {
+      ensureSpace(40);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(...colors.text);
+      doc.text(chart.label, margin, y);
+      y += 8;
+
+      const rows = chart.stat.segments.map((seg) => [
         seg.label,
         `${seg.pct}%`,
         `${seg.count}`,
-      ]),
-    );
+      ]);
 
-    autoTable(doc, {
-      startY: y,
-      head: [['Indicador', 'Categoria', 'Porcentaje', 'Respuestas']],
-      body: rows as any,
-      margin: { left: margin, right: margin, top, bottom },
-      tableWidth: contentW,
-      styles: {
-        font: 'helvetica',
-        fontSize: 9,
-        cellPadding: 6,
-        textColor: colors.text as any,
-        lineColor: colors.line as any,
-        lineWidth: 0.8,
-      },
-      headStyles: {
-        fillColor: colors.tableHead as any,
-        textColor: colors.text as any,
-        fontStyle: 'bold',
-        lineColor: colors.border as any,
-        lineWidth: 1,
-      },
-      alternateRowStyles: { fillColor: [248, 250, 252] as any },
-      columnStyles: {
-        0: { cellWidth: Math.floor(contentW * 0.38) },
-        1: { cellWidth: Math.floor(contentW * 0.32) },
-        2: { cellWidth: Math.floor(contentW * 0.15), halign: 'right' as any },
-        3: { cellWidth: Math.floor(contentW * 0.15), halign: 'right' as any },
-      },
-    });
+      autoTable(doc, {
+        startY: y,
+        head: [['Categoria', 'Porcentaje', 'Respuestas']],
+        body: rows as any,
+        margin: { left: margin, right: margin, top, bottom },
+        tableWidth: contentW,
+        styles: {
+          font: 'helvetica',
+          fontSize: 9,
+          cellPadding: 6,
+          textColor: colors.text as any,
+          lineColor: colors.line as any,
+          lineWidth: 0.8,
+        },
+        headStyles: {
+          fillColor: colors.tableHead as any,
+          textColor: colors.text as any,
+          fontStyle: 'bold',
+          lineColor: colors.border as any,
+          lineWidth: 1,
+        },
+        alternateRowStyles: { fillColor: [248, 250, 252] as any },
+        columnStyles: {
+          0: { cellWidth: Math.floor(contentW * 0.5) },
+          1: { cellWidth: Math.floor(contentW * 0.25), halign: 'right' as any },
+          2: { cellWidth: Math.floor(contentW * 0.25), halign: 'right' as any },
+        },
+      });
+
+      y = (doc as any).lastAutoTable?.finalY ? (doc as any).lastAutoTable.finalY + 14 : y + 14;
+    }
 
     const totalPages = (doc as any).getNumberOfPages();
     for (let i = 1; i <= totalPages; i++) {
