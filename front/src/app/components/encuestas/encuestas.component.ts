@@ -407,7 +407,7 @@ downloadEstadisticasColaboradoresExcel(): void {
     'secII_A.apoyoGestion':
       'Apoyo permanentemente la gestion educativa (planificacion, ejecucion y evaluacion) dentro y fuera del aula.',
     'secII_A.orientacionComportamiento':
-      'Oriento el comportamiento y presentacion personal en el aula con un lenguaje formal y pertinente.',
+      'Oriento el comportamiento y presentacion personal en el aula con un lenguaje formal y pertinente a la realidad del establecimiento educacional.',
     'secII_A.comunicacionConstante':
       'Mantuvo una comunicacion constante y oportuna, respecto a las actividades del establecimiento educacional.',
     'secII_A.retroalimentacionProceso':
@@ -926,7 +926,11 @@ downloadEstadisticasColaboradoresExcel(): void {
       this.registroForm.get('nombreDocenteColaborador')?.valueChanges.subscribe(val => {
         this.filtrarColaboradores(val);
       });
-      
+
+      this.registroForm.get('tipoPractica')?.valueChanges.subscribe((val) => {
+        this.updateSeccionesPorTipoPractica(val);
+      });
+      this.updateSeccionesPorTipoPractica(this.registroForm.get('tipoPractica')?.value);
 
       // Valores por defecto opcionales
       if (this.centros.length) {
@@ -948,6 +952,89 @@ downloadEstadisticasColaboradoresExcel(): void {
 
     if (this.readOnlySelects) {
       this.disableSelectControls();
+    }
+  }
+
+  private normalizeTexto(valor: string): string {
+    return valor.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  }
+
+  isApoyoDocenciaSeleccionada(): boolean {
+    const tipo = this.registroForm?.get('tipoPractica')?.value;
+    if (typeof tipo !== 'string') return false;
+    return this.normalizeTexto(tipo).startsWith('apoyo a la docencia');
+  }
+
+  isPracticaProfesionalSeleccionada(): boolean {
+    const tipo = this.registroForm?.get('tipoPractica')?.value;
+    if (typeof tipo !== 'string') return false;
+    return this.normalizeTexto(tipo) === 'practica profesional';
+  }
+
+  private getNumeroSeccionTallerista(): 'VII' | 'VIII' {
+    return this.isApoyoDocenciaSeleccionada() ? 'VII' : 'VIII';
+  }
+
+  private getNumeroSeccionSupervisor(): 'VII' | 'VIII' {
+    return this.isPracticaProfesionalSeleccionada() ? 'VII' : 'VIII';
+  }
+
+  private getNumeroSeccionCoordinacion(): 'VIII' | 'IX' {
+    if (this.isApoyoDocenciaSeleccionada() || this.isPracticaProfesionalSeleccionada()) {
+      return 'VIII';
+    }
+    return 'IX';
+  }
+
+  getTituloSeccionTallerista(): string {
+    return `${this.getNumeroSeccionTallerista()}. Percepción sobre el/la Tallerista`;
+  }
+
+  getTituloSeccionSupervisor(): string {
+    return `${this.getNumeroSeccionSupervisor()}. Percepción sobre el/la Supervisor/a`;
+  }
+
+  getTituloSeccionCoordinacion(): string {
+    return `${this.getNumeroSeccionCoordinacion()}. Sobre la Coordinación de Prácticas`;
+  }
+
+  private updateSeccionesPorTipoPractica(
+    tipoPractica: string | null | undefined
+  ): void {
+    if (!this.registroForm) return;
+
+    const normalized = typeof tipoPractica === 'string' ? this.normalizeTexto(tipoPractica) : '';
+    const isApoyoDocencia = normalized.startsWith('apoyo a la docencia');
+    const isPracticaProfesional = normalized === 'practica profesional';
+
+    const secIV_T = this.registroForm.get('secIV_T') as FormGroup | null;
+    const secIV_S = this.registroForm.get('secIV_S') as FormGroup | null;
+
+    if (secIV_T) {
+      Object.values(secIV_T.controls).forEach((ctrl) => {
+        if (isApoyoDocencia) {
+          ctrl.setValidators([Validators.required]);
+        } else {
+          ctrl.clearValidators();
+        }
+        ctrl.updateValueAndValidity({ emitEvent: false });
+      });
+    }
+
+    if (secIV_S) {
+      Object.entries(secIV_S.controls).forEach(([key, ctrl]) => {
+        if (key === 'mejoraRolTallerista') {
+          ctrl.clearValidators();
+          ctrl.updateValueAndValidity({ emitEvent: false });
+          return;
+        }
+        if (isPracticaProfesional) {
+          ctrl.setValidators([Validators.required]);
+        } else {
+          ctrl.clearValidators();
+        }
+        ctrl.updateValueAndValidity({ emitEvent: false });
+      });
     }
   }
 

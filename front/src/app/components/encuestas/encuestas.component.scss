@@ -541,6 +541,28 @@
   align-items: start;
 }
 
+.form-hint {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  padding: 0.75rem 0.9rem;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px dashed rgba(48, 56, 128, 0.3);
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.35;
+}
+
+.form-hint mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  color: var(--brand);
+}
+
 .form-grid + .form-grid {
   margin-top: -0.25rem;
   border-top: 0;

@@ -587,38 +587,39 @@
        NUEVO CAMPO: TIPO PRÁCTICA
        ========================== -->
   <mat-form-field appearance="outline" class="field">
-  <mat-label>Tipo de Práctica</mat-label>
-  <mat-select formControlName="tipoPractica" required>
-    <mat-option value="Apoyo a la Docencia I">Apoyo a la Docencia I</mat-option>
-    <mat-option value="Apoyo a la Docencia II">Apoyo a la Docencia II</mat-option>
-    <mat-option value="Apoyo a la Docencia III">Apoyo a la Docencia III</mat-option>
-    <mat-option value="Apoyo a la Docencia IV">Apoyo a la Docencia IV</mat-option>
-    <mat-option value="Práctica Profesional">Práctica Profesional</mat-option>
-  </mat-select>
-  <mat-error *ngIf="registroForm.get('tipoPractica')?.hasError('required')">
-    Requerido
-  </mat-error>
-</mat-form-field>
+    <mat-label>Tipo de Práctica</mat-label>
+    <mat-select formControlName="tipoPractica" required>
+      <mat-option value="Apoyo a la Docencia I">Apoyo a la Docencia I</mat-option>
+      <mat-option value="Apoyo a la Docencia II">Apoyo a la Docencia II</mat-option>
+      <mat-option value="Apoyo a la Docencia III">Apoyo a la Docencia III</mat-option>
+      <mat-option value="Apoyo a la Docencia IV">Apoyo a la Docencia IV</mat-option>
+      <mat-option value="Práctica Profesional">Práctica Profesional</mat-option>
+    </mat-select>
+    <mat-error *ngIf="registroForm.get('tipoPractica')?.hasError('required')">
+      Requerido
+    </mat-error>
+  </mat-form-field>
 
-
-  <!-- ==========================
-       NUEVO CAMPO: COLABORADOR EXTRA
-       ========================== -->
   <mat-form-field appearance="outline" class="field">
-  <mat-label>Colaborador adicional (opcional)</mat-label>
-  <mat-select formControlName="colaboradorAdicional">
-    
-    <!-- Opción vacía -->
-    <mat-option [value]="null">Ninguno</mat-option>
-
-    <!-- Colaboradores filtrados -->
-    <mat-option
-      *ngFor="let col of colaboradoresFiltrados"
-      [value]="col.id">
-      {{ col.nombre }}
-    </mat-option>
-  </mat-select>
-</mat-form-field>
+    <mat-label>Colaborador adicional (opcional)</mat-label>
+    <mat-select formControlName="colaboradorAdicional">
+      <mat-option [value]="null">Ninguno</mat-option>
+      <mat-option
+        *ngFor="let col of colaboradoresFiltrados"
+        [value]="col.id">
+        {{ col.nombre }}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+  <div class="form-hint full-width">
+    <mat-icon>info</mat-icon>
+    <span>
+      Según el tipo de práctica seleccionado, se habilita la sección correspondiente:
+      <strong>Apoyo a la Docencia (I, II, III o IV)</strong> → “Percepción sobre el/la Tallerista”.
+      <strong>Práctica Profesional</strong> → “Percepción sobre el/la Supervisor/a”.
+      La otra sección se oculta y no es obligatoria.
+    </span>
+  </div>
 
 
 </div>
@@ -757,7 +758,7 @@
 
                 <div class="question-row">
                   <p class="question-label">
-                    Orientó el comportamiento y presentación personal en el aula con un lenguaje formal y pertinente.
+                    Orientó el comportamiento y presentación personal en el aula con un lenguaje formal y pertinente a la realidad del establecimiento educacional.
                   </p>
                   <div class="answer-scale">
                     <mat-radio-group formControlName="orientacionComportamiento" class="scale-group">
@@ -1042,9 +1043,9 @@
             </mat-expansion-panel>
 
             <!-- SECCIÓN IV T -->
-            <mat-expansion-panel formGroupName="secIV_T">
+            <mat-expansion-panel formGroupName="secIV_T" *ngIf="isApoyoDocenciaSeleccionada()">
               <mat-expansion-panel-header>
-                <mat-panel-title>VII. Percepción sobre el Tallerista</mat-panel-title>
+                <mat-panel-title>{{ getTituloSeccionTallerista() }}</mat-panel-title>
                 <mat-panel-description>
                   En una escala de 1 a 5, donde 1 es muy insatisfecho y 5 muy satisfecho.
                 </mat-panel-description>
@@ -1164,9 +1165,9 @@
             </mat-expansion-panel>
 
             <!-- SECCIÓN IV S -->
-            <mat-expansion-panel formGroupName="secIV_S">
+            <mat-expansion-panel formGroupName="secIV_S" *ngIf="isPracticaProfesionalSeleccionada()">
               <mat-expansion-panel-header>
-                <mat-panel-title>VIII. Percepción sobre el Supervisor/a</mat-panel-title>
+                <mat-panel-title>{{ getTituloSeccionSupervisor() }}</mat-panel-title>
                 <mat-panel-description>
                   En una escala de 1 a 5, donde 1 es muy insatisfecho y 5 muy satisfecho.
                 </mat-panel-description>
@@ -1313,7 +1314,7 @@
             <!-- SECCIÓN V -->
             <mat-expansion-panel formGroupName="secV">
               <mat-expansion-panel-header>
-                <mat-panel-title>IX. Sobre la Coordinación de Prácticas</mat-panel-title>
+                <mat-panel-title>{{ getTituloSeccionCoordinacion() }}</mat-panel-title>
                 <mat-panel-description>
                   En una escala de 1 a 5, donde 1 es muy insatisfecho y 5 muy satisfecho.
                 </mat-panel-description>
