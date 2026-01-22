@@ -46,9 +46,33 @@
 .CloseBtn{ color:#64748b; }
 
 .DialogBody{
-  max-height: calc(90vh - 140px);
-  overflow: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+
+  overflow-y: auto;     /* ✅ scroll vertical del modal */
+  overflow-x: hidden;   /* ✅ nunca scroll horizontal */
   padding: 14px 18px 6px;
+}
+
+.DialogBody,
+.DialogBody * {
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+.EvidenceCard,
+.EvidenceBody,
+.EvidenceUpload,
+.EvidenceUpload__body,
+.EvidenceUpload__head,
+.EvidenceUpload__list,
+.FileItem {
+  min-width: 0;
+}
+
+.DialogBody * {
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .error{
@@ -357,9 +381,21 @@
 }
 
 .MiniBtn{
+  padding: 0 10px !important;
   height: 36px !important;
-  border-radius: 999px !important;
-  padding: 0 12px !important;
+}
+
+.MiniBtn mat-icon{
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+  line-height: 18px;
+  margin: 0;              /* por si Material mete margen */
+}
+
+.EvidenceUpload__head h4,
+.EvidenceUpload__head p{
+  margin-right: 0;
 }
 
 @media (max-width: 820px){
@@ -381,13 +417,13 @@
 }
 
 .CountPill{
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+
   font-size: 12px;
-  font-weight: 700;
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: 1px solid #e5e7eb;
-  background: #f8fafc;
-  color: #0f172a;
+  font-weight: 400;
+  color: #64748b; /* más apagado */
 }
 
 .FilesPanel{
@@ -397,7 +433,7 @@
   border-radius: 12px;
   padding: 8px;
 
-  max-height: 110px; /* ✅ prueba 90-120 */
+  max-height: 120px; /* ✅ prueba 90-120 */
   overflow: auto;    /* ✅ scroll interno */
 }
 
@@ -417,7 +453,12 @@
   border-radius: 12px;
   border: 1px solid #e5e7eb;
   background: #fff;
+
+  min-width: 0;         /* ✅ CLAVE */
+  max-width: 100%;      /* ✅ CLAVE */
+  overflow: hidden;     /* ✅ evita que empuje el ancho */
 }
+
 
 .FileItem__icon{
   width: 18px;
@@ -433,13 +474,12 @@
 }
 
 .FileItem__name{
-  font-size: 13px;
-  font-weight: 700;
-  color: #0f172a;
-  white-space: nowrap;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
+
 
 .FileItem__size{
   font-size: 12px;
@@ -468,6 +508,129 @@
 .FileItem--compact .FileItem__meta,
 .FileItem--compact .FileItem__size{
   display: none; /* por si quedan estilos viejos */
+}
+
+.EvidenceUpload{
+  height: 260px;
+  min-height: 260px;
+  max-height: 260px;
+  align-items: stretch;
+}
+
+.EvidenceUpload__body{
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.EvidenceUpload__head{
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.EvidenceUpload__title{
+  min-width: 0;
+}
+
+.EvidenceUpload__title h4{ margin: 0; }
+.EvidenceUpload__title p{
+  margin: 4px 0 0;
+  font-size: 12.5px;
+}
+
+.EvidenceUpload__meta{
+  justify-self: end;       /* alinea a la derecha dentro del grid */
+  min-width: 0;            /* permite encoger */
+  max-width: 100%;
+}
+
+.EvidenceUpload__meta .MiniBtn{
+  max-width: 100%;
+}
+
+.EvidenceUpload__actions{
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+  flex: 0 0 auto;
+}
+
+.EvidenceUpload__right{
+  display:flex;
+  align-items:center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.EvidenceUpload__panel{
+  margin-top: 10px;
+  border: 1px solid #e5e7eb;
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 8px;
+  min-height: 0;
+  flex: 1 1 auto;      /* << se lleva el resto del alto */
+  display: flex;
+}
+
+.EvidenceUpload__hint{
+  font-size: 13px;
+  color: #64748b;
+}
+
+.EvidenceUpload__list{
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+.EvidenceUpload__empty{
+  flex: 1 1 auto;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap: 8px;
+  color:#64748b;
+  font-size: 13px;
+}
+
+.FileItem,
+.FileItem__name,
+.EvidenceUpload__body,
+.EvidenceUpload__head,
+.EvidenceBody {
+  min-width: 0;
+}
+
+/* Lista más densa y resistente a nombres largos */
+.FileList--dense{
+  display: grid;
+  gap: 6px;
+}
+
+.FileItem--dense{
+  padding: 8px 10px;
+  border-radius: 12px;
+
+  min-width: 0;     /* ✅ CLAVE */
+  max-width: 100%;  /* ✅ CLAVE */
+  overflow: hidden; /* ✅ */
+}
+
+
+.FileItem--dense .FileItem__name{
+  min-width: 0;
+  flex: 1 1 auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 

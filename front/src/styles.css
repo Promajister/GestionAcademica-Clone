@@ -107,3 +107,153 @@ body.student-modal-open .mat-sidenav-content {
   border-radius: 22px !important;
 }
 
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+  background: #F0F4FA; 
+}
+
+.success-snackbar {
+  background: linear-gradient(135deg, #10b981, #059669) !important;
+  color: white !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3) !important;
+}
+
+.page {
+  background: #F0F4FA; 
+  padding: 24px;
+  border-radius: 12px;
+}
+
+.success-snackbar .mat-mdc-snack-bar-action {
+  color: white !important;
+  font-weight: 500 !important;
+}
+
+.error-snackbar {
+  background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+  color: white !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3) !important;
+}
+
+.error-snackbar .mat-mdc-snack-bar-action {
+  color: white !important;
+  font-weight: 500 !important;
+}
+
+.warning-snackbar {
+  background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+  color: white !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3) !important;
+}
+
+.warning-snackbar .mat-mdc-snack-bar-action {
+  color: white !important;
+  font-weight: 500 !important;
+}
+
+body.student-modal-open {
+  overflow: hidden; 
+}
+
+body.student-modal-open .mat-drawer-content,
+body.student-modal-open mat-sidenav-content {
+  transform: none !important;
+}
+
+body.student-modal-open .mat-drawer-content,
+body.student-modal-open mat-sidenav-content,
+body.student-modal-open .mat-sidenav-content {
+  transform: none !important;
+}
+
+.ga-dialog-backdrop{
+  background: rgba(2, 6, 23, .45) !important;
+  backdrop-filter: blur(2px);
+}
+
+.ga-dialog .mat-mdc-dialog-surface{
+  border-radius: 22px !important;
+  border: 1px solid #e5e7eb !important;
+  box-shadow: 0 24px 60px rgba(15,23,42,.22) !important;
+  overflow: hidden !important;
+  background: #fff !important;
+
+  display: flex !important;
+  flex-direction: column !important;
+  max-height: 90vh !important;
+}
+
+.ga-dialog .mat-mdc-dialog-content{
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.ga-dialog .mat-mdc-dialog-actions{
+  padding: 12px 18px 16px !important;
+  margin: 0 !important;
+  border-top: 1px solid #eef2f7 !important;
+  background: #fafafa !important;
+}
+
+.ga-dialog .mat-mdc-dialog-container{
+  border-radius: 22px !important;
+  overflow: hidden;
+  box-shadow: 0 30px 80px rgba(15,23,42,.35) !important;
+}
+.ga-dialog .mdc-dialog__surface{
+  border-radius: 22px !important;
+}
+
+/* El surface del dialog: caja principal */
+.ga-dialog .mat-mdc-dialog-surface,
+.ga-dialog .mdc-dialog__surface {
+  display: flex !important;
+  flex-direction: column !important;
+  max-height: 90vh !important;
+  overflow: hidden !important; /* ✅ corta horizontal y evita que “escape” */
+}
+
+/* El contenedor content de Angular Material: debe poder crecer */
+.ga-dialog .mat-mdc-dialog-content {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow: hidden !important; /* ✅ NO scroll acá, el scroll es en .DialogBody */
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Tabs: evitar que empujen el ancho */
+.ga-dialog .mat-mdc-tab-group,
+.ga-dialog .mat-mdc-tab-body,
+.ga-dialog .mat-mdc-tab-body-content {
+  min-width: 0 !important;
+  overflow-x: hidden !important;
+}
+
+/* SOLO para este diálogo */
+.ga-dialog .mat-mdc-dialog-surface,
+.ga-dialog .mdc-dialog__surface {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;  /* ✅ corta overflow del modal (evita scroll lateral) */
+}
+
+/* host del componente dentro del dialog */
+.ga-dialog .mat-mdc-dialog-component-host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
