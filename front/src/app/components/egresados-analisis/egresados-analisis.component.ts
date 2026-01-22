@@ -655,24 +655,28 @@ export class EgresadosAnalisisComponent implements OnInit {
     doc.setTextColor(...colors.text);
     doc.text('Parámetros del reporte', margin + 14, y + 24);
 
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(10);
-      doc.setTextColor(...colors.muted);
-      doc.text(`Año de egreso: ${anioLabel}`, margin + 14, y + 44);
-      doc.text(`Total encuestas: ${this.empleabilidad.total}`, margin + 200, y + 44);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(...colors.muted);
+    doc.text(`Año de egreso: ${anioLabel}`, margin + 14, y + 44);
+    doc.text(`Total encuestas: ${this.empleabilidad.total}`, margin + 200, y + 44);
 
-      y += 92;
+    y += 92;
 
-      const conclusionEmpleabilidad = this.conclusionEmpleabilidadText || this.buildConclusionEmpleabilidad();
-      const conclusionH = this.drawConclusionBlock(
-        doc,
-        'Conclusion IA (Empleabilidad)',
-        conclusionEmpleabilidad,
-        margin,
-        y,
-        contentW,
-      );
-      y += conclusionH + 18;
+    const conclusionEmpleabilidad = this.conclusionEmpleabilidadText || this.buildConclusionEmpleabilidad();
+    const conclusionH = this.drawConclusionBlock(
+      doc,
+      'Conclusion IA (Empleabilidad)',
+      conclusionEmpleabilidad,
+      margin,
+      y,
+      contentW,
+    );
+    y += conclusionH + 18;
+
+    doc.addPage();
+    this.drawPdfHeader(doc, headerData);
+    y = top;
 
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(11);
@@ -852,24 +856,28 @@ export class EgresadosAnalisisComponent implements OnInit {
     doc.setTextColor(...colors.text);
     doc.text('Parámetros del reporte', margin + 14, y + 24);
 
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(10);
-      doc.setTextColor(...colors.muted);
-      doc.text(`Año de egreso: ${anioLabel}`, margin + 14, y + 44);
-      doc.text(`Total encuestas: ${this.empleabilidad.total}`, margin + 200, y + 44);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(...colors.muted);
+    doc.text(`Año de egreso: ${anioLabel}`, margin + 14, y + 44);
+    doc.text(`Total encuestas: ${this.empleabilidad.total}`, margin + 200, y + 44);
 
-      y += 92;
+    y += 92;
 
-      const conclusionEmpleabilidad = this.conclusionEmpleabilidadText || this.buildConclusionEmpleabilidad();
-      const conclusionH = this.drawConclusionBlock(
-        doc,
-        'Conclusion IA (Empleabilidad)',
-        conclusionEmpleabilidad,
-        margin,
-        y,
-        contentW,
-      );
-      y += conclusionH + 18;
+    const conclusionEmpleabilidad = this.conclusionEmpleabilidadText || this.buildConclusionEmpleabilidad();
+    const conclusionH = this.drawConclusionBlock(
+      doc,
+      'Conclusion IA (Empleabilidad)',
+      conclusionEmpleabilidad,
+      margin,
+      y,
+      contentW,
+    );
+    y += conclusionH + 18;
+
+    doc.addPage();
+    this.drawPdfHeader(doc, headerData);
+    y = top;
 
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(11);
@@ -1034,6 +1042,10 @@ export class EgresadosAnalisisComponent implements OnInit {
     );
     y += conclusionH + 18;
 
+    doc.addPage();
+    this.drawPdfHeader(doc, headerData);
+    y = top;
+
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
     doc.setTextColor(...colors.text);
@@ -1193,24 +1205,28 @@ export class EgresadosAnalisisComponent implements OnInit {
     doc.setTextColor(...colors.text);
     doc.text('Resumen del reporte', margin + 14, y + 24);
 
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(10);
-      doc.setTextColor(...colors.muted);
-      doc.text(`Total encuestas: ${this.acreditacion.total}`, margin + 14, y + 44);
-      doc.text(`Promedio Likert: ${this.acreditacion.promedioLikert}%`, margin + 200, y + 44);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(...colors.muted);
+    doc.text(`Total encuestas: ${this.acreditacion.total}`, margin + 14, y + 44);
+    doc.text(`Promedio Likert: ${this.acreditacion.promedioLikert}%`, margin + 200, y + 44);
 
-      y += 92;
+    y += 92;
 
-      const conclusionAcreditacion = this.conclusionAcreditacionText || this.buildConclusionAcreditacion();
-      const conclusionH = this.drawConclusionBlock(
-        doc,
-        'Conclusion IA (Egresados)',
-        conclusionAcreditacion,
-        margin,
-        y,
-        contentW,
-      );
-      y += conclusionH + 18;
+    const conclusionAcreditacion = this.conclusionAcreditacionText || this.buildConclusionAcreditacion();
+    const conclusionH = this.drawConclusionBlock(
+      doc,
+      'Conclusion IA (Egresados)',
+      conclusionAcreditacion,
+      margin,
+      y,
+      contentW,
+    );
+    y += conclusionH + 18;
+
+    doc.addPage();
+    this.drawPdfHeader(doc, headerData);
+    y = top;
 
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(11);
