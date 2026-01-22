@@ -11,6 +11,7 @@ export interface Actividad {
   id: number;
   mes: string;
   nombre_actividad: string;
+  satisfaccion?: number | null;
   estudiantes?: string;
   terceros_asistieron?: boolean;
   terceros?: { rut: string; nombre: string }[];

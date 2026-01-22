@@ -11,8 +11,8 @@
         </div>
 
         <div class="hero__titles">
-          <h1>Gestión de actividades de las prácticas</h1>
-          <p>Registra, revisa y administra actividades vinculadas a prácticas profesionales.</p>
+          <h1>{{ vistaTitle }}</h1>
+          <p>{{ vistaDescription }}</p>
 
           <div class="hero__chips">
             <span class="chip">
@@ -25,7 +25,7 @@
         </div>
       </div>
 
-      <div class="hero__actions" *ngIf="!esJefatura">
+      <div class="hero__actions" *ngIf="!esSoloLectura">
         <button mat-flat-button color="primary" (click)="addActivity()" class="btn-cta">
           <mat-icon>{{ mostrarFormulario ? 'close' : 'add' }}</mat-icon>
           {{ mostrarFormulario ? 'Cerrar' : 'Añadir Actividad' }}
@@ -67,7 +67,7 @@
   </mat-card>
 
   <!-- FORMULARIO -->
-  <div class="FormContainer" [class.FormOpen]="mostrarFormulario" *ngIf="!esJefatura">
+  <div class="FormContainer" [class.FormOpen]="mostrarFormulario" *ngIf="!esSoloLectura">
     @if (mostrarFormulario) {
       <mat-card class="Elev FormCard">
         <div class="form-topline"></div>
@@ -130,7 +130,7 @@
                 <div class="StudentsColumn">
                   <div class="StudentsHeader">
                     <mat-form-field appearance="outline" class="FormField StudentsFilterField">
-                    <mat-label>Buscar estudiante</mat-label>
+                    <mat-label>Buscar {{ personasLabel }}</mat-label>
                     <input
                       matInput
                       [value]="estudiantesFiltro"
@@ -151,12 +151,12 @@
                   </div>
 
                   <div class="StudentsPanel">
-                    <label class="FormLabel">Estudiantes*</label>
+                    <label class="FormLabel">{{ personasLabelPlural | titlecase }}*</label>
                     <div class="StudentsResults">
                       @if (cargandoEstudiantes) {
-                        <div class="StudentsHint">Cargando estudiantes...</div>
+                        <div class="StudentsHint">Cargando {{ personasLabelPlural }}...</div>
                       } @else if (estudiantesDisponibles.length === 0) {
-                        <div class="StudentsHint">No hay estudiantes disponibles</div>
+                        <div class="StudentsHint">No hay {{ personasLabelPlural }} disponibles</div>
                       } @else {
                         @for (estudiante of estudiantesDisponibles; track estudiante.rut) {
                           <button
@@ -173,7 +173,7 @@
                     </div>
                     <div class="StudentsSelected">
                       @if (estudiantesSeleccionados.length === 0) {
-                        <div class="StudentsHint">Sin estudiantes seleccionados</div>
+                        <div class="StudentsHint">Sin {{ personasLabelPlural }} seleccionados</div>
                       } @else {
                         @for (estudiante of estudiantesSeleccionados; track estudiante) {
                           <span class="StudentChip">
@@ -190,7 +190,7 @@
                       }
                     </div>
                     @if (formularioActividad.get('estudiantes')?.invalid && formularioActividad.get('estudiantes')?.touched) {
-                      <div class="StudentsError">Selecciona al menos un estudiante</div>
+                      <div class="StudentsError">Selecciona al menos un {{ personasLabel }}</div>
                     }
                   </div>
 
@@ -386,8 +386,9 @@
           <div class="HeaderCell HeaderCell--date">FECHA</div>
           <div class="HeaderCell HeaderCell--time">HORA</div>
           <div class="HeaderCell HeaderCell--location">UBICACIÓN</div>
-          <div class="HeaderCell HeaderCell--students">ESTUDIANTES</div>
+          <div class="HeaderCell HeaderCell--students">{{ personasLabelPlural | uppercase }}</div>
           <div class="HeaderCell HeaderCell--terceros">TERCEROS</div>
+          <div class="HeaderCell HeaderCell--satisfaccion">SATISFACCIÓN</div>
           <div class="HeaderCell HeaderCell--evidence">RESPALDO</div>
           <div class="HeaderCell HeaderCell--actions">ACCIONES</div>
         </div>
@@ -418,6 +419,10 @@
             <span class="TercerosText">{{ actividad.terceros_asistieron ? 'Si' : 'No' }}</span>
           </div>
 
+          <div class="TableCell TableCell--satisfaccion">
+            <span class="SatisfaccionText">{{ actividad.satisfaccion !== null && actividad.satisfaccion !== undefined ? (actividad.satisfaccion + '%') : '—' }}</span>
+          </div>
+
           <div class="TableCell TableCell--evidence">
             <div class="EvidenceText">
               <a
@@ -440,11 +445,11 @@
                 <mat-icon>visibility</mat-icon>
               </button>
 
-              <button mat-icon-button color="primary" (click)="editActivity(actividad)" title="Editar" *ngIf="!esJefatura">
+              <button mat-icon-button color="primary" (click)="editActivity(actividad)" title="Editar" *ngIf="!esSoloLectura">
                 <mat-icon>edit</mat-icon>
               </button>
 
-              <button mat-icon-button color="warn" (click)="askDelete(actividad)" title="Eliminar" *ngIf="!esJefatura">
+              <button mat-icon-button color="warn" (click)="askDelete(actividad)" title="Eliminar" *ngIf="!esSoloLectura">
                 <mat-icon>delete</mat-icon>
               </button>
             </div>
@@ -567,7 +572,7 @@
               </div>
 
               <div class="KV KV--full">
-                <div class="K">Estudiantes</div>
+                <div class="K">{{ personasLabelPlural | titlecase }}</div>
                 <div class="V">{{ actividadSeleccionada.estudiantes || 'No especificados' }}</div>
               </div>
 
@@ -627,7 +632,7 @@
             mat-raised-button
             color="primary"
             (click)="editActivity(actividadSeleccionada!); cerrarDetalles()"
-            *ngIf="!esJefatura">
+            *ngIf="!esSoloLectura">
             <mat-icon>edit</mat-icon>
             Editar actividad
           </button>

@@ -1,1 +1,0 @@
--- No-op: original migration attempted to rename an index before the table existed.

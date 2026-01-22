@@ -442,6 +442,18 @@ export class DashboardComponent implements OnInit {
               desc: 'Marca estudiantes como egresados',
             },
             {
+              title: 'Actividades',
+              icon: 'event_note',
+              route: '/egresados/actividades',
+              desc: 'Registro de actividades de egresados',
+            },
+            {
+              title: 'Encuestas de actividades',
+              icon: 'assignment',
+              route: '/egresados/encuestas-actividades',
+              desc: 'Encuestas asociadas a actividades de egresados',
+            },
+            {
               title: 'Encuestas',
               icon: 'assignment',
               route: '/egresados/encuestas',

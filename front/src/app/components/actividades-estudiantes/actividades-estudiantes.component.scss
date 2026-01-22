@@ -473,7 +473,7 @@
 
 .TableHeader, .TableRow{
   display: grid;
-  grid-template-columns: 1.7fr .9fr .8fr 1fr .7fr .7fr .7fr .8fr;
+  grid-template-columns: 1.6fr .9fr .8fr 1fr .7fr .7fr .7fr .7fr .8fr;
   min-width: 0; 
 }
 .TableCell--students .StudentsText{
@@ -500,6 +500,9 @@
 .HeaderCell--students{
   text-align: center;
 }
+.HeaderCell--satisfaccion{
+  text-align: center;
+}
 
 .TableRow{
   border-bottom: 1px solid #f1f5f9;
@@ -519,6 +522,9 @@
 .TableCell--terceros{
   justify-content: center;
 }
+.TableCell--satisfaccion{
+  justify-content: center;
+}
 
 .ActivityName{
   font-weight: 900;
@@ -535,6 +541,11 @@
 .TercerosText{
   font-size: 13px;
   color:#0f172a;
+}
+.SatisfaccionText{
+  font-size: 13px;
+  color:#0f172a;
+  font-weight: 700;
 }
 .LocationText, .StudentsText{
   overflow: hidden;
@@ -645,7 +656,7 @@
   border-radius: 16px;
   box-shadow: 0 20px 25px -5px rgba(0,0,0,.1), 0 10px 10px -5px rgba(0,0,0,.04);
   max-height: 80vh;
-  overflow: auto;
+  overflow: hidden;
 }
 
 /* ancho de detalles */
@@ -653,7 +664,8 @@
   max-width: 920px;
   width: 95%;
   border: 1px solid #e5e7eb;
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .DialogHeader--details{
@@ -711,7 +723,11 @@
 }
 .CloseBtn{ color:#64748b; }
 
-.DialogBody{ padding: 14px 18px 2px; }
+.DialogBody{
+  padding: 14px 18px 2px;
+  overflow: auto;
+  flex: 1 1 auto;
+}
 
 /* chips */
 .DetailsTop{
@@ -869,6 +885,7 @@
   display:flex;
   justify-content: flex-end;
   gap: 12px;
+  flex: 0 0 auto;
 }
 .DialogActions--details button{
   border-radius: 12px !important;

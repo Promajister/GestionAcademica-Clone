@@ -15,6 +15,7 @@ import { CartaModule } from './carta/carta.module';
 import { TutorModule } from './tutor/tutor.module';
 import { PracticasModule } from './practicas/practicas.module';
 import { ActividadPracticaModule } from './actividad-practica/actividad-practica.module';
+import { ActividadEgresadosModule } from './actividad-egresados/actividad-egresados.module';
 import { ActividadesModule } from './actividades/actividades.module';
 import { ActividadesPmModule } from './actividades-pm/actividades-pm.module';
 import { AuthModule } from './auth/auth.module';
@@ -44,6 +45,7 @@ import { EncuestasEgresadosModule } from './encuestas-egresados/encuestas-egresa
     ActividadPracticaModule,
     ActividadesModule,
     ActividadesPmModule,
+    ActividadEgresadosModule,
     EncuestasModule,
     AuthModule,
     UsuariosModule,
