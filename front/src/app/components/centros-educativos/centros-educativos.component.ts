@@ -13,6 +13,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule, NativeDateAdapter, MAT_DATE_FORMATS, DateAdapter, MAT_DATE_LOCALE } from '@angular/material/core';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { formatDateEs, parseDateFlexible } from '../../utils/date-utils';
 
 
 // APIs
@@ -209,6 +210,11 @@ export class CentrosEducativosComponent implements OnInit, OnDestroy {
     utpCorreo: '',
     utpTelefono: '',
   };
+  showContactErrors = false;
+  contactErrors = {
+    director: { nombre: '', rut: '', telefono: '', correo: '' },
+    utp: { nombre: '', rut: '', telefono: '', correo: '' },
+  };
   private contactoDirectorId: number | null = null;
   private contactoUtpId: number | null = null;
 
@@ -358,9 +364,7 @@ export class CentrosEducativosComponent implements OnInit, OnDestroy {
 
   // ===== helpers de fecha =====
   toDate(iso?: string | null): Date | null {
-    if (!iso) return null;
-    const [y, m, d] = iso.split('-').map(Number);
-    return new Date(y, m - 1, d);
+    return parseDateFlexible(iso);
   }
 
   private toISODateOnly(d?: Date | null): string | null {
@@ -653,6 +657,8 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
 
   closeContacts() {
     this.contactsForCentro = null;
+    this.showContactErrors = false;
+    this.resetContactErrors();
     this.syncModalBodyClass();
   }
 
@@ -730,21 +736,7 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
   }
 
   formatFecha(value?: string | null): string {
-    if (!value) return '-';
-    const raw = String(value).trim();
-    const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
-    if (iso) {
-      const y = Number(iso[1]);
-      const m = Number(iso[2]) - 1;
-      const d = Number(iso[3]);
-      const date = new Date(y, m, d);
-      if (!isNaN(date.getTime())) {
-        return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-      }
-    }
-    const date = new Date(raw);
-    if (isNaN(date.getTime())) return raw.slice(0, 10);
-    return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    return value ? formatDateEs(value) : '-';
   }
 
   private getYearFromDate(value?: string | null): number | null {
@@ -767,6 +759,32 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
     if (this.esSoloLectura) return;
     if (!this.contactsForCentro) return;
     const centroId = this.contactsForCentro.id;
+    this.showContactErrors = true;
+    this.resetContactErrors();
+
+    const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+    const validateContact = (
+      contacto: 'director' | 'utp',
+      data: { nombre?: string; rut?: string; telefono?: string; correo?: string }
+    ) => {
+      const nombre = (data.nombre || '').trim();
+      const rut = (data.rut || '').trim();
+      const telefono = (data.telefono || '').toString().trim();
+      const correo = (data.correo || '').trim();
+      const hasAny = !!(nombre || rut || telefono || correo);
+      if (!hasAny) return true;
+
+      const errs = this.contactErrors[contacto];
+      if (!nombre) errs.nombre = 'Nombre es obligatorio';
+      if (!rut) errs.rut = 'RUT es obligatorio';
+      if (telefono && !/^\d{6,13}$/.test(telefono)) {
+        errs.telefono = 'Teléfono debe tener entre 6 y 13 dígitos';
+      }
+      if (correo && !isValidEmail(correo)) {
+        errs.correo = 'Correo no tiene formato válido';
+      }
+      return !(errs.nombre || errs.rut || errs.telefono || errs.correo);
+    };
 
     const toNum = (v?: string | number | null) => {
       const s = (v ?? '').toString().trim();
@@ -774,6 +792,26 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
     };
 
     const ops: Promise<any>[] = [];
+    const directorOk = validateContact('director', {
+      nombre: this.contactosForm.directorNombre,
+      rut: this.contactosForm.directorRut,
+      telefono: this.contactosForm.directorTelefono,
+      correo: this.contactosForm.directorCorreo,
+    });
+    const utpOk = validateContact('utp', {
+      nombre: this.contactosForm.utpNombre,
+      rut: this.contactosForm.utpRut,
+      telefono: this.contactosForm.utpTelefono,
+      correo: this.contactosForm.utpCorreo,
+    });
+    if (!directorOk || !utpOk) {
+      this.snack.open(
+        'Revisa los campos marcados en rojo antes de guardar',
+        'Cerrar',
+        { duration: 3500 }
+      );
+      return;
+    }
 
     // DIRECTOR
     if ((this.contactosForm.directorNombre || '').trim() !== '') {
@@ -826,11 +864,26 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
         this.closeContacts();
         this.load();
       })
-      .catch(() => {
-        this.snack.open('✗ Error al guardar contactos', 'Cerrar', {
-          duration: 3500,
+      .catch((err) => {
+        let mensajeError = 'Error al guardar contactos';
+        if (Array.isArray(err?.error?.message)) {
+          mensajeError = err.error.message.join(', ');
+        } else if (err?.error?.message) {
+          mensajeError = err.error.message;
+        } else if (err?.message) {
+          mensajeError = err.message;
+        }
+        this.snack.open(`✗ Error al guardar contactos: ${mensajeError}`, 'Cerrar', {
+          duration: 4500,
         });
       });
+  }
+
+  private resetContactErrors() {
+    this.contactErrors = {
+      director: { nombre: '', rut: '', telefono: '', correo: '' },
+      utp: { nombre: '', rut: '', telefono: '', correo: '' },
+    };
   }
 
   // ===== orden, filtros y paginador =====

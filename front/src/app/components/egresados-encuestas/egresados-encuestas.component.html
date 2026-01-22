@@ -64,7 +64,7 @@
 
         <div class="item-date" *ngIf="e.fecha">
           <mat-icon>calendar_today</mat-icon>
-          <span>{{ e.fecha | date: 'yyyy-MM-dd' }}</span>
+          <span>{{ formatFecha(e.fecha) }}</span>
         </div>
       </div>
       <div class="paginator-wrap">
@@ -97,7 +97,7 @@
         <mat-card-title>Detalle encuesta</mat-card-title>
         <mat-card-subtitle>
           {{ mapTipoLabel(selectedEncuesta.tipo) }}
-          <ng-container *ngIf="selectedEncuesta.fecha">- {{ selectedEncuesta.fecha | date: 'dd/MM/yyyy' }}</ng-container>
+          <ng-container *ngIf="selectedEncuesta.fecha">- {{ formatFecha(selectedEncuesta.fecha) }}</ng-container>
         </mat-card-subtitle>
       </div>
 

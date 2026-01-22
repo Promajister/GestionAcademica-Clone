@@ -42,7 +42,7 @@
         <div mat-card-avatar class="card-icon-container">
           <mat-icon>groups</mat-icon>
         </div>
-        <mat-card-title>Encuesta a colaboradores y Jefes UTP</mat-card-title>
+        <mat-card-title>Encuesta a colaboradores</mat-card-title>
         <mat-card-subtitle>Evaluaciones de supervisores y centros educativos</mat-card-subtitle>
       </mat-card-header>
       <mat-card-content>
@@ -78,7 +78,7 @@
             matInput
             [(ngModel)]="terminoBusqueda"
             (ngModelChange)="onFiltersChange()"
-            placeholder="Estudiante, centro, tipo, colaborador, fecha..."
+            placeholder="Centro, tipo, colaborador, fecha..."
           />
           <mat-icon matSuffix>search</mat-icon>
         </mat-form-field>
@@ -150,9 +150,7 @@
         <mat-label>Tipo de encuesta</mat-label>
         <mat-select [(ngModel)]="filtroTipoStats">
           <mat-option [value]="'ESTUDIANTIL'">Estudiantes</mat-option>
-          <mat-option [value]="'COLABORADORES_JEFES'">
-            Colaboradores / Jefes UTP
-          </mat-option>
+          <mat-option [value]="'COLABORADORES_JEFES'">Colaboradores</mat-option>
         </mat-select>
       </mat-form-field>
     </div>
@@ -186,15 +184,7 @@
             <span class="item-metadata">
               <!-- Encuesta Estudiantil -->
               <ng-container *ngIf="e.tipo === 'ESTUDIANTIL'">
-                Estudiante:
-                <ng-container *ngIf="e.metadata; else sinEstudiante">
-                  {{ e.metadata['nombre_estudiante'] }}
-                  <!-- aquí mostramos el nombre a partir del rut -->
-                  <ng-container *ngIf="getNombreEstudiantePorRut(e.metadata['nombre_estudiante']) as nombreEst">
-                    — {{ nombreEst }}
-                  </ng-container>
-                </ng-container>
-                <ng-template #sinEstudiante>Sin dato</ng-template>
+                Estudiante: Encuesta anónima
                 <br />
                 Centro educativo:
                 {{ e.metadata ? e.metadata['nombre_centro'] : 'Sin información' }}
@@ -237,7 +227,7 @@
 
         <div class="item-date">
           <mat-icon>calendar_today</mat-icon>
-          <span>{{ e.fecha | date: 'dd/MM/yyyy' }}</span>
+          <span>{{ formatFecha(e.fecha) }}</span>
         </div>
       </div>
     </div>
@@ -399,7 +389,7 @@
     <div class="modal-head-text">
       <mat-card-title>Estadísticas</mat-card-title>
       <mat-card-subtitle>
-        Colaboradores / Jefes UTP — Basado en
+        Colaboradores — Basado en
         <strong>{{ totalEncuestasColaboradores }}</strong> encuestas
       </mat-card-subtitle>
     </div>
@@ -431,7 +421,7 @@
 
       <div class="summary-chip">
         <mat-icon>groups</mat-icon>
-        <span>Colaboradores / UTP</span>
+        <span>Colaboradores</span>
       </div>
 
       <div class="summary-chip" *ngIf="filtroAnioStats">
@@ -560,18 +550,6 @@
 
 
   <mat-form-field appearance="outline" class="field">
-    <mat-label>Nombre del Estudiante</mat-label>
-    <mat-select formControlName="nombreEstudiante" required>
-      <mat-option *ngFor="let s of estudiantes" [value]="s.rut">
-        {{ s.nombre }}
-      </mat-option>
-    </mat-select>
-    <mat-error *ngIf="registroForm.get('nombreEstudiante')?.hasError('required')">
-      Requerido
-    </mat-error>
-  </mat-form-field>
-
-  <mat-form-field appearance="outline" class="field">
     <mat-label>Establecimiento donde desarrolló su práctica</mat-label>
     <mat-select formControlName="establecimiento">
       <mat-option *ngFor="let c of centros" [value]="c.id">
@@ -609,38 +587,39 @@
        NUEVO CAMPO: TIPO PRÁCTICA
        ========================== -->
   <mat-form-field appearance="outline" class="field">
-  <mat-label>Tipo de Práctica</mat-label>
-  <mat-select formControlName="tipoPractica" required>
-    <mat-option value="Apoyo a la Docencia I">Apoyo a la Docencia I</mat-option>
-    <mat-option value="Apoyo a la Docencia II">Apoyo a la Docencia II</mat-option>
-    <mat-option value="Apoyo a la Docencia III">Apoyo a la Docencia III</mat-option>
-    <mat-option value="Apoyo a la Docencia IV">Apoyo a la Docencia IV</mat-option>
-    <mat-option value="Práctica Profesional">Práctica Profesional</mat-option>
-  </mat-select>
-  <mat-error *ngIf="registroForm.get('tipoPractica')?.hasError('required')">
-    Requerido
-  </mat-error>
-</mat-form-field>
+    <mat-label>Tipo de Práctica</mat-label>
+    <mat-select formControlName="tipoPractica" required>
+      <mat-option value="Apoyo a la Docencia I">Apoyo a la Docencia I</mat-option>
+      <mat-option value="Apoyo a la Docencia II">Apoyo a la Docencia II</mat-option>
+      <mat-option value="Apoyo a la Docencia III">Apoyo a la Docencia III</mat-option>
+      <mat-option value="Apoyo a la Docencia IV">Apoyo a la Docencia IV</mat-option>
+      <mat-option value="Práctica Profesional">Práctica Profesional</mat-option>
+    </mat-select>
+    <mat-error *ngIf="registroForm.get('tipoPractica')?.hasError('required')">
+      Requerido
+    </mat-error>
+  </mat-form-field>
 
-
-  <!-- ==========================
-       NUEVO CAMPO: COLABORADOR EXTRA
-       ========================== -->
   <mat-form-field appearance="outline" class="field">
-  <mat-label>Colaborador adicional (opcional)</mat-label>
-  <mat-select formControlName="colaboradorAdicional">
-    
-    <!-- Opción vacía -->
-    <mat-option [value]="null">Ninguno</mat-option>
-
-    <!-- Colaboradores filtrados -->
-    <mat-option
-      *ngFor="let col of colaboradoresFiltrados"
-      [value]="col.id">
-      {{ col.nombre }}
-    </mat-option>
-  </mat-select>
-</mat-form-field>
+    <mat-label>Colaborador adicional (opcional)</mat-label>
+    <mat-select formControlName="colaboradorAdicional">
+      <mat-option [value]="null">Ninguno</mat-option>
+      <mat-option
+        *ngFor="let col of colaboradoresFiltrados"
+        [value]="col.id">
+        {{ col.nombre }}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+  <div class="form-hint full-width">
+    <mat-icon>info</mat-icon>
+    <span>
+      Según el tipo de práctica seleccionado, se habilita la sección correspondiente:
+      <strong>Apoyo a la Docencia (I, II, III o IV)</strong> → “Percepción sobre el/la Tallerista”.
+      <strong>Práctica Profesional</strong> → “Percepción sobre el/la Supervisor/a”.
+      La otra sección se oculta y no es obligatoria.
+    </span>
+  </div>
 
 
 </div>
@@ -779,7 +758,7 @@
 
                 <div class="question-row">
                   <p class="question-label">
-                    Orientó el comportamiento y presentación personal en el aula con un lenguaje formal y pertinente.
+                    Orientó el comportamiento y presentación personal en el aula con un lenguaje formal y pertinente a la realidad del establecimiento educacional.
                   </p>
                   <div class="answer-scale">
                     <mat-radio-group formControlName="orientacionComportamiento" class="scale-group">
@@ -1064,9 +1043,9 @@
             </mat-expansion-panel>
 
             <!-- SECCIÓN IV T -->
-            <mat-expansion-panel formGroupName="secIV_T">
+            <mat-expansion-panel formGroupName="secIV_T" *ngIf="isApoyoDocenciaSeleccionada()">
               <mat-expansion-panel-header>
-                <mat-panel-title>VII. Percepción sobre el Tallerista</mat-panel-title>
+                <mat-panel-title>{{ getTituloSeccionTallerista() }}</mat-panel-title>
                 <mat-panel-description>
                   En una escala de 1 a 5, donde 1 es muy insatisfecho y 5 muy satisfecho.
                 </mat-panel-description>
@@ -1186,9 +1165,9 @@
             </mat-expansion-panel>
 
             <!-- SECCIÓN IV S -->
-            <mat-expansion-panel formGroupName="secIV_S">
+            <mat-expansion-panel formGroupName="secIV_S" *ngIf="isPracticaProfesionalSeleccionada()">
               <mat-expansion-panel-header>
-                <mat-panel-title>VIII. Percepción sobre el Supervisor/a</mat-panel-title>
+                <mat-panel-title>{{ getTituloSeccionSupervisor() }}</mat-panel-title>
                 <mat-panel-description>
                   En una escala de 1 a 5, donde 1 es muy insatisfecho y 5 muy satisfecho.
                 </mat-panel-description>
@@ -1335,7 +1314,7 @@
             <!-- SECCIÓN V -->
             <mat-expansion-panel formGroupName="secV">
               <mat-expansion-panel-header>
-                <mat-panel-title>IX. Sobre la Coordinación de Prácticas</mat-panel-title>
+                <mat-panel-title>{{ getTituloSeccionCoordinacion() }}</mat-panel-title>
                 <mat-panel-description>
                   En una escala de 1 a 5, donde 1 es muy insatisfecho y 5 muy satisfecho.
                 </mat-panel-description>
@@ -1643,8 +1622,9 @@
 
                 <div class="question-row">
                   <p class="question-label">
-                    Usa la tecnología para comunicarse con los estudiantes, junto con promover
-                    que la usen en sus presentaciones.
+                    Usa la tecnología para comunicarse con los estudiantes, como plataformas virtuales,
+                    sitios web, etc. Junto con promover que los estudiantes usen tecnología en sus
+                    presentaciones orales.
                   </p>
                   <div class="answer-scale">
                     <mat-radio-group formControlName="e8_usoTecnologia" class="scale-group">
@@ -1698,7 +1678,8 @@
                 <div class="question-row">
                   <p class="question-label">
                     Se presenta a la práctica con una presentación personal acorde a lo requerido
-                    por el establecimiento, cumpliendo horarios.
+                    por el recinto escolar, además de cumplir con sus horarios de ingreso y salida
+                    del establecimiento.
                   </p>
                   <div class="answer-scale">
                     <mat-radio-group formControlName="i3_presentacionPersonal" class="scale-group">
@@ -1838,7 +1819,7 @@
   <div *ngIf="perfilSeleccionado === 2025">
     <p>
       La Carrera de Historia y Geografía establece un perfil de egreso ideal que representa
-      los conocimientos habilidades fundamentales que adquieren nuestros futuros profesores,
+      los conocimientos y habilidades fundamentales que adquieren nuestros futuros profesores,
       en su formación académica dentro del departamento, siendo algunas de las principales:
     </p>
     <ul>
@@ -1952,7 +1933,7 @@
       </mat-card-title>
       <mat-card-subtitle>
         {{ mapTipoLabel(encuestaEnEdicion.tipo) }} —
-        {{ encuestaEnEdicion.fecha | date: 'dd/MM/yyyy' }}
+        {{ formatFecha(encuestaEnEdicion.fecha) }}
       </mat-card-subtitle>
 
       <button mat-icon-button class="close-btn" (click)="cancelarEdicion()">
@@ -2013,7 +1994,7 @@
       <mat-card-title>Detalle Encuesta</mat-card-title>
       <mat-card-subtitle>
         {{ mapTipoLabel(selectedEncuesta.tipo) }} —
-        {{ selectedEncuesta.fecha | date: 'dd/MM/yyyy' }}
+        {{ formatFecha(selectedEncuesta.fecha) }}
       </mat-card-subtitle>
     </div>
 
@@ -2048,7 +2029,7 @@
 
               <td class="meta-v">
                 <ng-container *ngIf="key === 'fecha'; else plain">
-                  {{ selectedEncuesta!.metadata[key] | date: 'yyyy-MM-dd' }}
+                  {{ formatFecha(selectedEncuesta!.metadata[key]) }}
                 </ng-container>
                 <ng-template #plain>
                   {{ selectedEncuesta!.metadata[key] }}

@@ -15,8 +15,25 @@ CREATE TABLE `estudiante` (
     `direccion` VARCHAR(191) NULL,
     `sistema_ingreso` VARCHAR(191) NULL,
     `numero_inscripciones` INTEGER NULL,
+    `egresado` BOOLEAN NOT NULL DEFAULT false,
 
     PRIMARY KEY (`rut`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `empleabilidad` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `estudianteRut` VARCHAR(191) NOT NULL,
+    `lugarTrabajo` VARCHAR(191) NOT NULL,
+    `sector` VARCHAR(191) NOT NULL,
+    `sectorOtro` VARCHAR(191) NULL,
+    `cargo` VARCHAR(191) NOT NULL,
+    `cargoOtro` VARCHAR(191) NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+
+    UNIQUE INDEX `empleabilidad_estudianteRut_key`(`estudianteRut`),
+    PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
@@ -27,6 +44,8 @@ CREATE TABLE `practica` (
     `fecha_inicio` DATETIME(3) NOT NULL,
     `fecha_termino` DATETIME(3) NULL,
     `tipo` VARCHAR(191) NULL,
+    `anio` INTEGER NOT NULL,
+    `semestre` INTEGER NOT NULL,
     `estudianteRut` VARCHAR(191) NOT NULL,
     `centroId` INTEGER NOT NULL,
 
@@ -37,6 +56,7 @@ CREATE TABLE `practica` (
 CREATE TABLE `centro_educativo` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `nombre` VARCHAR(191) NOT NULL,
+    `rbd` VARCHAR(191) NULL,
     `region` VARCHAR(191) NULL,
     `comuna` VARCHAR(191) NULL,
     `direccion` VARCHAR(191) NULL,
@@ -91,6 +111,24 @@ CREATE TABLE `actividad` (
     `archivo_adjunto` VARCHAR(191) NULL,
 
     PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `tercero` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `rut` VARCHAR(191) NOT NULL,
+    `nombre` VARCHAR(191) NOT NULL,
+
+    UNIQUE INDEX `tercero_rut_key`(`rut`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `actividad_tercero` (
+    `actividadId` INTEGER NOT NULL,
+    `terceroId` INTEGER NOT NULL,
+
+    PRIMARY KEY (`actividadId`, `terceroId`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
@@ -197,6 +235,29 @@ CREATE TABLE `encuesta_colaborador` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
+CREATE TABLE `encuesta_jefatura` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `subtipo` VARCHAR(191) NOT NULL,
+    `fecha` DATETIME(3) NULL,
+    `actividadVinculacionId` INTEGER NULL,
+    `identificacion` JSON NULL,
+    `semestreId` INTEGER NULL,
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `encuesta_egresado` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `tipo` VARCHAR(191) NOT NULL,
+    `fecha` DATETIME(3) NULL,
+    `generales` JSON NULL,
+    `semestreId` INTEGER NULL,
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
 CREATE TABLE `pregunta` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `descripcion` VARCHAR(191) NOT NULL,
@@ -221,6 +282,8 @@ CREATE TABLE `respuesta_seleccionada` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `encuestaEstudianteId` INTEGER NULL,
     `encuestaColaboradorId` INTEGER NULL,
+    `encuestaJefaturaId` INTEGER NULL,
+    `encuestaEgresadoId` INTEGER NULL,
     `preguntaId` INTEGER NOT NULL,
     `alternativaId` INTEGER NULL,
     `respuestaAbierta` LONGTEXT NULL,
@@ -330,7 +393,7 @@ CREATE TABLE `actividad_vinculacion` (
     `medioDifusion` VARCHAR(191) NULL,
     `urlDifusion` VARCHAR(191) NULL,
     `enlaceNoticia` VARCHAR(191) NULL,
-    `observaciones` VARCHAR(191) NULL,
+    `observaciones` TEXT NULL,
     `resumenIa` TEXT NULL,
     `institucionVisitada` VARCHAR(191) NULL,
     `temaCentral` VARCHAR(191) NULL,
@@ -495,6 +558,9 @@ CREATE TABLE `_RolPermisos` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- AddForeignKey
+ALTER TABLE `empleabilidad` ADD CONSTRAINT `empleabilidad_estudianteRut_fkey` FOREIGN KEY (`estudianteRut`) REFERENCES `estudiante`(`rut`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE `practica` ADD CONSTRAINT `practica_estudianteRut_fkey` FOREIGN KEY (`estudianteRut`) REFERENCES `estudiante`(`rut`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -502,6 +568,12 @@ ALTER TABLE `practica` ADD CONSTRAINT `practica_centroId_fkey` FOREIGN KEY (`cen
 
 -- AddForeignKey
 ALTER TABLE `trabajador_educ` ADD CONSTRAINT `trabajador_educ_centroId_fkey` FOREIGN KEY (`centroId`) REFERENCES `centro_educativo`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `actividad_tercero` ADD CONSTRAINT `actividad_tercero_actividadId_fkey` FOREIGN KEY (`actividadId`) REFERENCES `actividad`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `actividad_tercero` ADD CONSTRAINT `actividad_tercero_terceroId_fkey` FOREIGN KEY (`terceroId`) REFERENCES `tercero`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Usuario` ADD CONSTRAINT `Usuario_rolId_fkey` FOREIGN KEY (`rolId`) REFERENCES `rol`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
@@ -519,6 +591,12 @@ ALTER TABLE `encuesta_estudiante` ADD CONSTRAINT `encuesta_estudiante_semestreId
 ALTER TABLE `encuesta_colaborador` ADD CONSTRAINT `encuesta_colaborador_semestreId_fkey` FOREIGN KEY (`semestreId`) REFERENCES `encuesta_semestre`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE `encuesta_jefatura` ADD CONSTRAINT `encuesta_jefatura_semestreId_fkey` FOREIGN KEY (`semestreId`) REFERENCES `encuesta_semestre`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `encuesta_egresado` ADD CONSTRAINT `encuesta_egresado_semestreId_fkey` FOREIGN KEY (`semestreId`) REFERENCES `encuesta_semestre`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE `alternativa` ADD CONSTRAINT `alternativa_preguntaId_fkey` FOREIGN KEY (`preguntaId`) REFERENCES `pregunta`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -526,6 +604,12 @@ ALTER TABLE `respuesta_seleccionada` ADD CONSTRAINT `respuesta_seleccionada_encu
 
 -- AddForeignKey
 ALTER TABLE `respuesta_seleccionada` ADD CONSTRAINT `respuesta_seleccionada_encuestaColaboradorId_fkey` FOREIGN KEY (`encuestaColaboradorId`) REFERENCES `encuesta_colaborador`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `respuesta_seleccionada` ADD CONSTRAINT `respuesta_seleccionada_encuestaJefaturaId_fkey` FOREIGN KEY (`encuestaJefaturaId`) REFERENCES `encuesta_jefatura`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `respuesta_seleccionada` ADD CONSTRAINT `respuesta_seleccionada_encuestaEgresadoId_fkey` FOREIGN KEY (`encuestaEgresadoId`) REFERENCES `encuesta_egresado`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `respuesta_seleccionada` ADD CONSTRAINT `respuesta_seleccionada_preguntaId_fkey` FOREIGN KEY (`preguntaId`) REFERENCES `pregunta`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;

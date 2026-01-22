@@ -180,11 +180,11 @@ export class TutoresComponent implements OnInit {
       };
     }
 
-    // Verificar máximo 8 dígitos
-    if (telefonoStr.length > 8) {
+    // Verificar rango 6-13 digitos
+    if (telefonoStr.length < 6 || telefonoStr.length > 13) {
       return {
         telefonoInvalido: true,
-        mensaje: 'El teléfono debe tener máximo 8 dígitos',
+        mensaje: 'El telefono debe tener entre 6 y 13 digitos',
       };
     }
 

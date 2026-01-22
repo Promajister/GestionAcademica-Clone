@@ -26,6 +26,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActividadesPmService } from '../../services/actividades-pm.service';
 import { saveAs } from 'file-saver';
 import { environment } from '../../../environments/environment';
+import { formatDateEs, parseDateFlexible } from '../../utils/date-utils';
 
 export interface ActividadPmDialogData {
   id: number;
@@ -387,8 +388,8 @@ export class ActividadPmDialogComponent implements OnInit {
 
   private toDateLabel(v?: any): string {
     if (!v) return '-';
-    const d = new Date(v);
-    return isNaN(d.getTime()) ? String(v) : d.toLocaleDateString('es-CL');
+    const parsed = parseDateFlexible(v);
+    return parsed ? formatDateEs(parsed) : String(v);
   }
 
   private toDateInput(value?: string): string {
@@ -399,7 +400,8 @@ export class ActividadPmDialogComponent implements OnInit {
     }
 
     if (typeof value === 'string') {
-      return value;
+      const parsed = parseDateFlexible(value);
+      return parsed ? parsed.toISOString().split('T')[0] : value;
     }
 
     return '';

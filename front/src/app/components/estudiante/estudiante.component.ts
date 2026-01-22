@@ -18,6 +18,7 @@ import {
   EstudianteDetalle,
   EstadoPractica,
 } from '../../services/estudiantes.service';
+import { formatDateEs, parseDateFlexible } from '../../utils/date-utils';
 
 @Component({
   standalone: true,
@@ -204,8 +205,8 @@ export class EstudiantesComponent implements OnInit {
 
   formatearFecha(value?: string | null): string {
     if (!value) return '-';
-    const date = new Date(value);
-    return isNaN(date.getTime()) ? value : date.toLocaleDateString('es-CL');
+    const parsed = parseDateFlexible(value);
+    return parsed ? formatDateEs(parsed) : value;
   }
 
   private async cargarLogo(
@@ -331,7 +332,7 @@ export class EstudiantesComponent implements OnInit {
 
   // Identificación
   const now = new Date();
-  const fecha = now.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const fecha = formatDateEs(now);
   const hora = now.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
   const practicasCount = detalle.practicas?.length || 0;
 

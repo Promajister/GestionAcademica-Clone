@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'prisma/prisma.service';
+import { formatDateEs } from '../common/date-format';
 import { calcSatisfaccionFromRespuestas } from './utils/satisfaccion.util';
 
 @Injectable()
@@ -50,7 +51,7 @@ export class ReportesService {
     const recientes = actividades.map(a => ({
       id: a.id,
       nombre: a.nombre_actividad,
-      fecha: a.fecha.toISOString(),
+      fecha: formatDateEs(a.fecha),
     }));
 
     // Próximos vencimientos 
@@ -70,7 +71,7 @@ export class ReportesService {
       practicaId: p.id,
       estudiante: p.estudiante?.nombre ?? 'Sin estudiante',
       centro: p.centro?.nombre ?? 'Sin centro',
-      fechaTermino: p.fecha_termino!.toISOString(),
+      fechaTermino: formatDateEs(p.fecha_termino!),
       estado: p.estado,
     }));
 
@@ -128,7 +129,7 @@ export class ReportesService {
       },
       recientes,
       vencimientos,
-      generatedAt: new Date().toISOString(),
+      generatedAt: formatDateEs(new Date()),
     };
   }
   
@@ -557,7 +558,7 @@ export class ReportesService {
         totalExcluidas: satCol.totalExcluidas,
       },
 
-      generatedAt: new Date().toISOString(),
+      generatedAt: formatDateEs(new Date()),
     };
   }
 

@@ -25,6 +25,7 @@ import autoTable, { type RowInput } from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { environment } from '../../../environments/environment';
+import { formatDateEs, parseDateFlexible } from '../../utils/date-utils';
 
 
 @Component({
@@ -1707,17 +1708,7 @@ export class ActividadesPmGestionComponent implements OnInit {
   }
 
   private buildGeneratedText(): string {
-    const formatted = new Intl.DateTimeFormat('es-CL', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: true,
-    }).format(new Date());
-
-    return `Fecha y hora: ${formatted}`;
+    return `Fecha: ${formatDateEs(new Date())}`;
   }
 
   private buildPdfFileName(base: string, items: any[]): string {
@@ -1785,8 +1776,8 @@ export class ActividadesPmGestionComponent implements OnInit {
     const datePart = trimmed.includes('T') ? trimmed.split('T')[0] : trimmed;
     const match = /^\d{4}/.exec(datePart);
     if (match) return Number(match[0]);
-    const parsed = new Date(trimmed);
-    return Number.isNaN(parsed.getTime()) ? null : parsed.getFullYear();
+    const parsed = parseDateFlexible(trimmed);
+    return parsed ? parsed.getFullYear() : null;
   }
 
   private drawPdfFooter(doc: jsPDF, page: number, totalPages: number, title: string) {
@@ -1826,8 +1817,8 @@ export class ActividadesPmGestionComponent implements OnInit {
 
   private formatDate(value?: string | null): string {
     if (!value) return '-';
-    const d = new Date(value);
-    return isNaN(d.getTime()) ? String(value) : d.toLocaleDateString('es-CL');
+    const parsed = parseDateFlexible(value);
+    return parsed ? formatDateEs(parsed) : String(value);
   }
 
   private excelText(value: any): string {

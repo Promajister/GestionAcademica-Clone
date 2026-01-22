@@ -27,6 +27,7 @@ import jsPDF from 'jspdf';
 import autoTable, { type RowInput, type CellDef } from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import { formatDateEs, parseDateFlexible } from '../../utils/date-utils';
 
 @Component({
   standalone: true,
@@ -206,7 +207,8 @@ export class ReportesEstudianteComponent {
   formatDate(value?: string | null): string {
     if (!value) return '—';
     const d = new Date(value);
-    return isNaN(d.getTime()) ? String(value) : d.toLocaleDateString('es-CL');
+    const parsed = parseDateFlexible(value);
+    return parsed ? formatDateEs(parsed) : String(value);
   }
 
   formatPeriodo(p: any): string {
@@ -416,7 +418,7 @@ export class ReportesEstudianteComponent {
             };
 
             const safe = (v: any) => (v === null || v === undefined || v === '' ? '—' : String(v));
-            const generatedText = `Generado: ${new Date().toLocaleString('es-CL')}`;
+            const generatedText = `Generado: ${formatDateEs(new Date())}`;
 
             const headerData = {
               title: 'REPORTE DE ESTUDIANTES',

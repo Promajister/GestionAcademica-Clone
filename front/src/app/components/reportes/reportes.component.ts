@@ -23,6 +23,7 @@ import {
   ReportesIndicadores,
   ReporteSatisfaccion,
 } from '../../services/reportes.service';
+import { formatDateEs, parseDateFlexible } from '../../utils/date-utils';
 
 @Component({
   standalone: true,
@@ -171,7 +172,7 @@ export class ReportesComponent implements OnInit {
   }
 
   formatDate(value: string): string {
-    const d = new Date(value);
-    return isNaN(d.getTime()) ? value : d.toLocaleDateString('es-CL');
+    const parsed = parseDateFlexible(value);
+    return parsed ? formatDateEs(parsed) : value;
   }
 }

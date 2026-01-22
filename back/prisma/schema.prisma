@@ -89,6 +89,8 @@ model Practica {
   fecha_inicio  DateTime
   fecha_termino DateTime?
   tipo          String?
+  anio          Int
+  semestre      Int
 
   estudianteRut String
   estudiante    Estudiante @relation(fields: [estudianteRut], references: [rut])
@@ -163,7 +165,30 @@ model Actividad {
   lugar               String?
   archivo_adjunto     String?
 
+  terceros ActividadTercero[]
+
   @@map("actividad")
+}
+
+model Tercero {
+  id     Int    @id @default(autoincrement())
+  rut    String @unique
+  nombre String
+
+  actividades ActividadTercero[]
+
+  @@map("tercero")
+}
+
+model ActividadTercero {
+  actividadId Int
+  terceroId   Int
+
+  actividad Actividad @relation(fields: [actividadId], references: [id], onDelete: Cascade)
+  tercero   Tercero   @relation(fields: [terceroId], references: [id], onDelete: Cascade)
+
+  @@id([actividadId, terceroId])
+  @@map("actividad_tercero")
 }
 
 model Usuario {

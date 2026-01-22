@@ -5,6 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTableModule } from '@angular/material/table';
+import { formatDateEs, parseDateFlexible } from '../../utils/date-utils';
 
 @Component({
   standalone: true,
@@ -35,7 +36,8 @@ export class DetalleEstudianteDialogComponent {
   formatDate(value?: string | null): string {
     if (!value) return '—';
     const d = new Date(value);
-    return isNaN(d.getTime()) ? String(value) : d.toLocaleDateString('es-CL');
+    const parsed = parseDateFlexible(value);
+    return parsed ? formatDateEs(parsed) : String(value);
   }
 
   formatPeriodo(p: any): string {

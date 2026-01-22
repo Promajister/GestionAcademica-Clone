@@ -87,8 +87,10 @@
           </div>
 
           <div>
-            <div class="form-title">Asignar Nueva Práctica</div>
-            <div class="form-subtitle">Completa los datos para asignar una práctica a un estudiante</div>
+            <div class="form-title">{{ practicaEditando ? 'Editar Práctica' : 'Asignar Nueva Práctica' }}</div>
+            <div class="form-subtitle">
+              {{ practicaEditando ? 'Actualiza los datos de la asignación.' : 'Completa los datos para asignar una práctica a un estudiante' }}
+            </div>
           </div>
         </div>
 
@@ -125,6 +127,8 @@
 
               @if (formularioPractica.get('estudianteRut')?.hasError('required')) {
                 <mat-error>Debe seleccionar un estudiante</mat-error>
+              } @else if (formularioPractica.get('estudianteRut')?.hasError('invalido')) {
+                <mat-error>Selecciona un estudiante válido</mat-error>
               }
             </mat-form-field>
 
@@ -151,6 +155,8 @@
 
               @if (formularioPractica.get('centroId')?.hasError('required')) {
                 <mat-error>Debe seleccionar un centro educativo</mat-error>
+              } @else if (formularioPractica.get('centroId')?.hasError('invalido')) {
+                <mat-error>Selecciona un centro educativo válido</mat-error>
               }
             </mat-form-field>
           </div>
@@ -248,7 +254,33 @@
             </mat-form-field>
           </div>
 
-          <!-- Tipo + Estado -->
+          <!-- Periodo -->
+          <div class="row-2">
+            <mat-form-field appearance="outline">
+              <mat-label>A&ntilde;o *</mat-label>
+              <input matInput type="number" formControlName="anio" min="2000" step="1" />
+              @if (formularioPractica.get('anio')?.hasError('required')) {
+                <mat-error>Debe indicar el a&ntilde;o</mat-error>
+              } @else if (formularioPractica.get('anio')?.hasError('min')) {
+                <mat-error>El a&ntilde;o debe ser mayor o igual a 2000</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Semestre *</mat-label>
+              <mat-select formControlName="semestre">
+                <mat-option [value]="null">Seleccionar semestre</mat-option>
+                @for (s of semestres; track s) {
+                  <mat-option [value]="s">{{ s }}</mat-option>
+                }
+              </mat-select>
+              @if (formularioPractica.get('semestre')?.hasError('required')) {
+                <mat-error>Debe indicar el semestre</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <!-- Tipo -->
           <div class="row-2">
             <mat-form-field appearance="outline">
               <mat-label>Tipo de Práctica</mat-label>
@@ -259,17 +291,6 @@
                 }
               </mat-select>
             </mat-form-field>
-
-            <mat-form-field appearance="outline">
-              <mat-label>Estado</mat-label>
-              <mat-select formControlName="estado">
-                @for (estado of estadosPractica; track estado) {
-                  <mat-option [value]="estado">
-                    {{ formatearEstado(estado) }}
-                  </mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
           </div>
 
           <!-- Acciones -->
@@ -277,7 +298,7 @@
             <button mat-stroked-button (click)="cerrarFormulario()">Cancelar</button>
             <button mat-flat-button color="primary" (click)="guardarPractica()">
               <mat-icon>person_add</mat-icon>
-              Asignar Práctica
+              {{ practicaEditando ? 'Guardar cambios' : 'Asignar Práctica' }}
             </button>
           </div>
         </form>
@@ -359,6 +380,12 @@
         <span class="status-pill" [ngClass]="assignment.estado.toLowerCase()">
           {{ formatearEstado(assignment.estado) }}
         </span>
+
+        @if (esCoordinadoraPracticas) {
+          <button mat-stroked-button class="btn-details" (click)="abrirEdicion(assignment)">
+            Editar
+          </button>
+        }
 
         <button mat-stroked-button class="btn-details" (click)="verDetalles(assignment)">
           Ver detalles

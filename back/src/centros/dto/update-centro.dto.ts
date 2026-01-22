@@ -1,6 +1,6 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { CreateCentroDto, TIPO_CENTRO_VALUES } from './create-centro.dto';
-import { IsDateString, IsEmail, IsIn, IsInt, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsDateString, IsEmail, IsIn, IsInt, IsOptional, IsString, MaxLength, Max, Min } from 'class-validator';
 
 export class UpdateCentroDto extends PartialType(CreateCentroDto) {
   @IsOptional() @IsString() @MaxLength(200)
@@ -24,6 +24,9 @@ export class UpdateCentroDto extends PartialType(CreateCentroDto) {
   override direccion?: string | null;
 
   @IsOptional()
+  @IsInt()
+  @Min(100000, { message: 'El telefono debe tener entre 6 y 13 digitos' })
+  @Max(9999999999999, { message: 'El telefono debe tener entre 6 y 13 digitos' })
   override telefono?: number | null;
 
   @IsOptional()

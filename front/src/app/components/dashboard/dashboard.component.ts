@@ -23,6 +23,7 @@ import {
   EstadoPractica,
   Practica,
 } from '../../services/practicas.service';
+import { formatDateEs, parseDateFlexible } from '../../utils/date-utils';
 
 type RoleId = 'jefatura' | 'vinculacion' | 'practicas';
 
@@ -115,10 +116,8 @@ export class DashboardComponent implements OnInit {
     const rawLastLogin = localStorage.getItem('lastLogin');
     if (rawLastLogin) {
       const d = new Date(rawLastLogin);
-      this.lastLogin = d.toLocaleString('es-CL', {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-      });
+      const parsed = parseDateFlexible(d);
+      this.lastLogin = parsed ? formatDateEs(parsed) : d.toString();
     } else {
       this.lastLogin = null;
     }
