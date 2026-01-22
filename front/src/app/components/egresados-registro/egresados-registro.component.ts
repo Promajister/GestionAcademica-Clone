@@ -556,13 +556,13 @@ export class EgresadosRegistroComponent implements OnInit, OnDestroy {
     section('Datos personales', [
       ['RUT', this.formatearRut(detalle.rut)],
       ['Genero', safe(detalle.genero)],
-      ['Ano nacimiento', this.formatearFecha(detalle.anio_nacimiento)],
+      ['Año nacimiento', this.formatearFecha(detalle.anio_nacimiento)],
       ['Direccion', safe((detalle as any).direccion)],
     ]);
 
     section('Datos academicos', [
       ['Carrera / Plan', safe(detalle.plan)],
-      ['Ano de ingreso', safe((detalle as any).anio_ingreso)],
+      ['Año de ingreso', safe((detalle as any).anio_ingreso)],
       ['Sistema de ingreso', safe((detalle as any).sistema_ingreso)],
       ['Nro inscripciones', safe((detalle as any).numero_inscripciones)],
       ['Avance', this.formatearNumero((detalle as any).avance)],

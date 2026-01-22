@@ -65,6 +65,11 @@ interface AcreditacionStats {
   countAutoevaluacion: number;
   pctComentarios: number;
   countComentarios: number;
+  preguntas: Array<{
+    key: string;
+    label: string;
+    stat: PieStat;
+  }>;
 }
 
 @Component({
@@ -125,6 +130,7 @@ export class EgresadosAnalisisComponent implements OnInit {
     countAutoevaluacion: 0,
     pctComentarios: 0,
     countComentarios: 0,
+    preguntas: [],
   };
 
   private readonly likertMap: Record<string, number> = {
@@ -134,6 +140,34 @@ export class EgresadosAnalisisComponent implements OnInit {
     'De acuerdo': 4,
     'Muy de acuerdo': 5,
   };
+  private readonly likertLabels = [
+    'Muy en desacuerdo',
+    'En desacuerdo',
+    'Ni de acuerdo ni en desacuerdo',
+    'De acuerdo',
+    'Muy de acuerdo',
+  ];
+  private readonly acreditacionPreguntas = [
+    { key: 'secciones.perfilEgreso.p1', label: 'Conoci el perfil de egreso de la carrera.' },
+    { key: 'secciones.perfilEgreso.p2', label: 'La formacion recibida corresponde al perfil de egreso declarado.' },
+    { key: 'secciones.planEstudios.p3', label: 'El plan de estudios fue consistente con el perfil de egreso.' },
+    { key: 'secciones.planEstudios.p4', label: 'Las asignaturas ofrecidas ayudaron al logro del perfil de egreso.' },
+    { key: 'secciones.planEstudios.p5', label: 'Las evaluaciones eran pertinentes y coherentes con los objetivos de aprendizaje.' },
+    { key: 'secciones.planEstudios.p6', label: 'Participe en actividades sobre etica, inclusion, diversidad y responsabilidad social.' },
+    { key: 'secciones.formacionPractica.p7', label: 'Las practicas profesionales se realizaron con instituciones pertinentes.' },
+    { key: 'secciones.formacionPractica.p8', label: 'Existio acompanamiento y supervision formal en la formacion practica.' },
+    { key: 'secciones.formacionPractica.p9', label: 'Las actividades de practica fueron evaluadas con pautas claras.' },
+    { key: 'secciones.cuerpoAcademico.p10', label: 'Los profesores tenian conocimientos actualizados y metodologias adecuadas.' },
+    { key: 'secciones.cuerpoAcademico.p11', label: 'Existia un equipo docente que lideraba el proyecto formativo.' },
+    { key: 'secciones.cuerpoAcademico.p12', label: 'Recibi material y herramientas elaboradas por mis docentes.' },
+    { key: 'secciones.gestionRecursos.p13', label: 'La infraestructura y equipamiento eran adecuados para el aprendizaje.' },
+    { key: 'secciones.gestionRecursos.p14', label: 'La biblioteca y recursos digitales eran suficientes.' },
+    { key: 'secciones.gestionRecursos.p15', label: 'Existian mecanismos formalizados para atender solicitudes de estudiantes.' },
+    { key: 'secciones.gestionRecursos.p16', label: 'La gestion del cuerpo directivo permitia una conduccion eficaz.' },
+    { key: 'secciones.autorregulacion.p17', label: 'Participe en procesos de autoevaluacion de la carrera.' },
+    { key: 'secciones.autorregulacion.p18', label: 'Observe mejoras durante mi formacion por aseguramiento de calidad.' },
+    { key: 'secciones.autorregulacion.p19', label: 'La carrera apoya insercion profesional y seguimiento de titulados.' },
+  ];
 
   ngOnInit(): void {
     this.loadEncuestas();
@@ -213,7 +247,7 @@ export class EgresadosAnalisisComponent implements OnInit {
     const tiempoMenos1 = this.countByRespuesta(
       encuestas,
       'insercion.tiempoPrimerTrabajo',
-      'Entre 6 meses y 1 ano',
+      'Entre 6 meses y 1 año',
     );
 
     const generoCounts = { mujer: 0, hombre: 0, noResponde: 0 };
@@ -311,6 +345,9 @@ export class EgresadosAnalisisComponent implements OnInit {
       blue: '#2563eb',
       green: '#15803d',
       yellow: '#f59e0b',
+      orange: '#ea580c',
+      purple: '#7c3aed',
+      teal: '#0f766e',
     };
 
     return {
@@ -322,7 +359,7 @@ export class EgresadosAnalisisComponent implements OnInit {
       tiempoEmpleo: this.buildPieStat([
         { label: 'Menos de 2 meses', count: tiempoMenos2, color: palette.blue },
         { label: 'Menos de 6 meses', count: tiempoMenos6, color: palette.yellow },
-        { label: 'Menos de 1 ano', count: tiempoMenos1, color: palette.green },
+        { label: 'Menos de 1 año', count: tiempoMenos1, color: palette.green },
       ]),
       empleoGenero: this.buildPieStat([
         { label: 'Mujer', count: generoCounts.mujer, color: palette.blue },
@@ -350,13 +387,13 @@ export class EgresadosAnalisisComponent implements OnInit {
         { label: 'Particular subvencionado', count: instSubv, color: palette.yellow },
         { label: 'Particular', count: instParticular, color: palette.green },
         { label: 'Otro', count: instOtro, color: palette.red },
-        { label: 'No corresponde', count: instNoCorresponde, color: palette.yellow },
+        { label: 'No corresponde', count: instNoCorresponde, color: palette.orange },
       ]),
       pertinencia: this.buildPieStat([
         { label: 'Muy de acuerdo', count: pertinenciaMuyDeAcuerdo, color: palette.green },
         { label: 'De acuerdo', count: pertinenciaDeAcuerdo, color: palette.blue },
         { label: 'Ni de acuerdo ni en desacuerdo', count: pertinenciaNeutral, color: palette.yellow },
-        { label: 'En desacuerdo', count: pertinenciaEnDesacuerdo, color: palette.red },
+        { label: 'En desacuerdo', count: pertinenciaEnDesacuerdo, color: palette.orange },
         { label: 'Muy en desacuerdo', count: pertinenciaMuyEnDesacuerdo, color: palette.red },
       ]),
       postgrado: this.buildPieStat([
@@ -499,6 +536,40 @@ export class EgresadosAnalisisComponent implements OnInit {
     return canvas.toDataURL('image/png');
   }
 
+  private drawConclusionBlock(
+    doc: jsPDF,
+    title: string,
+    text: string,
+    x: number,
+    y: number,
+    width: number,
+  ): number {
+    const padding = 12;
+    const headerH = 18;
+    const lineH = 12;
+    const maxTextW = width - padding * 2;
+    const lines = doc.splitTextToSize(text, maxTextW) as string[];
+    const contentH = headerH + lines.length * lineH + padding;
+
+    doc.setFillColor(248, 250, 252);
+    (doc as any).roundedRect(x, y, width, contentH, 10, 10, 'F');
+    doc.setDrawColor(209, 213, 219);
+    doc.setLineWidth(1);
+    (doc as any).roundedRect(x, y, width, contentH, 10, 10, 'S');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(17, 24, 39);
+    doc.text(title, x + padding, y + 16);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(17, 24, 39);
+    doc.text(lines, x + padding, y + 16 + lineH);
+
+    return contentH;
+  }
+
   async exportarPdfConGraficos(): Promise<void> {
     const doc = new jsPDF({ unit: 'pt', format: 'letter' });
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -561,17 +632,28 @@ export class EgresadosAnalisisComponent implements OnInit {
     doc.setTextColor(...colors.text);
     doc.text('Parámetros del reporte', margin + 14, y + 24);
 
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    doc.setTextColor(...colors.muted);
-    doc.text(`Año de egreso: ${anioLabel}`, margin + 14, y + 44);
-    doc.text(`Total encuestas: ${this.empleabilidad.total}`, margin + 200, y + 44);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(...colors.muted);
+      doc.text(`Año de egreso: ${anioLabel}`, margin + 14, y + 44);
+      doc.text(`Total encuestas: ${this.empleabilidad.total}`, margin + 200, y + 44);
 
-    y += 92;
+      y += 92;
 
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
-    doc.setTextColor(...colors.text);
+      const conclusionEmpleabilidad = this.conclusionEmpleabilidadText || this.buildConclusionEmpleabilidad();
+      const conclusionH = this.drawConclusionBlock(
+        doc,
+        'Conclusion IA (Empleabilidad)',
+        conclusionEmpleabilidad,
+        margin,
+        y,
+        contentW,
+      );
+      y += conclusionH + 18;
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(...colors.text);
     doc.text('INDICADORES DE EMPLEABILIDAD', margin, y);
     y += 8;
     doc.setDrawColor(...colors.line);
@@ -728,16 +810,27 @@ export class EgresadosAnalisisComponent implements OnInit {
     doc.setTextColor(...colors.text);
     doc.text('Parámetros del reporte', margin + 14, y + 24);
 
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    doc.setTextColor(...colors.muted);
-    doc.text(`Año de egreso: ${anioLabel}`, margin + 14, y + 44);
-    doc.text(`Total encuestas: ${this.empleabilidad.total}`, margin + 200, y + 44);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(...colors.muted);
+      doc.text(`Año de egreso: ${anioLabel}`, margin + 14, y + 44);
+      doc.text(`Total encuestas: ${this.empleabilidad.total}`, margin + 200, y + 44);
 
-    y += 92;
+      y += 92;
 
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
+      const conclusionEmpleabilidad = this.conclusionEmpleabilidadText || this.buildConclusionEmpleabilidad();
+      const conclusionH = this.drawConclusionBlock(
+        doc,
+        'Conclusion IA (Empleabilidad)',
+        conclusionEmpleabilidad,
+        margin,
+        y,
+        contentW,
+      );
+      y += conclusionH + 18;
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
     doc.setTextColor(...colors.text);
     doc.text('DETALLE DE INDICADORES', margin, y);
     y += 8;
@@ -809,6 +902,307 @@ export class EgresadosAnalisisComponent implements OnInit {
     doc.save(`analisis_egresados_tabla_${suffix}.pdf`);
   }
 
+  async exportarPdfAcreditacionConGraficos(): Promise<void> {
+    const doc = new jsPDF({ unit: 'pt', format: 'letter' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+
+    const margin = 52;
+    const headerH = 92;
+    const top = headerH + 22;
+    const bottom = 54;
+    const contentW = pageWidth - margin * 2;
+    const gap = 16;
+    const cardRadius = 12;
+    const cardW = Math.floor((contentW - gap) / 2);
+
+    const colors = {
+      text: [17, 24, 39] as [number, number, number],
+      muted: [100, 116, 139] as [number, number, number],
+      line: [229, 231, 235] as [number, number, number],
+      border: [209, 213, 219] as [number, number, number],
+      cardFill: [248, 250, 252] as [number, number, number],
+    };
+
+    const [logoUta, logoFeh] = await Promise.all([
+      this.loadImageAsDataURLSafe('assets/img/uta.png'),
+      this.loadImageAsDataURLSafe('assets/img/feh.png'),
+    ]);
+
+    const now = new Date();
+    const generatedText = `Generado: ${now.toLocaleString('es-CL')}`;
+
+    const headerData = {
+      title: 'ANÁLISIS DE EGRESADOS',
+      subtitle: 'Encuesta de egresados',
+      generatedText,
+      logoLeft: logoUta,
+      logoRight: logoFeh,
+    };
+
+    this.drawPdfHeader(doc, headerData);
+
+    let y = top;
+    const ensureSpace = (needed: number) => {
+      if (y + needed <= pageHeight - bottom) return;
+      doc.addPage();
+      this.drawPdfHeader(doc, headerData);
+      y = top;
+    };
+
+    ensureSpace(90);
+    doc.setFillColor(...colors.cardFill);
+    (doc as any).roundedRect(margin, y, contentW, 72, cardRadius, cardRadius, 'F');
+    doc.setDrawColor(...colors.border);
+    doc.setLineWidth(1);
+    (doc as any).roundedRect(margin, y, contentW, 72, cardRadius, cardRadius, 'S');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(...colors.text);
+    doc.text('Resumen del reporte', margin + 14, y + 24);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(...colors.muted);
+    doc.text(`Total encuestas: ${this.acreditacion.total}`, margin + 14, y + 44);
+    doc.text(`Promedio Likert: ${this.acreditacion.promedioLikert}%`, margin + 200, y + 44);
+
+    y += 92;
+
+    const conclusionAcreditacion = this.conclusionAcreditacionText || this.buildConclusionAcreditacion();
+    const conclusionH = this.drawConclusionBlock(
+      doc,
+      'Conclusion IA (Egresados)',
+      conclusionAcreditacion,
+      margin,
+      y,
+      contentW,
+    );
+    y += conclusionH + 18;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(...colors.text);
+    doc.text('INDICADORES DE EGRESADOS', margin, y);
+    y += 8;
+    doc.setDrawColor(...colors.line);
+    doc.setLineWidth(1);
+    doc.line(margin, y, margin + 240, y);
+    y += 16;
+
+    const charts = this.acreditacion.preguntas.map((q) => ({
+      title: q.label,
+      data: q.stat,
+    }));
+
+    const chartSize = 140;
+    const padding = 12;
+    const legendLineH = 12;
+    const getCardHeight = (segmentsCount: number) =>
+      padding + 18 + chartSize + 10 + (segmentsCount * legendLineH + 6) + padding;
+
+    const drawChartCard = (chart: { title: string; data: PieStat }, x: number, yPos: number, width: number) => {
+      const height = getCardHeight(chart.data.segments.length);
+
+      doc.setFillColor(255, 255, 255);
+      (doc as any).roundedRect(x, yPos, width, height, cardRadius, cardRadius, 'F');
+      doc.setDrawColor(...colors.border);
+      doc.setLineWidth(1);
+      (doc as any).roundedRect(x, yPos, width, height, cardRadius, cardRadius, 'S');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(...colors.text);
+      doc.text(chart.title, x + padding, yPos + 20);
+
+      const imgData = this.renderPieChartImage(chart.data.segments, chartSize);
+      const imgX = x + padding;
+      const imgY = yPos + 28;
+      if (imgData) {
+        doc.addImage(imgData, 'PNG', imgX, imgY, chartSize, chartSize);
+      }
+
+      let ly = imgY + chartSize + 10;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(...colors.text);
+
+      for (const seg of chart.data.segments) {
+        const [r, g, b] = this.hexToRgb(seg.color);
+        doc.setFillColor(r, g, b);
+        doc.rect(imgX, ly - 7, 8, 8, 'F');
+        doc.setTextColor(...colors.text);
+        doc.text(`${seg.label} (${seg.pct}%)`, imgX + 14, ly);
+        ly += legendLineH;
+      }
+
+      doc.setFontSize(8);
+      doc.setTextColor(...colors.muted);
+      doc.text(`Total encuestas: ${chart.data.total}`, x + padding, yPos + height - 10);
+
+      return height;
+    };
+
+    for (let i = 0; i < charts.length; i += 2) {
+      const left = charts[i];
+      const right = charts[i + 1];
+      const rowHeight = Math.max(
+        getCardHeight(left.data.segments.length),
+        right ? getCardHeight(right.data.segments.length) : 0,
+      );
+      ensureSpace(rowHeight + gap);
+      drawChartCard(left, margin, y, cardW);
+      if (right) drawChartCard(right, margin + cardW + gap, y, cardW);
+      y += rowHeight + gap;
+    }
+
+    const totalPages = (doc as any).getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      this.drawPdfHeader(doc, headerData);
+      this.drawPdfFooter(doc, i, totalPages, 'Análisis de egresados');
+    }
+
+    doc.save('analisis_egresados_acreditacion.pdf');
+  }
+
+  async exportarPdfAcreditacionTabla(): Promise<void> {
+    const doc = new jsPDF({ unit: 'pt', format: 'letter' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+
+    const margin = 52;
+    const headerH = 92;
+    const top = headerH + 22;
+    const bottom = 54;
+    const contentW = pageWidth - margin * 2;
+
+    const colors = {
+      text: [17, 24, 39] as [number, number, number],
+      muted: [100, 116, 139] as [number, number, number],
+      line: [229, 231, 235] as [number, number, number],
+      border: [209, 213, 219] as [number, number, number],
+      tableHead: [241, 245, 249] as [number, number, number],
+      cardFill: [248, 250, 252] as [number, number, number],
+    };
+
+    const [logoUta, logoFeh] = await Promise.all([
+      this.loadImageAsDataURLSafe('assets/img/uta.png'),
+      this.loadImageAsDataURLSafe('assets/img/feh.png'),
+    ]);
+
+    const now = new Date();
+    const generatedText = `Generado: ${now.toLocaleString('es-CL')}`;
+
+    const headerData = {
+      title: 'ANÁLISIS DE EGRESADOS',
+      subtitle: 'Encuesta de egresados',
+      generatedText,
+      logoLeft: logoUta,
+      logoRight: logoFeh,
+    };
+
+    this.drawPdfHeader(doc, headerData);
+
+    let y = top;
+    const ensureSpace = (needed: number) => {
+      if (y + needed <= pageHeight - bottom) return;
+      doc.addPage();
+      this.drawPdfHeader(doc, headerData);
+      y = top;
+    };
+
+    ensureSpace(90);
+    doc.setFillColor(...colors.cardFill);
+    (doc as any).roundedRect(margin, y, contentW, 72, 12, 12, 'F');
+    doc.setDrawColor(...colors.border);
+    doc.setLineWidth(1);
+    (doc as any).roundedRect(margin, y, contentW, 72, 12, 12, 'S');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(...colors.text);
+    doc.text('Resumen del reporte', margin + 14, y + 24);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(...colors.muted);
+      doc.text(`Total encuestas: ${this.acreditacion.total}`, margin + 14, y + 44);
+      doc.text(`Promedio Likert: ${this.acreditacion.promedioLikert}%`, margin + 200, y + 44);
+
+      y += 92;
+
+      const conclusionAcreditacion = this.conclusionAcreditacionText || this.buildConclusionAcreditacion();
+      const conclusionH = this.drawConclusionBlock(
+        doc,
+        'Conclusion IA (Egresados)',
+        conclusionAcreditacion,
+        margin,
+        y,
+        contentW,
+      );
+      y += conclusionH + 18;
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(...colors.text);
+    doc.text('DETALLE DE INDICADORES', margin, y);
+    y += 8;
+    doc.setDrawColor(...colors.line);
+    doc.setLineWidth(1);
+    doc.line(margin, y, margin + 240, y);
+    y += 16;
+
+    const rows = this.acreditacion.preguntas.flatMap((chart) =>
+      chart.stat.segments.map((seg) => [
+        chart.label,
+        seg.label,
+        `${seg.pct}%`,
+        `${seg.count}`,
+      ]),
+    );
+
+    autoTable(doc, {
+      startY: y,
+      head: [['Indicador', 'Categoria', 'Porcentaje', 'Respuestas']],
+      body: rows as any,
+      margin: { left: margin, right: margin, top, bottom },
+      tableWidth: contentW,
+      styles: {
+        font: 'helvetica',
+        fontSize: 9,
+        cellPadding: 6,
+        textColor: colors.text as any,
+        lineColor: colors.line as any,
+        lineWidth: 0.8,
+      },
+      headStyles: {
+        fillColor: colors.tableHead as any,
+        textColor: colors.text as any,
+        fontStyle: 'bold',
+        lineColor: colors.border as any,
+        lineWidth: 1,
+      },
+      alternateRowStyles: { fillColor: [248, 250, 252] as any },
+      columnStyles: {
+        0: { cellWidth: Math.floor(contentW * 0.38) },
+        1: { cellWidth: Math.floor(contentW * 0.32) },
+        2: { cellWidth: Math.floor(contentW * 0.15), halign: 'right' as any },
+        3: { cellWidth: Math.floor(contentW * 0.15), halign: 'right' as any },
+      },
+    });
+
+    const totalPages = (doc as any).getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      this.drawPdfHeader(doc, headerData);
+      this.drawPdfFooter(doc, i, totalPages, 'Análisis de egresados');
+    }
+
+    doc.save('analisis_egresados_acreditacion_tabla.pdf');
+  }
+
   private buildAcreditacionStats(encuestas: EgresadoEncuestaRow[]): AcreditacionStats {
     const total = encuestas.length;
     const promedioLikert = this.calcLikertPromedio(encuestas);
@@ -818,6 +1212,12 @@ export class EgresadosAnalisisComponent implements OnInit {
     const countMejora = this.countAgreement(encuestas, 'secciones.autorregulacion.p18');
     const countAutoevaluacion = this.countAgreement(encuestas, 'secciones.autorregulacion.p17');
     const countComentarios = this.countConComentarios(encuestas);
+
+    const preguntas = this.acreditacionPreguntas.map((q) => ({
+      key: q.key,
+      label: q.label,
+      stat: this.buildLikertStat(encuestas, q.key),
+    }));
 
     return {
       total,
@@ -833,6 +1233,7 @@ export class EgresadosAnalisisComponent implements OnInit {
       countAutoevaluacion,
       pctComentarios: this.pct(countComentarios, total),
       countComentarios,
+      preguntas,
     };
   }
 
@@ -924,6 +1325,16 @@ export class EgresadosAnalisisComponent implements OnInit {
     }
 
     return { total, segments };
+  }
+
+  private buildLikertStat(encuestas: EgresadoEncuestaRow[], key: string): PieStat {
+    const palette = ['#dc2626', '#f97316', '#eab308', '#22c55e', '#16a34a'];
+    const parts = this.likertLabels.map((label, idx) => ({
+      label,
+      count: this.countByRespuesta(encuestas, key, label),
+      color: palette[idx] ?? '#94a3b8',
+    }));
+    return this.buildPieStat(parts);
   }
 
   private getTopSegment(stat: PieStat): PieSegment | null {

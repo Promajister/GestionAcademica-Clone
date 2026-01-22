@@ -239,9 +239,30 @@
           <span class="muted">Calidad formativa, recursos y mejora continua.</span>
         </div>
       </div>
-      <div class="chip">
-        <mat-icon>assignment</mat-icon>
-        <span>{{ acreditacion.total }} encuestas</span>
+      <div class="section-tools">
+        <button
+          mat-flat-button
+          color="primary"
+          class="export-btn"
+          [matMenuTriggerFor]="exportMenuAcreditacion"
+        >
+          <mat-icon>picture_as_pdf</mat-icon>
+          Exportar PDF
+        </button>
+        <mat-menu #exportMenuAcreditacion="matMenu">
+          <button mat-menu-item (click)="exportarPdfAcreditacionConGraficos()">
+            <mat-icon>pie_chart</mat-icon>
+            Con gráficos
+          </button>
+          <button mat-menu-item (click)="exportarPdfAcreditacionTabla()">
+            <mat-icon>table_chart</mat-icon>
+            Solo tabla
+          </button>
+        </mat-menu>
+        <div class="chip">
+          <mat-icon>assignment</mat-icon>
+          <span>{{ acreditacion.total }} encuestas</span>
+        </div>
       </div>
     </div>
 
@@ -269,64 +290,19 @@
       </div>
     </div>
 
-    <div class="kpi-grid">
-      <div class="kpi-card">
-        <div class="kpi-label">Promedio Likert</div>
-        <div class="kpi-value">{{ acreditacion.promedioLikert }}%</div>
-        <div class="kpi-sub">{{ acreditacion.totalLikertRespuestas }} respuestas</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">Perfil de egreso</div>
-        <div class="kpi-value">{{ acreditacion.pctPerfilEgreso }}%</div>
-        <div class="kpi-sub">{{ acreditacion.countPerfilEgreso }} de {{ acreditacion.total }}</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">Recursos e infraestructura</div>
-        <div class="kpi-value">{{ acreditacion.pctRecursos }}%</div>
-        <div class="kpi-sub">{{ acreditacion.countRecursos }} de {{ acreditacion.total }}</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">Mejora continua</div>
-        <div class="kpi-value">{{ acreditacion.pctMejora }}%</div>
-        <div class="kpi-sub">{{ acreditacion.countMejora }} de {{ acreditacion.total }}</div>
-      </div>
-    </div>
-
-    <div class="chart-grid">
-      <div class="chart-card">
-        <div class="chart-title">Promedio global</div>
-        <div class="disk" [style.--value]="acreditacion.promedioLikert" [style.--color]="'#0ea5e9'">
-          <span>{{ acreditacion.promedioLikert }}%</span>
+    <div class="chart-grid chart-grid--wide">
+      <div class="chart-card chart-card--pie" *ngFor="let item of acreditacion.preguntas">
+        <div class="chart-title">{{ item.label }}</div>
+        <div class="pie" [style.background]="buildPieGradient(item.stat.segments)"></div>
+        <div class="legend">
+          <div class="legend-item" *ngFor="let seg of item.stat.segments">
+            <span class="legend-swatch" [style.background]="seg.color"></span>
+            <span class="legend-label">{{ seg.label }}</span>
+            <span class="legend-value">{{ seg.pct }}%</span>
+            <span class="legend-count">({{ seg.count }})</span>
+          </div>
         </div>
-        <div class="chart-note">Likert 1-5</div>
-        <div class="chart-count">{{ acreditacion.totalLikertRespuestas }} respuestas</div>
-      </div>
-
-      <div class="chart-card">
-        <div class="chart-title">Autoevaluación</div>
-        <div class="disk" [style.--value]="acreditacion.pctAutoevaluacion" [style.--color]="'#22c55e'">
-          <span>{{ acreditacion.pctAutoevaluacion }}%</span>
-        </div>
-        <div class="chart-note">Participación</div>
-        <div class="chart-count">{{ acreditacion.countAutoevaluacion }} de {{ acreditacion.total }}</div>
-      </div>
-
-      <div class="chart-card">
-        <div class="chart-title">Mejora continua</div>
-        <div class="disk" [style.--value]="acreditacion.pctMejora" [style.--color]="'#f97316'">
-          <span>{{ acreditacion.pctMejora }}%</span>
-        </div>
-        <div class="chart-note">Acciones de calidad</div>
-        <div class="chart-count">{{ acreditacion.countMejora }} de {{ acreditacion.total }}</div>
-      </div>
-
-      <div class="chart-card">
-        <div class="chart-title">Comentarios abiertos</div>
-        <div class="disk" [style.--value]="acreditacion.pctComentarios" [style.--color]="'#7c3aed'">
-          <span>{{ acreditacion.pctComentarios }}%</span>
-        </div>
-        <div class="chart-note">Encuestas con comentarios</div>
-        <div class="chart-count">{{ acreditacion.countComentarios }} de {{ acreditacion.total }}</div>
+        <div class="chart-count">Total respuestas: {{ item.stat.total }}</div>
       </div>
     </div>
   </mat-card>

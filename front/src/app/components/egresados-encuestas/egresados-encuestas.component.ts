@@ -96,8 +96,8 @@ export class EgresadosEncuestasComponent implements OnInit, OnDestroy {
   readonly tiemposPrimerTrabajo = [
     'Menos de 2 meses',
     'Entre 2 y 6 meses',
-    'Entre 6 meses y 1 ano',
-    'Mas de 1 ano',
+    'Entre 6 meses y 1 año',
+    'Mas de 1 año',
     'No he encontrado trabajo',
   ];
   readonly situacionesLaborales = [
@@ -374,7 +374,7 @@ export class EgresadosEncuestasComponent implements OnInit, OnDestroy {
     const generales = encuesta?.generales || {};
     const anio = generales?.anioEgreso ?? 'Sin dato';
     const edad = generales?.edad ?? 'Sin dato';
-    return `Ano egreso: ${anio} - Edad: ${edad}`;
+    return `Año egreso: ${anio} - Edad: ${edad}`;
   }
 
   getGeneralesLinea2(encuesta: any): string {
@@ -392,7 +392,7 @@ export class EgresadosEncuestasComponent implements OnInit, OnDestroy {
       }
     };
 
-    push('Ano de egreso', generales.anioEgreso);
+    push('Año de egreso', generales.anioEgreso);
     push('Edad', generales.edad);
     push('Sexo', generales.sexo);
     return rows;

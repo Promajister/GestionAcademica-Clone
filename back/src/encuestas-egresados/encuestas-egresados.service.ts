@@ -379,9 +379,23 @@ export class EncuestasEgresadosService {
     }
 
     const stats = payload?.stats ?? {};
+    const preguntas = Array.isArray(stats?.preguntas) ? stats.preguntas : [];
+    const preguntasTxt = preguntas.length
+      ? preguntas.map((p: any) => {
+        const label = safe(p?.label);
+        const total = safe(p?.stat?.total);
+        const segments = Array.isArray(p?.stat?.segments)
+          ? p.stat.segments.map((s: any) => `${safe(s?.label)} ${safe(s?.pct)}% (${safe(s?.count)})`).join('; ')
+          : '-';
+        return `${label} | Total: ${total} | ${segments}`;
+      }).join('\n')
+      : '-';
     return [
-      'Eres un analista de datos educativos. Redacta una conclusion relevante (5 a 7 oraciones) en espanol formal.',
-      'No enumeres todos los indicadores ni repitas datos crudos. Prioriza hallazgos, riesgos y oportunidades.',
+      'Eres un analista de datos educativos. Redacta una conclusion clara en espanol formal.',
+      'Debes mencionar TODOS los indicadores listados, usando porcentaje y conteo cuando exista.',
+      'Es obligatorio cubrir cada indicador (sin saltar ninguno), con una frase breve por indicador.',
+      'Cada indicador debe incluir una mini-conclusion basada en su distribucion (implica fortaleza, brecha u oportunidad).',
+      'No asumas falta de respuestas; un 0% significa ausencia de esa categoria, no ausencia de datos.',
       'Usa solo la informacion entregada. No inventes porcentajes ni hechos.',
       'Contexto: encuesta de egresados y acreditacion.',
       `Total encuestas: ${safe(stats?.total)}`,
@@ -391,6 +405,8 @@ export class EncuestasEgresadosService {
       `Mejora continua: ${safe(stats?.pctMejora)}% (${safe(stats?.countMejora)})`,
       `Autoevaluacion: ${safe(stats?.pctAutoevaluacion)}% (${safe(stats?.countAutoevaluacion)})`,
       `Comentarios abiertos: ${safe(stats?.pctComentarios)}% (${safe(stats?.countComentarios)})`,
+      'Detalle por pregunta (Likert):',
+      preguntasTxt,
       'Entrega solo el texto final, sin listas ni etiquetas.',
     ].join('\n');
   }
