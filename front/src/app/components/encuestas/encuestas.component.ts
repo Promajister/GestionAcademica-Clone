@@ -340,7 +340,7 @@ downloadEstadisticasColaboradoresExcel(): void {
     { value: 'ESTUDIANTIL' as TipoEncuesta, label: 'Percepción estudiantil' },
     {
       value: 'COLABORADORES_JEFES' as TipoEncuesta,
-      label: 'Colaboradores / Jefes UTP',
+      label: 'Colaboradores',
     },
   ];
 
@@ -364,14 +364,14 @@ downloadEstadisticasColaboradoresExcel(): void {
     'secI.e7_normasClase':
       'Establece las normas del curso o actividades a traves del dialogo y/o la negociacion con los estudiantes.',
     'secI.e8_usoTecnologia':
-      'Usa la tecnologia para comunicarse con los estudiantes y promover su uso en sus presentaciones.',
+      'Usa la tecnologia para comunicarse con los estudiantes, como plataformas virtuales, sitios web, etc. Junto con promover que los estudiantes usen tecnologia en sus presentaciones orales.',
 
     // SECCION II
     'secII.i1_vinculacionPares':
       'Establece vinculacion con sus pares y docentes del establecimiento y participa en actividades extracurriculares.',
     'secII.i2_capacidadGrupoTrabajo': 'Capacidad de participar en un grupo de trabajo.',
     'secII.i3_presentacionPersonal':
-      'Presentacion personal acorde a lo requerido por el establecimiento, cumpliendo horarios.',
+      'Presentacion personal acorde a lo requerido por el recinto escolar, ademas de cumplir con sus horarios de ingreso y salida del establecimiento.',
     'secII.i4_autoaprendizaje':
       'Existe un proceso de autoaprendizaje e iniciativa personal frente a la superacion de debilidades.',
     'secII.i5_formacionSuficiente':
@@ -491,7 +491,6 @@ downloadEstadisticasColaboradoresExcel(): void {
     nombre_colegio: 'Centro educativo',
 
     // ESTUDIANTIL
-    nombre_estudiante: 'Nombre del estudiante',
     nombre_centro: 'Centro educativo',
 
     // Campos generales
@@ -619,11 +618,12 @@ downloadEstadisticasColaboradoresExcel(): void {
 
           const fechaObj = item.fecha ? new Date(item.fecha) : new Date();
 
-          // Definimos tipo por presencia de nombre_estudiante
+          // Definimos tipo por "tipo" si viene del backend; fallback a heurística anterior
           const tipoInferido: TipoEncuesta =
-            (item as any).nombre_estudiante
+            (item as any).tipo ??
+            ((item as any).nombre_estudiante
               ? 'ESTUDIANTIL'
-              : 'COLABORADORES_JEFES';
+              : 'COLABORADORES_JEFES');
 
           // Año y semestre "oficiales" de la encuesta
           const anioEncuesta =
@@ -646,13 +646,20 @@ downloadEstadisticasColaboradoresExcel(): void {
             }
           }
 
+          const metadataBase = { ...rest };
+          if (tipoInferido === 'ESTUDIANTIL') {
+            delete (metadataBase as any).nombre_estudiante;
+            delete (metadataBase as any).nombre_estudiante_label;
+            delete (metadataBase as any).nombreEstudianteLabel;
+          }
+
           return {
             id: (item.id ?? Math.random()).toString(),
             tipo: tipoInferido,
             fecha: fechaObj,
             origenArchivo: (item as any).origenArchivo ?? '',
             metadata: {
-              ...rest,
+              ...metadataBase,
               fecha: fechaObj,
               anioEncuesta,
               semestreEncuesta,
@@ -770,7 +777,6 @@ downloadEstadisticasColaboradoresExcel(): void {
     return this.fb.group({
       anioEncuesta: [anioActual, Validators.required],
       semestreEncuesta: [1, Validators.required],
-      nombreEstudiante: ['', Validators.required],
       establecimiento: ['', Validators.required],
       fechaEvaluacion: [null, Validators.required],
       nombreTalleristaSupervisor: ['', Validators.required],
@@ -923,11 +929,6 @@ downloadEstadisticasColaboradoresExcel(): void {
       
 
       // Valores por defecto opcionales
-      if (this.estudiantes.length) {
-        this.registroForm.patchValue({
-          nombreEstudiante: this.estudiantes[0].rut,
-        });
-      }
       if (this.centros.length) {
         this.registroForm.patchValue({ establecimiento: this.centros[0].id });
       }
@@ -960,7 +961,6 @@ downloadEstadisticasColaboradoresExcel(): void {
   // Deshabilita controles select cuando se requiere modo solo lectura
   private disableSelectControls(): void {
     const controls = [
-      'nombreEstudiante',
       'establecimiento',
       'nombreTalleristaSupervisor',
       'nombreDocenteColaborador',
@@ -1096,18 +1096,6 @@ downloadEstadisticasColaboradoresExcel(): void {
       lista = lista.filter((e) => {
         const meta = e.metadata || {};
 
-        // Para encuestas estudiantiles
-        const rutEstudiante = (meta['nombre_estudiante'] || '')
-          .toString()
-          .toLowerCase();
-        const rutEstudianteSinPuntos = rutEstudiante.replace(/\./g, '');
-        const nombreEstudiante = (
-          this.getNombreEstudiantePorRut(meta['nombre_estudiante']) || ''
-        )
-          .toString()
-          .toLowerCase();
-
-
         // Para encuestas de colaboradores
         const rutColaborador = (
           this.getRutColaboradorPorNombre(meta['nombre_colaborador']) || ''
@@ -1136,9 +1124,6 @@ downloadEstadisticasColaboradoresExcel(): void {
           : '';
 
         return (
-          rutEstudiante.includes(termino) ||
-          rutEstudianteSinPuntos.includes(terminoSinPuntos) ||
-          nombreEstudiante.includes(termino) ||
           rutColaborador.includes(termino) ||
           rutColaboradorSinPuntos.includes(terminoSinPuntos) ||
           nombreColaborador.includes(termino) ||
@@ -1164,14 +1149,8 @@ downloadEstadisticasColaboradoresExcel(): void {
           const metaA = a.metadata || {};
           const metaB = b.metadata || {};
 
-          const nombreA =
-            this.getNombreEstudiantePorRut(metaA['nombre_estudiante']) ||
-            metaA['nombre_colaborador'] ||
-            '';
-          const nombreB =
-            this.getNombreEstudiantePorRut(metaB['nombre_estudiante']) ||
-            metaB['nombre_colaborador'] ||
-            '';
+          const nombreA = metaA['nombre_colaborador'] || '';
+          const nombreB = metaB['nombre_colaborador'] || '';
 
           return asc * nombreA.localeCompare(nombreB);
         }
@@ -1616,9 +1595,6 @@ private computeEstadisticasColaboradores(): void {
     if (this.tipoRegistroActivo === 'ESTUDIANTIL') {
       const data = raw;
 
-      const estudianteRut: string = data.nombreEstudiante;
-      const estudianteNombre =
-        this.estudiantes.find((s) => s.rut === estudianteRut)?.nombre ?? null;
       const centroId = data.establecimiento;
       const centroNombre =
         this.centros.find((c) => c.id === centroId)?.nombre ?? null;
@@ -1630,8 +1606,6 @@ private computeEstadisticasColaboradores(): void {
         this.colaboradores.find((c) => c.id === colaboradorId)?.nombre ?? null;
 
       payload.data = {
-        nombreEstudiante: estudianteRut,
-        nombreEstudianteLabel: estudianteNombre,
         establecimiento: centroNombre,
         establecimientoId: centroId,
         fechaEvaluacion: data.fechaEvaluacion
