@@ -359,7 +359,7 @@ export class EncuestasEgresadosService {
       const stats = payload?.stats ?? {};
       const anio = payload?.anioEgreso ?? 'ALL';
       return [
-        'Eres un analista de datos educativos. Redacta una conclusion relevante (5 a 7 oraciones) en espanol formal.',
+        'Eres un analista de datos educativos. Redacta una conclusion relevante (10 a 15 oraciones) en espanol formal.',
         'No enumeres todos los graficos ni repitas datos crudos. Prioriza hallazgos, riesgos y oportunidades.',
         'Usa solo la informacion entregada. No inventes porcentajes ni hechos.',
         `Contexto: encuesta de empleabilidad. Anio egreso: ${safe(anio)}.`,

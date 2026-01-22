@@ -586,7 +586,7 @@ export class EgresadosAnalisisComponent implements OnInit {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
     doc.setTextColor(17, 24, 39);
-    doc.text(lines, x + padding, y + 16 + lineH);
+    doc.text(lines, x + padding, y + 16 + lineH, { align: 'justify', maxWidth: maxTextW } as any);
 
     return contentH;
   }
@@ -625,8 +625,8 @@ export class EgresadosAnalisisComponent implements OnInit {
       : String(this.anioEgresoFiltroEmpleabilidad);
 
     const headerData = {
-      title: 'ANÁLISIS DE EGRESADOS',
-      subtitle: 'Empleabilidad',
+      title: 'ANÁLISIS DE ENCUESTAS DE EMPLEABILIDAD',
+      subtitle: '',
       generatedText,
       logoLeft: logoUta,
       logoRight: logoFeh,
@@ -700,11 +700,27 @@ export class EgresadosAnalisisComponent implements OnInit {
     const chartSize = 140;
     const padding = 12;
     const legendLineH = 12;
-    const getCardHeight = (segmentsCount: number) =>
-      padding + 18 + chartSize + 10 + (segmentsCount * legendLineH + 6) + padding;
+    const titleLineH = 12;
+    const getTitleLines = (title: string, width: number) => {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      return doc.splitTextToSize(title, width - padding * 2) as string[];
+    };
+    const getCardLayout = (chart: { title: string; data: PieStat }, width: number) => {
+      const titleLines = getTitleLines(chart.title, width);
+      const titleH = titleLines.length * titleLineH;
+      const height = padding + titleH + 6 + chartSize + 10 + (chart.data.segments.length * legendLineH + 6) + padding;
+      return { height, titleLines };
+    };
 
-    const drawChartCard = (chart: { title: string; data: PieStat }, x: number, yPos: number, width: number) => {
-      const height = getCardHeight(chart.data.segments.length);
+    const drawChartCard = (
+      chart: { title: string; data: PieStat },
+      layout: { height: number; titleLines: string[] },
+      x: number,
+      yPos: number,
+      width: number,
+    ) => {
+      const { height, titleLines } = layout;
 
       doc.setFillColor(255, 255, 255);
       (doc as any).roundedRect(x, yPos, width, height, cardRadius, cardRadius, 'F');
@@ -715,11 +731,11 @@ export class EgresadosAnalisisComponent implements OnInit {
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(10);
       doc.setTextColor(...colors.text);
-      doc.text(chart.title, x + padding, yPos + 20);
+      doc.text(titleLines, x + padding, yPos + padding + titleLineH);
 
       const imgData = this.renderPieChartImage(chart.data.segments, chartSize);
       const imgX = x + padding;
-      const imgY = yPos + 28;
+      const imgY = yPos + padding + titleLines.length * titleLineH + 6;
       if (imgData) {
         doc.addImage(imgData, 'PNG', imgX, imgY, chartSize, chartSize);
       }
@@ -748,13 +764,12 @@ export class EgresadosAnalisisComponent implements OnInit {
     for (let i = 0; i < charts.length; i += 2) {
       const left = charts[i];
       const right = charts[i + 1];
-      const rowHeight = Math.max(
-        getCardHeight(left.data.segments.length),
-        right ? getCardHeight(right.data.segments.length) : 0
-      );
+      const leftLayout = getCardLayout(left, cardW);
+      const rightLayout = right ? getCardLayout(right, cardW) : null;
+      const rowHeight = Math.max(leftLayout.height, rightLayout ? rightLayout.height : 0);
       ensureSpace(rowHeight + gap);
-      drawChartCard(left, margin, y, cardW);
-      if (right) drawChartCard(right, margin + cardW + gap, y, cardW);
+      drawChartCard(left, leftLayout, margin, y, cardW);
+      if (right && rightLayout) drawChartCard(right, rightLayout, margin + cardW + gap, y, cardW);
       y += rowHeight + gap;
     }
 
@@ -768,7 +783,7 @@ export class EgresadosAnalisisComponent implements OnInit {
     const suffix = this.anioEgresoFiltroEmpleabilidad === 'ALL'
       ? 'todos'
       : `anio_${this.anioEgresoFiltroEmpleabilidad}`;
-    doc.save(`analisis_egresados_${suffix}.pdf`);
+    doc.save(`analisis_encuestas_empleabilidad_${suffix}.pdf`);
   }
 
   exportarPdf(): void {
@@ -807,7 +822,7 @@ export class EgresadosAnalisisComponent implements OnInit {
       : String(this.anioEgresoFiltroEmpleabilidad);
 
     const headerData = {
-      title: 'AN\u00c1LISIS DE EGRESADOS',
+      title: 'AN\u00c1LISIS DE ENCUESTAS DE EMPLEABILIDAD',
       subtitle: 'Empleabilidad',
       generatedText,
       logoLeft: logoUta,
@@ -880,12 +895,14 @@ export class EgresadosAnalisisComponent implements OnInit {
     ];
 
     for (const chart of charts) {
-      ensureSpace(40);
+      const titleLines = doc.splitTextToSize(chart.title, contentW) as string[];
+      const titleLineH = 12;
+      ensureSpace(titleLines.length * titleLineH + 24);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(10);
       doc.setTextColor(...colors.text);
-      doc.text(chart.title, margin, y);
-      y += 8;
+      doc.text(titleLines, margin, y);
+      y += titleLines.length * titleLineH - 4;
 
       const rows = chart.data.segments.map((seg) => [
         seg.label,
@@ -935,7 +952,7 @@ export class EgresadosAnalisisComponent implements OnInit {
     const suffix = this.anioEgresoFiltroEmpleabilidad === 'ALL'
       ? 'todos'
       : `anio_${this.anioEgresoFiltroEmpleabilidad}`;
-    doc.save(`analisis_egresados_tabla_${suffix}.pdf`);
+    doc.save(`analisis_encuestas_empleabilidad_tabla_${suffix}.pdf`);
   }
 
   async exportarPdfAcreditacionConGraficos(): Promise<void> {
@@ -969,8 +986,8 @@ export class EgresadosAnalisisComponent implements OnInit {
     const generatedText = `Generado: ${now.toLocaleString('es-CL')}`;
 
     const headerData = {
-      title: 'ANÁLISIS DE EGRESADOS',
-      subtitle: 'Encuesta de egresados',
+      title: 'ANÁLISIS DE ENCUESTAS DE EGRESADOS',
+      subtitle: '',
       generatedText,
       logoLeft: logoUta,
       logoRight: logoFeh,
@@ -1035,11 +1052,27 @@ export class EgresadosAnalisisComponent implements OnInit {
     const chartSize = 140;
     const padding = 12;
     const legendLineH = 12;
-    const getCardHeight = (segmentsCount: number) =>
-      padding + 18 + chartSize + 10 + (segmentsCount * legendLineH + 6) + padding;
+    const titleLineH = 12;
+    const getTitleLines = (title: string, width: number) => {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      return doc.splitTextToSize(title, width - padding * 2) as string[];
+    };
+    const getCardLayout = (chart: { title: string; data: PieStat }, width: number) => {
+      const titleLines = getTitleLines(chart.title, width);
+      const titleH = titleLines.length * titleLineH;
+      const height = padding + titleH + 6 + chartSize + 10 + (chart.data.segments.length * legendLineH + 6) + padding;
+      return { height, titleLines };
+    };
 
-    const drawChartCard = (chart: { title: string; data: PieStat }, x: number, yPos: number, width: number) => {
-      const height = getCardHeight(chart.data.segments.length);
+    const drawChartCard = (
+      chart: { title: string; data: PieStat },
+      layout: { height: number; titleLines: string[] },
+      x: number,
+      yPos: number,
+      width: number,
+    ) => {
+      const { height, titleLines } = layout;
 
       doc.setFillColor(255, 255, 255);
       (doc as any).roundedRect(x, yPos, width, height, cardRadius, cardRadius, 'F');
@@ -1050,11 +1083,11 @@ export class EgresadosAnalisisComponent implements OnInit {
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(10);
       doc.setTextColor(...colors.text);
-      doc.text(chart.title, x + padding, yPos + 20);
+      doc.text(titleLines, x + padding, yPos + padding + titleLineH);
 
       const imgData = this.renderPieChartImage(chart.data.segments, chartSize);
       const imgX = x + padding;
-      const imgY = yPos + 28;
+      const imgY = yPos + padding + titleLines.length * titleLineH + 6;
       if (imgData) {
         doc.addImage(imgData, 'PNG', imgX, imgY, chartSize, chartSize);
       }
@@ -1083,13 +1116,12 @@ export class EgresadosAnalisisComponent implements OnInit {
     for (let i = 0; i < charts.length; i += 2) {
       const left = charts[i];
       const right = charts[i + 1];
-      const rowHeight = Math.max(
-        getCardHeight(left.data.segments.length),
-        right ? getCardHeight(right.data.segments.length) : 0,
-      );
+      const leftLayout = getCardLayout(left, cardW);
+      const rightLayout = right ? getCardLayout(right, cardW) : null;
+      const rowHeight = Math.max(leftLayout.height, rightLayout ? rightLayout.height : 0);
       ensureSpace(rowHeight + gap);
-      drawChartCard(left, margin, y, cardW);
-      if (right) drawChartCard(right, margin + cardW + gap, y, cardW);
+      drawChartCard(left, leftLayout, margin, y, cardW);
+      if (right && rightLayout) drawChartCard(right, rightLayout, margin + cardW + gap, y, cardW);
       y += rowHeight + gap;
     }
 
@@ -1100,7 +1132,7 @@ export class EgresadosAnalisisComponent implements OnInit {
       this.drawPdfFooter(doc, i, totalPages, 'Análisis de egresados');
     }
 
-    doc.save('analisis_egresados_acreditacion.pdf');
+    doc.save('analisis_encuestas_egresados.pdf');
   }
 
   async exportarPdfAcreditacionTabla(): Promise<void> {
@@ -1132,8 +1164,8 @@ export class EgresadosAnalisisComponent implements OnInit {
     const generatedText = `Generado: ${now.toLocaleString('es-CL')}`;
 
     const headerData = {
-      title: 'ANÁLISIS DE EGRESADOS',
-      subtitle: 'Encuesta de egresados',
+      title: 'ANÁLISIS DE ENCUESTAS DE EGRESADOS',
+      subtitle: '',
       generatedText,
       logoLeft: logoUta,
       logoRight: logoFeh,
@@ -1191,12 +1223,14 @@ export class EgresadosAnalisisComponent implements OnInit {
     y += 16;
 
     for (const chart of this.acreditacion.preguntas) {
-      ensureSpace(40);
+      const titleLines = doc.splitTextToSize(chart.label, contentW) as string[];
+      const titleLineH = 12;
+      ensureSpace(titleLines.length * titleLineH + 24);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(10);
       doc.setTextColor(...colors.text);
-      doc.text(chart.label, margin, y);
-      y += 8;
+      doc.text(titleLines, margin, y);
+      y += titleLines.length * titleLineH - 4;
 
       const rows = chart.stat.segments.map((seg) => [
         seg.label,
@@ -1243,7 +1277,7 @@ export class EgresadosAnalisisComponent implements OnInit {
       this.drawPdfFooter(doc, i, totalPages, 'Análisis de egresados');
     }
 
-    doc.save('analisis_egresados_acreditacion_tabla.pdf');
+    doc.save('analisis_encuestas_egresados_tabla.pdf');
   }
 
   private buildAcreditacionStats(encuestas: EgresadoEncuestaRow[]): AcreditacionStats {
