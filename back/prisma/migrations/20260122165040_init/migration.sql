@@ -114,6 +114,30 @@ CREATE TABLE `actividad` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
+CREATE TABLE `actividad_egresado` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `mes` VARCHAR(191) NOT NULL,
+    `nombre_actividad` VARCHAR(191) NOT NULL,
+    `terceros_asistieron` BOOLEAN NOT NULL DEFAULT false,
+    `fecha` DATETIME(3) NOT NULL,
+    `horario` VARCHAR(191) NULL,
+    `lugar` VARCHAR(191) NULL,
+    `archivo_adjunto` VARCHAR(191) NULL,
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `actividad_egresado_participante` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `actividadEgresadoId` INTEGER NOT NULL,
+    `estudianteRut` VARCHAR(191) NOT NULL,
+
+    UNIQUE INDEX `actividad_egresado_participante_actividadEgresadoId_estudian_key`(`actividadEgresadoId`, `estudianteRut`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
 CREATE TABLE `tercero` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `rut` VARCHAR(191) NOT NULL,
@@ -129,6 +153,14 @@ CREATE TABLE `actividad_tercero` (
     `terceroId` INTEGER NOT NULL,
 
     PRIMARY KEY (`actividadId`, `terceroId`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `actividad_egresado_tercero` (
+    `actividadEgresadoId` INTEGER NOT NULL,
+    `terceroId` INTEGER NOT NULL,
+
+    PRIMARY KEY (`actividadEgresadoId`, `terceroId`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
@@ -254,6 +286,19 @@ CREATE TABLE `encuesta_egresado` (
     `generales` JSON NULL,
     `semestreId` INTEGER NULL,
 
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `egresados_conclusion` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `tipo` VARCHAR(191) NOT NULL,
+    `anioEgreso` INTEGER NOT NULL DEFAULT 0,
+    `texto` TEXT NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+
+    UNIQUE INDEX `egresados_conclusion_tipo_anioEgreso_key`(`tipo`, `anioEgreso`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -570,10 +615,22 @@ ALTER TABLE `practica` ADD CONSTRAINT `practica_centroId_fkey` FOREIGN KEY (`cen
 ALTER TABLE `trabajador_educ` ADD CONSTRAINT `trabajador_educ_centroId_fkey` FOREIGN KEY (`centroId`) REFERENCES `centro_educativo`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE `actividad_egresado_participante` ADD CONSTRAINT `actividad_egresado_participante_actividadEgresadoId_fkey` FOREIGN KEY (`actividadEgresadoId`) REFERENCES `actividad_egresado`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `actividad_egresado_participante` ADD CONSTRAINT `actividad_egresado_participante_estudianteRut_fkey` FOREIGN KEY (`estudianteRut`) REFERENCES `estudiante`(`rut`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE `actividad_tercero` ADD CONSTRAINT `actividad_tercero_actividadId_fkey` FOREIGN KEY (`actividadId`) REFERENCES `actividad`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `actividad_tercero` ADD CONSTRAINT `actividad_tercero_terceroId_fkey` FOREIGN KEY (`terceroId`) REFERENCES `tercero`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `actividad_egresado_tercero` ADD CONSTRAINT `actividad_egresado_tercero_actividadEgresadoId_fkey` FOREIGN KEY (`actividadEgresadoId`) REFERENCES `actividad_egresado`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `actividad_egresado_tercero` ADD CONSTRAINT `actividad_egresado_tercero_terceroId_fkey` FOREIGN KEY (`terceroId`) REFERENCES `tercero`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Usuario` ADD CONSTRAINT `Usuario_rolId_fkey` FOREIGN KEY (`rolId`) REFERENCES `rol`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;

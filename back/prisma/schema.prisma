@@ -61,6 +61,7 @@ model Estudiante {
   practicas  Practica[]
   historial  HistorialEvento[]
   empleabilidad Empleabilidad?
+  actividadesEgresado ActividadEgresadoParticipante[]
 
   @@map("estudiante")
 }
@@ -170,12 +171,42 @@ model Actividad {
   @@map("actividad")
 }
 
+model ActividadEgresado {
+  id                  Int      @id @default(autoincrement())
+  mes                 String
+  nombre_actividad    String
+  satisfaccion        Float?
+  terceros_asistieron Boolean  @default(false)
+  fecha               DateTime
+  horario             String?
+  lugar               String?
+  archivo_adjunto     String?
+
+  egresados ActividadEgresadoParticipante[]
+  terceros  ActividadEgresadoTercero[]
+
+  @@map("actividad_egresado")
+}
+
+model ActividadEgresadoParticipante {
+  id                  Int    @id @default(autoincrement())
+  actividadEgresadoId Int
+  estudianteRut       String
+
+  actividad ActividadEgresado @relation(fields: [actividadEgresadoId], references: [id], onDelete: Cascade)
+  estudiante Estudiante @relation(fields: [estudianteRut], references: [rut], onDelete: Cascade)
+
+  @@unique([actividadEgresadoId, estudianteRut])
+  @@map("actividad_egresado_participante")
+}
+
 model Tercero {
   id     Int    @id @default(autoincrement())
   rut    String @unique
   nombre String
 
   actividades ActividadTercero[]
+  actividadesEgresados ActividadEgresadoTercero[]
 
   @@map("tercero")
 }
@@ -189,6 +220,17 @@ model ActividadTercero {
 
   @@id([actividadId, terceroId])
   @@map("actividad_tercero")
+}
+
+model ActividadEgresadoTercero {
+  actividadEgresadoId Int
+  terceroId           Int
+
+  actividad ActividadEgresado @relation(fields: [actividadEgresadoId], references: [id], onDelete: Cascade)
+  tercero   Tercero          @relation(fields: [terceroId], references: [id], onDelete: Cascade)
+
+  @@id([actividadEgresadoId, terceroId])
+  @@map("actividad_egresado_tercero")
 }
 
 model Usuario {

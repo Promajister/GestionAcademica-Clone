@@ -1,6 +1,6 @@
 import { Component, inject, PLATFORM_ID, OnInit } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, ActivatedRoute } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 // Angular Material
@@ -17,8 +17,10 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { Observable } from 'rxjs';
 
-import { ActividadesEstudiantesService, Actividad } from '../../services/actividades-estudiantes.service';
+import { ActividadesEstudiantesService, Actividad, ActividadResponse, QueryActividadParams } from '../../services/actividades-estudiantes.service';
+import { ActividadesEgresadosService } from '../../services/actividades-egresados.service';
 import { EstudiantesService, EstudianteResumen } from '../../services/estudiantes.service';
 import JSZip from 'jszip';
 import { formatDateEs, parseDateFlexible } from '../../utils/date-utils';
@@ -108,9 +110,25 @@ export const MY_DATE_FORMATS = {
 export class ActividadesEstudiantesComponent implements OnInit {
   private fb = inject(FormBuilder);
   private platformId = inject(PLATFORM_ID);
+  private route = inject(ActivatedRoute);
   private snack = inject(MatSnackBar);
   private actividadesService = inject(ActividadesEstudiantesService);
+  private actividadesEgresadosService = inject(ActividadesEgresadosService);
   private estudiantesService = inject(EstudiantesService);
+
+  private api!: {
+    listar: (params?: QueryActividadParams) => Observable<ActividadResponse>;
+    obtenerPorId: (id: number) => Observable<Actividad>;
+    crear: (actividad: Partial<Actividad> & { egresadosRuts?: string[] }, archivo?: File) => Observable<Actividad>;
+    actualizar: (
+      id: number,
+      actividad: Partial<Actividad> & { egresadosRuts?: string[] },
+      archivo?: File
+    ) => Observable<Actividad>;
+    obtenerTerceroPorRut: (rut: string) => Observable<{ rut: string; nombre: string } | null>;
+    eliminar: (id: number) => Observable<void>;
+    getArchivoUrl: (archivoPath: string | undefined) => string | null;
+  };
   
   searchTerm: string = '';
   selectedMes: string = 'all';
@@ -121,6 +139,7 @@ export class ActividadesEstudiantesComponent implements OnInit {
   readonly estudiantesLimit: number = 5;
   tercerosSeleccionados: Tercero[] = [];
   tercerosListaInvalida: boolean = false;
+  soloEgresados: boolean = false;
   
   // Lista de meses disponibles
   readonly meses = [
@@ -169,6 +188,30 @@ export class ActividadesEstudiantesComponent implements OnInit {
       return false;
     }
   }
+
+  get esSoloLectura(): boolean {
+    return this.esJefatura && !this.soloEgresados;
+  }
+
+  get vistaTitle(): string {
+    return this.soloEgresados
+      ? 'Gestión de actividades de egresados'
+      : 'Gestión de actividades de las prácticas';
+  }
+
+  get vistaDescription(): string {
+    return this.soloEgresados
+      ? 'Registra, revisa y administra actividades vinculadas a egresados.'
+      : 'Registra, revisa y administra actividades vinculadas a prácticas profesionales.';
+  }
+
+  get personasLabel(): string {
+    return this.soloEgresados ? 'egresado' : 'estudiante';
+  }
+
+  get personasLabelPlural(): string {
+    return this.soloEgresados ? 'egresados' : 'estudiantes';
+  }
   
   // ===== paginación =====
   pageIndex = 0;
@@ -192,23 +235,17 @@ export class ActividadesEstudiantesComponent implements OnInit {
   actividades: Actividad[] = [];
 
   ngOnInit(): void {
+    this.soloEgresados = !!this.route.snapshot.data?.['soloEgresados'];
+    this.api = this.soloEgresados ? this.actividadesEgresadosService : this.actividadesService;
     this.cargarActividades();
     this.cargarEstudiantes();
     this.formularioActividad.get('terceros_asistieron')?.valueChanges.subscribe((value) => {
       if (!value) {
         this.tercerosSeleccionados = [];
         this.formularioActividad.patchValue({ tercero_rut: '', tercero_nombre: '' });
-        this.formularioActividad.get('tercero_rut')?.clearValidators();
-        this.formularioActividad.get('tercero_nombre')?.clearValidators();
-        this.formularioActividad.get('tercero_rut')?.updateValueAndValidity({ emitEvent: false });
-        this.formularioActividad.get('tercero_nombre')?.updateValueAndValidity({ emitEvent: false });
         this.tercerosListaInvalida = false;
-      } else {
-        this.formularioActividad.get('tercero_rut')?.setValidators([Validators.required]);
-        this.formularioActividad.get('tercero_nombre')?.setValidators([Validators.required]);
-        this.formularioActividad.get('tercero_rut')?.updateValueAndValidity({ emitEvent: false });
-        this.formularioActividad.get('tercero_nombre')?.updateValueAndValidity({ emitEvent: false });
       }
+      this.actualizarValidadoresTerceros();
     });
   }
 
@@ -219,6 +256,7 @@ export class ActividadesEstudiantesComponent implements OnInit {
       nombre: term || undefined,
       rut: term || undefined,
       limit: this.estudiantesLimit,
+      ...(this.soloEgresados ? { egresado: true } : {}),
     };
 
     this.estudiantesService.listar(params).subscribe({
@@ -266,7 +304,7 @@ export class ActividadesEstudiantesComponent implements OnInit {
     // Cargar un número grande de actividades para filtrar localmente
     const params = { page: 1, limit: 1000 };
     
-    this.actividadesService.listar(params).subscribe({
+    this.api.listar(params).subscribe({
       next: (response) => {
         this.actividades = (response.items || []).map((item) => this.normalizarActividad(item));
         this.cargando = false;
@@ -318,6 +356,7 @@ export class ActividadesEstudiantesComponent implements OnInit {
 
     return resultado;
   }
+
 
   // ===== items paginados de los filtrados =====
   get filteredActivities(): Actividad[] {
@@ -433,7 +472,7 @@ export class ActividadesEstudiantesComponent implements OnInit {
 
   alternarFormulario(): void {
     // Si es jefatura, no permitir abrir el formulario
-    if (this.esJefatura) return;
+    if (this.esSoloLectura) return;
     
     this.mostrarFormulario = !this.mostrarFormulario;
     if (!this.mostrarFormulario) {
@@ -462,7 +501,7 @@ export class ActividadesEstudiantesComponent implements OnInit {
     const rut = (this.formularioActividad.get('tercero_rut')?.value || '').trim();
     if (!rut) return;
 
-    this.actividadesService.obtenerTerceroPorRut(rut).subscribe({
+    this.api.obtenerTerceroPorRut(rut).subscribe({
       next: (tercero) => {
         if (tercero?.nombre) {
           this.formularioActividad.patchValue({ tercero_nombre: tercero.nombre });
@@ -497,12 +536,31 @@ export class ActividadesEstudiantesComponent implements OnInit {
       this.tercerosSeleccionados = [...this.tercerosSeleccionados, { rut, nombre }];
     }
     this.tercerosListaInvalida = false;
-
     this.formularioActividad.patchValue({ tercero_rut: '', tercero_nombre: '' });
+    this.formularioActividad.get('tercero_rut')?.markAsUntouched();
+    this.formularioActividad.get('tercero_nombre')?.markAsUntouched();
+    this.actualizarValidadoresTerceros();
   }
 
   quitarTercero(rut: string): void {
     this.tercerosSeleccionados = this.tercerosSeleccionados.filter((t) => t.rut !== rut);
+    this.actualizarValidadoresTerceros();
+  }
+
+  private actualizarValidadoresTerceros(): void {
+    const tercerosAsistieron = this.formularioActividad.get('terceros_asistieron')?.value === true;
+    const requiere = tercerosAsistieron && this.tercerosSeleccionados.length === 0;
+
+    if (requiere) {
+      this.formularioActividad.get('tercero_rut')?.setValidators([Validators.required]);
+      this.formularioActividad.get('tercero_nombre')?.setValidators([Validators.required]);
+    } else {
+      this.formularioActividad.get('tercero_rut')?.clearValidators();
+      this.formularioActividad.get('tercero_nombre')?.clearValidators();
+    }
+
+    this.formularioActividad.get('tercero_rut')?.updateValueAndValidity({ emitEvent: false });
+    this.formularioActividad.get('tercero_nombre')?.updateValueAndValidity({ emitEvent: false });
   }
 
   private resetFormularioActividad(): void {
@@ -533,6 +591,16 @@ export class ActividadesEstudiantesComponent implements OnInit {
   private parsearEstudiantes(value: string | null | undefined): string[] {
     if (!value) return [];
     return value.split(',').map((item) => item.trim()).filter((item) => item.length > 0);
+  }
+
+  private obtenerRutsSeleccionados(): string[] {
+    const seleccionados = this.estudiantesSeleccionados || [];
+    return seleccionados
+      .map((item) => {
+        const match = item.match(/\(([^)]+)\)\s*$/);
+        return match ? match[1].trim() : '';
+      })
+      .filter((rut) => !!rut);
   }
 
   contarEstudiantes(value: string | null | undefined): number {
@@ -679,7 +747,7 @@ export class ActividadesEstudiantesComponent implements OnInit {
       }
     }
 
-    const actividadData: Partial<Actividad> = {
+    const actividadData: Partial<Actividad> & { egresadosRuts?: string[] } = {
       nombre_actividad: formValue.nombre_actividad,
       fecha: fechaCompleta,
       horario: formValue.horario || undefined,
@@ -688,6 +756,10 @@ export class ActividadesEstudiantesComponent implements OnInit {
       terceros_asistieron: formValue.terceros_asistieron === true,
       terceros: formValue.terceros_asistieron ? this.tercerosSeleccionados : [],
     };
+
+    if (this.soloEgresados) {
+      actividadData.egresadosRuts = this.obtenerRutsSeleccionados();
+    }
 
     if (actividadData.terceros_asistieron && (!actividadData.terceros || actividadData.terceros.length === 0)) {
       this.tercerosListaInvalida = true;
@@ -722,7 +794,7 @@ export class ActividadesEstudiantesComponent implements OnInit {
     if (this.estaEditando && this.actividadEditando) {
       // Editar actividad existente (sin modificar archivos)
       this.cargando = true;
-      this.actividadesService.actualizar(
+      this.api.actualizar(
         this.actividadEditando.id,
         actividadData,
         undefined // No enviar archivo nuevo al editar
@@ -762,7 +834,7 @@ export class ActividadesEstudiantesComponent implements OnInit {
     } else {
       // Agregar nueva actividad
       this.cargando = true;
-      this.actividadesService.crear(actividadData, archivoParaEnviar).subscribe({
+      this.api.crear(actividadData, archivoParaEnviar).subscribe({
         next: (nuevaActividad) => {
           const creada = this.normalizarActividad(nuevaActividad);
           this.actividades.push(creada);
@@ -797,7 +869,7 @@ export class ActividadesEstudiantesComponent implements OnInit {
 
   viewActivity(actividad: Actividad): void {
     // Cargar detalles completos desde el backend
-    this.actividadesService.obtenerPorId(actividad.id).subscribe({
+    this.api.obtenerPorId(actividad.id).subscribe({
       next: (actividadCompleta) => {
         this.actividadSeleccionada = this.normalizarActividad(actividadCompleta);
       },
@@ -814,7 +886,7 @@ export class ActividadesEstudiantesComponent implements OnInit {
    * Obtener la URL completa del archivo adjunto para descarga
    */
   getArchivoUrl(archivoPath: string | undefined): string | null {
-    return this.actividadesService.getArchivoUrl(archivoPath);
+    return this.api.getArchivoUrl(archivoPath);
   }
 
   cerrarDetalles(): void {
@@ -823,7 +895,7 @@ export class ActividadesEstudiantesComponent implements OnInit {
 
   editActivity(actividad: Actividad): void {
     // Si es jefatura, no permitir editar
-    if (this.esJefatura) return;
+    if (this.esSoloLectura) return;
     
     this.actividadEditando = actividad;
     this.estaEditando = true;
@@ -865,7 +937,7 @@ export class ActividadesEstudiantesComponent implements OnInit {
 
   askDelete(actividad: Actividad): void {
     // Si es jefatura, no permitir eliminar
-    if (this.esJefatura) return;
+    if (this.esSoloLectura) return;
     
     this.pendingDelete = actividad;
   }
@@ -878,7 +950,7 @@ export class ActividadesEstudiantesComponent implements OnInit {
     if (!this.pendingDelete) return;
     
     this.cargando = true;
-    this.actividadesService.eliminar(this.pendingDelete.id).subscribe({
+    this.api.eliminar(this.pendingDelete.id).subscribe({
       next: () => {
         const index = this.actividades.findIndex(a => a.id === this.pendingDelete!.id);
         if (index !== -1) {

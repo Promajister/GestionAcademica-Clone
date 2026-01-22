@@ -203,12 +203,28 @@ export const routes: Routes = [
         .then(m => m.EgresadosRegistroComponent),
   },
   {
+    path: 'egresados/actividades',
+    canActivate: [authGuard, roleGuard],
+    data: { allowedRoles: ['jefatura'], soloEgresados: true },
+    loadComponent: () =>
+      import('./components/actividades-estudiantes/actividades-estudiantes.component')
+        .then(m => m.ActividadesEstudiantesComponent),
+  },
+  {
     path: 'egresados/encuestas',
     canActivate: [authGuard, roleGuard],
     data: { allowedRoles: ['jefatura'] },
     loadComponent: () =>
       import('./components/egresados-encuestas/egresados-encuestas.component')
         .then(m => m.EgresadosEncuestasComponent),
+  },
+  {
+    path: 'egresados/encuestas-actividades',
+    canActivate: [authGuard, roleGuard],
+    data: { allowedRoles: ['jefatura'] },
+    loadComponent: () =>
+      import('./components/egresados-encuestas-actividades/egresados-encuestas-actividades.component')
+        .then(m => m.EgresadosEncuestasActividadesComponent),
   },
   {
     path: 'egresados/analisis',

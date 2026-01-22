@@ -91,12 +91,17 @@
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="field search">
-        <mat-label>Búsqueda (nombre / escuela)</mat-label>
+        <mat-label>Búsqueda (nombre)</mat-label>
         <input matInput [(ngModel)]="filtroBusqueda" placeholder="Escribe para filtrar..." />
         <button mat-icon-button matSuffix type="button" (click)="filtroBusqueda=''" *ngIf="filtroBusqueda">
           <mat-icon>close</mat-icon>
         </button>
       </mat-form-field>
+
+      <button mat-stroked-button type="button" class="filters-clear" (click)="downloadEstadisticasExcel()">
+        <mat-icon>download</mat-icon>
+        Exportar Excel
+      </button>
 
       <button mat-stroked-button type="button" class="filters-clear" (click)="limpiarFiltros()">
         <mat-icon>restart_alt</mat-icon>
