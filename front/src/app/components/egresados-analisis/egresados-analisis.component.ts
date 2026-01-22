@@ -100,7 +100,8 @@ export class EgresadosAnalisisComponent implements OnInit {
   conclusionAcreditacionText = '';
   encuestas: EgresadoEncuestaRow[] = [];
   aniosEgreso: number[] = [];
-  anioEgresoFiltro: number | 'ALL' = 'ALL';
+  anioEgresoFiltroEmpleabilidad: number | 'ALL' = 'ALL';
+  anioEgresoFiltroAcreditacion: number | 'ALL' = 'ALL';
 
   empleabilidad: EmpleabilidadStats = {
     total: 0,
@@ -191,21 +192,36 @@ export class EgresadosAnalisisComponent implements OnInit {
 
   private buildStats(): void {
     const empleabilidad = this.encuestas.filter((e) => e.tipo === 'EMPLEABILIDAD');
-    this.aniosEgreso = this.buildAniosEgreso(empleabilidad);
-    if (this.anioEgresoFiltro !== 'ALL' && !this.aniosEgreso.includes(this.anioEgresoFiltro)) {
-      this.anioEgresoFiltro = 'ALL';
+    this.aniosEgreso = this.buildAniosEgreso(this.encuestas);
+    if (
+      this.anioEgresoFiltroEmpleabilidad !== 'ALL'
+      && !this.aniosEgreso.includes(this.anioEgresoFiltroEmpleabilidad)
+    ) {
+      this.anioEgresoFiltroEmpleabilidad = 'ALL';
+    }
+    if (
+      this.anioEgresoFiltroAcreditacion !== 'ALL'
+      && !this.aniosEgreso.includes(this.anioEgresoFiltroAcreditacion)
+    ) {
+      this.anioEgresoFiltroAcreditacion = 'ALL';
     }
     const empleabilidadFiltrada = this.filterEmpleabilidadByYear(empleabilidad);
     const acreditacion = this.encuestas.filter((e) => e.tipo === 'ACREDITACION');
+    const acreditacionFiltrada = this.filterAcreditacionByYear(acreditacion);
 
     this.empleabilidad = this.buildEmpleabilidadStats(empleabilidadFiltrada);
-    this.acreditacion = this.buildAcreditacionStats(acreditacion);
+    this.acreditacion = this.buildAcreditacionStats(acreditacionFiltrada);
 
     this.cargarConclusionesGuardadas();
   }
 
-  onAnioEgresoChange(value: number | 'ALL'): void {
-    this.anioEgresoFiltro = value;
+  onAnioEgresoEmpleabilidadChange(value: number | 'ALL'): void {
+    this.anioEgresoFiltroEmpleabilidad = value;
+    this.buildStats();
+  }
+
+  onAnioEgresoAcreditacionChange(value: number | 'ALL'): void {
+    this.anioEgresoFiltroAcreditacion = value;
     this.buildStats();
   }
 
@@ -219,8 +235,13 @@ export class EgresadosAnalisisComponent implements OnInit {
   }
 
   private filterEmpleabilidadByYear(encuestas: EgresadoEncuestaRow[]): EgresadoEncuestaRow[] {
-    if (this.anioEgresoFiltro === 'ALL') return encuestas;
-    return encuestas.filter((e) => this.getAnioEgreso(e) === this.anioEgresoFiltro);
+    if (this.anioEgresoFiltroEmpleabilidad === 'ALL') return encuestas;
+    return encuestas.filter((e) => this.getAnioEgreso(e) === this.anioEgresoFiltroEmpleabilidad);
+  }
+
+  private filterAcreditacionByYear(encuestas: EgresadoEncuestaRow[]): EgresadoEncuestaRow[] {
+    if (this.anioEgresoFiltroAcreditacion === 'ALL') return encuestas;
+    return encuestas.filter((e) => this.getAnioEgreso(e) === this.anioEgresoFiltroAcreditacion);
   }
 
   private getAnioEgreso(encuesta: EgresadoEncuestaRow): number | null {
@@ -599,7 +620,9 @@ export class EgresadosAnalisisComponent implements OnInit {
 
     const now = new Date();
     const generatedText = `Generado: ${now.toLocaleString('es-CL')}`;
-    const anioLabel = this.anioEgresoFiltro === 'ALL' ? 'Todos' : String(this.anioEgresoFiltro);
+    const anioLabel = this.anioEgresoFiltroEmpleabilidad === 'ALL'
+      ? 'Todos'
+      : String(this.anioEgresoFiltroEmpleabilidad);
 
     const headerData = {
       title: 'ANÁLISIS DE EGRESADOS',
@@ -742,7 +765,9 @@ export class EgresadosAnalisisComponent implements OnInit {
       this.drawPdfFooter(doc, i, totalPages, 'An\u00e1lisis de egresados');
     }
 
-    const suffix = this.anioEgresoFiltro === 'ALL' ? 'todos' : `anio_${this.anioEgresoFiltro}`;
+    const suffix = this.anioEgresoFiltroEmpleabilidad === 'ALL'
+      ? 'todos'
+      : `anio_${this.anioEgresoFiltroEmpleabilidad}`;
     doc.save(`analisis_egresados_${suffix}.pdf`);
   }
 
@@ -777,7 +802,9 @@ export class EgresadosAnalisisComponent implements OnInit {
 
     const now = new Date();
     const generatedText = `Generado: ${now.toLocaleString('es-CL')}`;
-    const anioLabel = this.anioEgresoFiltro === 'ALL' ? 'Todos' : String(this.anioEgresoFiltro);
+    const anioLabel = this.anioEgresoFiltroEmpleabilidad === 'ALL'
+      ? 'Todos'
+      : String(this.anioEgresoFiltroEmpleabilidad);
 
     const headerData = {
       title: 'AN\u00c1LISIS DE EGRESADOS',
@@ -905,7 +932,9 @@ export class EgresadosAnalisisComponent implements OnInit {
       this.drawPdfFooter(doc, i, totalPages, 'An\u00e1lisis de egresados');
     }
 
-    const suffix = this.anioEgresoFiltro === 'ALL' ? 'todos' : `anio_${this.anioEgresoFiltro}`;
+    const suffix = this.anioEgresoFiltroEmpleabilidad === 'ALL'
+      ? 'todos'
+      : `anio_${this.anioEgresoFiltroEmpleabilidad}`;
     doc.save(`analisis_egresados_tabla_${suffix}.pdf`);
   }
 
@@ -1477,7 +1506,7 @@ export class EgresadosAnalisisComponent implements OnInit {
     this.showEmpleabilidadConclusion = true;
     this.api.generarConclusion({
       tipo: 'EMPLEABILIDAD',
-      anioEgreso: this.anioEgresoFiltro,
+      anioEgreso: this.anioEgresoFiltroEmpleabilidad,
       stats: this.empleabilidad,
     }).subscribe({
       next: (data) => {
@@ -1522,7 +1551,7 @@ export class EgresadosAnalisisComponent implements OnInit {
       this.showAcreditacionConclusion = false;
     }
 
-    this.api.obtenerConclusion('EMPLEABILIDAD', this.anioEgresoFiltro).subscribe({
+    this.api.obtenerConclusion('EMPLEABILIDAD', this.anioEgresoFiltroEmpleabilidad).subscribe({
       next: (data) => {
         const text = (data?.texto ?? '').trim();
         if (text) {
@@ -1532,7 +1561,7 @@ export class EgresadosAnalisisComponent implements OnInit {
       },
     });
 
-    this.api.obtenerConclusion('ACREDITACION').subscribe({
+    this.api.obtenerConclusion('ACREDITACION', this.anioEgresoFiltroAcreditacion).subscribe({
       next: (data) => {
         const text = (data?.texto ?? '').trim();
         if (text) {

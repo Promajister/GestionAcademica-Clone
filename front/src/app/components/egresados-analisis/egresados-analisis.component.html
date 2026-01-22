@@ -29,10 +29,10 @@
       <div class="section-tools">
         <mat-form-field appearance="outline" class="filter-field">
           <mat-label>Año de egreso</mat-label>
-          <mat-select
-            [value]="anioEgresoFiltro"
-            (selectionChange)="onAnioEgresoChange($event.value)"
-          >
+            <mat-select
+              [value]="anioEgresoFiltroEmpleabilidad"
+              (selectionChange)="onAnioEgresoEmpleabilidadChange($event.value)"
+            >
             <mat-option value="ALL">Todos</mat-option>
             <mat-option *ngFor="let anio of aniosEgreso" [value]="anio">{{ anio }}</mat-option>
           </mat-select>
@@ -240,6 +240,16 @@
         </div>
       </div>
       <div class="section-tools">
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Año de egreso</mat-label>
+            <mat-select
+              [value]="anioEgresoFiltroAcreditacion"
+              (selectionChange)="onAnioEgresoAcreditacionChange($event.value)"
+            >
+            <mat-option value="ALL">Todos</mat-option>
+            <mat-option *ngFor="let anio of aniosEgreso" [value]="anio">{{ anio }}</mat-option>
+          </mat-select>
+        </mat-form-field>
         <button
           mat-flat-button
           color="primary"
