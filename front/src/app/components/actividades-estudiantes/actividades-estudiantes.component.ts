@@ -21,6 +21,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActividadesEstudiantesService, Actividad } from '../../services/actividades-estudiantes.service';
 import { EstudiantesService, EstudianteResumen } from '../../services/estudiantes.service';
 import JSZip from 'jszip';
+import { formatDateEs, parseDateFlexible } from '../../utils/date-utils';
 
 interface Tercero {
   rut: string;
@@ -353,6 +354,8 @@ export class ActividadesEstudiantesComponent implements OnInit {
   }
 
   formatDate(date: Date | string): string {
+    const parsed = parseDateFlexible(date);
+    if (parsed) return formatDateEs(parsed);
     try {
       let d: Date;
       if (typeof date === 'string') {
@@ -383,7 +386,7 @@ export class ActividadesEstudiantesComponent implements OnInit {
 
   formatTime(date: Date | string): string {
     try {
-      const d = typeof date === 'string' ? new Date(date) : date;
+      const d = typeof date === 'string' ? (parseDateFlexible(date) ?? new Date(date)) : date;
       if (isNaN(d.getTime())) {
         return '—';
       }
@@ -836,6 +839,7 @@ export class ActividadesEstudiantesComponent implements OnInit {
     } else {
       fecha = actividad.fecha;
     }
+    fecha = parseDateFlexible(actividad.fecha) ?? fecha;
     
     // Si hay un archivo adjunto, no podemos recuperar los archivos originales desde el ZIP guardado
     this.archivosSeleccionados = [];

@@ -22,6 +22,7 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { forkJoin } from 'rxjs';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import { formatDateEs, parseDateFlexible } from '../../utils/date-utils';
 
 // Tipos de encuesta manejados por el módulo
 export type TipoEncuesta = 'ESTUDIANTIL' | 'COLABORADORES_JEFES';
@@ -616,7 +617,7 @@ downloadEstadisticasColaboradoresExcel(): void {
             | null
             | undefined;
 
-          const fechaObj = item.fecha ? new Date(item.fecha) : new Date();
+          const fechaObj = item.fecha ? (parseDateFlexible(item.fecha) ?? new Date()) : new Date();
 
           // Definimos tipo por "tipo" si viene del backend; fallback a heurística anterior
           const tipoInferido: TipoEncuesta =
@@ -1134,6 +1135,10 @@ downloadEstadisticasColaboradoresExcel(): void {
   mapTipoLabel(tipo: TipoEncuesta | string): string {
     const found = this.tiposEncuesta.find((t) => t.value === tipo);
     return found ? found.label : (tipo as string);
+  }
+
+  formatFecha(value?: string | Date | null): string {
+    return formatDateEs(value);
   }
 
   // Obtiene nombre del estudiante a partir del rut (para mostrar en lista)

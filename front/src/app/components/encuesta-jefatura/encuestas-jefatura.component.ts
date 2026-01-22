@@ -23,6 +23,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { ConfirmDialogComponent } from '../gestion/confirm-dialog.component';
+import { formatDateEs, parseDateFlexible } from '../../utils/date-utils';
 
 type ScaleType = 'INTERES' | 'ACUERDO' | 'PREPARACION';
 
@@ -374,7 +375,7 @@ export class EncuestaJefaturaComponent implements OnInit, OnDestroy {
       next: (data) => {
         this.encuestas = (data || []).map((e) => ({
           ...e,
-          fecha: e.fecha ? new Date(e.fecha) : null,
+          fecha: parseDateFlexible(e.fecha),
         }));
         this.isLoadingEncuestas = false;
       },
@@ -402,6 +403,10 @@ export class EncuestaJefaturaComponent implements OnInit, OnDestroy {
 
   get currentSurvey(): SurveyConfig {
     return this.SURVEYS.find(s => s.subtipo === this.selectedSubtipo)!;
+  }
+
+  formatFecha(value?: string | Date | null): string {
+    return formatDateEs(value);
   }
 
   onChangeSurvey(subtipo: SubtipoEncuestaBidireccional) {

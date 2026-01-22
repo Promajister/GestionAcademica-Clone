@@ -13,6 +13,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule, NativeDateAdapter, MAT_DATE_FORMATS, DateAdapter, MAT_DATE_LOCALE } from '@angular/material/core';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { formatDateEs, parseDateFlexible } from '../../utils/date-utils';
 
 
 // APIs
@@ -363,9 +364,7 @@ export class CentrosEducativosComponent implements OnInit, OnDestroy {
 
   // ===== helpers de fecha =====
   toDate(iso?: string | null): Date | null {
-    if (!iso) return null;
-    const [y, m, d] = iso.split('-').map(Number);
-    return new Date(y, m - 1, d);
+    return parseDateFlexible(iso);
   }
 
   private toISODateOnly(d?: Date | null): string | null {
@@ -737,21 +736,7 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
   }
 
   formatFecha(value?: string | null): string {
-    if (!value) return '-';
-    const raw = String(value).trim();
-    const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
-    if (iso) {
-      const y = Number(iso[1]);
-      const m = Number(iso[2]) - 1;
-      const d = Number(iso[3]);
-      const date = new Date(y, m, d);
-      if (!isNaN(date.getTime())) {
-        return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-      }
-    }
-    const date = new Date(raw);
-    if (isNaN(date.getTime())) return raw.slice(0, 10);
-    return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    return value ? formatDateEs(value) : '-';
   }
 
   private getYearFromDate(value?: string | null): number | null {

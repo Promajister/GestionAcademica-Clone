@@ -14,6 +14,7 @@ import {
   EncuestaEgresadosPayload,
   EncuestasEgresadosService,
 } from '../../services/encuestas-egresados.service';
+import { formatDateEs, parseDateFlexible } from '../../utils/date-utils';
 
 type SurveyId = 'EMPLEABILIDAD' | 'ACREDITACION';
 
@@ -324,7 +325,7 @@ export class EgresadosEncuestasComponent implements OnInit {
       next: (data) => {
         this.encuestas = (data || []).map((e) => ({
           ...e,
-          fecha: e.fecha ? new Date(e.fecha) : null,
+          fecha: parseDateFlexible(e.fecha),
         }));
         this.isLoadingEncuestas = false;
       },
@@ -340,6 +341,10 @@ export class EgresadosEncuestasComponent implements OnInit {
     if (tipo === 'EMPLEABILIDAD') return 'Encuesta de empleabilidad';
     if (tipo === 'ACREDITACION') return 'Encuesta de egresados';
     return 'Encuesta de egresados';
+  }
+
+  formatFecha(value?: string | Date | null): string {
+    return formatDateEs(value);
   }
 
   getGeneralesLinea1(encuesta: any): string {

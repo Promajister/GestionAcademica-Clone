@@ -19,6 +19,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { jsPDF } from 'jspdf';
+import { formatDateEs } from '../../utils/date-utils';
 import {
   EstudiantesService,
   EstudianteDetalle,
@@ -360,9 +361,7 @@ export class EgresadosRegistroComponent implements OnInit, OnDestroy {
   }
 
   formatearFecha(value?: string | null): string {
-    if (!value) return '-';
-    const date = new Date(value);
-    return isNaN(date.getTime()) ? value : date.toLocaleDateString('es-CL');
+    return value ? formatDateEs(value) : '-';
   }
 
   private async cargarLogo(
@@ -484,7 +483,7 @@ export class EgresadosRegistroComponent implements OnInit, OnDestroy {
     y = contentStartY();
 
     const now = new Date();
-    const fecha = now.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const fecha = formatDateEs(now);
     const hora = now.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
     const practicasCount = detalle.practicas?.length || 0;
 

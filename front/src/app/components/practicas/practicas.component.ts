@@ -15,6 +15,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatDialogModule } from '@angular/material/dialog';
+import { formatDateEs, parseDateFlexible } from '../../utils/date-utils';
 
 // Servicios
 import {
@@ -423,9 +424,7 @@ export class PracticasComponent {
   // Transformar datos de la API al formato local
   transformarPractica(p: any): Practica {
     const formatearFecha = (fecha: any): string => {
-      if (!fecha) return '';
-      const date = new Date(fecha);
-      return date.toLocaleDateString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit' });
+      return fecha ? formatDateEs(fecha) : '';
     };
 
     const colaboradores = Array.isArray(p.practicaColaboradores)
@@ -612,14 +611,14 @@ export class PracticasComponent {
       colaborador2Id: colaboradorIds[1] ?? null,
       tutor1Id: tutor?.tutor?.id ?? null,
       tutor1Rol: tutor?.rol ?? '',
-      fecha_inicio: practica.fechaInicioRaw ? new Date(practica.fechaInicioRaw) : practica.fechaInicio,
-      fecha_termino: practica.fechaTerminoRaw ? new Date(practica.fechaTerminoRaw) : practica.fechaTermino,
+      fecha_inicio: practica.fechaInicioRaw ? (parseDateFlexible(practica.fechaInicioRaw) ?? practica.fechaInicioRaw) : practica.fechaInicio,
+      fecha_termino: practica.fechaTerminoRaw ? (parseDateFlexible(practica.fechaTerminoRaw) ?? practica.fechaTerminoRaw) : practica.fechaTermino,
       tipo: practica.tipo ?? '',
       anio: practica.anio ?? null,
       semestre: practica.semestre ?? null
     });
     this.fechaMinimaTermino = practica.fechaInicioRaw
-      ? new Date(practica.fechaInicioRaw)
+      ? (parseDateFlexible(practica.fechaInicioRaw) ?? null)
       : null;
     this.estudianteFiltrado = [...this.estudiantes];
     this.centroFiltrado = [...this.centros];
@@ -1041,15 +1040,7 @@ export class PracticasComponent {
   }
 
   formatearFecha(fecha: string): string {
-    if (!fecha) return '';
-    const date = new Date(fecha);
-    return date.toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return fecha ? formatDateEs(parseDateFlexible(fecha) ?? fecha) : '';
   }
 
   // Formatear fecha a ISO string

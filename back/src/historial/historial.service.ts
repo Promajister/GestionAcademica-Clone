@@ -108,7 +108,7 @@ export class HistorialService {
       .map(
         (ev) => `
         <div class="item">
-          <div class="item__fecha">${dayjs(ev.fecha).format('DD MMM YYYY')}</div>
+            <div class="item__fecha">${dayjs(ev.fecha).format('DD/MM/YYYY')}</div>
           <div class="item__body">
             <div class="item__tipo">${ev.tipo || 'Evento'}</div>
             ${

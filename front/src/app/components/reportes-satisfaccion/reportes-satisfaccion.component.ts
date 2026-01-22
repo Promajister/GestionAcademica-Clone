@@ -17,6 +17,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import { formatDateEs } from '../../utils/date-utils';
 
 const TIPOS_PRACTICA = [
   { label: 'PRÁCTICA DE APOYO A LA DOCENCIA I', value: 'Apoyo a la Docencia I' },
@@ -221,7 +222,7 @@ export class ReportesSatisfaccionComponent {
     ]);
 
     const now = new Date();
-    const generatedText = `Generado: ${now.toLocaleString('es-CL')}`;
+    const generatedText = `Generado: ${formatDateEs(now)}`;
 
     const headerData = {
       title: 'REPORTE DE SATISFACCIÓN',

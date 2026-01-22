@@ -11,6 +11,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { formatDateEs, parseDateFlexible } from '../../utils/date-utils';
 
 // Servicios
 import {
@@ -129,9 +130,7 @@ export class EstudiantesEnPracticaComponent implements OnInit {
 
   transformarPractica(p: any): PracticaEstudiante {
     const formatearFecha = (fecha: any): string => {
-      if (!fecha) return '';
-      const date = new Date(fecha);
-      return date.toLocaleDateString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit' });
+      return fecha ? formatDateEs(fecha) : '';
     };
 
     const colaboradores = Array.isArray(p.practicaColaboradores)
@@ -375,15 +374,7 @@ export class EstudiantesEnPracticaComponent implements OnInit {
   }
 
   formatearFecha(fecha: string): string {
-    if (!fecha) return '';
-    const date = new Date(fecha);
-    return date.toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return fecha ? formatDateEs(parseDateFlexible(fecha) ?? fecha) : '';
   }
 }
 

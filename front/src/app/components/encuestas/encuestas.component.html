@@ -227,7 +227,7 @@
 
         <div class="item-date">
           <mat-icon>calendar_today</mat-icon>
-          <span>{{ e.fecha | date: 'dd/MM/yyyy' }}</span>
+          <span>{{ formatFecha(e.fecha) }}</span>
         </div>
       </div>
     </div>
@@ -1933,7 +1933,7 @@
       </mat-card-title>
       <mat-card-subtitle>
         {{ mapTipoLabel(encuestaEnEdicion.tipo) }} —
-        {{ encuestaEnEdicion.fecha | date: 'dd/MM/yyyy' }}
+        {{ formatFecha(encuestaEnEdicion.fecha) }}
       </mat-card-subtitle>
 
       <button mat-icon-button class="close-btn" (click)="cancelarEdicion()">
@@ -1994,7 +1994,7 @@
       <mat-card-title>Detalle Encuesta</mat-card-title>
       <mat-card-subtitle>
         {{ mapTipoLabel(selectedEncuesta.tipo) }} —
-        {{ selectedEncuesta.fecha | date: 'dd/MM/yyyy' }}
+        {{ formatFecha(selectedEncuesta.fecha) }}
       </mat-card-subtitle>
     </div>
 
@@ -2029,7 +2029,7 @@
 
               <td class="meta-v">
                 <ng-container *ngIf="key === 'fecha'; else plain">
-                  {{ selectedEncuesta!.metadata[key] | date: 'yyyy-MM-dd' }}
+                  {{ formatFecha(selectedEncuesta!.metadata[key]) }}
                 </ng-container>
                 <ng-template #plain>
                   {{ selectedEncuesta!.metadata[key] }}

@@ -143,7 +143,7 @@
 
         <div class="item-date" *ngIf="e.fecha">
           <mat-icon>calendar_today</mat-icon>
-          <span>{{ e.fecha | date: 'yyyy-MM-dd' }}</span>
+          <span>{{ formatFecha(e.fecha) }}</span>
         </div>
       </div>
     </div>
@@ -240,7 +240,7 @@
 
                   <mat-option *ngFor="let a of actividades" [value]="a.id">
                     {{ a.nombre }}
-                    <span class="muted-opt" *ngIf="a.fechaInicio">- {{ a.fechaInicio | date:'yyyy-MM-dd' }}</span>
+                    <span class="muted-opt" *ngIf="a.fechaInicio">- {{ formatFecha(a.fechaInicio) }}</span>
                   </mat-option>
                 </mat-select>
 
@@ -365,7 +365,7 @@
       <div class="modal-head-text">
         <mat-card-title>Detalle encuesta</mat-card-title>
         <mat-card-subtitle>
-          {{ mapSubtipoLabel(selectedEncuesta.subtipo) }} - {{ selectedEncuesta.fecha | date: 'dd/MM/yyyy' }}
+          {{ mapSubtipoLabel(selectedEncuesta.subtipo) }} - {{ formatFecha(selectedEncuesta.fecha) }}
         </mat-card-subtitle>
       </div>
 
@@ -382,7 +382,7 @@
         </div>
         <div class="summary-chip">
           <mat-icon>event</mat-icon>
-          <span>{{ selectedEncuesta.fecha | date: 'yyyy-MM-dd' }}</span>
+          <span>{{ formatFecha(selectedEncuesta.fecha) }}</span>
         </div>
       </div>
 
@@ -461,7 +461,7 @@
     <mat-card-header>
       <mat-card-title>Editar respuestas abiertas</mat-card-title>
       <mat-card-subtitle>
-        {{ mapSubtipoLabel(encuestaEnEdicion.subtipo) }} - {{ encuestaEnEdicion.fecha | date: 'dd/MM/yyyy' }}
+        {{ mapSubtipoLabel(encuestaEnEdicion.subtipo) }} - {{ formatFecha(encuestaEnEdicion.fecha) }}
       </mat-card-subtitle>
 
       <button mat-icon-button class="close-btn" (click)="cancelarEdicion()">

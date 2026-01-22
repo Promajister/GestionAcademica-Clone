@@ -5,6 +5,7 @@ import { UpdatePracticaDto } from './dto/actualizar-practica.dto';
 import { Prisma } from '@prisma/client';
 import { Subject } from 'rxjs';
 import { ConsultasJefaturaDto } from './dto/consultar-jefatura.dto';
+import { formatDateEs } from '../common/date-format';
 
 
 @Injectable()
@@ -29,7 +30,7 @@ export class PracticasService {
   ) {
     this.changes$.next({
       type: `practice.${event}`,
-      at: new Date().toISOString(),
+      at: formatDateEs(new Date()),
       payload,
       meta,
     });
