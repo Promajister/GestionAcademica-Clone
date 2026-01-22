@@ -24,6 +24,8 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { ConfirmDialogComponent } from '../gestion/confirm-dialog.component';
 import { formatDateEs, parseDateFlexible } from '../../utils/date-utils';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 type ScaleType = 'INTERES' | 'ACUERDO' | 'PREPARACION';
 
@@ -148,14 +150,12 @@ export class EncuestaJefaturaComponent implements OnInit, OnDestroy {
     return String(ident.nivelEducacional ?? ident.nivel ?? '');
   }
 
-  private getNombreOEscuela(encuesta: any): string {
+  private getNombreBusqueda(encuesta: any): string {
     const ident = this.getIdent(encuesta);
-    // Alternancias pregrado: nombre
     if (encuesta?.subtipo === 'ALTERNANCIAS_PREGRADO') {
       return String(ident.nombre ?? '');
     }
-    // Otros: escuela/liceo
-    return String(ident.escuelaOLiceo ?? '');
+    return '';
   }
 
   private getActividadNombreById(id: number | null): string {
@@ -181,14 +181,14 @@ export class EncuestaJefaturaComponent implements OnInit, OnDestroy {
         const nivel = this.normalize(this.getNivel(e));
         if (this.normalize(this.filtroNivel) !== nivel) return false;
       }
-      // 4) búsqueda libre (nombre/escuela + actividad)
+      // 4) búsqueda libre (nombre + actividad)
       if (q) {
-        const nombreEscuela = this.normalize(this.getNombreOEscuela(e));
+        const nombre = this.normalize(this.getNombreBusqueda(e));
         const actividadNombre = this.normalize(this.getActividadNombreById(actId));
         const actividadLabel = this.normalize(this.getActividadLabel(e)); // ya lo tienes
 
         const hayMatch =
-          nombreEscuela.includes(q) ||
+          nombre.includes(q) ||
           actividadNombre.includes(q) ||
           actividadLabel.includes(q);
 
@@ -204,6 +204,96 @@ export class EncuestaJefaturaComponent implements OnInit, OnDestroy {
     this.filtroActividadId = 'ALL';
     this.filtroNivel = '';
     this.filtroBusqueda = '';
+  }
+
+  private sanitizeSheetName(name: string): string {
+    let clean = name.replace(/[\\\/\?\*\[\]\:]/g, ' ');
+    if (clean.length > 31) {
+      clean = clean.slice(0, 31);
+    }
+    return clean || 'Hoja';
+  }
+
+  downloadEstadisticasExcel(): void {
+    const encuestas = this.encuestasFiltradas || [];
+    if (!encuestas.length) {
+      this.snack.open('No hay encuestas para exportar.', 'Cerrar', { duration: 3000 });
+      return;
+    }
+
+    const stats = new Map<string, { label: string; counts: Record<number, number> }>();
+
+    encuestas.forEach((encuesta) => {
+      const cerradas = this.getRespuestasCerradas(encuesta?.respuestas);
+      cerradas.forEach((r: any) => {
+        const key = r?.pregunta?.descripcion;
+        if (!key) return;
+        const val = Number(this.mapRespuestaValor(r));
+        if (!Number.isFinite(val)) return;
+
+        const label = this.mapPreguntaDescripcion(key);
+        if (!stats.has(key)) {
+          stats.set(key, { label, counts: {} });
+        }
+        const entry = stats.get(key)!;
+        entry.counts[val] = (entry.counts[val] || 0) + 1;
+      });
+    });
+
+    if (!stats.size) {
+      this.snack.open('No hay respuestas cerradas para exportar.', 'Cerrar', { duration: 3000 });
+      return;
+    }
+
+    const header = [
+      'Aspecto a evaluar',
+      'No aplica',
+      'Muy insatisfecho',
+      'Insatisfecho',
+      'Ni insatisfecho',
+      'Satisfecho',
+      'Muy satisfecho',
+      'Total encuestas',
+    ];
+
+    const data: any[][] = [header];
+
+    Array.from(stats.values())
+      .sort((a, b) => a.label.localeCompare(b.label))
+      .forEach((entry) => {
+        const counts = {
+          0: entry.counts[0] || 0,
+          1: entry.counts[1] || 0,
+          2: entry.counts[2] || 0,
+          3: entry.counts[3] || 0,
+          4: entry.counts[4] || 0,
+          5: entry.counts[5] || 0,
+        };
+        const total =
+          counts[0] + counts[1] + counts[2] + counts[3] + counts[4] + counts[5];
+
+        data.push([
+          entry.label,
+          counts[0],
+          counts[1],
+          counts[2],
+          counts[3],
+          counts[4],
+          counts[5],
+          total,
+        ]);
+      });
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    XLSX.utils.book_append_sheet(wb, ws, this.sanitizeSheetName('Estadísticas'));
+
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([wbout], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    });
+
+    saveAs(blob, 'estadisticas_encuestas_actividades.xlsx');
   }
 
   readonly SURVEYS: SurveyConfig[] = [
