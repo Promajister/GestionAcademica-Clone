@@ -75,8 +75,8 @@ export class EstudiantesEnPracticaComponent implements OnInit {
   terminoBusqueda = '';
   estadoSeleccionado: 'all' | EstadoPractica = 'all';
   nivelSeleccionado: 'all' | string = 'all';
-  
-  // ===== paginaciÃ³n =====
+
+  // ===== paginación =====
   pageIndex = 0;
   pageSize = 10;
   totalItems = 0;
@@ -86,7 +86,7 @@ export class EstudiantesEnPracticaComponent implements OnInit {
   practicas: PracticaEstudiante[] = [];
   cargando = false;
 
-  // Estado para diÃ¡logo de confirmaciÃ³n
+  // Estado para diálogo de confirmación
   mostrarDialogoNotaFinal = false;
   practicaANotar: PracticaEstudiante | null = null;
 
@@ -121,8 +121,8 @@ export class EstudiantesEnPracticaComponent implements OnInit {
         this.cargando = false;
       },
       error: (err) => {
-        console.error('Error al cargar prÃ¡cticas:', err);
-        this.snack.open('Error al cargar estudiantes en prÃ¡ctica', 'Cerrar', { duration: 3000 });
+        console.error('Error al cargar práticas:', err);
+        this.snack.open('Error al cargar estudiantes en práctica', 'Cerrar', { duration: 3000 });
         this.cargando = false;
       }
     });
@@ -206,7 +206,7 @@ export class EstudiantesEnPracticaComponent implements OnInit {
     return formato[estado] || estado;
   }
 
-  // FunciÃ³n para formatear el tipo de centro educativo
+  // Función para formatear el tipo de centro educativo
   formatearTipoCentro(tipo: string | null | undefined): string {
     if (!tipo) return 'Sin especificar';
     const formato: Record<string, string> = {
@@ -247,10 +247,10 @@ export class EstudiantesEnPracticaComponent implements OnInit {
     return filtradas.slice(startIndex, endIndex);
   }
 
-  // Actualizar paginaciÃ³n cuando cambian los filtros o datos
+  // Actualizar paginación cuando cambian los filtros o datos
   actualizarPaginacion(): void {
     this.totalItems = this.estudiantesFiltrados.length;
-    // Asegurar que pageIndex no exceda el nÃºmero de pÃ¡ginas disponibles
+    // Asegurar que pageIndex no exceda el número de páginas disponibles
     const maxPage = Math.max(0, Math.ceil(this.totalItems / this.pageSize) - 1);
     if (this.pageIndex > maxPage) {
       this.pageIndex = maxPage;
