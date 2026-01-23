@@ -54,6 +54,16 @@ export interface Actividad {
   archivo_adjunto?: string | null;
 }
 
+export interface EmpleabilidadDetalle {
+  lugarTrabajo: string;
+  sector: string;
+  sectorOtro?: string | null;
+  cargo: string;
+  cargoOtro?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface EstudianteDetalle extends EstudianteResumen {
   genero?: string | null;
   anio_nacimiento?: string | null;
@@ -67,6 +77,7 @@ export interface EstudianteDetalle extends EstudianteResumen {
   promedio?: number | null;
   practicas: PracticaDetalle[];
   actividades: Actividad[];
+  empleabilidad?: EmpleabilidadDetalle | null;
 }
 
 export interface EmpleabilidadPayload {
@@ -75,6 +86,9 @@ export interface EmpleabilidadPayload {
   sectorOtro?: string | null;
   cargo: string;
   cargoOtro?: string | null;
+  direccion?: string | null;
+  email?: string | null;
+  fono?: number | null;
 }
 
 export interface EstudianteQuery {

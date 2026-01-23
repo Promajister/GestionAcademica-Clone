@@ -143,8 +143,7 @@ export class EstudianteService {
     practicaTutores: { include: { tutor: true } },
   },
 },
-
-        
+        empleabilidad: true,
       },
     });
 
@@ -205,6 +204,9 @@ export class EstudianteService {
     sectorOtro?: string | null;
     cargo: string;
     cargoOtro?: string | null;
+    direccion?: string | null;
+    email?: string | null;
+    fono?: number | null;
   }) {
     const normalizedRut = this.normalizeRut(rut);
     const estudiante = await this.prisma.estudiante.findFirst({
@@ -227,6 +229,23 @@ export class EstudianteService {
       cargo: payload.cargo.trim(),
       cargoOtro: payload.cargoOtro?.trim() || null,
     };
+
+    const estudianteData: Prisma.EstudianteUpdateInput = {};
+    if (payload.direccion !== undefined) {
+      estudianteData.direccion = payload.direccion?.trim() || null;
+    }
+    if (payload.email !== undefined) {
+      estudianteData.email = payload.email?.trim() || null;
+    }
+    if (payload.fono !== undefined) {
+      estudianteData.fono = payload.fono ?? null;
+    }
+    if (Object.keys(estudianteData).length) {
+      await this.prisma.estudiante.update({
+        where: { rut: estudiante.rut },
+        data: estudianteData,
+      });
+    }
 
     return this.prisma.empleabilidad.upsert({
       where: { estudianteRut: estudiante.rut },

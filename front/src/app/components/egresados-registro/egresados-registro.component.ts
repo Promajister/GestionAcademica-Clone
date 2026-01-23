@@ -24,6 +24,7 @@ import {
   EstudiantesService,
   EstudianteDetalle,
   EstudianteResumen,
+  EmpleabilidadDetalle,
 } from '../../services/estudiantes.service';
 
 @Component({
@@ -75,6 +76,7 @@ export class EgresadosRegistroComponent implements OnInit, OnDestroy {
 
   empleabilidadModalOpen = false;
   empleabilidadSaving = false;
+  empleabilidadEditing = false;
   empleabilidadForm = {
     egresadoRut: '',
     lugarTrabajo: '',
@@ -82,6 +84,9 @@ export class EgresadosRegistroComponent implements OnInit, OnDestroy {
     sectorOtro: '',
     cargo: '',
     cargoOtro: '',
+    direccion: '',
+    email: '',
+    fono: '',
   };
 
   readonly sectorOptions = [
@@ -219,15 +224,20 @@ export class EgresadosRegistroComponent implements OnInit, OnDestroy {
     this.syncModalBodyClass();
   }
 
-  abrirEmpleabilidadModal(): void {
+  abrirEmpleabilidadModal(editing = false): void {
     if (!this.seleccionado) return;
+    this.empleabilidadEditing = editing;
+    const empleabilidad = this.detalle?.empleabilidad;
     this.empleabilidadForm = {
       egresadoRut: this.seleccionado.rut,
-      lugarTrabajo: '',
-      sector: '',
-      sectorOtro: '',
-      cargo: '',
-      cargoOtro: '',
+      lugarTrabajo: empleabilidad?.lugarTrabajo ?? '',
+      sector: empleabilidad?.sector ?? '',
+      sectorOtro: empleabilidad?.sectorOtro ?? '',
+      cargo: empleabilidad?.cargo ?? '',
+      cargoOtro: empleabilidad?.cargoOtro ?? '',
+      direccion: this.detalle?.direccion ?? '',
+      email: this.detalle?.email ?? '',
+      fono: this.detalle?.fono ? String(this.detalle.fono) : '',
     };
     this.empleabilidadModalOpen = true;
     this.syncModalBodyClass();
@@ -235,6 +245,7 @@ export class EgresadosRegistroComponent implements OnInit, OnDestroy {
 
   cerrarEmpleabilidadModal(): void {
     this.empleabilidadModalOpen = false;
+    this.empleabilidadEditing = false;
     this.syncModalBodyClass();
   }
 
@@ -255,6 +266,10 @@ export class EgresadosRegistroComponent implements OnInit, OnDestroy {
   guardarEmpleabilidad(): void {
     if (!this.empleabilidadValida()) return;
     const rut = this.empleabilidadForm.egresadoRut;
+    const telefonoRaw = this.empleabilidadForm.fono.trim();
+    const telefonoParsed = telefonoRaw
+      ? Number(telefonoRaw.replace(/[^0-9]/g, ''))
+      : null;
     const payload = {
       lugarTrabajo: this.empleabilidadForm.lugarTrabajo.trim(),
       sector: this.empleabilidadForm.sector,
@@ -265,6 +280,9 @@ export class EgresadosRegistroComponent implements OnInit, OnDestroy {
       cargoOtro: this.empleabilidadForm.cargo === 'otro'
         ? this.empleabilidadForm.cargoOtro.trim()
         : null,
+      direccion: this.empleabilidadForm.direccion.trim() || null,
+      email: this.empleabilidadForm.email.trim() || null,
+      fono: Number.isFinite(telefonoParsed) ? telefonoParsed : null,
     };
 
     this.empleabilidadSaving = true;
@@ -273,6 +291,9 @@ export class EgresadosRegistroComponent implements OnInit, OnDestroy {
         this.empleabilidadSaving = false;
         this.snack.open('Empleabilidad guardada.', 'OK', { duration: 3000 });
         this.cerrarEmpleabilidadModal();
+        if (this.seleccionado) {
+          this.obtenerDetalle(this.seleccionado.rut, false);
+        }
       },
       error: () => {
         this.empleabilidadSaving = false;
@@ -362,6 +383,30 @@ export class EgresadosRegistroComponent implements OnInit, OnDestroy {
 
   formatearFecha(value?: string | null): string {
     return value ? formatDateEs(value) : '-';
+  }
+
+  obtenerLabelOpcion(
+    value: string | null | undefined,
+    options: { value: string; label: string }[],
+  ): string {
+    if (!value) return '-';
+    return options.find((opt) => opt.value === value)?.label ?? value;
+  }
+
+  formatEmpleabilidadSector(empleabilidad?: EmpleabilidadDetalle | null): string {
+    if (!empleabilidad) return '-';
+    if (empleabilidad.sector === 'otro') {
+      return empleabilidad.sectorOtro?.trim() || 'Otro';
+    }
+    return this.obtenerLabelOpcion(empleabilidad.sector, this.sectorOptions);
+  }
+
+  formatEmpleabilidadCargo(empleabilidad?: EmpleabilidadDetalle | null): string {
+    if (!empleabilidad) return '-';
+    if (empleabilidad.cargo === 'otro') {
+      return empleabilidad.cargoOtro?.trim() || 'Otro';
+    }
+    return this.obtenerLabelOpcion(empleabilidad.cargo, this.cargoOptions);
   }
 
   private async cargarLogo(
@@ -575,155 +620,11 @@ export class EgresadosRegistroComponent implements OnInit, OnDestroy {
       ['Telefono', safe((detalle as any).fono)],
     ]);
 
-    addPageWithHeader();
-
-    ensure(80);
-    setFont(11, 'bold', colors.text);
-    doc.text('HISTORIAL DE PRACTICAS', margin, y);
-    y += 8;
-
-    doc.setDrawColor(colors.line);
-    doc.setLineWidth(1);
-    doc.line(margin, y, margin + 260, y);
-
-    y += 14;
-
-    const drawSimpleTitle = (title: string) => {
-      y += 18;
-      ensure(70);
-      setFont(11, 'bold', colors.text);
-      doc.text(title, margin, y);
-      y += 8;
-      doc.setDrawColor(colors.line);
-      doc.setLineWidth(1);
-      doc.line(margin, y, margin + 260, y);
-      y += 14;
-    };
-
-    const drawTable = (
-      cols: { label: string; w: number }[],
-      rows: (string | string[])[][],
-    ) => {
-      const headH = 22;
-
-      const drawTableHead = () => {
-        ensure(headH + 10);
-        doc.setDrawColor(colors.border);
-        doc.setFillColor(colors.tableHead);
-        doc.rect(margin, y, contentW, headH, 'FD');
-        setFont(9, 'bold', colors.text);
-        let x = margin;
-        cols.forEach((c, idx) => {
-          doc.text(c.label, x + 8, y + 15);
-          x += c.w;
-          doc.setDrawColor(colors.line);
-          if (idx < cols.length - 1) {
-            doc.line(x, y, x, y + headH);
-          }
-        });
-        y += headH;
-      };
-
-      drawTableHead();
-
-      const rowHBase = 22;
-
-      rows.forEach((r) => {
-        const wrapped: string[][] = r.map((cell, i) => {
-          const txt = safe(cell as any);
-          const maxW = cols[i].w - 14;
-          setFont(9, 'normal', colors.text);
-          return doc.splitTextToSize(txt, maxW) as string[];
-        });
-
-        const maxLines = Math.max(...wrapped.map((w) => w.length));
-        const rowH = Math.max(rowHBase, maxLines * 12 + 10);
-
-        if (y + rowH > pageHeight - bottom) {
-          addPageWithHeader();
-          drawTableHead();
-        }
-
-        doc.setDrawColor(colors.border);
-        doc.setLineWidth(1);
-        doc.rect(margin, y, contentW, rowH);
-
-        let x = margin;
-        cols.forEach((c, i) => {
-          x += c.w;
-          doc.setDrawColor(colors.line);
-          if (i < cols.length - 1) {
-            doc.line(x, y, x, y + rowH);
-          }
-        });
-
-        let cx = margin;
-        wrapped.forEach((lines, i) => {
-          if (i === 0) {
-            doc.text(lines[0] ?? '-', cx + cols[i].w / 2, y + 15, { align: 'center' as any });
-          } else {
-            doc.text(lines, cx + 8, y + 15);
-          }
-          cx += cols[i].w;
-        });
-
-        y += rowH;
-      });
-
-      y += 14;
-    };
-
-    if (!detalle.practicas?.length) {
-      setFont(10, 'normal', colors.muted);
-      doc.text('Sin practicas registradas.', margin, y);
-      y += 18;
-    } else {
-      const cols = [
-        { label: 'Nro', w: 34 },
-        { label: 'Tipo', w: 170 },
-        { label: 'Estado', w: 82 },
-        { label: 'Fechas', w: 150 },
-        { label: 'Centro', w: contentW - (34 + 170 + 82 + 150) },
-      ];
-
-      const rows = detalle.practicas.map((p: any, idx: number) => {
-        const tipo = safe(p?.tipo);
-        const estado = safe(p?.estado);
-        const fechas = `${this.formatearFecha(p?.fecha_inicio)} - ${this.formatearFecha(p?.fecha_termino)}`;
-        const centro = safe(p?.centro?.nombre);
-        return [String(idx + 1), tipo, estado, fechas, centro];
-      });
-
-      drawTable(cols, rows);
-    }
-
-    drawSimpleTitle('ACTIVIDADES ASOCIADAS');
-
-    const actividades = ((detalle as any).actividades || []) as any[];
-
-    if (!actividades.length) {
-      setFont(10, 'normal', colors.muted);
-      doc.text('Sin actividades asociadas.', margin, y);
-      y += 16;
-    } else {
-      const colsAct = [
-        { label: 'Nro', w: 34 },
-        { label: 'Actividad', w: 220 },
-        { label: 'Fecha', w: 110 },
-        { label: 'Horario', w: 85 },
-        { label: 'Lugar', w: contentW - (34 + 220 + 110 + 85) },
-      ];
-
-      const rowsAct = actividades.map((a: any, idx: number) => {
-        const nombre = safe(a?.nombre_actividad ?? a?.titulo ?? a?.nombre);
-        const fechaAct = this.formatearFecha(a?.fecha ?? a?.fechaRegistro);
-        const horario = safe(a?.horario);
-        const lugar = safe(a?.lugar ?? a?.descripcion);
-        return [String(idx + 1), nombre, fechaAct, horario, lugar];
-      });
-
-      drawTable(colsAct, rowsAct);
-    }
+    section('Empleabilidad', [
+      ['Lugar de trabajo', safe((detalle as any).empleabilidad?.lugarTrabajo)],
+      ['Sector laboral', safe(this.formatEmpleabilidadSector((detalle as any).empleabilidad))],
+      ['Cargo actual', safe(this.formatEmpleabilidadCargo((detalle as any).empleabilidad))],
+    ]);
 
     const totalPages = doc.getNumberOfPages();
     for (let i = 1; i <= totalPages; i++) {

@@ -90,10 +90,17 @@
             <mat-icon>picture_as_pdf</mat-icon>
             Exportar PDF
           </button>
-          <button mat-stroked-button class="btn-pill" type="button" (click)="abrirEmpleabilidadModal()">
-            <mat-icon>work</mat-icon>
-            Registrar empleabilidad
-          </button>
+          @if (detalle.empleabilidad) {
+            <button mat-stroked-button class="btn-pill" type="button" (click)="abrirEmpleabilidadModal(true)">
+              <mat-icon>edit</mat-icon>
+              Editar
+            </button>
+          } @else {
+            <button mat-stroked-button class="btn-pill" type="button" (click)="abrirEmpleabilidadModal()">
+              <mat-icon>work</mat-icon>
+              Registrar empleabilidad
+            </button>
+          }
         </div>
       </mat-card-header>
 
@@ -160,6 +167,32 @@
                   <div class="v">{{ detalle.direccion || '-' }}</div>
                 </div>
               </div>
+            </div>
+
+            <div class="sec">
+              <div class="sec__head">
+                <mat-icon>work</mat-icon>
+                <h3>Empleabilidad</h3>
+              </div>
+
+              @if (detalle.empleabilidad) {
+                <div class="kv-grid">
+                  <div class="kv kv--full">
+                    <div class="k">Lugar de trabajo</div>
+                    <div class="v">{{ detalle.empleabilidad.lugarTrabajo || '-' }}</div>
+                  </div>
+                  <div class="kv">
+                    <div class="k">Sector laboral</div>
+                    <div class="v">{{ formatEmpleabilidadSector(detalle.empleabilidad) }}</div>
+                  </div>
+                  <div class="kv">
+                    <div class="k">Cargo actual</div>
+                    <div class="v">{{ formatEmpleabilidadCargo(detalle.empleabilidad) }}</div>
+                  </div>
+                </div>
+              } @else {
+                <div class="muted">Sin empleabilidad registrada.</div>
+              }
             </div>
 
             <div class="sec">
@@ -394,8 +427,12 @@
           <mat-icon>work</mat-icon>
         </span>
         <div>
-          <div class="modal-title-text">Registrar empleabilidad</div>
-          <div class="modal-title-sub">Datos laborales basicos del egresado</div>
+          <div class="modal-title-text">
+            {{ empleabilidadEditing ? 'Editar empleabilidad' : 'Registrar empleabilidad' }}
+          </div>
+          <div class="modal-title-sub">
+            {{ empleabilidadEditing ? 'Actualiza empleabilidad, direccion y contacto.' : 'Datos laborales basicos del egresado' }}
+          </div>
         </div>
       </div>
       <button mat-icon-button (click)="cerrarEmpleabilidadModal()">
@@ -458,9 +495,24 @@
             <input matInput [(ngModel)]="empleabilidadForm.cargoOtro" placeholder="Indica el cargo" />
           </mat-form-field>
         }
+
+        <mat-form-field appearance="outline" class="field full">
+          <mat-label>Direccion</mat-label>
+          <input matInput [(ngModel)]="empleabilidadForm.direccion" placeholder="Direccion del egresado" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="field">
+          <mat-label>Correo</mat-label>
+          <input matInput [(ngModel)]="empleabilidadForm.email" placeholder="correo@ejemplo.cl" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="field">
+          <mat-label>Telefono</mat-label>
+          <input matInput [(ngModel)]="empleabilidadForm.fono" placeholder="Ej: 987654321" />
+        </mat-form-field>
       </div>
       <div class="modal-note">
-        Completa todos los campos para habilitar el guardado.
+        Completa los campos de empleabilidad para habilitar el guardado.
       </div>
     </div>
 
@@ -473,7 +525,7 @@
         color="primary"
         [disabled]="!empleabilidadValida() || empleabilidadSaving"
         (click)="guardarEmpleabilidad()">
-        Guardar empleabilidad
+        {{ empleabilidadEditing ? 'Guardar cambios' : 'Guardar empleabilidad' }}
       </button>
     </div>
   </div>
