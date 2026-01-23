@@ -68,6 +68,7 @@ export class EstudianteService {
     const where: Prisma.EstudianteWhereInput = {
       ...(orFilters.length ? { OR: orFilters } : {}),
       ...(q.carrera ? { plan: { contains: q.carrera } } : {}),
+      ...(q.egresado !== undefined ? { egresado: q.egresado } : {}),
       ...(q.anioIngreso ? { anio_ingreso: q.anioIngreso } : {}),
       ...(Object.keys(practicaFilter).length
         ? { practicas: { some: practicaFilter } }
@@ -94,15 +95,16 @@ export class EstudianteService {
 
     const estudiantes = await this.prisma.estudiante.findMany(query);
 
-    return estudiantes.map((e) => ({
-      rut: e.rut,
-      nombre: e.nombre,
-      plan: e.plan,
-      email: e.email,
-      fono: e.fono,
-      estadoPractica: e.practicas[0]?.estado ?? null,
-      ultimaPractica: e.practicas[0]
-        ? {
+      return estudiantes.map((e) => ({
+        rut: e.rut,
+        nombre: e.nombre,
+        plan: e.plan,
+        email: e.email,
+        fono: e.fono,
+        egresado: e.egresado,
+        estadoPractica: e.practicas[0]?.estado ?? null,
+        ultimaPractica: e.practicas[0]
+          ? {
             fecha_inicio: e.practicas[0].fecha_inicio,
             fecha_termino: e.practicas[0].fecha_termino,
             tipo: e.practicas[0].tipo,
@@ -141,8 +143,7 @@ export class EstudianteService {
     practicaTutores: { include: { tutor: true } },
   },
 },
-
-        
+        empleabilidad: true,
       },
     });
 
@@ -175,6 +176,82 @@ export class EstudianteService {
     }
 
     return { ...estudiante, actividades };
+  }
+
+  /* ============================
+     EGRESADOS
+  ============================ */
+  async updateEgresado(rut: string, egresado: boolean) {
+    const normalizedRut = this.normalizeRut(rut);
+    const estudiante = await this.prisma.estudiante.findFirst({
+      where: { OR: [{ rut }, { rut: normalizedRut }] },
+    });
+
+    if (!estudiante) {
+      throw new NotFoundException('Estudiante no encontrado');
+    }
+
+    return this.prisma.estudiante.update({
+      where: { rut: estudiante.rut },
+      data: { egresado },
+      select: { rut: true, nombre: true, egresado: true },
+    });
+  }
+
+  async upsertEmpleabilidad(rut: string, payload: {
+    lugarTrabajo: string;
+    sector: string;
+    sectorOtro?: string | null;
+    cargo: string;
+    cargoOtro?: string | null;
+    direccion?: string | null;
+    email?: string | null;
+    fono?: number | null;
+  }) {
+    const normalizedRut = this.normalizeRut(rut);
+    const estudiante = await this.prisma.estudiante.findFirst({
+      where: { OR: [{ rut }, { rut: normalizedRut }] },
+      select: { rut: true, egresado: true },
+    });
+
+    if (!estudiante) {
+      throw new NotFoundException('Estudiante no encontrado');
+    }
+
+    if (!estudiante.egresado) {
+      throw new BadRequestException('El estudiante no esta marcado como egresado');
+    }
+
+    const data = {
+      lugarTrabajo: payload.lugarTrabajo.trim(),
+      sector: payload.sector.trim(),
+      sectorOtro: payload.sectorOtro?.trim() || null,
+      cargo: payload.cargo.trim(),
+      cargoOtro: payload.cargoOtro?.trim() || null,
+    };
+
+    const estudianteData: Prisma.EstudianteUpdateInput = {};
+    if (payload.direccion !== undefined) {
+      estudianteData.direccion = payload.direccion?.trim() || null;
+    }
+    if (payload.email !== undefined) {
+      estudianteData.email = payload.email?.trim() || null;
+    }
+    if (payload.fono !== undefined) {
+      estudianteData.fono = payload.fono ?? null;
+    }
+    if (Object.keys(estudianteData).length) {
+      await this.prisma.estudiante.update({
+        where: { rut: estudiante.rut },
+        data: estudianteData,
+      });
+    }
+
+    return this.prisma.empleabilidad.upsert({
+      where: { estudianteRut: estudiante.rut },
+      update: data,
+      create: { estudianteRut: estudiante.rut, ...data },
+    });
   }
 
   /* ============================

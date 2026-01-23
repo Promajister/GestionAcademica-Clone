@@ -1,14 +1,11 @@
 import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import e from 'express';
 
 const prisma = new PrismaClient();
 
 type RolClave = 'jefatura' | 'vinculacion' | 'practicas';
-
-type PermDef = {
-  clave: string;
-  descripcion: string;
-};
+type PermDef = { clave: string; descripcion: string };
 
 async function ensureUsuario(
   email: string,
@@ -24,6 +21,7 @@ async function ensureUsuario(
       role,
       activo: true,
       rolId,
+      // OJO: no actualizo password aquí para no pisarlo si ya existe
     },
     create: {
       email,
@@ -83,7 +81,67 @@ async function seedRolesYPermisos() {
   // ===== ASIGNACIÓN DE PERMISOS =====
   const permisosAll = Object.values(permisosMap).map((id) => ({ id }));
 
+  const rolePerms: Record<RolClave, string[]> = {
+    jefatura: Object.keys(permisosMap),
+    vinculacion: [
+      'dashboard.ver',
+      'encuestas.ver',
+      'encuestas.crear',
+      'encuestas.editar',
+      'encuestas.eliminar',
+      'estudiantes.ver',
+      'estudiantes.crear',
+      'estudiantes.editar',
+      'estudiantes.eliminar',
+      'colaboradores.ver',
+      'colaboradores.crear',
+      'colaboradores.editar',
+      'colaboradores.eliminar',
+      'centros.ver',
+      'centros.crear',
+      'centros.editar',
+      'centros.eliminar',
+      'tutores.ver',
+      'tutores.crear',
+      'tutores.editar',
+      'tutores.eliminar',
+    ],
+    practicas: [
+      'dashboard.ver',
+      'estudiantes.ver',
+      'estudiantes.crear',
+      'estudiantes.editar',
+      'estudiantes.eliminar',
+      'tutores.ver',
+      'tutores.crear',
+      'tutores.editar',
+      'tutores.eliminar',
+      'colaboradores.ver',
+      'colaboradores.crear',
+      'colaboradores.editar',
+      'colaboradores.eliminar',
+      'centros.ver',
+      'centros.crear',
+      'centros.editar',
+      'centros.eliminar',
+      'practicas.ver',
+      'practicas.crear',
+      'practicas.editar',
+      'practicas.eliminar',
+      'actividades.ver',
+      'actividades.crear',
+      'actividades.editar',
+      'actividades.eliminar',
+      'reportes.ver',
+    ],
+  };
+
   for (const r of roles) {
+    const claves = rolePerms[r.clave as RolClave] ?? [];
+    const toConnect = claves
+      .map((c) => ({ id: permisosMap[c] }))
+      .filter((c) => c.id);
+
     await prisma.rol.update({
       where: { id: r.id },
       data: {
@@ -98,8 +156,61 @@ async function seedRolesYPermisos() {
   return roles;
 }
 
+async function seedColaboradores() {
+  const colaboradores = [
+    { nombre: 'Etna Vivar', correo: 'etnavn2006@gmail.com' },
+    { nombre: 'Alexis Fernández', correo: 'alexis.fernandezme@slepchinchorro.cl' },
+    { nombre: 'Amalia Rojas', correo: 'amalia.Rojas.Varela@gmail.com' },
+    { nombre: 'Ginnetta Villanueva', correo: 'ginnetta.villanueva.v@gmail.com' },
+    { nombre: 'Maritza Gatica', correo: 'mgaticacoya@gmail.com' },
+    { nombre: 'Katherina Araya', correo: 'karaya@colegiosaucache.cl' },
+    { nombre: 'Juan Pablo León', correo: 'juan.leonan@slepchinchorro.cl' },
+    { nombre: 'Edith Morales', correo: 'emorales@insucovalpo.cl' },
+    { nombre: 'Gabriela Farias', correo: 'gabriela.gahona@liceoavb.cl' },
+    { nombre: 'Daniela Maya', correo: 'daniela.mayase@slepchinchorro.cl' },
+    { nombre: 'Leonor Calderon', correo: 'leitoantu@gmail.com' },
+    { nombre: 'Katherine Vega', correo: 'katherine.vegaro@slepchinchorro.cl' },
+    { nombre: 'Jonathan Escobar', correo: 'jonathan.escobarri@slepchinchorro.cl' },
+    { nombre: 'Leslie Poblete', correo: 'leslie.poblete@aricacollege.cl' },
+    { nombre: 'Profesora Claudia Campos', correo: 'claudia.campos@aricacollege.cl' },
+    { nombre: 'Maryori Ferrerira', correo: 'mferreira@fesma.cl' },
+    { nombre: 'Viviana Yáñez Quevedo', correo: 'viviana.yanez.quevedo@ccrsha.cl' },
+    { nombre: 'Maykoll Gamonal', correo: 'm.gamonal@juanpablosegundo.cl' },
+    { nombre: 'Arantzazú Ardiles', correo: 'a.ardilesvilla@gmail.com' },
+    { nombre: 'Mauricio Fuentes', correo: 'mauricio.fuentes@cisa-arica.cl' },
+    { nombre: 'Cristian Jelves', correo: 'c.jelves@colegioabo.cl' },
+    { nombre: 'Ivania Reyes', correo: 'ireyes@colegioaltacordillera.cl' },
+    { nombre: 'William Espinoza', correo: 'wespinoza@colegiosaucache.cl' },
+    { nombre: 'Monserrat Casas', correo: 'mcasas@colegioaltacordillera.cl' },
+    { nombre: 'Andrea Alfaro', correo: 'andreaalfaro.t@dsarica.cl' },
+    { nombre: 'Ayelen Simpertigue', correo: 'a.simpertigue@colegioabo.cl' },
+  ];
+
+  const seen = new Set<string>();
+
+  for (const item of colaboradores) {
+    const nombre = item.nombre.trim();
+    const correo = item.correo.trim();
+    const key = `${correo.toLowerCase()}|${nombre.toLowerCase()}`;
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+
+    const existing = await prisma.colaborador.findFirst({
+      where: { nombre, correo },
+    });
+
+    if (!existing) {
+      await prisma.colaborador.create({
+        data: { nombre, correo },
+      });
+    }
+  }
+}
+
 async function main() {
-  // ===== PASSWORD BASE PARA LOGIN =====
+  // Solo lo mínimo para login (roles/permisos/usuarios)
   const plainPassword = '123456';
   const hashedPassword = await bcrypt.hash(plainPassword, 10);
 
@@ -110,29 +221,38 @@ async function main() {
   // ===== USUARIOS =====
   await Promise.all([
     ensureUsuario(
-      'jefatura@uta.cl',
+      'pedhg@gestion.uta.cl',
       hashedPassword,
-      'Jefatura de Carrera',
+      'Johana Rojas',
       'jefatura',
       rolJefatura.id,
     ),
     ensureUsuario(
-      'vinculacion@uta.cl',
+      'cpalomoc@gestion.uta.cl',
       hashedPassword,
-      'Coordinacion de Vinculacion',
+      'Claudia Palomo',
       'vinculacion',
       rolVinculacion.id,
     ),
     ensureUsuario(
-      'practicas@uta.cl',
+      'practicas.hg@gestion.uta.cl',
       hashedPassword,
-      'Coordinacion de Practicas',
+      'Carolina Quintana',
       'practicas',
       rolPracticas.id,
     ),
+    ensureUsuario(
+      'jc_pedhg@gestion.uta.cl',
+      hashedPassword,
+      'Ignacio Jara',
+      'jefatura',
+      rolJefatura.id,
+    ),
   ]);
 
-  console.log('Seed ejecutado: roles, permisos y usuarios creados');
+  await seedColaboradores();
+
+  console.log('Seed OK: usuarios/roles/permisos/colaboradores.');
 }
 
 main()

@@ -6,6 +6,7 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import { existsSync } from 'fs';
 import cookieParser from 'cookie-parser';
+import { DateFormatInterceptor } from './common/interceptors/date-format.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -38,6 +39,7 @@ async function bootstrap() {
     transform: true,
     transformOptions: { enableImplicitConversion: true }
   }));
+  app.useGlobalInterceptors(new DateFormatInterceptor());
   await app.listen(process.env.PORT || 3000);
 }
 bootstrap();

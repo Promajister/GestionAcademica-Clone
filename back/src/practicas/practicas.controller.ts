@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Param, ParseIntPipe, Post, Patch, Query, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
 import { PracticasService } from './practicas.service';
 import { CreatePracticaDto } from './dto/crear-practica.dto';
+import { UpdatePracticaDto } from './dto/actualizar-practica.dto';
 import { ConsultasPracticasDto } from './dto/consultar-practicas-dto';
 import { ConsultasJefaturaDto } from './dto/consultar-jefatura.dto';
 import { ActualizarEstadoDto } from './dto/actualizar-estado.dto';
@@ -47,6 +48,15 @@ export class PracticasController {
     return this.service.updateEstado(id, dto.estado);
   }
 
+  @Patch(':id')
+  @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdatePracticaDto,
+  ) {
+    return this.service.update(id, dto);
+  }
+
   @Patch(':id/nota-final')
   @Roles('jefatura')
   @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
@@ -56,17 +66,16 @@ export class PracticasController {
   ) {
     return this.service.updateNotaFinal(id, dto.nota_final);
   }
-  
+
+  @Sse('stream')
+  stream(): Observable<MessageEvent> {
+    return this.service.stream$.pipe(
+      map((data) => ({ data }) as MessageEvent),
+    );
+  }
+
   @Get(':id')
   async findOne(@Param('id', ParseIntPipe) id: number) {
     return this.service.findOne(id);
   }
-  
-  @Sse('stream')
-  stream(): Observable<MessageEvent> {
-    return this.service.stream$.pipe(
-        map((data) => ({ data }) as MessageEvent),
-    );
-    }
-
 }

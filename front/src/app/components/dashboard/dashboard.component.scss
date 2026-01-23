@@ -144,6 +144,32 @@
   color: #6b7280;
 }
 
+.modules-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 0 4px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.modules-group:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+
+.group-header h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.group-header p {
+  margin: 2px 0 0;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
 .modules-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(270px, 3fr));

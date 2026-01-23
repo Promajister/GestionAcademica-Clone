@@ -1,6 +1,6 @@
-import { Component, inject, PLATFORM_ID } from '@angular/core';
+import { Component, inject, PLATFORM_ID, Injectable } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule, AbstractControl, ValidationErrors } from '@angular/forms';
 
 // Angular Material
 import { MatButtonModule } from '@angular/material/button';
@@ -10,11 +10,12 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatNativeDateModule } from '@angular/material/core';
+import { MatNativeDateModule, NativeDateAdapter, MAT_DATE_FORMATS, DateAdapter, MAT_DATE_LOCALE } from '@angular/material/core';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatDialogModule } from '@angular/material/dialog';
+import { formatDateEs, parseDateFlexible } from '../../utils/date-utils';
 
 // Servicios
 import {
@@ -48,7 +49,11 @@ interface Practica {
   estado: EstadoPractica;
   fechaInicio: string;
   fechaTermino?: string;
+  fechaInicioRaw?: string;
+  fechaTerminoRaw?: string;
   tipo?: TipoPractica;
+  anio?: number;
+  semestre?: number;
   estudiante: Estudiante;
   centro: CentroEducativo;
   colaboradores: Colaborador[];
@@ -56,6 +61,45 @@ interface Practica {
   actividades?: Actividad[];
   observaciones?: Observacion[];
 }
+
+@Injectable()
+export class CustomDateAdapter extends NativeDateAdapter {
+  override format(date: Date, displayFormat: Object): string {
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  }
+
+  override parse(value: string): Date | null {
+    if (!value) return null;
+    const parts = value.split('/');
+    if (parts.length === 3) {
+      const day = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const year = parseInt(parts[2], 10);
+      if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+        const date = new Date(year, month, day);
+        if (date.getDate() === day && date.getMonth() === month && date.getFullYear() === year) {
+          return date;
+        }
+      }
+    }
+    return super.parse(value);
+  }
+}
+
+export const MY_DATE_FORMATS = {
+  parse: {
+    dateInput: 'DD/MM/YYYY',
+  },
+  display: {
+    dateInput: 'DD/MM/YYYY',
+    monthYearLabel: 'MMMM YYYY',
+    dateA11yLabel: 'LL',
+    monthYearA11yLabel: 'MMMM YYYY',
+  },
+};
 
 @Component({
   standalone: true,
@@ -78,7 +122,12 @@ interface Practica {
     MatAutocompleteModule,
     MatPaginatorModule,
     MatDialogModule
-  ]
+  ],
+  providers: [
+    { provide: DateAdapter, useClass: CustomDateAdapter },
+    { provide: MAT_DATE_FORMATS, useValue: MY_DATE_FORMATS },
+    { provide: MAT_DATE_LOCALE, useValue: 'es-ES' },
+  ],
 })
 export class PracticasComponent {
   private fb = inject(FormBuilder);
@@ -97,7 +146,7 @@ export class PracticasComponent {
   
   // ===== paginación =====
   pageIndex = 0;
-  pageSize = 5;
+  pageSize = 10;
   totalItems = 0;
   readonly pageSizeOptions = [5, 10, 20, 50];
 
@@ -128,6 +177,7 @@ export class PracticasComponent {
   // Estado para modal de formulario
   mostrarFormulario = false;
   formularioPractica: FormGroup;
+  practicaEditando: Practica | null = null;
 
   // Propiedades para autocompletado
   estudianteFiltrado: Estudiante[] = [];
@@ -153,13 +203,8 @@ export class PracticasComponent {
   // Tipos de centro educativo (derivados de los datos cargados)
   tiposCentro: string[] = [];
 
-  estadosPractica: EstadoPractica[] = [
-    'EN_CURSO',
-    'APROBADO',
-    'REPROBADO'
-  ];
-
   rolesTutor: TutorRol[] = ['Supervisor', 'Tallerista'];
+  semestres: number[] = [1, 2];
 
   // Función para formatear el estado para mostrar al usuario
   formatearEstado(estado: EstadoPractica): string {
@@ -208,83 +253,41 @@ export class PracticasComponent {
     return null;
   }
 
+  validarEstudianteSeleccionado = (control: AbstractControl): ValidationErrors | null => {
+    const value = control.value;
+    if (!value) return null;
+    const rut = typeof value === 'string' ? value : value?.rut;
+    if (!rut) return { invalido: true };
+    return this.estudiantes.some((e) => e.rut === rut) ? null : { invalido: true };
+  };
+
+  validarCentroSeleccionado = (control: AbstractControl): ValidationErrors | null => {
+    const value = control.value;
+    if (value === null || value === undefined || value === '') return null;
+    const id = typeof value === 'number' ? value : value?.id ?? Number(value);
+    if (!id || Number.isNaN(id)) return { invalido: true };
+    return this.centros.some((c) => c.id === id) ? null : { invalido: true };
+  };
+
   constructor() {
     // Inicializar formulario con validaciones personalizadas
     this.formularioPractica = this.fb.group({
-      estudianteRut: ['', [Validators.required]],
-      centroId: ['', [Validators.required]],
+      estudianteRut: ['', [Validators.required, this.validarEstudianteSeleccionado]],
+      centroId: ['', [Validators.required, this.validarCentroSeleccionado]],
       colaborador1Id: [null, [Validators.required]],
       colaborador2Id: [null],
       tutor1Id: [null, [Validators.required]],
       tutor1Rol: ['', [Validators.required]],
-      tutor2Id: [null],
-      tutor2Rol: [{value: '', disabled: true}],
       fecha_inicio: ['', Validators.required],
       fecha_termino: [''],
       tipo: [''],
-      estado: ['PENDIENTE']
+      anio: [null, [Validators.required, Validators.min(2000)]],
+      semestre: [null, [Validators.required]]
     }, { validators: this.validarFechas });
 
     // Inicializar formulario de observaciones
     this.formularioObservacion = this.fb.group({
       descripcion: ['', [Validators.required, Validators.minLength(3)]]
-    });
-
-    // Validación para evitar que tutor2 sea igual a tutor1
-    this.formularioPractica.get('tutor1Id')?.valueChanges.subscribe((value) => {
-      const tutor2Id = this.formularioPractica.get('tutor2Id')?.value;
-      if (value && tutor2Id && value === tutor2Id) {
-        this.formularioPractica.patchValue({ 
-          tutor2Id: null,
-          tutor2Rol: ''
-        }, { emitEvent: false });
-        this.snack.open('El Tutor 2 no puede ser el mismo que el Tutor 1', 'Cerrar', {
-          duration: 3000,
-          horizontalPosition: 'center',
-          verticalPosition: 'bottom',
-          panelClass: ['warning-snackbar']
-        });
-      }
-    });
-
-    this.formularioPractica.get('tutor2Id')?.valueChanges.subscribe((value) => {
-      const tutor1Id = this.formularioPractica.get('tutor1Id')?.value;
-      
-      // Validar que tutor2 no sea igual a tutor1
-      if (value && tutor1Id && value === tutor1Id) {
-        this.formularioPractica.patchValue({ 
-          tutor2Id: null,
-          tutor2Rol: ''
-        }, { emitEvent: false });
-        this.snack.open('El Tutor 2 no puede ser el mismo que el Tutor 1', 'Cerrar', {
-          duration: 3000,
-          horizontalPosition: 'center',
-          verticalPosition: 'bottom',
-          panelClass: ['warning-snackbar']
-        });
-        return;
-      }
-
-      const rolControl = this.formularioPractica.get('tutor2Rol');
-      if (value !== null && value !== undefined && value !== '') {
-        rolControl?.enable();
-        rolControl?.setValidators([Validators.required]);
-      } else {
-        rolControl?.disable();
-        rolControl?.clearValidators();
-        rolControl?.setValue('', { emitEvent: false });
-      }
-      rolControl?.updateValueAndValidity({ emitEvent: false });
-    });
-
-    this.formularioPractica.get('tutor2Rol')?.valueChanges.subscribe((value) => {
-      const tutorControl = this.formularioPractica.get('tutor2Id');
-      if (value && (value as string).trim()) {
-        tutorControl?.setValidators([Validators.required]);
-      } else {
-        tutorControl?.clearValidators();
-      }
-      tutorControl?.updateValueAndValidity({ emitEvent: false });
     });
 
     // Suscribirse a cambios en fecha_inicio para actualizar fechaMinimaTermino
@@ -324,6 +327,7 @@ export class PracticasComponent {
           next: (estudiantes) => {
             this.estudiantes = estudiantes.filter(est => !rutConPracticasEnCurso.has(est.rut));
             this.estudianteFiltrado = this.estudiantes.slice(0, 5);
+            this.formularioPractica.get('estudianteRut')?.updateValueAndValidity({ emitEvent: false });
           },
           error: (err) => { console.error('Error al cargar estudiantes:', err); }
         });
@@ -343,6 +347,7 @@ export class PracticasComponent {
       next: (estudiantes) => {
         this.estudiantes = estudiantes;
         this.estudianteFiltrado = this.estudiantes.slice(0, 5);
+        this.formularioPractica.get('estudianteRut')?.updateValueAndValidity({ emitEvent: false });
       },
       error: (err) => { console.error('Error al cargar estudiantes:', err); }
     });
@@ -360,6 +365,7 @@ export class PracticasComponent {
           if (t) setTipos.add(t); 
         });
         this.tiposCentro = Array.from(setTipos).sort((a, b) => a.localeCompare(b));
+        this.formularioPractica.get('centroId')?.updateValueAndValidity({ emitEvent: false });
       },
       error: (err) => { console.error('Error al cargar centros:', err); }
     });
@@ -418,9 +424,7 @@ export class PracticasComponent {
   // Transformar datos de la API al formato local
   transformarPractica(p: any): Practica {
     const formatearFecha = (fecha: any): string => {
-      if (!fecha) return '';
-      const date = new Date(fecha);
-      return date.toLocaleDateString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit' });
+      return fecha ? formatDateEs(fecha) : '';
     };
 
     const colaboradores = Array.isArray(p.practicaColaboradores)
@@ -464,7 +468,11 @@ export class PracticasComponent {
       estado: p.estado,
       fechaInicio: formatearFecha(p.fecha_inicio) || p.fecha_inicio,
       fechaTermino: p.fecha_termino ? formatearFecha(p.fecha_termino) : undefined,
+      fechaInicioRaw: p.fecha_inicio,
+      fechaTerminoRaw: p.fecha_termino,
       tipo: p.tipo,
+      anio: p.anio,
+      semestre: p.semestre,
       estudiante: {
         rut: p.estudiante?.rut || '',
         nombre: p.estudiante?.nombre || '',
@@ -553,16 +561,16 @@ export class PracticasComponent {
 
   abrirNuevaAsignacion() {
     this.mostrarFormulario = true;
+    this.practicaEditando = null;
     this.formularioPractica.reset({
-      estado: 'EN_CURSO',
       colaborador1Id: null,
       colaborador2Id: null,
       tutor1Id: null,
       tutor1Rol: '',
-      tutor2Id: null,
-      tutor2Rol: '',
       fecha_inicio: '',
-      fecha_termino: ''
+      fecha_termino: '',
+      anio: null,
+      semestre: null
     });
     this.fechaMinimaTermino = null;
     this.estudianteFiltrado = [...this.estudiantes];
@@ -571,18 +579,49 @@ export class PracticasComponent {
 
   cerrarFormulario() {
     this.mostrarFormulario = false;
+    this.practicaEditando = null;
     this.formularioPractica.reset({
-      estado: 'EN_CURSO',
       colaborador1Id: null,
       colaborador2Id: null,
       tutor1Id: null,
       tutor1Rol: '',
-      tutor2Id: null,
-      tutor2Rol: '',
       fecha_inicio: '',
-      fecha_termino: ''
+      fecha_termino: '',
+      anio: null,
+      semestre: null
     });
     this.fechaMinimaTermino = null;
+  }
+
+  abrirEdicion(practica: Practica) {
+    this.mostrarFormulario = true;
+    this.practicaEditando = practica;
+
+    const colaboradorIds = practica.colaboradores?.map((c) => c.id) ?? [];
+    const tutor = practica.tutores?.[0];
+
+    if (practica.estudiante?.rut && !this.estudiantes.some((e) => e.rut === practica.estudiante?.rut)) {
+      this.estudiantes = [...this.estudiantes, practica.estudiante];
+    }
+
+    this.formularioPractica.reset({
+      estudianteRut: practica.estudiante?.rut || '',
+      centroId: practica.centro?.id || '',
+      colaborador1Id: colaboradorIds[0] ?? null,
+      colaborador2Id: colaboradorIds[1] ?? null,
+      tutor1Id: tutor?.tutor?.id ?? null,
+      tutor1Rol: tutor?.rol ?? '',
+      fecha_inicio: practica.fechaInicioRaw ? (parseDateFlexible(practica.fechaInicioRaw) ?? practica.fechaInicioRaw) : practica.fechaInicio,
+      fecha_termino: practica.fechaTerminoRaw ? (parseDateFlexible(practica.fechaTerminoRaw) ?? practica.fechaTerminoRaw) : practica.fechaTermino,
+      tipo: practica.tipo ?? '',
+      anio: practica.anio ?? null,
+      semestre: practica.semestre ?? null
+    });
+    this.fechaMinimaTermino = practica.fechaInicioRaw
+      ? (parseDateFlexible(practica.fechaInicioRaw) ?? null)
+      : null;
+    this.estudianteFiltrado = [...this.estudiantes];
+    this.centroFiltrado = [...this.centros];
   }
 
   // Métodos de filtrado para autocompletado (máximo 5 resultados)
@@ -632,12 +671,6 @@ export class PracticasComponent {
     if (colaboradorId === null || colaboradorId === undefined) return false;
     const otroControl = control === 'colaborador1Id' ? 'colaborador2Id' : 'colaborador1Id';
     return this.formularioPractica.get(otroControl)?.value === colaboradorId;
-  }
-
-  isTutorSeleccionado(tutorId: number | null, control: 'tutor1Id' | 'tutor2Id'): boolean {
-    if (tutorId === null || tutorId === undefined) return false;
-    const otroControl = control === 'tutor1Id' ? 'tutor2Id' : 'tutor1Id';
-    return this.formularioPractica.get(otroControl)?.value === tutorId;
   }
 
   formatColaboradores(colaboradores?: Colaborador[]): string {
@@ -731,8 +764,7 @@ export class PracticasComponent {
     }
 
     const tutorEntries = [
-      { id: toNumber(formData.tutor1Id), rol: (formData.tutor1Rol || '').trim() },
-      { id: toNumber(formData.tutor2Id), rol: (formData.tutor2Rol || '').trim() }
+      { id: toNumber(formData.tutor1Id), rol: (formData.tutor1Rol || '').trim() }
     ].filter(entry => entry.id !== null);
 
     if (!tutorEntries.length) {
@@ -788,6 +820,28 @@ export class PracticasComponent {
       return;
     }
 
+    const anio = toNumber(formData.anio);
+    const semestre = toNumber(formData.semestre);
+    if (!anio) {
+      this.snack.open('El a\u00f1o es obligatorio.', 'Cerrar', {
+        duration: 3000,
+        horizontalPosition: 'center',
+        verticalPosition: 'bottom',
+        panelClass: ['warning-snackbar']
+      });
+      return;
+    }
+
+    if (semestre !== 1 && semestre !== 2) {
+      this.snack.open('Debes seleccionar un semestre v\u00e1lido.', 'Cerrar', {
+        duration: 3000,
+        horizontalPosition: 'center',
+        verticalPosition: 'bottom',
+        panelClass: ['warning-snackbar']
+      });
+      return;
+    }
+
     const dto = {
       estudianteRut: formData.estudianteRut,
       centroId,
@@ -797,10 +851,34 @@ export class PracticasComponent {
       fecha_inicio: fechaInicio,
       fecha_termino: formData.fecha_termino ? this.formatearFechaISO(formData.fecha_termino) : undefined,
       tipo: formData.tipo || undefined,
-      estado: formData.estado || 'EN_CURSO'
+      anio,
+      semestre
     };
 
-      this.practicasService.crear(dto).subscribe({
+    if (this.practicaEditando) {
+      this.practicasService.actualizar(this.practicaEditando.id, dto).subscribe({
+        next: () => {
+          this.snack.open('✓ Práctica actualizada exitosamente', 'Cerrar', {
+            duration: 4000,
+            horizontalPosition: 'center',
+            verticalPosition: 'bottom',
+            panelClass: ['success-snackbar']
+          });
+          this.cargarPracticas();
+          this.cerrarFormulario();
+        },
+        error: (err) => {
+          console.error('Error al actualizar práctica:', err);
+          const mensaje = err.error?.message || 'Error al actualizar práctica';
+          this.snack.open(mensaje, 'Cerrar', {
+            duration: 4000, horizontalPosition: 'center', verticalPosition: 'bottom', panelClass: ['error-snackbar']
+          });
+        }
+      });
+      return;
+    }
+
+      this.practicasService.crear({ ...dto, estado: 'EN_CURSO' }).subscribe({
         next: () => {
           this.snack.open(
           '✓ Práctica asignada exitosamente',
@@ -962,15 +1040,7 @@ export class PracticasComponent {
   }
 
   formatearFecha(fecha: string): string {
-    if (!fecha) return '';
-    const date = new Date(fecha);
-    return date.toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return fecha ? formatDateEs(parseDateFlexible(fecha) ?? fecha) : '';
   }
 
   // Formatear fecha a ISO string
@@ -981,3 +1051,4 @@ export class PracticasComponent {
     return '';
   }
 }
+

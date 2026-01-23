@@ -1,16 +1,24 @@
-import { Component, OnInit, ViewChild, TemplateRef } from '@angular/core';
+import { Component, OnInit, ViewChild, TemplateRef, Injectable } from '@angular/core';
 
 import { CommonModule } from '@angular/common';
-import {AbstractControl,FormBuilder,FormGroup,ReactiveFormsModule,ValidationErrors,Validators} from '@angular/forms';
+import {
+  AbstractControl,
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
 import { catchError, debounceTime, distinctUntilChanged, of, switchMap } from 'rxjs';
 
-import { MatOptionModule } from '@angular/material/core';
+import { MatOptionModule, MatNativeDateModule, NativeDateAdapter, MAT_DATE_FORMATS, DateAdapter, MAT_DATE_LOCALE } from '@angular/material/core';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -36,6 +44,45 @@ type TipoActividad =
   | 'ALTERNANCIA_PEDAGOGICA'
   | 'SALIDA_A_TERRENO';
 
+@Injectable()
+export class CustomDateAdapter extends NativeDateAdapter {
+  override format(date: Date, displayFormat: Object): string {
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  }
+
+  override parse(value: string): Date | null {
+    if (!value) return null;
+    const parts = value.split('/');
+    if (parts.length === 3) {
+      const day = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const year = parseInt(parts[2], 10);
+      if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+        const date = new Date(year, month, day);
+        if (date.getDate() === day && date.getMonth() === month && date.getFullYear() === year) {
+          return date;
+        }
+      }
+    }
+    return super.parse(value);
+  }
+}
+
+export const MY_DATE_FORMATS = {
+  parse: {
+    dateInput: 'DD/MM/YYYY',
+  },
+  display: {
+    dateInput: 'DD/MM/YYYY',
+    monthYearLabel: 'MMMM YYYY',
+    dateA11yLabel: 'LL',
+    monthYearA11yLabel: 'MMMM YYYY',
+  },
+};
+
 @Component({
   selector: 'app-actividades-pm',
   standalone: true,
@@ -46,6 +93,8 @@ type TipoActividad =
     MatDividerModule,
     MatFormFieldModule,
     MatInputModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
     MatSelectModule,
     MatButtonModule,
     MatIconModule,
@@ -55,12 +104,19 @@ type TipoActividad =
     MatSnackBarModule,
     MatDialogModule,
   ],
+  providers: [
+    { provide: DateAdapter, useClass: CustomDateAdapter },
+    { provide: MAT_DATE_FORMATS, useValue: MY_DATE_FORMATS },
+    { provide: MAT_DATE_LOCALE, useValue: 'es-ES' },
+  ],
   templateUrl: './actividades-pm.component.html',
   styleUrls: ['./actividades-pm.component.scss'],
 })
 export class ActividadesPmComponent implements OnInit {
   form!: FormGroup;
   selectedTabIndex = 0;
+  private readonly draftKey = 'actividad_pm_draft_v1';
+  private draftTimer: ReturnType<typeof setTimeout> | null = null;
   @ViewChild('dialogOk') dialogOk!: TemplateRef<any>;
 
 
@@ -124,8 +180,6 @@ export class ActividadesPmComponent implements OnInit {
     'OTROS (EXTERNOS)',
   ];
 
-  medidasImpacto = ['ENCUESTA'];
-
   tipoActividadCatalogo: { value: TipoActividad; label: string }[] = [
     { value: 'FERIA_VOCACIONAL', label: 'Feria Vocacional' },
     { value: 'JORNADA_PEDAGOGICA', label: 'Jornada Pedagógica' },
@@ -135,9 +189,9 @@ export class ActividadesPmComponent implements OnInit {
     { value: 'SALIDA_A_TERRENO', label: 'Salida a Terreno' },
   ];
 
-  asistenciaFile: File | null = null;
-  documentosFile: File | null = null;
-  fotosFile: File | null = null;
+  asistenciaFile: File[] = [];
+  documentosFile: File[] = [];
+  fotosFile: File[] = [];
 
   asistenciaFileName = '';
   documentosFileName = '';
@@ -145,11 +199,11 @@ export class ActividadesPmComponent implements OnInit {
 
   showUnidadError = false;
 
-constructor(
-  private fb: FormBuilder,
-  private actividadesPmService: ActividadesPmService,
-  private dialog: MatDialog
-) {}
+  constructor(
+    private fb: FormBuilder,
+    private actividadesPmService: ActividadesPmService,
+    private dialog: MatDialog,
+  ) {}
 
 
   ngOnInit(): void {
@@ -185,8 +239,6 @@ constructor(
         jornadaTemaCentral: [''],
         jornadaTalleres: [''],
         jornadaResponsableTaller: [''],
-        jornadaNumAsistentes: [null],
-        jornadaSatisfaccion: [null],
 
         tallerAsignatura: [''],
         tallerCompetencia: [''],
@@ -195,8 +247,6 @@ constructor(
         congresoNombreEvento: [''],
         congresoPonenciaPresentada: [''],
         congresoRelator: [''],
-        congresoNumAsistentes: [null],
-        congresoSatisfaccion: [null],
 
         alternanciaColegioAsociado: [''],
         alternanciaDocenteColaborador: [''],
@@ -211,9 +261,9 @@ constructor(
         salidaProfesorResponsable: [''],
         salidaEstRut: [''],
         salidaEstNombre: [''],
-        },
-  { validators: [this.fechaRangoValidator('fechaInicio', 'fechaTermino')] 
-      }),
+      },
+      { validators: [this.fechaRangoValidator('fechaInicio', 'fechaTermino')] },
+    ),
 
       equipoTrabajo: this.fb.group({
         rut: ['', [Validators.required, this.rutValidator()]],
@@ -226,7 +276,9 @@ constructor(
         documentosRef: [''],
         fotosRef: [''],
         enlaceNoticia: [''],
-        observaciones: [''],
+        valoracionPositivos: [''],
+        valoracionNegativos: [''],
+        valoracionMejorar: [''],
       }),
 
       financiamiento: this.fb.group({
@@ -240,11 +292,6 @@ constructor(
         instTipo: ['INSTITUCIÓN EXTERNA', Validators.required],
         instNombre: ['', [Validators.required, Validators.maxLength(150)]],
         ...this.buildParticipantesControls(),
-      }),
-
-      impacto: this.fb.group({
-        medidaImpacto: ['ENCUESTA', Validators.required],
-        indicadorImpacto: ['', Validators.required],
       }),
 
       difusion: this.fb.group({
@@ -329,14 +376,16 @@ constructor(
           this.fEq('nombre').setValue(equipo.nombre, { emitEvent: false });
         }
       });
+
+    this.loadDraft();
+
+    this.form.valueChanges.pipe(debounceTime(500)).subscribe(() => {
+      this.scheduleDraftSave();
+    });
   }
 
   fProy(name: string) {
     return (this.form.get('proyecto') as FormGroup).get(name)!;
-  }
-
-  fImp(name: string) {
-    return (this.form.get('impacto') as FormGroup).get(name)!;
   }
 
   fEq(name: string) {
@@ -350,8 +399,6 @@ constructor(
       'jornadaTemaCentral',
       'jornadaTalleres',
       'jornadaResponsableTaller',
-      'jornadaNumAsistentes',
-      'jornadaSatisfaccion',
 
       'tallerAsignatura',
       'tallerCompetencia',
@@ -360,8 +407,6 @@ constructor(
       'congresoNombreEvento',
       'congresoPonenciaPresentada',
       'congresoRelator',
-      'congresoNumAsistentes',
-      'congresoSatisfaccion',
 
       'alternanciaColegioAsociado',
       'alternanciaDocenteColaborador',
@@ -395,8 +440,6 @@ constructor(
       reqText('jornadaTemaCentral', 250);
       reqText('jornadaTalleres', 250);
       reqText('jornadaResponsableTaller', 200);
-      reqNum('jornadaNumAsistentes');
-      reqNum('jornadaSatisfaccion');
     }
 
     if (t === 'TALLER_REMEDIAL') {
@@ -409,8 +452,6 @@ constructor(
       reqText('congresoNombreEvento', 250);
       reqText('congresoPonenciaPresentada', 250);
       reqText('congresoRelator', 200);
-      reqNum('congresoNumAsistentes');
-      reqNum('congresoSatisfaccion');
     }
 
     if (t === 'ALTERNANCIA_PEDAGOGICA') {
@@ -448,10 +489,12 @@ constructor(
     this.showUnidadError = false;
     this.fProy('unidadCod').setValue('');
     this.fProy('unidadNombre').setValue('');
+    this.scheduleDraftSave();
   }
 
   removeUnidad(row: UnidadRow): void {
     this.unidades = this.unidades.filter((x) => x !== row);
+    this.scheduleDraftSave();
   }
 
   addResponsable(): void {
@@ -466,10 +509,12 @@ constructor(
     this.fProy('responsableRut').setValue('');
     this.fProy('responsableNombre').setValue('');
     this.fProy('responsableTipo').setValue('Académicos');
+    this.scheduleDraftSave();
   }
 
   removeResponsable(row: ResponsableRow): void {
     this.responsables = this.responsables.filter((x) => x !== row);
+    this.scheduleDraftSave();
   }
 
 
@@ -498,11 +543,13 @@ constructor(
     g.markAsPristine();
     g.markAsUntouched();
     this.updateEquipoValidators();
+    this.scheduleDraftSave();
   }
 
   removeEquipo(row: EquipoRow): void {
     this.equipoTrabajo = this.equipoTrabajo.filter((x) => x !== row);
     this.updateEquipoValidators();
+    this.scheduleDraftSave();
   }
 
   onRutInputEquipo(ev: Event): void {
@@ -549,10 +596,12 @@ constructor(
 
     this.fProy('feriaEstRut').setValue('');
     this.fProy('feriaEstNombre').setValue('');
+    this.scheduleDraftSave();
   }
 
   removeEstudianteFeria(row: EstudianteRow): void {
     this.estudiantesFeria = this.estudiantesFeria.filter((x) => x !== row);
+    this.scheduleDraftSave();
   }
 
   addEstudianteSalida(): void {
@@ -571,10 +620,12 @@ constructor(
 
     this.fProy('salidaEstRut').setValue('');
     this.fProy('salidaEstNombre').setValue('');
+    this.scheduleDraftSave();
   }
 
   removeEstudianteSalida(row: EstudianteRow): void {
     this.estudiantesSalida = this.estudiantesSalida.filter((x) => x !== row);
+    this.scheduleDraftSave();
   }
 
   private isRutFormatOk(v: string): boolean {
@@ -592,68 +643,64 @@ constructor(
   }
 
   private validarDvRut(rut: string): boolean {
-  const clean = rut.replace(/\./g, '').replace('-', '').toUpperCase();
-  const body = clean.slice(0, -1);
-  const dv = clean.slice(-1);
+    const clean = rut.replace(/\./g, '').replace('-', '').toUpperCase();
+    const body = clean.slice(0, -1);
+    const dv = clean.slice(-1);
 
-  let sum = 0;
-  let mul = 2;
+    let sum = 0;
+    let mul = 2;
 
-  for (let i = body.length - 1; i >= 0; i--) {
-    sum += Number(body[i]) * mul;
-    mul = mul === 7 ? 2 : mul + 1;
+    for (let i = body.length - 1; i >= 0; i--) {
+      sum += Number(body[i]) * mul;
+      mul = mul === 7 ? 2 : mul + 1;
+    }
+
+    const res = 11 - (sum % 11);
+    const dvEsperado = res === 11 ? '0' : res === 10 ? 'K' : String(res);
+
+    return dv === dvEsperado;
   }
-
-  const res = 11 - (sum % 11);
-  const dvEsperado =
-    res === 11 ? '0' :
-    res === 10 ? 'K' :
-    String(res);
-
-  return dv === dvEsperado;
-}
 
 
   private rutValidator() {
-  return (control: AbstractControl): ValidationErrors | null => {
-    const v = String(control.value ?? '').trim();
-    if (!v) return null;
+    return (control: AbstractControl): ValidationErrors | null => {
+      const v = String(control.value ?? '').trim();
+      if (!v) return null;
 
-    const okFormat = /^\d{1,2}(\.\d{3}){2}-[0-9K]$/i.test(v);
-    if (!okFormat) return { rut: true };
+      const okFormat = /^\d{1,2}(\.\d{3}){2}-[0-9K]$/i.test(v);
+      if (!okFormat) return { rut: true };
 
-    if (!this.validarDvRut(v)) return { rutDv: true };
+      if (!this.validarDvRut(v)) return { rutDv: true };
 
-    return null;
-  };
-}
+      return null;
+    };
+  }
 
   private fechaRangoValidator(startKey: string, endKey: string) {
-  return (control: AbstractControl): ValidationErrors | null => {
-    const g = control as FormGroup;
-    const start = g.get(startKey)?.value;
-    const end = g.get(endKey)?.value;
+    return (control: AbstractControl): ValidationErrors | null => {
+      const g = control as FormGroup;
+      const start = g.get(startKey)?.value;
+      const end = g.get(endKey)?.value;
 
-    if (!start || !end) return null;
+      if (!start || !end) return null;
 
-    const d1 = new Date(start);
-    const d2 = new Date(end);
+      const d1 = new Date(start);
+      const d2 = new Date(end);
 
-    if (Number.isNaN(d1.getTime()) || Number.isNaN(d2.getTime())) return null;
+      if (Number.isNaN(d1.getTime()) || Number.isNaN(d2.getTime())) return null;
 
-    return d1 <= d2 ? null : { fechaRango: true };
-  };
-}
+      return d1 <= d2 ? null : { fechaRango: true };
+    };
+  }
 
-private noSeleccioneValidator(invalidValues: string[] = ['SELECCIONE']) {
-  return (control: AbstractControl): ValidationErrors | null => {
-    const v = String(control.value ?? '').trim();
-    if (!v) return { required: true };
-    if (invalidValues.includes(v)) return { noSeleccione: true };
-    return null;
-  };
-}
-
+  private noSeleccioneValidator(invalidValues: string[] = ['SELECCIONE']) {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const v = String(control.value ?? '').trim();
+      if (!v) return { required: true };
+      if (invalidValues.includes(v)) return { noSeleccione: true };
+      return null;
+    };
+  }
 
   addFinanciamiento(): void {
     const g = this.form.get('financiamiento') as FormGroup;
@@ -674,10 +721,12 @@ private noSeleccioneValidator(invalidValues: string[] = ['SELECCIONE']) {
     g.get('finMonto')?.setValue(0);
     g.markAsPristine();
     g.markAsUntouched();
+    this.scheduleDraftSave();
   }
 
   removeFin(row: FinRow): void {
     this.financiamientos = this.financiamientos.filter((x) => x !== row);
+    this.scheduleDraftSave();
   }
 
   addCentroCosto(): void {
@@ -689,41 +738,122 @@ private noSeleccioneValidator(invalidValues: string[] = ['SELECCIONE']) {
     }
     this.centrosCosto = [...this.centrosCosto, { tipo }];
     g.get('ccTipo')?.setValue('');
+    this.scheduleDraftSave();
   }
 
   removeCC(row: CentroCostoRow): void {
     this.centrosCosto = this.centrosCosto.filter((x) => x !== row);
+    this.scheduleDraftSave();
   }
 
   onFileSelected(event: Event, tipo: 'asistencia' | 'documentos' | 'fotos'): void {
     const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    if (!file) return;
+    const files = Array.from(input.files ?? []);
+    if (!files.length) return;
 
     const maxMb = 10;
-    const sizeOk = file.size <= maxMb * 1024 * 1024;
-
-    const ext = (file.name.split('.').pop() ?? '').toLowerCase();
     const allow = {
       asistencia: ['pdf', 'xls', 'xlsx'],
       documentos: ['pdf', 'xls', 'xlsx'],
       fotos: ['jpg', 'jpeg', 'png'],
     }[tipo];
 
-    if (!allow.includes(ext) || !sizeOk) {
+    const validFiles = files.filter((file) => {
+      const sizeOk = file.size <= maxMb * 1024 * 1024;
+      const ext = (file.name.split('.').pop() ?? '').toLowerCase();
+      return allow.includes(ext) && sizeOk;
+    });
+
+    if (!validFiles.length) {
       input.value = '';
       return;
     }
 
-    if (tipo === 'asistencia') {
-      this.asistenciaFile = file;
-      this.asistenciaFileName = file.name;
-    } else if (tipo === 'documentos') {
-      this.documentosFile = file;
-      this.documentosFileName = file.name;
+    if (tipo == 'asistencia') {
+      this.asistenciaFile = validFiles;
+      this.asistenciaFileName = this.formatFileNames(validFiles);
+    } else if (tipo == 'documentos') {
+      this.documentosFile = validFiles;
+      this.documentosFileName = this.formatFileNames(validFiles);
     } else {
-      this.fotosFile = file;
-      this.fotosFileName = file.name;
+      this.fotosFile = validFiles;
+      this.fotosFileName = this.formatFileNames(validFiles);
+    }
+    this.scheduleDraftSave();
+  }
+
+  private formatFileNames(files: File[]): string {
+    const names = files.map((f) => f.name).filter((n) => n);
+    if (!names.length) return '';
+    if (names.length <= 2) return names.join(', ');
+    return `${names[0]}, ${names[1]} (+${names.length - 2} mas)`;
+  }
+
+  private buildValoracionObservaciones(evidencias: any): string {
+    const positivos = String(evidencias?.valoracionPositivos ?? '').trim();
+    const negativos = String(evidencias?.valoracionNegativos ?? '').trim();
+    const mejorar = String(evidencias?.valoracionMejorar ?? '').trim();
+    const parts: string[] = [];
+    if (positivos) parts.push(`Aspectos positivos: ${positivos}`);
+    if (negativos) parts.push(`Aspectos negativos: ${negativos}`);
+    if (mejorar) parts.push(`Aspectos a mejorar: ${mejorar}`);
+    return parts.join('\n');
+  }
+
+  private scheduleDraftSave(): void {
+    if (this.draftTimer) clearTimeout(this.draftTimer);
+    this.draftTimer = setTimeout(() => this.saveDraft(), 400);
+  }
+
+  private saveDraft(): void {
+    if (!this.form) return;
+    const draft = {
+      form: this.form.getRawValue(),
+      unidades: this.unidades,
+      responsables: this.responsables,
+      equipoTrabajo: this.equipoTrabajo,
+      financiamientos: this.financiamientos,
+      centrosCosto: this.centrosCosto,
+      instituciones: this.instituciones,
+      difusiones: this.difusiones,
+      estudiantesFeria: this.estudiantesFeria,
+      estudiantesSalida: this.estudiantesSalida,
+      selectedTabIndex: this.selectedTabIndex,
+      savedAt: new Date().toISOString(),
+    };
+    try {
+      localStorage.setItem(this.draftKey, JSON.stringify(draft));
+    } catch {
+      // ignore storage errors
+    }
+  }
+
+  private loadDraft(): void {
+    try {
+      const raw = localStorage.getItem(this.draftKey);
+      if (!raw) return;
+      const draft = JSON.parse(raw);
+      if (draft?.form) this.form.patchValue(draft.form);
+      this.unidades = draft?.unidades ?? [];
+      this.responsables = draft?.responsables ?? [];
+      this.equipoTrabajo = draft?.equipoTrabajo ?? [];
+      this.financiamientos = draft?.financiamientos ?? [];
+      this.centrosCosto = draft?.centrosCosto ?? [];
+      this.instituciones = draft?.instituciones ?? [];
+      this.difusiones = draft?.difusiones ?? [];
+      this.estudiantesFeria = draft?.estudiantesFeria ?? [];
+      this.estudiantesSalida = draft?.estudiantesSalida ?? [];
+      this.selectedTabIndex = draft?.selectedTabIndex ?? this.selectedTabIndex;
+      this.updateEquipoValidators();
+      this.updateInstitucionValidators();
+    } catch {
+    }
+  }
+
+  private clearDraft(): void {
+    try {
+      localStorage.removeItem(this.draftKey);
+    } catch {
     }
   }
 
@@ -771,11 +901,13 @@ private noSeleccioneValidator(invalidValues: string[] = ['SELECCIONE']) {
     g.get('instNombre')?.markAsPristine();
     g.get('instNombre')?.markAsUntouched();
     this.updateInstitucionValidators();
+    this.scheduleDraftSave();
   }
 
   removeInstitucion(row: InstRow): void {
     this.instituciones = this.instituciones.filter((x) => x !== row);
     this.updateInstitucionValidators();
+    this.scheduleDraftSave();
   }
 
   editResponsable(row: ResponsableRow): void {
@@ -836,10 +968,12 @@ private noSeleccioneValidator(invalidValues: string[] = ['SELECCIONE']) {
     g.get('difusionUrl')?.setValue('');
     g.markAsPristine();
     g.markAsUntouched();
+    this.scheduleDraftSave();
   }
 
   removeDifusion(row: DifusionRow): void {
     this.difusiones = this.difusiones.filter((x) => x !== row);
+    this.scheduleDraftSave();
   }
 
   editDifusion(row: DifusionRow): void {
@@ -875,12 +1009,15 @@ private noSeleccioneValidator(invalidValues: string[] = ['SELECCIONE']) {
 
     const estudiantes = [...this.estudiantesFeria, ...this.estudiantesSalida];
 
+    const evidencias = this.form.value.evidencias;
     const request = {
       payload: {
         proyecto: this.form.value.proyecto,
-        evidencias: this.form.value.evidencias,
+        evidencias: {
+          ...evidencias,
+          observaciones: this.buildValoracionObservaciones(evidencias),
+        },
         participantes: this.form.value.participantes,
-        impacto: this.form.value.impacto,
         difusion: this.form.value.difusion,
       },
       unidades: this.unidades,
@@ -899,40 +1036,32 @@ private noSeleccioneValidator(invalidValues: string[] = ['SELECCIONE']) {
     };
 
     this.actividadesPmService.crear(request).subscribe({
-  next: () => {
-    const medios = this.difusiones?.length
-      ? ` (Medio: ${this.difusiones.map((d) => d.medio).join(', ')})`
-      : '';
+      next: (res) => {
+        const id = Number(res?.id ?? 0);
+        if (!Number.isFinite(id) || id <= 0) {
+          this.openDialog(false, 'No se pudo registrar la actividad de vinculacion. Intenta nuevamente.');
+          return;
+        }
+        const medios = this.difusiones?.length
+          ? ` (Medio: ${this.difusiones.map((d) => d.medio).join(', ')})`
+          : '';
 
-    this.dialog.open(this.dialogOk, {
-  data: { message: `Actividad de vinculación registrada exitosamente.` },
-  disableClose: true,
-  autoFocus: false,
-  panelClass: 'ok-dialog',
-});
-
-
-  this.limpiar();
-},
-
-  error: (err) => {
-  console.error('Error guardando actividad', err);
-
-  this.dialog.open(this.dialogOk, {
-  data: { message: 'No se pudo registrar la actividad de vinculación. Intenta nuevamente.' },
-  disableClose: false,
-  autoFocus: false,
-  panelClass: 'ok-dialog',
-});
-
-},
-
-});
+        this.openDialog(true, `Actividad de vinculacion registrada exitosamente.`);
+        this.limpiar();
+      },
+      error: (err) => {
+        console.error('Error guardando actividad', err);
+        const apiMessage = err?.error?.message || err?.message;
+        const fallback = 'No se pudo registrar la actividad de vinculacion. Intenta nuevamente.';
+        this.openDialog(false, apiMessage || fallback);
+      },
+    });
 
   }
 
   private goToSection(id: string, tabIndex: number) {
     this.selectedTabIndex = tabIndex;
+    this.scheduleDraftSave();
     setTimeout(() => {
       const target = document.getElementById(id);
       if (!target) return;
@@ -958,8 +1087,17 @@ private noSeleccioneValidator(invalidValues: string[] = ['SELECCIONE']) {
     }, 0);
   }
 
-    closeDialogOk(): void {
+  closeDialogOk(): void {
     this.dialog.closeAll();
+  }
+
+  private openDialog(success: boolean, message: string): void {
+    this.dialog.open(this.dialogOk, {
+      data: { message, success },
+      disableClose: !success,
+      autoFocus: false,
+      panelClass: 'ok-dialog',
+    });
   }
 
 
@@ -970,15 +1108,16 @@ private noSeleccioneValidator(invalidValues: string[] = ['SELECCIONE']) {
     this.financiamientos = [];
     this.centrosCosto = [];
     this.instituciones = [];
+    this.difusiones = [];
     this.estudiantesFeria = [];
     this.estudiantesSalida = [];
     this.showUnidadError = false;
 
-    this.asistenciaFile = null;
+    this.asistenciaFile = [];
     this.asistenciaFileName = '';
-    this.documentosFile = null;
+    this.documentosFile = [];
     this.documentosFileName = '';
-    this.fotosFile = null;
+    this.fotosFile = [];
     this.fotosFileName = '';
 
     const part = this.form.get('participantes') as FormGroup;
@@ -1015,8 +1154,6 @@ private noSeleccioneValidator(invalidValues: string[] = ['SELECCIONE']) {
         jornadaTemaCentral: '',
         jornadaTalleres: '',
         jornadaResponsableTaller: '',
-        jornadaNumAsistentes: null,
-        jornadaSatisfaccion: null,
 
         tallerAsignatura: '',
         tallerCompetencia: '',
@@ -1025,8 +1162,6 @@ private noSeleccioneValidator(invalidValues: string[] = ['SELECCIONE']) {
         congresoNombreEvento: '',
         congresoPonenciaPresentada: '',
         congresoRelator: '',
-        congresoNumAsistentes: null,
-        congresoSatisfaccion: null,
 
         alternanciaColegioAsociado: '',
         alternanciaDocenteColaborador: '',
@@ -1047,19 +1182,21 @@ private noSeleccioneValidator(invalidValues: string[] = ['SELECCIONE']) {
         documentosRef: '',
         fotosRef: '',
         enlaceNoticia: '',
-        observaciones: '',
+        valoracionPositivos: '',
+        valoracionNegativos: '',
+        valoracionMejorar: '',
       },
       equipoTrabajo: { rut: '', nombre: '', tipo: '' },
       financiamiento: { finCategoria: '', finTipoFinanciamiento: '', finMonto: 0 },
       difusion: { difusionEquipo: 'SELECCIONE', difusionUrl: '' },
       participantes: { instTipo: 'INSTITUCIÓN EXTERNA', instNombre: '' },
-      impacto: { medidaImpacto: 'ENCUESTA', indicadorImpacto: '' },
     });
 
     this.form.markAsPristine();
     this.form.markAsUntouched();
     this.updateEquipoValidators();
     this.updateInstitucionValidators();
+    this.clearDraft();
   }
 
   private updateEquipoValidators() {

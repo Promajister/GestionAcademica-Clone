@@ -8,9 +8,9 @@ datasource db {
 }
 
 enum EstadoPractica {
-  EN_CURSO   @map("En Curso")
-  APROBADO   @map("Aprobado")
-  REPROBADO  @map("Reprobado")
+  EN_CURSO  @map("En Curso")
+  APROBADO  @map("Aprobado")
+  REPROBADO @map("Reprobado")
 }
 
 enum EstadoActividad {
@@ -41,7 +41,7 @@ enum TipoPregunta {
 /////////////////////////////////
 
 model Estudiante {
-  rut                  String    @id
+  rut                  String   @id
   nombre               String
   genero               String?
   anio_nacimiento      DateTime?
@@ -56,26 +56,48 @@ model Estudiante {
   direccion            String?
   sistema_ingreso      String?
   numero_inscripciones Int?
+  egresado             Boolean  @default(false)
 
-  practicas Practica[]
-  historial HistorialEvento[]
+  practicas  Practica[]
+  historial  HistorialEvento[]
+  empleabilidad Empleabilidad?
+  actividadesEgresado ActividadEgresadoParticipante[]
 
   @@map("estudiante")
 }
 
+model Empleabilidad {
+  id            Int       @id @default(autoincrement())
+  estudianteRut String    @unique
+  estudiante    Estudiante @relation(fields: [estudianteRut], references: [rut], onDelete: Cascade)
+
+  lugarTrabajo String
+  sector       String
+  sectorOtro   String?
+  cargo        String
+  cargoOtro    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("empleabilidad")
+}
+
 model Practica {
-  id            Int             @id @default(autoincrement())
+  id            Int           @id @default(autoincrement())
   estado        EstadoPractica
   nota_final    Float?
   fecha_inicio  DateTime
   fecha_termino DateTime?
   tipo          String?
+  anio          Int
+  semestre      Int
 
   estudianteRut String
-  estudiante    Estudiante      @relation(fields: [estudianteRut], references: [rut])
+  estudiante    Estudiante @relation(fields: [estudianteRut], references: [rut])
 
   centroId Int
-  centro   CentroEducativo      @relation(fields: [centroId], references: [id])
+  centro   CentroEducativo @relation(fields: [centroId], references: [id])
 
   practicaColaboradores PracticaColaborador[]
   practicaTutores       PracticaTutor[]
@@ -85,8 +107,9 @@ model Practica {
 }
 
 model CentroEducativo {
-  id                      Int         @id @default(autoincrement())
+  id                      Int        @id @default(autoincrement())
   nombre                  String
+  rbd                     String?
   region                  String?
   comuna                  String?
   direccion               String?
@@ -104,8 +127,8 @@ model CentroEducativo {
 }
 
 model TrabajadorEduc {
-  id       Int     @id @default(autoincrement())
-  rut      String  @unique
+  id       Int    @id @default(autoincrement())
+  rut      String @unique
   nombre   String
   rol      String?
   correo   String?
@@ -118,48 +141,111 @@ model TrabajadorEduc {
 }
 
 model Colaborador {
-  id                 Int      @id @default(autoincrement())
-  rut                String   @unique
+  id                 Int    @id @default(autoincrement())
+  rut                String? @unique
   nombre             String
   correo             String?
   direccion          String?
   telefono           Int?
   universidad_egreso String?
 
-  cargos                 Cargo[]
-  practicaColaboradores  PracticaColaborador[]
+  cargos                Cargo[]
+  practicaColaboradores PracticaColaborador[]
 
   @@map("colaborador")
 }
 
 model Actividad {
-  id               Int      @id @default(autoincrement())
-  mes              String
-  nombre_actividad String
-  estudiantes      String?
-  terceros_asistieron Boolean @default(false)
-  fecha            DateTime
-  horario          String?
-  lugar            String?
-  archivo_adjunto  String?
+  id                  Int      @id @default(autoincrement())
+  mes                 String
+  nombre_actividad    String
+  estudiantes         String?
+  terceros_asistieron Boolean  @default(false)
+  fecha               DateTime
+  horario             String?
+  lugar               String?
+  archivo_adjunto     String?
+
+  terceros ActividadTercero[]
 
   @@map("actividad")
 }
 
+model ActividadEgresado {
+  id                  Int      @id @default(autoincrement())
+  mes                 String
+  nombre_actividad    String
+  satisfaccion        Float?
+  terceros_asistieron Boolean  @default(false)
+  fecha               DateTime
+  horario             String?
+  lugar               String?
+  archivo_adjunto     String?
+
+  egresados ActividadEgresadoParticipante[]
+  terceros  ActividadEgresadoTercero[]
+
+  @@map("actividad_egresado")
+}
+
+model ActividadEgresadoParticipante {
+  id                  Int    @id @default(autoincrement())
+  actividadEgresadoId Int
+  estudianteRut       String
+
+  actividad ActividadEgresado @relation(fields: [actividadEgresadoId], references: [id], onDelete: Cascade)
+  estudiante Estudiante @relation(fields: [estudianteRut], references: [rut], onDelete: Cascade)
+
+  @@unique([actividadEgresadoId, estudianteRut])
+  @@map("actividad_egresado_participante")
+}
+
+model Tercero {
+  id     Int    @id @default(autoincrement())
+  rut    String @unique
+  nombre String
+
+  actividades ActividadTercero[]
+  actividadesEgresados ActividadEgresadoTercero[]
+
+  @@map("tercero")
+}
+
+model ActividadTercero {
+  actividadId Int
+  terceroId   Int
+
+  actividad Actividad @relation(fields: [actividadId], references: [id], onDelete: Cascade)
+  tercero   Tercero   @relation(fields: [terceroId], references: [id], onDelete: Cascade)
+
+  @@id([actividadId, terceroId])
+  @@map("actividad_tercero")
+}
+
+model ActividadEgresadoTercero {
+  actividadEgresadoId Int
+  terceroId           Int
+
+  actividad ActividadEgresado @relation(fields: [actividadEgresadoId], references: [id], onDelete: Cascade)
+  tercero   Tercero          @relation(fields: [terceroId], references: [id], onDelete: Cascade)
+
+  @@id([actividadEgresadoId, terceroId])
+  @@map("actividad_egresado_tercero")
+}
 
 model Usuario {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  password  String
-  nombre    String
-  role      String
-  rolId     Int?
-  rol       Rol?     @relation(fields: [rolId], references: [id])
-  activo    Boolean  @default(true)
-  fotoUrl   String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  resetTokens PasswordResetToken[]
+  id            Int      @id @default(autoincrement())
+  email         String   @unique
+  password      String
+  nombre        String
+  role          String
+  rolId         Int?
+  rol           Rol?     @relation(fields: [rolId], references: [id])
+  activo        Boolean  @default(true)
+  fotoUrl       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  resetTokens   PasswordResetToken[]
   refreshTokens RefreshToken[]
 }
 
@@ -182,23 +268,23 @@ model Permiso {
   @@map("permiso")
 }
 
-
 /////////////////////////////////////
 //    NUEVO MODELO: ENCUESTA SEMESTRE
 /////////////////////////////////////
 
 model EncuestaSemestre {
-  id                      Int                      @id @default(autoincrement())
-  anio                    Int
-  semestre                Int
-  archivo_adjunto         String?
+  id              Int @id @default(autoincrement())
+  anio            Int
+  semestre        Int
+  archivo_adjunto String?
 
-  encuestasEstudiantes    EncuestaEstudiante[]
-  encuestasColaboradores  EncuestaColaborador[]
+  encuestasEstudiantes   EncuestaEstudiante[]
+  encuestasColaboradores EncuestaColaborador[]
+  encuestasJefatura      EncuestaJefatura[]
+  encuestasEgresados     EncuestaEgresado[]
 
   @@map("encuesta_semestre")
   @@unique([anio, semestre], name: "anio_semestre_unique")
-
 }
 
 /////////////////////////////////////
@@ -217,88 +303,111 @@ model PasswordResetToken {
 }
 
 model RefreshToken {
-  id         String   @id // jti
-  userId     Int
-  usuario    Usuario  @relation(fields: [userId], references: [id])
+  id          String   @id // jti
+  userId      Int
+  usuario     Usuario  @relation(fields: [userId], references: [id])
   hashedToken String
-  expiresAt  DateTime
-  revoked    Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  expiresAt   DateTime
+  revoked     Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@map("refresh_tokens")
   @@index([userId])
 }
 
-
 /////////////////////////////////////
 //   ENCUESTAS A ESTUDIANTES
+//   ✅ Cambios: sin ItemEncuestaEstudiante, preguntas fijas (catálogo)
 /////////////////////////////////////
 
 model EncuestaEstudiante {
-  id                 Int       @id @default(autoincrement())
+  id                 Int      @id @default(autoincrement())
   nombre_estudiante  String
   nombre_tallerista  String?
   nombre_centro      String?
   nombre_colaborador String?
   fecha              DateTime?
-  observacion String? @db.Text
-  tipo_practica               String?
+  observacion        String?  @db.Text
+  tipo_practica      String?
   nombre_docente_colaborador_opcional Int?
-
 
   semestreId Int?
   semestre   EncuestaSemestre? @relation(fields: [semestreId], references: [id], onDelete: Cascade)
 
-  items      ItemEncuestaEstudiante[]
   respuestas RespuestaSeleccionada[]
 
   @@map("encuesta_estudiante")
 }
 
-model ItemEncuestaEstudiante {
-  id         Int    @id @default(autoincrement())
-  encuestaId Int
-  titulo     String
-  orden      Int?
-
-  encuesta  EncuestaEstudiante @relation(fields: [encuestaId], references: [id], onDelete: Cascade)
-  preguntas Pregunta[]
-
-  @@map("item_encuesta_estudiante")
-}
-
 /////////////////////////////////////
 //   ENCUESTAS A COLABORADORES
+//   ✅ Cambios: sin ItemEncuestaColaborador, preguntas fijas (catálogo)
 /////////////////////////////////////
 
 model EncuestaColaborador {
   id                 Int      @id @default(autoincrement())
   nombre_colaborador String
   nombre_colegio     String?
-  observacion String? @db.Text
+  observacion        String?  @db.Text
   tipo_practica      String?
   fecha              DateTime?
-  
+
   semestreId Int?
   semestre   EncuestaSemestre? @relation(fields: [semestreId], references: [id], onDelete: Cascade)
 
-  items      ItemEncuestaColaborador[]
   respuestas RespuestaSeleccionada[]
 
   @@map("encuesta_colaborador")
 }
 
-model ItemEncuestaColaborador {
-  id         Int    @id @default(autoincrement())
-  encuestaId Int
-  titulo     String
-  orden      Int?
+/////////////////////////////////////
+//   ENCUESTAS JEFATURA (VINCULACION)
+/////////////////////////////////////
 
-  encuesta  EncuestaColaborador @relation(fields: [encuestaId], references: [id], onDelete: Cascade)
-  preguntas Pregunta[]
+model EncuestaJefatura {
+  id                       Int      @id @default(autoincrement())
+  subtipo                  String
+  fecha                    DateTime?
+  actividadVinculacionId   Int?
+  identificacion           Json?
 
-  @@map("item_encuesta_colaborador")
+  semestreId Int?
+  semestre   EncuestaSemestre? @relation(fields: [semestreId], references: [id], onDelete: Cascade)
+
+  respuestas RespuestaSeleccionada[]
+
+  @@map("encuesta_jefatura")
+}
+
+/////////////////////////////////////
+//   ENCUESTAS EGRESADOS
+/////////////////////////////////////
+
+model EncuestaEgresado {
+  id       Int      @id @default(autoincrement())
+  tipo     String
+  fecha    DateTime?
+  generales Json?
+
+  semestreId Int?
+  semestre   EncuestaSemestre? @relation(fields: [semestreId], references: [id], onDelete: Cascade)
+
+  respuestas RespuestaSeleccionada[]
+
+  @@map("encuesta_egresado")
+}
+
+model EgresadosConclusion {
+  id         Int      @id @default(autoincrement())
+  tipo       String
+  anioEgreso Int      @default(0)
+  texto      String   @db.Text
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([tipo, anioEgreso], name: "egresados_conclusion_unique")
+  @@map("egresados_conclusion")
 }
 
 /////////////////////////////////////
@@ -306,16 +415,10 @@ model ItemEncuestaColaborador {
 /////////////////////////////////////
 
 model Pregunta {
-  id               Int     @id @default(autoincrement())
-  descripcion      String
-  tipo             TipoPregunta
+  id          Int          @id @default(autoincrement())
+  descripcion String
+  tipo        TipoPregunta
   respuestaAbierta String? @db.LongText
-
-  itemEstudianteId  Int?
-  itemEstudiante    ItemEncuestaEstudiante? @relation(fields: [itemEstudianteId], references: [id])
-
-  itemColaboradorId Int?
-  itemColaborador   ItemEncuestaColaborador? @relation(fields: [itemColaboradorId], references: [id])
 
   alternativas Alternativa[]
   respuestas   RespuestaSeleccionada[]
@@ -336,26 +439,28 @@ model Alternativa {
   @@map("alternativa")
 }
 
-///////////////////////////////
-//   NUEVO MODELO: RESPUESTAS
-///////////////////////////////
-
 model RespuestaSeleccionada {
-  id                    Int      @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 
-  encuestaEstudianteId  Int?
-  encuestaEstudiante    EncuestaEstudiante? @relation(fields: [encuestaEstudianteId], references: [id], onDelete: Cascade)
+  encuestaEstudianteId Int?
+  encuestaEstudiante   EncuestaEstudiante? @relation(fields: [encuestaEstudianteId], references: [id], onDelete: Cascade)
 
   encuestaColaboradorId Int?
   encuestaColaborador   EncuestaColaborador? @relation(fields: [encuestaColaboradorId], references: [id], onDelete: Cascade)
 
-  preguntaId            Int
-  pregunta              Pregunta @relation(fields: [preguntaId], references: [id])
+  encuestaJefaturaId Int?
+  encuestaJefatura   EncuestaJefatura? @relation(fields: [encuestaJefaturaId], references: [id], onDelete: Cascade)
 
-  alternativaId         Int?
-  alternativa           Alternativa? @relation(fields: [alternativaId], references: [id])
+  encuestaEgresadoId Int?
+  encuestaEgresado   EncuestaEgresado? @relation(fields: [encuestaEgresadoId], references: [id], onDelete: Cascade)
 
-  respuestaAbierta      String? @db.LongText
+  preguntaId  Int
+  pregunta    Pregunta @relation(fields: [preguntaId], references: [id])
+
+  alternativaId Int?
+  alternativa   Alternativa? @relation(fields: [alternativaId], references: [id])
+
+  respuestaAbierta String? @db.LongText
 
   @@map("respuesta_seleccionada")
 }
@@ -365,15 +470,15 @@ model RespuestaSeleccionada {
 /////////////////////////////////////
 
 model HistorialEvento {
-  id             Int        @id @default(autoincrement())
-  estudianteRut  String
-  estudiante     Estudiante @relation(fields: [estudianteRut], references: [rut], onDelete: Cascade)
-  fecha          DateTime   @default(now())
-  tipo           String
-  titulo         String?
-  descripcion    String?    @db.Text
-  responsable    String?
-  createdAt      DateTime   @default(now())
+  id            Int        @id @default(autoincrement())
+  estudianteRut String
+  estudiante    Estudiante @relation(fields: [estudianteRut], references: [rut], onDelete: Cascade)
+  fecha         DateTime   @default(now())
+  tipo          String
+  titulo        String?
+  descripcion   String?    @db.Text
+  responsable   String?
+  createdAt     DateTime   @default(now())
 
   @@index([estudianteRut, fecha])
   @@map("historial_evento")
@@ -384,8 +489,8 @@ model HistorialEvento {
 /////////////////////////////////////
 
 model Tutor {
-  id                 Int     @id @default(autoincrement())
-  rut                String  @unique
+  id                 Int    @id @default(autoincrement())
+  rut                String @unique
   nombre             String
   correo             String?
   direccion          String?
@@ -456,6 +561,7 @@ model Observacion {
 
   @@map("observacion")
 }
+
 model ActividadVinculacion {
   id Int @id @default(autoincrement())
 
@@ -463,12 +569,14 @@ model ActividadVinculacion {
   tipoActividad String // "Feria Vocacional" | "Jornada Pedagogica" | "Taller Remedial" | "Congreso Academico" | "Alternancia Pedagogica" | "Salida a Terreno"
 
   nombre      String
-  objetivo    String
-  descripcion String
+  objetivo    String @db.Text
+  descripcion String @db.Text
 
   tipoVinculacion String
   areaVinculacion String
   areaImpacto     String
+  medidaImpacto   String?
+  indicadorImpacto String?
   sede            String
 
   fechaInicio  DateTime
@@ -478,7 +586,7 @@ model ActividadVinculacion {
   ingresos Int @default(0)
 
   proyecto   String?
-  resultados String?
+  resultados String? @db.Text
 
   // difusion (1:1 embebida)
   medioDifusion String?
@@ -486,7 +594,8 @@ model ActividadVinculacion {
 
   // evidencias (texto)
   enlaceNoticia String?
-  observaciones String?
+  observaciones String? @db.Text
+  resumenIa     String? @db.Text
 
   // Campos condicionales segun tipoActividad
 

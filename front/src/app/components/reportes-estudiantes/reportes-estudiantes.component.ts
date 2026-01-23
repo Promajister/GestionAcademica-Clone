@@ -27,6 +27,7 @@ import jsPDF from 'jspdf';
 import autoTable, { type RowInput, type CellDef } from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import { formatDateEs, parseDateFlexible } from '../../utils/date-utils';
 
 @Component({
   standalone: true,
@@ -206,7 +207,8 @@ export class ReportesEstudianteComponent {
   formatDate(value?: string | null): string {
     if (!value) return '—';
     const d = new Date(value);
-    return isNaN(d.getTime()) ? String(value) : d.toLocaleDateString('es-CL');
+    const parsed = parseDateFlexible(value);
+    return parsed ? formatDateEs(parsed) : String(value);
   }
 
   formatPeriodo(p: any): string {
@@ -242,8 +244,12 @@ export class ReportesEstudianteComponent {
   }
 
   private formatTipo(value: any): string {
-    const s = value ? String(value) : '—';
+    const s = value ? String(value) : '-';
     return s.replace(/\s+/g, ' ').trim();
+  }
+
+  private formatNotaFinal(value: any): string {
+    return value === null || value === undefined || value === '' ? '-' : String(value);
   }
 
   private getSelectedRuts(): string[] {
@@ -269,15 +275,40 @@ export class ReportesEstudianteComponent {
       const res = await fetch(path);
       if (!res.ok) return null;
       const blob = await res.blob();
-      return await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
+      return await this.blobToPngDataUrl(blob, 256);
     } catch {
       return null;
     }
+  }
+
+  private blobToPngDataUrl(blob: Blob, maxWidth: number): Promise<string | null> {
+    return new Promise((resolve) => {
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => {
+        const naturalW = img.naturalWidth || img.width;
+        const naturalH = img.naturalHeight || img.height;
+        const scale = naturalW > maxWidth ? maxWidth / naturalW : 1;
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(naturalW * scale));
+        canvas.height = Math.max(1, Math.round(naturalH * scale));
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          URL.revokeObjectURL(url);
+          resolve(null);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/png');
+        URL.revokeObjectURL(url);
+        resolve(dataUrl);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve(null);
+      };
+      img.src = url;
+    });
   }
 
   private drawPdfHeader(
@@ -305,7 +336,8 @@ export class ReportesEstudianteComponent {
 
     const drawLogo = (dataUrl: string | null | undefined, x: number, y: number, w: number, h: number) => {
       if (!dataUrl) return;
-      doc.addImage(dataUrl, 'PNG', x, y, w, h);
+      const format = dataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+      doc.addImage(dataUrl, format, x, y, w, h);
     };
 
     drawLogo(opts.logoLeft, margin, 18, 76, 56);
@@ -358,14 +390,14 @@ export class ReportesEstudianteComponent {
     const sub = `RUT: ${safe(est?.rut)}  •  Plan: ${safe(est?.plan)}`;
 
     const rowTitle: RowInput = [
-      { content: title, colSpan: 5, styles: { fontStyle: 'bold' as any } } as CellDef,
+      { content: title, colSpan: 6, styles: { fontStyle: 'bold' as any } } as CellDef,
     ];
 
     const rowSub: RowInput = [
-      { content: sub, colSpan: 5, styles: { fontStyle: 'normal' as any } } as CellDef,
+      { content: sub, colSpan: 6, styles: { fontStyle: 'normal' as any } } as CellDef,
     ];
 
-    const rowCols: RowInput = ['N°', 'Tipo', 'Estado', 'Supervisor', 'Centro Educativo'];
+    const rowCols: RowInput = ['N°', 'Tipo', 'Estado', 'Nota final', 'Supervisor', 'Centro Educativo'];
 
     return [rowTitle, rowSub, rowCols];
   }
@@ -412,7 +444,8 @@ export class ReportesEstudianteComponent {
             };
 
             const safe = (v: any) => (v === null || v === undefined || v === '' ? '—' : String(v));
-            const generatedText = `Generado: ${new Date().toLocaleString('es-CL')}`;
+            const now = new Date();
+            const generatedText = `Generado: ${formatDateEs(now)} ${now.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}`;
 
             const headerData = {
               title: 'REPORTE DE ESTUDIANTES',
@@ -434,10 +467,11 @@ export class ReportesEstudianteComponent {
             };
 
             const wN = 30;
-            const wTipo = 165;
-            const wEstado = 90;
-            const wSupervisor = 120;
-            const wCentro = contentW - (wN + wTipo + wEstado + wSupervisor);
+            const wTipo = 150;
+            const wEstado = 80;
+            const wNota = 45;
+            const wSupervisor = 110;
+            const wCentro = contentW - (wN + wTipo + wEstado + wNota + wSupervisor);
 
             for (let idx = 0; idx < estudiantes.length; idx++) {
               const est: any = estudiantes[idx];
@@ -449,12 +483,13 @@ export class ReportesEstudianteComponent {
 
               const body: RowInput[] =
                 practicas.length === 0
-                  ? [[{ content: 'Sin prácticas registradas.', colSpan: 5 } as CellDef]]
+                  ? [[{ content: 'Sin prácticas registradas.', colSpan: 6 } as CellDef]]
                   : practicas.flatMap((p: any, i: number) => {
                       const filaPrincipal: RowInput = [
                         String(i + 1),
                         this.formatTipo(p?.tipo),
                         safe(p?.estado),
+                        this.formatNotaFinal(p?.notaFinal ?? p?.nota_final),
                         this.formatSupervisor(p),
                         safe(p?.centro),
                       ];
@@ -463,7 +498,7 @@ export class ReportesEstudianteComponent {
                         '',
                         {
                           content: this.formatPeriodoLinea(p),
-                          colSpan: 4,
+                          colSpan: 5,
                           styles: { fontStyle: 'normal' as any, textColor: colors.text as any } as any,
                         } as CellDef,
                       ];
@@ -500,8 +535,9 @@ export class ReportesEstudianteComponent {
                   0: { cellWidth: wN, halign: 'center' },
                   1: { cellWidth: wTipo },
                   2: { cellWidth: wEstado },
-                  3: { cellWidth: wSupervisor },
-                  4: { cellWidth: wCentro },
+                  3: { cellWidth: wNota, halign: 'center' },
+                  4: { cellWidth: wSupervisor },
+                  5: { cellWidth: wCentro },
                 },
                 didParseCell: (data) => {
                   if (data.section === 'head') {
@@ -600,6 +636,7 @@ export class ReportesEstudianteComponent {
                   Plan: est.plan ?? '',
                   Tipo: '',
                   Estado: '',
+                  'Nota final': '-',
                   Periodo: '',
                   Centro: '',
                   Supervisor: '',
@@ -616,6 +653,7 @@ export class ReportesEstudianteComponent {
                   Plan: est.plan ?? '',
                   Tipo: p.tipo ?? '',
                   Estado: p.estado ?? '',
+                  'Nota final': this.formatNotaFinal(p.notaFinal ?? p.nota_final),
                   Periodo: this.formatPeriodo(p),
                   Centro: p.centro ?? '',
                   Supervisor: this.formatSupervisor(p),
@@ -633,6 +671,7 @@ export class ReportesEstudianteComponent {
               { wch: 16 },
               { wch: 28 },
               { wch: 14 },
+              { wch: 12 },
               { wch: 22 },
               { wch: 28 },
               { wch: 22 },

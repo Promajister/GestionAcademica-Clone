@@ -40,3 +40,4 @@ pnpm-debug.log*
 Thumbs.db
 .idea/
 .vscode/
+back/prisma/migrations/20260112140307_init/migration.sql

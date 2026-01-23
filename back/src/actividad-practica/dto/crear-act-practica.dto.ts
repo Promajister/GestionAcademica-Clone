@@ -23,6 +23,10 @@ export class CreateActividadPracticaDto {
   tercerosAsistieron?: boolean;
 
   @IsOptional()
+  @IsString()
+  terceros?: string;
+
+  @IsOptional()
   @IsDateString({}, { message: 'La fecha debe tener un formato válido (YYYY-MM-DD)' })
   fechaRegistro?: string;
 

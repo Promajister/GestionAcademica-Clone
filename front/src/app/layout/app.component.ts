@@ -12,6 +12,7 @@ import { Router, RouterModule, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { Subscription } from 'rxjs';
 import { AuthService } from '../services/auth.service';
+import { NotificationsService } from '../services/notifications.service';
 import { MatSidenavModule, MatSidenav } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatListModule } from '@angular/material/list';
@@ -37,7 +38,7 @@ interface NavItem {
 }
 
 interface NavSection {
-  id: 'practicas' | 'vinculacion';
+  id: 'practicas' | 'vinculacion' | 'egresados';
   title: string;
   icon: string;
   items: NavItem[];
@@ -63,8 +64,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   private router = inject(Router);
   private platformId = inject(PLATFORM_ID);
   private auth = inject(AuthService);
-
-  private readonly photoKey = 'app.profilePhoto';
+  private notifications = inject(NotificationsService);
 
   @ViewChild(MatSidenav) sidenav?: MatSidenav;
 
@@ -75,26 +75,21 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     this.sidenav?.close();
   };
 
-  // UI
   isAuthRoute = false;
   isSidenavOpened = true;
 
-  // Usuario (siempre existe en tu sistema)
   user!: { name: string; roleLabel: string; icon: string };
   rolePermissions: string[] = [];
 
-  // Foto
-  profilePhoto: string | null = null;
-
-  // Nav base
   nav: NavItem[] = [];
 
-  // Jefatura -> secciones colapsables
   isJefatura = false;
+  isVinculacion = false;
   navSections: NavSection[] = [];
-  openSections: Record<'practicas' | 'vinculacion', boolean> = {
+  openSections: Record<'practicas' | 'vinculacion' | 'egresados', boolean> = {
     practicas: true,
-    vinculacion: false,
+    vinculacion: true,
+    egresados: true,
   };
 
   ngOnInit(): void {
@@ -104,8 +99,8 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.isAuthRoute = this.isAuthUrl(this.router.url);
 
-    this.loadRoleFromStorage();  // setea user/nav
-    this.loadProfilePhoto();
+    this.loadRoleFromStorage();  
+    this.notifications.start();
 
     this.navigationSub = this.router.events
       .pipe(filter((event) => event instanceof NavigationEnd))
@@ -114,7 +109,6 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
         this.isAuthRoute = this.isAuthUrl(url);
 
         this.loadRoleFromStorage();
-        this.loadProfilePhoto();
       });
   }
 
@@ -123,7 +117,6 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
 
     queueMicrotask(() => {
       this.loadRoleFromStorage();
-      this.loadProfilePhoto();
     });
   }
 
@@ -177,11 +170,6 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     this.applyRole(role);
   }
 
-  private loadProfilePhoto() {
-    if (!isPlatformBrowser(this.platformId)) return;
-    this.profilePhoto = localStorage.getItem(this.photoKey);
-  }
-
   private applyRole(role: SavedRole) {
     this.user = {
       name: role.name,
@@ -192,27 +180,24 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     this.rolePermissions = Array.isArray(role.permissions) ? role.permissions : [];
 
     this.isJefatura = role.id === 'jefatura';
+    this.isVinculacion = role.id === 'vinculacion';
 
-    // base siempre
-    this.nav = [
-  { label: 'Mi cuenta', icon: 'person', route: '/mi-cuenta' },
-  ...(role.id === 'jefatura'
-    ? [{ label: 'Usuarios', icon: 'manage_accounts', route: '/usuarios' }]
-    : []),
-];
-
+    this.navSections = [];
 
     if (this.isJefatura) {
-      // Jefatura: secciones colapsables
+      this.nav = [
+        { label: 'Mi cuenta', icon: 'person', route: '/mi-cuenta' },
+        { label: 'Usuarios', icon: 'manage_accounts', route: '/usuarios' },
+      ];
       this.navSections = this.buildJefaturaSections();
     } else {
-      // Otros roles: nav normal
-      this.navSections = [];
       this.nav = this.buildNav(role.id);
+
+      if (this.isVinculacion) {
+        this.navSections = this.buildVinculacionSections();
+      }
     }
   }
-
-  // ======= Métodos que tu HTML usa (faltaban) =======
 
   onSidenavChange(opened: boolean) {
     this.isSidenavOpened = opened;
@@ -226,9 +211,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     this.router.navigate(['/dashboard']);
   }
 
-  // ==================================================
-
-  toggleSection(id: 'practicas' | 'vinculacion') {
+  toggleSection(id: 'practicas' | 'vinculacion' | 'egresados') {
     this.openSections[id] = !this.openSections[id];
   }
 
@@ -245,6 +228,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
       window.removeEventListener('app:close-sidenav', this.closeSidenavListener);
     }
     this.navigationSub?.unsubscribe();
+    this.notifications.stop();
   }
 
   private mapRoleLabel(id: RoleId): string {
@@ -280,7 +264,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
         items: [
           { label: 'Estudiantes', icon: 'school', route: '/estudiantes' },
           { label: 'Importar estudiantes', icon: 'upload_file', route: '/importar-estudiantes' },
-          { label: 'Estudiantes en Práctica', icon: 'school', route: '/estudiantes-en-practica' },
+          { label: 'Prácticas', icon: 'assignment', route: '/estudiantes-en-practica' },
           { label: 'Tutores', icon: 'supervisor_account', route: '/tutores' },
           { label: 'Colaboradores', icon: 'groups', route: '/colaboradores' },
           { label: 'Centros Educativos', icon: 'domain', route: '/centros-educativos' },
@@ -299,6 +283,83 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
             icon: 'playlist_add',
             route: '/vinculacion/actividades-pm',
           },
+          {
+            label: 'Gestionar actividad',
+            icon: 'manage_search',
+            route: '/vinculacion/actividades-pm/gestion',
+          },
+        ],
+      },
+      {
+        id: 'egresados',
+        title: 'Egresados y Empleabilidad',
+        icon: 'work',
+        items: [
+          {
+            label: 'Registro de egresados',
+            icon: 'how_to_reg',
+            route: '/egresados/registro',
+          },
+          {
+            label: 'Actividades',
+            icon: 'event_note',
+            route: '/egresados/actividades',
+          },
+          {
+            label: 'Encuestas de actividades',
+            icon: 'assignment',
+            route: '/egresados/encuestas-actividades',
+          },
+          {
+            label: 'Encuestas de egresados',
+            icon: 'assignment',
+            route: '/egresados/encuestas',
+          },
+          {
+            label: 'Análisis de datos',
+            icon: 'analytics',
+            route: '/egresados/analisis',
+          },
+        ],
+      },
+    ];
+  }
+
+  private buildVinculacionSections(): NavSection[] {
+    return [
+      {
+        id: 'practicas',
+        title: 'Gestión de prácticas',
+        icon: 'assignment_ind',
+        items: [
+          { label: 'Encuestas', icon: 'assignment', route: '/encuestas' },
+          { label: 'Estudiantes', icon: 'school', route: '/estudiantes' },
+          { label: 'Colaboradores', icon: 'groups', route: '/colaboradores' },
+          { label: 'Centros Educativos', icon: 'domain', route: '/centros-educativos' },
+          { label: 'Tutores', icon: 'supervisor_account', route: '/tutores' },
+          { label: 'Supervisión General', icon: 'analytics', route: '/reportes' },
+        ],
+      },
+      {
+        id: 'vinculacion',
+        title: 'Vinculación con el medio',
+        icon: 'groups',
+        items: [
+          { label: 'Registrar actividad', icon: 'playlist_add', route: '/vinculacion/actividades-pm' },
+          { label: 'Gestionar actividad', icon: 'manage_search', route: '/vinculacion/actividades-pm/gestion' },
+          { label: 'Encuestas de actividad', icon: 'assignment', route: '/encuestas-vinculacion' },
+        ],
+      },
+      {
+        id: 'egresados',
+        title: 'Egresados y Empleabilidad',
+        icon: 'work',
+        items: [
+          { label: 'Registro de egresados', icon: 'how_to_reg', route: '/egresados/registro' },
+          { label: 'Actividades', icon: 'event_note', route: '/egresados/actividades' },
+          { label: 'Encuestas de actividades', icon: 'assignment', route: '/egresados/encuestas-actividades' },
+          { label: 'Encuestas de egresados', icon: 'assignment', route: '/egresados/encuestas' },
+          { label: 'Análisis de datos', icon: 'analytics', route: '/egresados/analisis' },
         ],
       },
     ];
@@ -308,23 +369,18 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     if (id === 'vinculacion') {
       return [
         { label: 'Mi cuenta', icon: 'person', route: '/mi-cuenta' },
-        { label: 'Encuestas', icon: 'assignment', route: '/encuestas' },
-        { label: 'Estudiantes', icon: 'school', route: '/estudiantes' },
-        { label: 'Colaboradores', icon: 'groups', route: '/colaboradores' },
-        { label: 'Centros Educativos', icon: 'domain', route: '/centros-educativos' },
-        { label: 'Tutores', icon: 'supervisor_account', route: '/tutores' },
       ];
     }
 
-    // practicas
+
     return [
       { label: 'Mi cuenta', icon: 'person', route: '/mi-cuenta' },
       { label: 'Estudiantes', icon: 'school', route: '/estudiantes' },
       { label: 'Tutores', icon: 'supervisor_account', route: '/tutores' },
       { label: 'Colaboradores', icon: 'groups', route: '/colaboradores' },
       { label: 'Centros Educativos', icon: 'domain', route: '/centros-educativos' },
-      { label: 'Prácticas', icon: 'event_note', route: '/practicas' },
-      { label: 'Actividades', icon: 'assignment', route: '/actividades-estudiantes' },
+      { label: 'Prácticas', icon: 'assignment', route: '/practicas' },
+      { label: 'Actividades', icon: 'event_note', route: '/actividades-estudiantes' },
       { label: 'Supervisión General', icon: 'analytics', route: '/reportes' },
     ];
   }

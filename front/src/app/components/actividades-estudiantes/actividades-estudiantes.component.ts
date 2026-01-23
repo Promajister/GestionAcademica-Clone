@@ -1,6 +1,6 @@
 import { Component, inject, PLATFORM_ID, OnInit } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, ActivatedRoute } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 // Angular Material
@@ -17,10 +17,18 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { Observable } from 'rxjs';
 
-import { ActividadesEstudiantesService, Actividad } from '../../services/actividades-estudiantes.service';
+import { ActividadesEstudiantesService, Actividad, ActividadResponse, QueryActividadParams } from '../../services/actividades-estudiantes.service';
+import { ActividadesEgresadosService } from '../../services/actividades-egresados.service';
 import { EstudiantesService, EstudianteResumen } from '../../services/estudiantes.service';
 import JSZip from 'jszip';
+import { formatDateEs, parseDateFlexible } from '../../utils/date-utils';
+
+interface Tercero {
+  rut: string;
+  nombre: string;
+}
 
 // DateAdapter personalizado para formato DD/MM/YYYY
 @Injectable()
@@ -102,9 +110,25 @@ export const MY_DATE_FORMATS = {
 export class ActividadesEstudiantesComponent implements OnInit {
   private fb = inject(FormBuilder);
   private platformId = inject(PLATFORM_ID);
+  private route = inject(ActivatedRoute);
   private snack = inject(MatSnackBar);
   private actividadesService = inject(ActividadesEstudiantesService);
+  private actividadesEgresadosService = inject(ActividadesEgresadosService);
   private estudiantesService = inject(EstudiantesService);
+
+  private api!: {
+    listar: (params?: QueryActividadParams) => Observable<ActividadResponse>;
+    obtenerPorId: (id: number) => Observable<Actividad>;
+    crear: (actividad: Partial<Actividad> & { egresadosRuts?: string[] }, archivo?: File) => Observable<Actividad>;
+    actualizar: (
+      id: number,
+      actividad: Partial<Actividad> & { egresadosRuts?: string[] },
+      archivo?: File
+    ) => Observable<Actividad>;
+    obtenerTerceroPorRut: (rut: string) => Observable<{ rut: string; nombre: string } | null>;
+    eliminar: (id: number) => Observable<void>;
+    getArchivoUrl: (archivoPath: string | undefined) => string | null;
+  };
   
   searchTerm: string = '';
   selectedMes: string = 'all';
@@ -113,6 +137,9 @@ export class ActividadesEstudiantesComponent implements OnInit {
   estudiantesDisponibles: EstudianteResumen[] = [];
   estudiantesFiltro: string = '';
   readonly estudiantesLimit: number = 5;
+  tercerosSeleccionados: Tercero[] = [];
+  tercerosListaInvalida: boolean = false;
+  soloEgresados: boolean = false;
   
   // Lista de meses disponibles
   readonly meses = [
@@ -161,10 +188,34 @@ export class ActividadesEstudiantesComponent implements OnInit {
       return false;
     }
   }
+
+  get esSoloLectura(): boolean {
+    return this.esJefatura && !this.soloEgresados;
+  }
+
+  get vistaTitle(): string {
+    return this.soloEgresados
+      ? 'Gestión de actividades de egresados'
+      : 'Gestión de actividades de las prácticas';
+  }
+
+  get vistaDescription(): string {
+    return this.soloEgresados
+      ? 'Registra, revisa y administra actividades vinculadas a egresados.'
+      : 'Registra, revisa y administra actividades vinculadas a prácticas profesionales.';
+  }
+
+  get personasLabel(): string {
+    return this.soloEgresados ? 'egresado' : 'estudiante';
+  }
+
+  get personasLabelPlural(): string {
+    return this.soloEgresados ? 'egresados' : 'estudiantes';
+  }
   
   // ===== paginación =====
   pageIndex = 0;
-  pageSize = 5;
+  pageSize = 10;
   totalItems = 0;
   readonly pageSizeOptions = [5, 10, 20, 50];
   
@@ -176,14 +227,26 @@ export class ActividadesEstudiantesComponent implements OnInit {
     lugar: [''],
     estudiantes: [[], [Validators.required]],
     terceros_asistieron: [false],
+    tercero_rut: [''],
+    tercero_nombre: [''],
     archivo_adjunto: ['']
   });
   
   actividades: Actividad[] = [];
 
   ngOnInit(): void {
+    this.soloEgresados = !!this.route.snapshot.data?.['soloEgresados'];
+    this.api = this.soloEgresados ? this.actividadesEgresadosService : this.actividadesService;
     this.cargarActividades();
     this.cargarEstudiantes();
+    this.formularioActividad.get('terceros_asistieron')?.valueChanges.subscribe((value) => {
+      if (!value) {
+        this.tercerosSeleccionados = [];
+        this.formularioActividad.patchValue({ tercero_rut: '', tercero_nombre: '' });
+        this.tercerosListaInvalida = false;
+      }
+      this.actualizarValidadoresTerceros();
+    });
   }
 
   cargarEstudiantes(): void {
@@ -193,6 +256,7 @@ export class ActividadesEstudiantesComponent implements OnInit {
       nombre: term || undefined,
       rut: term || undefined,
       limit: this.estudiantesLimit,
+      ...(this.soloEgresados ? { egresado: true } : {}),
     };
 
     this.estudiantesService.listar(params).subscribe({
@@ -240,9 +304,9 @@ export class ActividadesEstudiantesComponent implements OnInit {
     // Cargar un número grande de actividades para filtrar localmente
     const params = { page: 1, limit: 1000 };
     
-    this.actividadesService.listar(params).subscribe({
+    this.api.listar(params).subscribe({
       next: (response) => {
-        this.actividades = response.items || [];
+        this.actividades = (response.items || []).map((item) => this.normalizarActividad(item));
         this.cargando = false;
         this.actualizarPaginacion();
       },
@@ -252,6 +316,23 @@ export class ActividadesEstudiantesComponent implements OnInit {
         this.cargando = false;
       }
     });
+  }
+
+  private normalizarActividad(raw: any): Actividad {
+    const terceros = Array.isArray(raw?.terceros)
+      ? raw.terceros
+          .map((item: any) => item?.tercero ?? item)
+          .map((item: any) => ({
+            rut: typeof item?.rut === 'string' ? item.rut : '',
+            nombre: typeof item?.nombre === 'string' ? item.nombre : '',
+          }))
+          .filter((item: Tercero) => item.rut && item.nombre)
+      : [];
+
+    return {
+      ...raw,
+      terceros,
+    };
   }
 
   // ===== filtros - aplicados localmente =====
@@ -275,6 +356,7 @@ export class ActividadesEstudiantesComponent implements OnInit {
 
     return resultado;
   }
+
 
   // ===== items paginados de los filtrados =====
   get filteredActivities(): Actividad[] {
@@ -311,6 +393,8 @@ export class ActividadesEstudiantesComponent implements OnInit {
   }
 
   formatDate(date: Date | string): string {
+    const parsed = parseDateFlexible(date);
+    if (parsed) return formatDateEs(parsed);
     try {
       let d: Date;
       if (typeof date === 'string') {
@@ -341,7 +425,7 @@ export class ActividadesEstudiantesComponent implements OnInit {
 
   formatTime(date: Date | string): string {
     try {
-      const d = typeof date === 'string' ? new Date(date) : date;
+      const d = typeof date === 'string' ? (parseDateFlexible(date) ?? new Date(date)) : date;
       if (isNaN(d.getTime())) {
         return '—';
       }
@@ -380,9 +464,15 @@ export class ActividadesEstudiantesComponent implements OnInit {
     return this.formatTime(actividad.fecha);
   }
 
+  getTercerosLabel(actividad?: Actividad | null): string {
+    const terceros = actividad?.terceros ?? [];
+    if (!terceros.length) return '';
+    return terceros.map((t) => `${t.nombre} (${t.rut})`).join(', ');
+  }
+
   alternarFormulario(): void {
     // Si es jefatura, no permitir abrir el formulario
-    if (this.esJefatura) return;
+    if (this.esSoloLectura) return;
     
     this.mostrarFormulario = !this.mostrarFormulario;
     if (!this.mostrarFormulario) {
@@ -407,6 +497,72 @@ export class ActividadesEstudiantesComponent implements OnInit {
     }
   }
 
+  buscarTerceroPorRut(): void {
+    const rut = (this.formularioActividad.get('tercero_rut')?.value || '').trim();
+    if (!rut) return;
+
+    this.api.obtenerTerceroPorRut(rut).subscribe({
+      next: (tercero) => {
+        if (tercero?.nombre) {
+          this.formularioActividad.patchValue({ tercero_nombre: tercero.nombre });
+        }
+      },
+      error: () => {
+        // Si no existe, no bloquear el flujo
+      },
+    });
+  }
+
+  agregarTercero(): void {
+    const rut = (this.formularioActividad.get('tercero_rut')?.value || '').trim();
+    const nombre = (this.formularioActividad.get('tercero_nombre')?.value || '').trim();
+
+    if (!rut || !nombre) {
+      this.formularioActividad.get('tercero_rut')?.markAsTouched();
+      this.formularioActividad.get('tercero_nombre')?.markAsTouched();
+      this.snack.open('Debes ingresar RUT y nombre del tercero.', 'Cerrar', {
+        duration: 3000,
+        horizontalPosition: 'center',
+        verticalPosition: 'bottom',
+        panelClass: ['warning-snackbar'],
+      });
+      return;
+    }
+
+    const index = this.tercerosSeleccionados.findIndex((t) => t.rut === rut);
+    if (index >= 0) {
+      this.tercerosSeleccionados[index] = { rut, nombre };
+    } else {
+      this.tercerosSeleccionados = [...this.tercerosSeleccionados, { rut, nombre }];
+    }
+    this.tercerosListaInvalida = false;
+    this.formularioActividad.patchValue({ tercero_rut: '', tercero_nombre: '' });
+    this.formularioActividad.get('tercero_rut')?.markAsUntouched();
+    this.formularioActividad.get('tercero_nombre')?.markAsUntouched();
+    this.actualizarValidadoresTerceros();
+  }
+
+  quitarTercero(rut: string): void {
+    this.tercerosSeleccionados = this.tercerosSeleccionados.filter((t) => t.rut !== rut);
+    this.actualizarValidadoresTerceros();
+  }
+
+  private actualizarValidadoresTerceros(): void {
+    const tercerosAsistieron = this.formularioActividad.get('terceros_asistieron')?.value === true;
+    const requiere = tercerosAsistieron && this.tercerosSeleccionados.length === 0;
+
+    if (requiere) {
+      this.formularioActividad.get('tercero_rut')?.setValidators([Validators.required]);
+      this.formularioActividad.get('tercero_nombre')?.setValidators([Validators.required]);
+    } else {
+      this.formularioActividad.get('tercero_rut')?.clearValidators();
+      this.formularioActividad.get('tercero_nombre')?.clearValidators();
+    }
+
+    this.formularioActividad.get('tercero_rut')?.updateValueAndValidity({ emitEvent: false });
+    this.formularioActividad.get('tercero_nombre')?.updateValueAndValidity({ emitEvent: false });
+  }
+
   private resetFormularioActividad(): void {
     this.formularioActividad.reset({
       nombre_actividad: '',
@@ -415,8 +571,12 @@ export class ActividadesEstudiantesComponent implements OnInit {
       lugar: '',
       estudiantes: [],
       terceros_asistieron: false,
+      tercero_rut: '',
+      tercero_nombre: '',
       archivo_adjunto: ''
     });
+    this.tercerosSeleccionados = [];
+    this.tercerosListaInvalida = false;
   }
 
   getEstudianteEtiqueta(estudiante: EstudianteResumen): string {
@@ -431,6 +591,16 @@ export class ActividadesEstudiantesComponent implements OnInit {
   private parsearEstudiantes(value: string | null | undefined): string[] {
     if (!value) return [];
     return value.split(',').map((item) => item.trim()).filter((item) => item.length > 0);
+  }
+
+  private obtenerRutsSeleccionados(): string[] {
+    const seleccionados = this.estudiantesSeleccionados || [];
+    return seleccionados
+      .map((item) => {
+        const match = item.match(/\(([^)]+)\)\s*$/);
+        return match ? match[1].trim() : '';
+      })
+      .filter((rut) => !!rut);
   }
 
   contarEstudiantes(value: string | null | undefined): number {
@@ -577,14 +747,31 @@ export class ActividadesEstudiantesComponent implements OnInit {
       }
     }
 
-    const actividadData: Partial<Actividad> = {
+    const actividadData: Partial<Actividad> & { egresadosRuts?: string[] } = {
       nombre_actividad: formValue.nombre_actividad,
       fecha: fechaCompleta,
       horario: formValue.horario || undefined,
       lugar: formValue.lugar || undefined,
       estudiantes: this.serializarEstudiantes(formValue.estudiantes),
       terceros_asistieron: formValue.terceros_asistieron === true,
+      terceros: formValue.terceros_asistieron ? this.tercerosSeleccionados : [],
     };
+
+    if (this.soloEgresados) {
+      actividadData.egresadosRuts = this.obtenerRutsSeleccionados();
+    }
+
+    if (actividadData.terceros_asistieron && (!actividadData.terceros || actividadData.terceros.length === 0)) {
+      this.tercerosListaInvalida = true;
+      this.snack.open('Debes agregar al menos un tercero.', 'Cerrar', {
+        duration: 3000,
+        horizontalPosition: 'center',
+        verticalPosition: 'bottom',
+        panelClass: ['warning-snackbar'],
+      });
+      return;
+    }
+    this.tercerosListaInvalida = false;
 
     // Determinar qué archivo enviar (el ZIP comprimido)
     let archivoParaEnviar: File | undefined = undefined;
@@ -607,18 +794,19 @@ export class ActividadesEstudiantesComponent implements OnInit {
     if (this.estaEditando && this.actividadEditando) {
       // Editar actividad existente (sin modificar archivos)
       this.cargando = true;
-      this.actividadesService.actualizar(
+      this.api.actualizar(
         this.actividadEditando.id,
         actividadData,
         undefined // No enviar archivo nuevo al editar
       ).subscribe({
         next: (actividadActualizada) => {
-          const index = this.actividades.findIndex(a => a.id === actividadActualizada.id);
+          const actualizada = this.normalizarActividad(actividadActualizada);
+          const index = this.actividades.findIndex(a => a.id === actualizada.id);
           if (index !== -1) {
-            this.actividades[index] = actividadActualizada;
+            this.actividades[index] = actualizada;
           }
           this.snack.open(
-            `✓ ${actividadActualizada.nombre_actividad} actualizada correctamente`,
+            `✓ ${actualizada.nombre_actividad} actualizada correctamente`,
             'Cerrar',
             {
               duration: 4000,
@@ -646,11 +834,12 @@ export class ActividadesEstudiantesComponent implements OnInit {
     } else {
       // Agregar nueva actividad
       this.cargando = true;
-      this.actividadesService.crear(actividadData, archivoParaEnviar).subscribe({
+      this.api.crear(actividadData, archivoParaEnviar).subscribe({
         next: (nuevaActividad) => {
-          this.actividades.push(nuevaActividad);
+          const creada = this.normalizarActividad(nuevaActividad);
+          this.actividades.push(creada);
           this.snack.open(
-            `✓ ${nuevaActividad.nombre_actividad} agregada correctamente`,
+            `✓ ${creada.nombre_actividad} agregada correctamente`,
             'Cerrar',
             {
               duration: 4000,
@@ -680,9 +869,9 @@ export class ActividadesEstudiantesComponent implements OnInit {
 
   viewActivity(actividad: Actividad): void {
     // Cargar detalles completos desde el backend
-    this.actividadesService.obtenerPorId(actividad.id).subscribe({
+    this.api.obtenerPorId(actividad.id).subscribe({
       next: (actividadCompleta) => {
-        this.actividadSeleccionada = actividadCompleta;
+        this.actividadSeleccionada = this.normalizarActividad(actividadCompleta);
       },
       error: (err) => {
         console.error('Error al cargar detalles de actividad:', err);
@@ -697,7 +886,7 @@ export class ActividadesEstudiantesComponent implements OnInit {
    * Obtener la URL completa del archivo adjunto para descarga
    */
   getArchivoUrl(archivoPath: string | undefined): string | null {
-    return this.actividadesService.getArchivoUrl(archivoPath);
+    return this.api.getArchivoUrl(archivoPath);
   }
 
   cerrarDetalles(): void {
@@ -706,7 +895,7 @@ export class ActividadesEstudiantesComponent implements OnInit {
 
   editActivity(actividad: Actividad): void {
     // Si es jefatura, no permitir editar
-    if (this.esJefatura) return;
+    if (this.esSoloLectura) return;
     
     this.actividadEditando = actividad;
     this.estaEditando = true;
@@ -722,6 +911,7 @@ export class ActividadesEstudiantesComponent implements OnInit {
     } else {
       fecha = actividad.fecha;
     }
+    fecha = parseDateFlexible(actividad.fecha) ?? fecha;
     
     // Si hay un archivo adjunto, no podemos recuperar los archivos originales desde el ZIP guardado
     this.archivosSeleccionados = [];
@@ -734,15 +924,20 @@ export class ActividadesEstudiantesComponent implements OnInit {
       lugar: actividad.lugar || '',
       estudiantes: this.parsearEstudiantes(actividad.estudiantes),
       terceros_asistieron: actividad.terceros_asistieron === true,
+      tercero_rut: '',
+      tercero_nombre: '',
       archivo_adjunto: actividad.archivo_adjunto || ''
     });
+
+    this.tercerosSeleccionados = actividad.terceros ? [...actividad.terceros] : [];
+    this.tercerosListaInvalida = false;
     
     this.mostrarFormulario = true;
   }
 
   askDelete(actividad: Actividad): void {
     // Si es jefatura, no permitir eliminar
-    if (this.esJefatura) return;
+    if (this.esSoloLectura) return;
     
     this.pendingDelete = actividad;
   }
@@ -755,7 +950,7 @@ export class ActividadesEstudiantesComponent implements OnInit {
     if (!this.pendingDelete) return;
     
     this.cargando = true;
-    this.actividadesService.eliminar(this.pendingDelete.id).subscribe({
+    this.api.eliminar(this.pendingDelete.id).subscribe({
       next: () => {
         const index = this.actividades.findIndex(a => a.id === this.pendingDelete!.id);
         if (index !== -1) {

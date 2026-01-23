@@ -18,6 +18,7 @@ export interface TrabajadorDTO {
 export interface CentroEducativoDTO {
   id: number;
   nombre: string;
+  rbd?: string | null;
   tipo: 'PARTICULAR' | 'PARTICULAR_SUBVENCIONADO' | 'SLEP' | 'NO_CONVENCIONAL' | string;
   region: string;
   comuna: string;
@@ -36,6 +37,7 @@ export interface PagedResult<T> {
 
 export interface CreateCentroPayload {
   nombre: string;
+  rbd?: string | null;
   tipo: string;
   region: string;
   comuna: string;

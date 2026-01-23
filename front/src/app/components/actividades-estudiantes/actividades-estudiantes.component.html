@@ -11,8 +11,8 @@
         </div>
 
         <div class="hero__titles">
-          <h1>Gestión de actividades de las prácticas</h1>
-          <p>Registra, revisa y administra actividades vinculadas a prácticas profesionales.</p>
+          <h1>{{ vistaTitle }}</h1>
+          <p>{{ vistaDescription }}</p>
 
           <div class="hero__chips">
             <span class="chip">
@@ -25,7 +25,7 @@
         </div>
       </div>
 
-      <div class="hero__actions" *ngIf="!esJefatura">
+      <div class="hero__actions" *ngIf="!esSoloLectura">
         <button mat-flat-button color="primary" (click)="addActivity()" class="btn-cta">
           <mat-icon>{{ mostrarFormulario ? 'close' : 'add' }}</mat-icon>
           {{ mostrarFormulario ? 'Cerrar' : 'Añadir Actividad' }}
@@ -67,7 +67,7 @@
   </mat-card>
 
   <!-- FORMULARIO -->
-  <div class="FormContainer" [class.FormOpen]="mostrarFormulario" *ngIf="!esJefatura">
+  <div class="FormContainer" [class.FormOpen]="mostrarFormulario" *ngIf="!esSoloLectura">
     @if (mostrarFormulario) {
       <mat-card class="Elev FormCard">
         <div class="form-topline"></div>
@@ -130,7 +130,7 @@
                 <div class="StudentsColumn">
                   <div class="StudentsHeader">
                     <mat-form-field appearance="outline" class="FormField StudentsFilterField">
-                    <mat-label>Buscar estudiante</mat-label>
+                    <mat-label>Buscar {{ personasLabel }}</mat-label>
                     <input
                       matInput
                       [value]="estudiantesFiltro"
@@ -148,22 +148,15 @@
                     }
                     </mat-form-field>
 
-                    <div class="TicketField">
-                      <label class="FormLabel">Terceros</label>
-                      <mat-checkbox formControlName="terceros_asistieron">Asistieron terceros</mat-checkbox>
-                      @if (formularioActividad.get('terceros_asistieron')?.value) {
-                        <span class="TicketBadge">TERCEROS</span>
-                      }
-                    </div>
                   </div>
 
                   <div class="StudentsPanel">
-                    <label class="FormLabel">Estudiantes*</label>
+                    <label class="FormLabel">{{ personasLabelPlural | titlecase }}*</label>
                     <div class="StudentsResults">
                       @if (cargandoEstudiantes) {
-                        <div class="StudentsHint">Cargando estudiantes...</div>
+                        <div class="StudentsHint">Cargando {{ personasLabelPlural }}...</div>
                       } @else if (estudiantesDisponibles.length === 0) {
-                        <div class="StudentsHint">No hay estudiantes disponibles</div>
+                        <div class="StudentsHint">No hay {{ personasLabelPlural }} disponibles</div>
                       } @else {
                         @for (estudiante of estudiantesDisponibles; track estudiante.rut) {
                           <button
@@ -180,7 +173,7 @@
                     </div>
                     <div class="StudentsSelected">
                       @if (estudiantesSeleccionados.length === 0) {
-                        <div class="StudentsHint">Sin estudiantes seleccionados</div>
+                        <div class="StudentsHint">Sin {{ personasLabelPlural }} seleccionados</div>
                       } @else {
                         @for (estudiante of estudiantesSeleccionados; track estudiante) {
                           <span class="StudentChip">
@@ -197,9 +190,74 @@
                       }
                     </div>
                     @if (formularioActividad.get('estudiantes')?.invalid && formularioActividad.get('estudiantes')?.touched) {
-                      <div class="StudentsError">Selecciona al menos un estudiante</div>
+                      <div class="StudentsError">Selecciona al menos un {{ personasLabel }}</div>
                     }
                   </div>
+
+                  <div class="TercerosToggle">
+                    <label class="FormLabel">Terceros</label>
+                    <mat-checkbox formControlName="terceros_asistieron">Asistieron terceros</mat-checkbox>
+                    @if (formularioActividad.get('terceros_asistieron')?.value) {
+                      <span class="TicketBadge">TERCEROS</span>
+                    }
+                  </div>
+
+                  @if (formularioActividad.get('terceros_asistieron')?.value) {
+                    <div class="StudentsPanel">
+                      <div class="FormRow FormRow--terceros">
+                        <mat-form-field appearance="outline" class="FormField">
+                          <mat-label>RUT tercero</mat-label>
+                          <input
+                            matInput
+                            formControlName="tercero_rut"
+                            placeholder="Ej: 12.345.678-9"
+                            (blur)="buscarTerceroPorRut()" />
+                          @if (formularioActividad.get('tercero_rut')?.hasError('required') && formularioActividad.get('tercero_rut')?.touched) {
+                            <mat-error>El RUT del tercero es requerido</mat-error>
+                          }
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline" class="FormField">
+                          <mat-label>Nombre tercero</mat-label>
+                          <input matInput formControlName="tercero_nombre" placeholder="Nombre completo" />
+                          @if (formularioActividad.get('tercero_nombre')?.hasError('required') && formularioActividad.get('tercero_nombre')?.touched) {
+                            <mat-error>El nombre del tercero es requerido</mat-error>
+                          }
+                        </mat-form-field>
+
+                        <button
+                          mat-stroked-button
+                          type="button"
+                          class="AddTerceroBtn"
+                          (click)="agregarTercero()">
+                          <mat-icon>add</mat-icon>
+                          Agregar
+                        </button>
+                      </div>
+
+                      <div class="StudentsSelected">
+                        @if (tercerosSeleccionados.length === 0) {
+                          <div class="StudentsHint">Sin terceros agregados</div>
+                        } @else {
+                          @for (tercero of tercerosSeleccionados; track tercero.rut) {
+                            <span class="StudentChip">
+                              <span class="StudentChipText">{{ tercero.nombre }} ({{ tercero.rut }})</span>
+                              <button
+                                type="button"
+                                class="StudentChipRemove"
+                                (click)="quitarTercero(tercero.rut)"
+                                aria-label="Quitar tercero">
+                                <mat-icon>close</mat-icon>
+                              </button>
+                            </span>
+                          }
+                        }
+                      </div>
+                      @if (tercerosListaInvalida && tercerosSeleccionados.length === 0) {
+                        <div class="StudentsError">Debes agregar al menos un tercero</div>
+                      }
+                    </div>
+                  }
 
                 </div>
 
@@ -328,9 +386,10 @@
           <div class="HeaderCell HeaderCell--date">FECHA</div>
           <div class="HeaderCell HeaderCell--time">HORA</div>
           <div class="HeaderCell HeaderCell--location">UBICACIÓN</div>
-          <div class="HeaderCell HeaderCell--students">ESTUDIANTES</div>
+          <div class="HeaderCell HeaderCell--students">{{ personasLabelPlural | uppercase }}</div>
           <div class="HeaderCell HeaderCell--terceros">TERCEROS</div>
-          <div class="HeaderCell HeaderCell--evidence">EVIDENCIAS</div>
+          <div class="HeaderCell HeaderCell--satisfaccion">SATISFACCIÓN</div>
+          <div class="HeaderCell HeaderCell--evidence">RESPALDO</div>
           <div class="HeaderCell HeaderCell--actions">ACCIONES</div>
         </div>
 
@@ -360,6 +419,10 @@
             <span class="TercerosText">{{ actividad.terceros_asistieron ? 'Si' : 'No' }}</span>
           </div>
 
+          <div class="TableCell TableCell--satisfaccion">
+            <span class="SatisfaccionText">{{ actividad.satisfaccion !== null && actividad.satisfaccion !== undefined ? (actividad.satisfaccion + '%') : '—' }}</span>
+          </div>
+
           <div class="TableCell TableCell--evidence">
             <div class="EvidenceText">
               <a
@@ -382,11 +445,11 @@
                 <mat-icon>visibility</mat-icon>
               </button>
 
-              <button mat-icon-button color="primary" (click)="editActivity(actividad)" title="Editar" *ngIf="!esJefatura">
+              <button mat-icon-button color="primary" (click)="editActivity(actividad)" title="Editar" *ngIf="!esSoloLectura">
                 <mat-icon>edit</mat-icon>
               </button>
 
-              <button mat-icon-button color="warn" (click)="askDelete(actividad)" title="Eliminar" *ngIf="!esJefatura">
+              <button mat-icon-button color="warn" (click)="askDelete(actividad)" title="Eliminar" *ngIf="!esSoloLectura">
                 <mat-icon>delete</mat-icon>
               </button>
             </div>
@@ -509,7 +572,7 @@
               </div>
 
               <div class="KV KV--full">
-                <div class="K">Estudiantes</div>
+                <div class="K">{{ personasLabelPlural | titlecase }}</div>
                 <div class="V">{{ actividadSeleccionada.estudiantes || 'No especificados' }}</div>
               </div>
 
@@ -517,13 +580,22 @@
                 <div class="K">Terceros</div>
                 <div class="V">{{ actividadSeleccionada.terceros_asistieron ? 'Si' : 'No' }}</div>
               </div>
+
+              @if (actividadSeleccionada.terceros_asistieron && actividadSeleccionada.terceros?.length) {
+                <div class="KV KV--full">
+                  <div class="K">Listado de terceros</div>
+                  <div class="V">
+                    {{ getTercerosLabel(actividadSeleccionada) }}
+                  </div>
+                </div>
+              }
             </div>
           </div>
 
           <div class="DetailsSection">
             <div class="SectionHead">
               <mat-icon>attach_file</mat-icon>
-              <h3>Evidencias</h3>
+              <h3>Respaldo</h3>
             </div>
 
             @if (actividadSeleccionada.archivo_adjunto) {
@@ -532,7 +604,7 @@
                   <mat-icon class="EvidenceIcon">folder_zip</mat-icon>
                   <div class="EvidenceTextBlock">
                     <div class="EvidenceTitle">Archivos adjuntos</div>
-                    <div class="EvidenceMeta">ZIP con evidencias de la actividad</div>
+                    <div class="EvidenceMeta">ZIP con respaldo de la actividad</div>
                   </div>
                 </div>
 
@@ -548,7 +620,7 @@
                 </a>
               </div>
             } @else {
-              <p class="Muted">No hay evidencias adjuntas para esta actividad.</p>
+              <p class="Muted">No hay respaldo adjunto para esta actividad.</p>
             }
           </div>
         </div>
@@ -560,7 +632,7 @@
             mat-raised-button
             color="primary"
             (click)="editActivity(actividadSeleccionada!); cerrarDetalles()"
-            *ngIf="!esJefatura">
+            *ngIf="!esSoloLectura">
             <mat-icon>edit</mat-icon>
             Editar actividad
           </button>

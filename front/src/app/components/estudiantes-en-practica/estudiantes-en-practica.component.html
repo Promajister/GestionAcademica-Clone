@@ -11,8 +11,8 @@
         </div>
 
         <div class="hero__titles">
-          <h1>Estudiantes en Práctica</h1>
-          <p>Revisa estudiantes asignados, centro, fechas y estado de su práctica.</p>
+          <h1>Gestión de Prácticas</h1>
+          <p>Gestiona prácticas profesionales asignadas a estudiantes.</p>
 
           <div class="hero__chips">
             <span class="chip">
@@ -243,6 +243,7 @@
           <mat-form-field appearance="outline" class="EstadoSelect">
             <mat-label>Nota final (1 a 7)</mat-label>
             <input matInput type="number" min="1" max="7" step="0.1" [(ngModel)]="notaFinalEditada" />
+            <mat-error *ngIf="notaFinalError">{{ notaFinalError }}</mat-error>
           </mat-form-field>
         </div>
 
@@ -513,7 +514,7 @@
 
                     <div class="ActivityDate">
                       <mat-icon>event</mat-icon>
-                      <span>{{ actividad.fecha }}</span>
+                      <span>{{ formatearFecha(actividad.fecha) }}</span>
                     </div>
                   </div>
                 }

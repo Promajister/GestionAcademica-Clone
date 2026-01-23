@@ -11,7 +11,7 @@
 
         <div class="hero__titles">
           <h1>Gestión de Tutores</h1>
-          <p>Registra, edita y administra tutores vinculados a prácticas profesionales.</p>
+          <p>Registra y administra tutores vinculados a prácticas profesionales.</p>
 
           <div class="hero__chips">
             <span class="chip">
@@ -104,7 +104,7 @@
 
               <mat-form-field appearance="outline" class="FormField">
                 <mat-label>Teléfono</mat-label>
-                <input matInput formControlName="telefono" placeholder="987654321" type="tel" />
+                <input matInput formControlName="telefono" placeholder="987654321" type="tel" minlength="6" maxlength="13" pattern="\d{6,13}" />
                 @if (formularioTutor.get('telefono')?.invalid && formularioTutor.get('telefono')?.touched) {
                   <mat-error>{{ getErrorTelefono() }}</mat-error>
                 }

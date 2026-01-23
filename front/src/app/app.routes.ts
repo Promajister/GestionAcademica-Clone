@@ -129,16 +129,16 @@ export const routes: Routes = [
   {
     path: 'reportes',
     canActivate: [authGuard, RoleGuard],
-    data: { roles: [ROLES.JEFATURA,ROLES.PRACTICAS] },
+    data: { roles: [ROLES.JEFATURA, ROLES.PRACTICAS, ROLES.VINCULACION] },
     loadComponent: () =>
       import('./components/reportes/reportes.component')
         .then(m => m.ReportesComponent)
   },
 
-   {
+  {
     path: 'reportes/estudiante',
     canActivate: [authGuard, RoleGuard],
-    data: { roles: [ROLES.JEFATURA, ROLES.PRACTICAS] },
+    data: { roles: [ROLES.JEFATURA, ROLES.PRACTICAS, ROLES.VINCULACION] },
     loadComponent: () =>
       import('./components/reportes-estudiantes/reportes-estudiantes.component')
         .then(m => m.ReportesEstudianteComponent),
@@ -147,7 +147,7 @@ export const routes: Routes = [
   {
     path: 'reportes/satisfaccion',
     canActivate: [authGuard, RoleGuard],
-    data: { roles: [ROLES.JEFATURA, ROLES.PRACTICAS] },
+    data: { roles: [ROLES.JEFATURA, ROLES.PRACTICAS, ROLES.VINCULACION] },
     loadComponent: () =>
       import('./components/reportes-satisfaccion/reportes-satisfaccion.component')
         .then(m => m.ReportesSatisfaccionComponent),
@@ -157,7 +157,7 @@ export const routes: Routes = [
   {
     path: 'reportes/historico',
     canActivate: [authGuard, RoleGuard],
-    data: { roles: [ROLES.JEFATURA, ROLES.PRACTICAS] },
+    data: { roles: [ROLES.JEFATURA, ROLES.PRACTICAS, ROLES.VINCULACION] },
     loadComponent: () =>
       import('./components/reportes-historico/reportes-historico.component')
         .then(m => m.ReportesHistoricoComponent),
@@ -170,6 +170,69 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./components/actividades-pm/actividades-pm.component')
         .then(m => m.ActividadesPmComponent),
+  },
+
+  {
+    path: 'vinculacion/actividades-pm/gestion',
+    canActivate: [authGuard, roleGuard],
+    data: { allowedRoles: ['jefatura', 'vinculacion'] },
+    loadComponent: () =>
+      import('./components/gestion/actividades-pm-gestion.component')
+        .then(m => m.ActividadesPmGestionComponent),
+  },
+
+  {
+    path: 'encuestas-vinculacion',
+    canActivate: [authGuard, roleGuard],
+    data: { allowedRoles: ['jefatura', 'vinculacion'] },
+    loadComponent: () =>
+      import('./components/encuesta-jefatura/encuestas-jefatura.component')
+        .then(m => m.EncuestaJefaturaComponent),
+  },
+  {
+    path: 'encuestas-jefatura',
+    redirectTo: 'encuestas-vinculacion',
+    pathMatch: 'full',
+  },
+  {
+    path: 'egresados/registro',
+    canActivate: [authGuard, roleGuard],
+    data: { allowedRoles: ['jefatura', 'vinculacion'] },
+    loadComponent: () =>
+      import('./components/egresados-registro/egresados-registro.component')
+        .then(m => m.EgresadosRegistroComponent),
+  },
+  {
+    path: 'egresados/actividades',
+    canActivate: [authGuard, roleGuard],
+    data: { allowedRoles: ['jefatura', 'vinculacion'], soloEgresados: true },
+    loadComponent: () =>
+      import('./components/actividades-estudiantes/actividades-estudiantes.component')
+        .then(m => m.ActividadesEstudiantesComponent),
+  },
+  {
+    path: 'egresados/encuestas',
+    canActivate: [authGuard, roleGuard],
+    data: { allowedRoles: ['jefatura', 'vinculacion'] },
+    loadComponent: () =>
+      import('./components/egresados-encuestas/egresados-encuestas.component')
+        .then(m => m.EgresadosEncuestasComponent),
+  },
+  {
+    path: 'egresados/encuestas-actividades',
+    canActivate: [authGuard, roleGuard],
+    data: { allowedRoles: ['jefatura', 'vinculacion'] },
+    loadComponent: () =>
+      import('./components/egresados-encuestas-actividades/egresados-encuestas-actividades.component')
+        .then(m => m.EgresadosEncuestasActividadesComponent),
+  },
+  {
+    path: 'egresados/analisis',
+    canActivate: [authGuard, roleGuard],
+    data: { allowedRoles: ['jefatura', 'vinculacion'] },
+    loadComponent: () =>
+      import('./components/egresados-analisis/egresados-analisis.component')
+        .then(m => m.EgresadosAnalisisComponent),
   },
 
   {

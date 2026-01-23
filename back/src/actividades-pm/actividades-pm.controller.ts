@@ -4,19 +4,25 @@ import {
   Controller,
   Delete,
   Get,
+  InternalServerErrorException,
   NotFoundException,
   Param,
   ParseIntPipe,
   Post,
   Put,
   Query,
+  Res,
   UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import type { Response } from 'express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import { existsSync } from 'fs';
+import * as path from 'path';
+import archiver from 'archiver';
 import { ActividadesPmService } from './actividades-pm.service';
 import { JwtCookieAuthGuard } from '../auth/guards/jwt-cookie-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -38,9 +44,9 @@ export class ActividadesPmController {
   @UseInterceptors(
     FileFieldsInterceptor(
       [
-        { name: 'asistencia', maxCount: 1 },
-        { name: 'documentos', maxCount: 1 },
-        { name: 'fotos', maxCount: 1 },
+        { name: 'asistencia', maxCount: 10 },
+        { name: 'documentos', maxCount: 10 },
+        { name: 'fotos', maxCount: 10 },
       ],
       {
         storage: diskStorage({
@@ -94,8 +100,10 @@ export class ActividadesPmController {
     @Query('anio') anio?: string,
     @Query('tipo') tipo?: string,
     @Query('q') q?: string,
+    @Query('fechaInicio') fechaInicio?: string,
+    @Query('fechaTermino') fechaTermino?: string,
   ) {
-    return this.service.findAll({ anio, tipo, q });
+    return this.service.findAll({ anio, tipo, q, fechaInicio, fechaTermino });
   }
 
   @Get('unidades/:codigo')
@@ -124,13 +132,23 @@ export class ActividadesPmController {
     return this.service.findOne(id);
   }
 
+  @Get(':id/encuestas')
+  findEncuestas(@Param('id', ParseIntPipe) id: number) {
+    return this.service.findEncuestasPorActividad(id);
+  }
+
+  @Post(':id/resumen-ia')
+  regenerarResumen(@Param('id', ParseIntPipe) id: number) {
+    return this.service.regenerarResumen(id);
+  }
+
   @Put(':id')
   @UseInterceptors(
     FileFieldsInterceptor(
       [
-        { name: 'asistencia', maxCount: 1 },
-        { name: 'documentos', maxCount: 1 },
-        { name: 'fotos', maxCount: 1 },
+        { name: 'asistencia', maxCount: 10 },
+        { name: 'documentos', maxCount: 10 },
+        { name: 'fotos', maxCount: 10 },
       ],
       {
         storage: diskStorage({
@@ -183,5 +201,54 @@ export class ActividadesPmController {
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.service.remove(id);
+  }
+
+  @Get(':id/archivos/:tipo/zip')
+  async descargarArchivosZip(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('tipo') tipo: string,
+    @Res() res: Response,
+  ) {
+    const tipoNormalized = String(tipo ?? '').toLowerCase();
+    const tipoMap: Record<string, string> = {
+      asistencia: 'LISTA_ASISTENCIA',
+      documentos: 'DOCUMENTO',
+      fotos: 'FOTOGRAFIA',
+      lista_asistencia: 'LISTA_ASISTENCIA',
+      documento: 'DOCUMENTO',
+      fotografia: 'FOTOGRAFIA',
+    };
+    const tipoArchivo = tipoMap[tipoNormalized];
+    if (!tipoArchivo) {
+      throw new BadRequestException('Tipo de archivo no valido');
+    }
+
+    const actividad = await this.service.findOne(id);
+    const archivos = (actividad?.archivosEvidencia ?? []).filter(
+      (a) => a?.tipo === tipoArchivo && typeof a?.url === 'string' && a.url.startsWith('uploads/'),
+    );
+
+    if (!archivos.length) {
+      throw new NotFoundException('No hay archivos para descargar');
+    }
+
+    const zipName = `actividad_${id}_${tipoNormalized}.zip`;
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename=${zipName}`);
+
+    const archive = archiver('zip', { zlib: { level: 9 } });
+    archive.on('error', () => {
+      throw new InternalServerErrorException('No se pudo generar el zip');
+    });
+    archive.pipe(res);
+
+    for (const archivo of archivos) {
+      const filePath = path.resolve(process.cwd(), archivo.url);
+      if (!existsSync(filePath)) continue;
+      const name = archivo?.nombre || path.basename(filePath);
+      archive.file(filePath, { name });
+    }
+
+    await archive.finalize();
   }
 }

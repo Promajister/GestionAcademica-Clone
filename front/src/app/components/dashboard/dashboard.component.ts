@@ -23,6 +23,7 @@ import {
   EstadoPractica,
   Practica,
 } from '../../services/practicas.service';
+import { formatDateEs, parseDateFlexible } from '../../utils/date-utils';
 
 type RoleId = 'jefatura' | 'vinculacion' | 'practicas';
 
@@ -41,6 +42,12 @@ interface CardItem {
   route: string;
   desc?: string;
   subItems?: { title: string; route: string; desc?: string }[];
+}
+
+interface ModuleGroup {
+  title: string;
+  desc?: string;
+  items: CardItem[];
 }
 
 @Component({
@@ -69,6 +76,7 @@ export class DashboardComponent implements OnInit {
 
   user = { name: 'Usuario', roleLabel: 'Rol', icon: 'account_circle' };
   cards: CardItem[] = [];
+  moduleGroups: ModuleGroup[] = [];
 
   // Último acceso formateado para mostrar en el hero
   lastLogin: string | null = null;
@@ -97,19 +105,19 @@ export class DashboardComponent implements OnInit {
         roleLabel: this.mapRoleLabel(role.id),
         icon: role.icon ?? 'account_circle',
       };
-      this.cards = this.buildCardsFor(role.id);
+      this.moduleGroups = this.buildGroupsFor(role.id);
+      this.cards = this.moduleGroups.flatMap((g) => g.items);
     } else {
-      this.cards = this.buildCardsFor('vinculacion');
+      this.moduleGroups = this.buildGroupsFor('vinculacion');
+      this.cards = this.moduleGroups.flatMap((g) => g.items);
     }
 
     // Cargar y formatear último acceso (si existe)
     const rawLastLogin = localStorage.getItem('lastLogin');
     if (rawLastLogin) {
       const d = new Date(rawLastLogin);
-      this.lastLogin = d.toLocaleString('es-CL', {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-      });
+      const parsed = parseDateFlexible(d);
+      this.lastLogin = parsed ? formatDateEs(parsed) : d.toString();
     } else {
       this.lastLogin = null;
     }
@@ -140,10 +148,10 @@ export class DashboardComponent implements OnInit {
           desc: 'Roles y permisos',
         },
         {
-          title: 'Estudiantes en práctica',
-          icon: 'school',
+          title: 'Prácticas',
+          icon: 'assignment',
           route: '/estudiantes-en-practica',
-          desc: 'Visualización de estudiantes en práctica',
+          desc: 'Gestión de estudiantes en práctica',
         },
         {
           title: 'Tutores',
@@ -159,7 +167,7 @@ export class DashboardComponent implements OnInit {
         },
         {
           title: 'Actividades',
-          icon: 'assignment',
+          icon: 'event_note',
           route: '/actividades-estudiantes',
           desc: 'Visualización de actividades',
         },
@@ -198,18 +206,18 @@ export class DashboardComponent implements OnInit {
     }
 
     if (id === 'vinculacion') {
-      return [
+      const miCuenta: CardItem = {
+        title: 'Mi cuenta',
+        icon: 'person',
+        route: '/mi-cuenta',
+        desc: 'Perfil y configuración',
+      };
+      const gestionPracticas: CardItem[] = [
         {
-          title: 'Centros educativos',
-          icon: 'domain',
-          route: '/centros-educativos',
-          desc: 'Listado de centros educativos',
-        },
-        {
-          title: 'Colaboradores',
-          icon: 'groups',
-          route: '/colaboradores',
-          desc: 'Gestión de colaboradores',
+          title: 'Encuestas',
+          icon: 'assignment',
+          route: '/encuestas',
+          desc: 'Registro y análisis de encuestas',
         },
         {
           title: 'Estudiantes',
@@ -218,10 +226,16 @@ export class DashboardComponent implements OnInit {
           desc: 'Seguimiento de estudiantes',
         },
         {
-          title: 'Encuestas',
-          icon: 'assignment',
-          route: '/encuestas',
-          desc: 'Registro y análisis de encuestas',
+          title: 'Colaboradores',
+          icon: 'groups',
+          route: '/colaboradores',
+          desc: 'Gestión de colaboradores',
+        },
+        {
+          title: 'Centros educativos',
+          icon: 'domain',
+          route: '/centros-educativos',
+          desc: 'Listado de centros educativos',
         },
         {
           title: 'Tutores',
@@ -229,8 +243,28 @@ export class DashboardComponent implements OnInit {
           route: '/tutores',
           desc: 'Gestión de tutores',
         },
-        ...comunes,
       ];
+      const vinculacionMedio: CardItem[] = [
+        {
+          title: 'Registrar actividad',
+          icon: 'playlist_add',
+          route: '/vinculacion/actividades-pm',
+          desc: 'Registro de actividades del plan de mejora',
+        },
+        {
+          title: 'Gestionar actividades',
+          icon: 'manage_search',
+          route: '/vinculacion/actividades-pm/gestion',
+          desc: 'Administrar actividades registradas',
+        },
+        {
+          title: 'Encuestas de actividad',
+          icon: 'assignment',
+          route: '/encuestas-vinculacion',
+          desc: 'Registro y seguimiento de encuestas de vinculacion',
+        },
+      ];
+      return [miCuenta, ...gestionPracticas, ...vinculacionMedio, ...comunes];
     }
 
     if (id === 'practicas') {
@@ -255,7 +289,7 @@ export class DashboardComponent implements OnInit {
         },
         {
           title: 'Prácticas',
-          icon: 'event_note',
+          icon: 'assignment',
           route: '/practicas',
           desc: 'Gestión de prácticas',
         },
@@ -273,7 +307,7 @@ export class DashboardComponent implements OnInit {
         },
         {
           title: 'Actividades',
-          icon: 'assignment',
+          icon: 'event_note',
           route: '/actividades-estudiantes',
           desc: 'Visualización de actividades',
         },
@@ -289,6 +323,337 @@ export class DashboardComponent implements OnInit {
         desc: 'Responde tus formularios',
       },
       ...comunes,
+    ];
+  }
+
+  private buildGroupsFor(id: RoleId): ModuleGroup[] {
+    if (id === 'jefatura') {
+      return [
+        {
+          title: 'General',
+          desc: 'Accesos personales',
+          items: [
+            {
+              title: 'Mi cuenta',
+              icon: 'person',
+              route: '/mi-cuenta',
+              desc: 'Perfil y configuración',
+            },
+          ],
+        },
+        {
+          title: 'Administración',
+          desc: 'Control y configuración del sistema',
+          items: [
+            {
+              title: 'Usuarios',
+              icon: 'manage_accounts',
+              route: '/usuarios',
+              desc: 'Roles y permisos',
+            },
+          ],
+        },
+        {
+          title: 'Gestión de prácticas',
+          desc: 'Funcionalidades asociadas a la gestión de prácticas profesionales',
+          items: [
+            {
+              title: 'Prácticas',
+              icon: 'assignment',
+              route: '/estudiantes-en-practica',
+              desc: 'Gestión de estudiantes en práctica',
+            },
+            {
+              title: 'Estudiantes',
+              icon: 'school',
+              route: '/estudiantes',
+              desc: 'Visualización de estudiantes',
+            },
+            {
+              title: 'Importar estudiantes',
+              icon: 'upload_file',
+              route: '/importar-estudiantes',
+              desc: 'Importar estudiantes desde excel',
+            },
+            {
+              title: 'Tutores',
+              icon: 'supervisor_account',
+              route: '/tutores',
+              desc: 'Visualización de tutores',
+            },
+            {
+              title: 'Colaboradores',
+              icon: 'groups',
+              route: '/colaboradores',
+              desc: 'Visualización de colaboradores',
+            },
+            {
+              title: 'Centros educativos',
+              icon: 'domain',
+              route: '/centros-educativos',
+              desc: 'Visualización de centros educativos',
+            },
+            {
+              title: 'Actividades',
+              icon: 'event_note',
+              route: '/actividades-estudiantes',
+              desc: 'Visualización de actividades',
+            },
+            {
+              title: 'Supervisión general',
+              icon: 'analytics',
+              route: '/reportes',
+              desc: 'Reportes y estadísticas',
+            },
+            {
+              title: 'Generar solicitud',
+              icon: 'description',
+              route: '/carta',
+              desc: 'Generar cartas de solicitud de prácticas',
+            },
+          ],
+        },
+        {
+          title: 'Vinculación con el medio',
+          desc: 'Funcionalidades asociadas a la gestión de actividades pertenecientes al plan de mejora',
+          items: [
+            {
+              title: 'Registrar actividad',
+              icon: 'playlist_add',
+              route: '/vinculacion/actividades-pm',
+              desc: 'Registro de actividades del plan de mejora',
+            },
+            {
+              title: 'Gestionar actividades',
+              icon: 'manage_search',
+              route: '/vinculacion/actividades-pm/gestion',
+              desc: 'Administrar actividades registradas',
+            },
+          ],
+        },
+        {
+          title: 'Egresados y Empleabilidad',
+          desc: 'Funcionalidades para el seguimiento de egresados y empleabilidad',
+          items: [
+            {
+              title: 'Registro de egresados',
+              icon: 'how_to_reg',
+              route: '/egresados/registro',
+              desc: 'Marca estudiantes como egresados',
+            },
+            {
+              title: 'Actividades',
+              icon: 'event_note',
+              route: '/egresados/actividades',
+              desc: 'Registro de actividades de egresados',
+            },
+            {
+              title: 'Encuestas de actividades',
+              icon: 'assignment',
+              route: '/egresados/encuestas-actividades',
+              desc: 'Encuestas asociadas a actividades de egresados',
+            },
+            {
+              title: 'Encuestas de egresados',
+              icon: 'assignment',
+              route: '/egresados/encuestas',
+              desc: 'Encuestas para egresados',
+            },
+            {
+              title: 'Analisis de datos',
+              icon: 'analytics',
+              route: '/egresados/analisis',
+              desc: 'Analisis de datos de egresados',
+            },
+          ],
+        },
+      ];
+    }
+
+    if (id === 'vinculacion') {
+      return [
+        {
+          title: 'General',
+          desc: 'Accesos personales',
+          items: [
+            {
+              title: 'Mi cuenta',
+              icon: 'person',
+              route: '/mi-cuenta',
+              desc: 'Perfil y configuración',
+            },
+          ],
+        },
+        {
+          title: 'Gestión de prácticas',
+          desc: 'Funcionalidades asociadas a la gestión de prácticas profesionales',
+          items: [
+            {
+              title: 'Encuestas',
+              icon: 'assignment',
+              route: '/encuestas',
+              desc: 'Registro y análisis de encuestas',
+            },
+            {
+              title: 'Estudiantes',
+              icon: 'school',
+              route: '/estudiantes',
+              desc: 'Seguimiento de estudiantes',
+            },
+            {
+              title: 'Colaboradores',
+              icon: 'groups',
+              route: '/colaboradores',
+              desc: 'Gestión de colaboradores',
+            },
+            {
+              title: 'Centros educativos',
+              icon: 'domain',
+              route: '/centros-educativos',
+              desc: 'Listado de centros educativos',
+            },
+            {
+              title: 'Tutores',
+              icon: 'supervisor_account',
+              route: '/tutores',
+              desc: 'Gestión de tutores',
+            },
+          ],
+        },
+        {
+          title: 'Vinculación con el medio',
+          desc: 'Funcionalidades asociadas a la gestión de actividades pertenecientes al plan de mejora',
+          items: [
+            {
+              title: 'Registrar actividad',
+              icon: 'playlist_add',
+              route: '/vinculacion/actividades-pm',
+              desc: 'Registro de actividades del plan de mejora',
+            },
+            {
+              title: 'Gestionar actividades',
+              icon: 'manage_search',
+              route: '/vinculacion/actividades-pm/gestion',
+              desc: 'Administrar actividades registradas',
+            },
+            {
+              title: 'Encuestas de actividad',
+              icon: 'assignment',
+              route: '/encuestas-vinculacion',
+              desc: 'Registro y seguimiento de encuestas de vinculacion',
+            },
+          ],
+        },
+        {
+          title: 'Egresados y Empleabilidad',
+          desc: 'Funcionalidades para el seguimiento de egresados y empleabilidad',
+          items: [
+            {
+              title: 'Registro de egresados',
+              icon: 'how_to_reg',
+              route: '/egresados/registro',
+              desc: 'Marca estudiantes como egresados',
+            },
+            {
+              title: 'Actividades',
+              icon: 'event_note',
+              route: '/egresados/actividades',
+              desc: 'Registro de actividades de egresados',
+            },
+            {
+              title: 'Encuestas de actividades',
+              icon: 'assignment',
+              route: '/egresados/encuestas-actividades',
+              desc: 'Encuestas asociadas a actividades de egresados',
+            },
+            {
+              title: 'Encuestas de egresados',
+              icon: 'assignment',
+              route: '/egresados/encuestas',
+              desc: 'Encuestas para egresados',
+            },
+            {
+              title: 'Análisis de datos',
+              icon: 'analytics',
+              route: '/egresados/analisis',
+              desc: 'Análisis de datos de egresados',
+            },
+          ],
+        },
+      ];
+    }
+
+    if (id === 'practicas') {
+      return [
+        {
+          title: 'General',
+          desc: 'Accesos personales',
+          items: [
+            {
+              title: 'Mi cuenta',
+              icon: 'person',
+              route: '/mi-cuenta',
+              desc: 'Perfil y configuración',
+            },
+          ],
+        },
+        {
+          title: 'Gestión de prácticas',
+          desc: 'Funcionalidades asociadas a la gestión de prácticas profesionales',
+          items: [
+            {
+              title: 'Estudiantes',
+              icon: 'school',
+              route: '/estudiantes',
+              desc: 'Seguimiento asignado',
+            },
+            {
+              title: 'Tutores',
+              icon: 'supervisor_account',
+              route: '/tutores',
+              desc: 'Gestión de tutores',
+            },
+            {
+              title: 'Colaboradores',
+              icon: 'groups',
+              route: '/colaboradores',
+              desc: 'Gestión de colaboradores',
+            },
+            {
+              title: 'Centros educativos',
+              icon: 'domain',
+              route: '/centros-educativos',
+              desc: 'Gestión de centros',
+            },
+            {
+              title: 'Prácticas',
+              icon: 'assignment',
+              route: '/practicas',
+              desc: 'Gestión de prácticas',
+            },
+            {
+              title: 'Actividades',
+              icon: 'event_note',
+              route: '/actividades-estudiantes',
+              desc: 'Visualización de actividades',
+            },
+            {
+              title: 'Reportes/Historial',
+              icon: 'timeline',
+              route: '/reportes',
+              desc: 'Historial y reportes',
+            },
+          ],
+        },
+      ];
+    }
+
+    return [
+      {
+        title: 'Módulos del sistema',
+        desc: 'Selecciona un módulo para acceder a sus funciones.',
+        items: this.buildCardsFor(id),
+      },
     ];
   }
 

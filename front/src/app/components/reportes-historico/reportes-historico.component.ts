@@ -22,6 +22,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import { formatDateEs } from '../../utils/date-utils';
 
 type GroupBy = 'semester' | 'year';
 
@@ -371,7 +372,7 @@ export class ReportesHistoricoComponent {
       ]);
 
       const now = new Date();
-      const generatedText = `Generado: ${now.toLocaleString('es-CL')}`;
+      const generatedText = `Generado: ${formatDateEs(now)}`;
 
       const groupLabel = data.groupBy === 'year' ? 'Año' : 'Periodo';
       const groupLabelPretty = data.groupBy === 'year' ? 'Por año' : 'Por semestre';

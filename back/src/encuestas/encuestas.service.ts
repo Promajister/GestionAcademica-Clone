@@ -3,6 +3,7 @@ import {Injectable,InternalServerErrorException,NotFoundException,BadRequestExce
 import { PrismaService } from '../../prisma/prisma.service';
 import ExcelJS from 'exceljs';
 import { Response } from 'express';
+import { formatDateEs } from '../common/date-format';
 
 export type TipoEncuesta = 'ESTUDIANTIL' | 'COLABORADORES_JEFES';
 
@@ -122,7 +123,7 @@ async create(payload: {
       return this.prisma.$transaction(async (tx) => {
         const created = await tx.encuestaEstudiante.create({
           data: {
-            nombre_estudiante: data.nombreEstudiante ?? null,
+            nombre_estudiante: '',
             nombre_tallerista: data.nombreTalleristaSupervisor ?? null,
             nombre_colaborador: data.nombreDocenteColaborador ?? null,
             tipo_practica: data.tipo_practica ?? null,
@@ -207,11 +208,6 @@ if (tipo === 'COLABORADORES_JEFES') {
       sheet.columns = [
         { header: 'ID', key: 'id', width: 8 },
         {
-          header: 'Nombre Estudiante (rut)',
-          key: 'nombre_estudiante',
-          width: 24,
-        },
-        {
           header: 'Tallerista/Supervisor',
           key: 'nombre_tallerista',
           width: 30,
@@ -239,10 +235,9 @@ if (tipo === 'COLABORADORES_JEFES') {
 
         sheet.addRow({
           id: e.id,
-          nombre_estudiante: e.nombre_estudiante ?? '',
           nombre_tallerista: e.nombre_tallerista ?? '',
           nombre_centro: e.nombre_centro ?? '',
-          fecha: e.fecha ? e.fecha.toISOString() : '',
+          fecha: e.fecha ? formatDateEs(e.fecha) : '',
           observacion: e.observacion ?? '',
           semestre: e.semestre
             ? `${e.semestre.anio}-${e.semestre.semestre}`

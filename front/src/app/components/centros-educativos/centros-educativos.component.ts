@@ -1,5 +1,5 @@
-import { Component, inject, PLATFORM_ID } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, inject, PLATFORM_ID, Injectable, OnDestroy, Renderer2 } from '@angular/core';
+import { CommonModule, DOCUMENT } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 // Angular Material
@@ -11,8 +11,9 @@ import { MatInputModule }  from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatNativeDateModule } from '@angular/material/core';
+import { MatNativeDateModule, NativeDateAdapter, MAT_DATE_FORMATS, DateAdapter, MAT_DATE_LOCALE } from '@angular/material/core';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { formatDateEs, parseDateFlexible } from '../../utils/date-utils';
 
 
 // APIs
@@ -24,6 +25,7 @@ import {
   UpdateCentroPayload,
 } from '../../services/centros-api.service';
 import { TrabajadoresApiService } from '../../services/trabajadores-api.service';
+import { PracticasService, Practica, EstadoPractica } from '../../services/practicas.service';
 import { OnInit } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 
@@ -34,6 +36,7 @@ type Convenio   = 'Marco SLEP' | 'Solicitud directa' | 'ADEP' | string;
 interface CentroEducativo {
   id: number;
   nombre: string;
+  rbd?: string | null;
   tipo: TipoCentro;
   region: string;
   comuna: string;
@@ -47,6 +50,45 @@ interface CentroEducativo {
 
 type CentroDetalle = CentroEducativo & {
   trabajadores?: TrabajadorDTO[];
+};
+
+@Injectable()
+export class CustomDateAdapter extends NativeDateAdapter {
+  override format(date: Date, displayFormat: Object): string {
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  }
+
+  override parse(value: string): Date | null {
+    if (!value) return null;
+    const parts = value.split('/');
+    if (parts.length === 3) {
+      const day = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const year = parseInt(parts[2], 10);
+      if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+        const date = new Date(year, month, day);
+        if (date.getDate() === day && date.getMonth() === month && date.getFullYear() === year) {
+          return date;
+        }
+      }
+    }
+    return super.parse(value);
+  }
+}
+
+export const MY_DATE_FORMATS = {
+  parse: {
+    dateInput: 'DD/MM/YYYY',
+  },
+  display: {
+    dateInput: 'DD/MM/YYYY',
+    monthYearLabel: 'MMMM YYYY',
+    dateA11yLabel: 'LL',
+    monthYearA11yLabel: 'MMMM YYYY',
+  },
 };
 
 @Component({
@@ -68,14 +110,22 @@ type CentroDetalle = CentroEducativo & {
     MatNativeDateModule,
     MatPaginatorModule,
   ],
+  providers: [
+    { provide: DateAdapter, useClass: CustomDateAdapter },
+    { provide: MAT_DATE_FORMATS, useValue: MY_DATE_FORMATS },
+    { provide: MAT_DATE_LOCALE, useValue: 'es-ES' },
+  ],
 })
-export class CentrosEducativosComponent implements OnInit {
+export class CentrosEducativosComponent implements OnInit, OnDestroy {
   private snack = inject(MatSnackBar);
   private platformId = inject(PLATFORM_ID);
+  private renderer = inject(Renderer2);
+  private doc = inject(DOCUMENT);
 
   // APIs
   private centrosApi = inject(CentrosApiService);
   private trabajadoresApi = inject(TrabajadoresApiService);
+  private practicasApi = inject(PracticasService);
 
   // ===== UI =====
   showForm = false;
@@ -104,7 +154,7 @@ export class CentrosEducativosComponent implements OnInit {
 
   // ===== paginación (back) =====
   pageIndex = 0;        
-  pageSize = 5;
+  pageSize = 10;
   totalItems = 0;
   readonly pageSizeOptions = [5, 10, 20, 50];
 
@@ -137,6 +187,7 @@ export class CentrosEducativosComponent implements OnInit {
   editId: number | null = null;
   newCentroEducativo: Partial<CentroEducativo> = {
     nombre: '',
+    rbd: '',
     tipo: 'SLEP',
     region: '',
     comuna: '',
@@ -159,6 +210,11 @@ export class CentrosEducativosComponent implements OnInit {
     utpCorreo: '',
     utpTelefono: '',
   };
+  showContactErrors = false;
+  contactErrors = {
+    director: { nombre: '', rut: '', telefono: '', correo: '' },
+    utp: { nombre: '', rut: '', telefono: '', correo: '' },
+  };
   private contactoDirectorId: number | null = null;
   private contactoUtpId: number | null = null;
 
@@ -175,6 +231,12 @@ export class CentrosEducativosComponent implements OnInit {
   // modal contactos (nuevo)
   contactsForCentro: CentroEducativo | null = null;
 
+  // modal historial practicas
+  practicasCentro: Practica[] = [];
+  practicasCentroLoading = false;
+  practicasCentroTarget: CentroEducativo | null = null;
+  practicasCentroYear: 'all' | number = 'all';
+  practicasCentroYears: number[] = [];
 
   
   constructor() {
@@ -187,6 +249,24 @@ export class CentrosEducativosComponent implements OnInit {
       this.showForm = false;
       this.isEditing = false;
     }
+  }
+
+  ngOnDestroy(): void {
+    this.renderer.removeClass(this.doc.body, 'student-modal-open');
+  }
+
+  private syncModalBodyClass(): void {
+    const isOpen = !!(
+      this.selectedCentroEducativo ||
+      this.pendingDelete ||
+      this.contactsForCentro ||
+      this.practicasCentroTarget
+    );
+    if (isOpen) {
+      this.renderer.addClass(this.doc.body, 'student-modal-open');
+      return;
+    }
+    this.renderer.removeClass(this.doc.body, 'student-modal-open');
   }
 
   showField(label: string, value: string) {
@@ -268,6 +348,7 @@ export class CentrosEducativosComponent implements OnInit {
   private mapDTOtoUI = (dto: CentroEducativoDTO): CentroEducativo => ({
     id: dto.id,
     nombre: dto.nombre,
+    rbd: dto.rbd ?? undefined,
     tipo: (dto.tipo as TipoCentro) ?? 'SLEP',
     region: dto.region,
     comuna: dto.comuna,
@@ -283,9 +364,7 @@ export class CentrosEducativosComponent implements OnInit {
 
   // ===== helpers de fecha =====
   toDate(iso?: string | null): Date | null {
-    if (!iso) return null;
-    const [y, m, d] = iso.split('-').map(Number);
-    return new Date(y, m - 1, d);
+    return parseDateFlexible(iso);
   }
 
   private toISODateOnly(d?: Date | null): string | null {
@@ -321,6 +400,7 @@ export class CentrosEducativosComponent implements OnInit {
     this.editId = null;
     this.newCentroEducativo = {
       nombre: '',
+      rbd: '',
       tipo: 'SLEP',
       region: '',
       comuna: '',
@@ -369,6 +449,7 @@ export class CentrosEducativosComponent implements OnInit {
 
     const payloadCentro: CreateCentroPayload = {
       nombre: c.nombre!.trim(),
+      rbd: cleanOrNull(c.rbd),
       tipo: c.tipo as any,
       region: c.region!,
       comuna: c.comuna!,
@@ -453,10 +534,12 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
   askDelete(c: CentroEducativo) {
     if (this.esSoloLectura) return;
     this.pendingDelete = c;
+    this.syncModalBodyClass();
   }
 
   cancelDelete() {
     this.pendingDelete = null;
+    this.syncModalBodyClass();
   }
 
   confirmDelete() {
@@ -473,6 +556,7 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
           panelClass: ['success-snackbar'],
         });
         this.pendingDelete = null;
+        this.syncModalBodyClass();
         if (this.centrosEducativos.length === 1 && this.pageIndex > 0) {
           this.pageIndex--;
         }
@@ -481,6 +565,7 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
       error: () => {
         this.snack.open('No se pudo eliminar.', 'Cerrar', { duration: 2500 });
         this.pendingDelete = null;
+        this.syncModalBodyClass();
       },
     });
   }
@@ -489,6 +574,7 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
   viewCentro(c: CentroEducativo) {
     this.detalleCargando = true;
     this.selectedCentroEducativo = null;
+    this.syncModalBodyClass();
 
     this.centrosApi.getById(c.id).subscribe({
       next: (full) => {
@@ -498,24 +584,28 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
           trabajadores: full.trabajadores ?? [],
         };
         this.detalleCargando = false;
+        this.syncModalBodyClass();
       },
       error: () => {
         this.detalleCargando = false;
         this.snack.open('No se pudo cargar el detalle.', 'Cerrar', {
           duration: 2500,
         });
+        this.syncModalBodyClass();
       },
     });
   }
 
   closeDetails() {
     this.selectedCentroEducativo = null;
+    this.syncModalBodyClass();
   }
 
   // ===== Añadir/Editar contactos (modal) =====
   openContacts(c: CentroEducativo) {
     if (this.esSoloLectura) return;
     this.contactsForCentro = c;
+    this.syncModalBodyClass();
 
     this.contactoDirectorId = null;
     this.contactoUtpId = null;
@@ -567,12 +657,134 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
 
   closeContacts() {
     this.contactsForCentro = null;
+    this.showContactErrors = false;
+    this.resetContactErrors();
+    this.syncModalBodyClass();
+  }
+
+  // ===== Historial de practicas por centro =====
+  openPracticasHistory(c: CentroEducativo) {
+    this.practicasCentroTarget = c;
+    this.practicasCentro = [];
+    this.practicasCentroLoading = true;
+    this.practicasCentroYear = 'all';
+    this.practicasCentroYears = [];
+    this.syncModalBodyClass();
+
+    this.practicasApi
+      .listarParaJefatura({
+        centroId: c.id,
+        page: 1,
+        pageSize: 50,
+        sortBy: 'fecha_inicio',
+        sortOrder: 'desc',
+      })
+      .subscribe({
+        next: (res) => {
+        this.practicasCentro = res.items ?? [];
+        this.practicasCentroYears = this.buildPracticasYears(this.practicasCentro);
+        this.practicasCentroLoading = false;
+        this.syncModalBodyClass();
+      },
+      error: () => {
+        this.practicasCentroLoading = false;
+        this.snack.open('No se pudieron cargar las practicas del centro.', 'Cerrar', {
+          duration: 2500,
+        });
+        this.syncModalBodyClass();
+      },
+    });
+  }
+
+  closePracticasHistory() {
+    this.practicasCentroTarget = null;
+    this.syncModalBodyClass();
+  }
+
+  get practicasCentroFiltradas(): Practica[] {
+    if (this.practicasCentroYear === 'all') return this.practicasCentro;
+    return this.practicasCentro.filter((p) => {
+      const y = this.getYearFromDate(p.fecha_inicio) ?? this.getYearFromDate(p.fecha_termino);
+      return y === this.practicasCentroYear;
+    });
+  }
+
+  estadoPracticaLabel(estado?: EstadoPractica | null): string {
+    const map: Record<EstadoPractica, string> = {
+      EN_CURSO: 'En curso',
+      APROBADO: 'Aprobado',
+      REPROBADO: 'Reprobado',
+    };
+    return estado ? map[estado] : 'Sin estado';
+  }
+
+  estadoPracticaClass(estado?: EstadoPractica | null): string {
+    switch (estado) {
+      case 'APROBADO':
+        return 'status-pill--ok';
+      case 'REPROBADO':
+        return 'status-pill--bad';
+      case 'EN_CURSO':
+        return 'status-pill--warn';
+      default:
+        return '';
+    }
+  }
+
+  formatFechaPractica(value?: string | null): string {
+    return this.formatFecha(value);
+  }
+
+  formatFecha(value?: string | null): string {
+    return value ? formatDateEs(value) : '-';
+  }
+
+  private getYearFromDate(value?: string | null): number | null {
+    if (!value) return null;
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return null;
+    return d.getFullYear();
+  }
+
+  private buildPracticasYears(items: Practica[]): number[] {
+    const years = new Set<number>();
+    for (const p of items) {
+      const y = this.getYearFromDate(p.fecha_inicio) ?? this.getYearFromDate(p.fecha_termino);
+      if (y) years.add(y);
+    }
+    return Array.from(years).sort((a, b) => b - a);
   }
 
   saveContactsForCentro() {
     if (this.esSoloLectura) return;
     if (!this.contactsForCentro) return;
     const centroId = this.contactsForCentro.id;
+    this.showContactErrors = true;
+    this.resetContactErrors();
+
+    const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+    const validateContact = (
+      contacto: 'director' | 'utp',
+      data: { nombre?: string; rut?: string; telefono?: string; correo?: string }
+    ) => {
+      const nombre = (data.nombre || '').trim();
+      const rut = (data.rut || '').trim();
+      const telefono = (data.telefono || '').toString().trim();
+      const correo = (data.correo || '').trim();
+      const hasAny = !!(nombre || rut || telefono || correo);
+      if (!hasAny) return true;
+
+      const errs = this.contactErrors[contacto];
+      if (!nombre) errs.nombre = 'Nombre es obligatorio';
+      if (!rut) errs.rut = 'RUT es obligatorio';
+      if (telefono && !/^\d{6,13}$/.test(telefono)) {
+        errs.telefono = 'Teléfono debe tener entre 6 y 13 dígitos';
+      }
+      if (correo && !isValidEmail(correo)) {
+        errs.correo = 'Correo no tiene formato válido';
+      }
+      return !(errs.nombre || errs.rut || errs.telefono || errs.correo);
+    };
 
     const toNum = (v?: string | number | null) => {
       const s = (v ?? '').toString().trim();
@@ -580,6 +792,26 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
     };
 
     const ops: Promise<any>[] = [];
+    const directorOk = validateContact('director', {
+      nombre: this.contactosForm.directorNombre,
+      rut: this.contactosForm.directorRut,
+      telefono: this.contactosForm.directorTelefono,
+      correo: this.contactosForm.directorCorreo,
+    });
+    const utpOk = validateContact('utp', {
+      nombre: this.contactosForm.utpNombre,
+      rut: this.contactosForm.utpRut,
+      telefono: this.contactosForm.utpTelefono,
+      correo: this.contactosForm.utpCorreo,
+    });
+    if (!directorOk || !utpOk) {
+      this.snack.open(
+        'Revisa los campos marcados en rojo antes de guardar',
+        'Cerrar',
+        { duration: 3500 }
+      );
+      return;
+    }
 
     // DIRECTOR
     if ((this.contactosForm.directorNombre || '').trim() !== '') {
@@ -632,11 +864,26 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
         this.closeContacts();
         this.load();
       })
-      .catch(() => {
-        this.snack.open('✗ Error al guardar contactos', 'Cerrar', {
-          duration: 3500,
+      .catch((err) => {
+        let mensajeError = 'Error al guardar contactos';
+        if (Array.isArray(err?.error?.message)) {
+          mensajeError = err.error.message.join(', ');
+        } else if (err?.error?.message) {
+          mensajeError = err.error.message;
+        } else if (err?.message) {
+          mensajeError = err.message;
+        }
+        this.snack.open(`✗ Error al guardar contactos: ${mensajeError}`, 'Cerrar', {
+          duration: 4500,
         });
       });
+  }
+
+  private resetContactErrors() {
+    this.contactErrors = {
+      director: { nombre: '', rut: '', telefono: '', correo: '' },
+      utp: { nombre: '', rut: '', telefono: '', correo: '' },
+    };
   }
 
   // ===== orden, filtros y paginador =====

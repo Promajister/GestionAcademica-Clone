@@ -1,4 +1,4 @@
-import { IsEmail, IsInt, IsNotEmpty, IsOptional, IsString, Length } from 'class-validator';
+import { IsEmail, IsInt, IsNotEmpty, IsOptional, IsString, Length, Max, Min } from 'class-validator';
 import { IsRut } from 'src/validador/rut.validador';
 
 
@@ -20,6 +20,8 @@ export class CreateTrabajadorDto {
 
   // Si mantienes Int en Prisma, usa IsInt; si cambias a String en Prisma, cámbialo por IsString aquí
   @IsOptional() @IsInt()
+  @Min(100000, { message: 'El telefono debe tener entre 6 y 13 digitos' })
+  @Max(9999999999999, { message: 'El telefono debe tener entre 6 y 13 digitos' })
   telefono?: number;
 
   // ← OBLIGATORIO: debe existir el centro

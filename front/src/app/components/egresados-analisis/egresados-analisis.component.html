@@ -1,0 +1,320 @@
+<div class="container section">
+  <div class="header hero">
+    <div class="hero__bg"></div>
+    <div class="hero__content">
+      <div class="hero__left">
+        <div class="hero__icon">
+          <mat-icon>analytics</mat-icon>
+        </div>
+
+        <div class="headline hero__titles">
+          <h1>Análisis de datos</h1>
+          <p class="muted">
+            Indicadores de empleabilidad y encuesta de egresados.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <mat-card class="elev section-card">
+    <div class="section-head">
+      <div class="section-title">
+        <mat-icon>work_outline</mat-icon>
+        <div>
+          <h2>Empleabilidad</h2>
+          <span class="muted">Indicadores laborales y formación profesional.</span>
+        </div>
+      </div>
+      <div class="section-tools">
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Año de egreso</mat-label>
+            <mat-select
+              [value]="anioEgresoFiltroEmpleabilidad"
+              (selectionChange)="onAnioEgresoEmpleabilidadChange($event.value)"
+            >
+            <mat-option value="ALL">Todos</mat-option>
+            <mat-option *ngFor="let anio of aniosEgreso" [value]="anio">{{ anio }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <button
+          mat-flat-button
+          color="primary"
+          class="export-btn"
+          [matMenuTriggerFor]="exportMenu"
+        >
+          <mat-icon>picture_as_pdf</mat-icon>
+          Exportar PDF
+        </button>
+        <mat-menu #exportMenu="matMenu">
+          <button mat-menu-item (click)="exportarPdfConGraficos()">
+            <mat-icon>pie_chart</mat-icon>
+            Con gráficos
+          </button>
+          <button mat-menu-item (click)="exportarPdfTabla()">
+            <mat-icon>table_chart</mat-icon>
+            Solo tabla
+          </button>
+        </mat-menu>
+        <div class="chip">
+          <mat-icon>assignment</mat-icon>
+          <span>{{ empleabilidad.total }} encuestas</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="ai-summary">
+      <div class="ai-summary__head">
+        <div class="ai-summary__title">
+          <mat-icon>auto_awesome</mat-icon>
+          <span>Conclusion IA · Empleabilidad</span>
+        </div>
+        <button
+          mat-stroked-button
+          color="primary"
+          type="button"
+          (click)="generarConclusionEmpleabilidad()"
+          [disabled]="generatingEmpleabilidad || !empleabilidad.total">
+          <mat-icon>auto_awesome</mat-icon>
+          {{ generatingEmpleabilidad ? 'Generando...' : 'Generar' }}
+        </button>
+      </div>
+      <div class="ai-summary__body" *ngIf="showEmpleabilidadConclusion">
+        {{ conclusionEmpleabilidad }}
+      </div>
+      <div class="ai-summary__empty muted" *ngIf="!showEmpleabilidadConclusion">
+        Presiona "Generar" para obtener una conclusion basada en los indicadores de empleabilidad.
+      </div>
+    </div>
+
+    <div class="chart-grid chart-grid--wide">
+      <div class="chart-card chart-card--pie">
+        <div class="chart-title">Con empleo vs sin empleo</div>
+        <div class="pie" [style.background]="buildPieGradient(empleabilidad.estadoLaboral.segments)"></div>
+        <div class="legend">
+          <div class="legend-item" *ngFor="let item of empleabilidad.estadoLaboral.segments">
+            <span class="legend-swatch" [style.background]="item.color"></span>
+            <span class="legend-label">{{ item.label }}</span>
+            <span class="legend-value">{{ item.pct }}%</span>
+            <span class="legend-count">({{ item.count }})</span>
+          </div>
+        </div>
+        <div class="chart-count">Total encuestas: {{ empleabilidad.estadoLaboral.total }}</div>
+      </div>
+
+      <div class="chart-card chart-card--pie">
+        <div class="chart-title">Tiempo para encontrar trabajo</div>
+        <div class="pie" [style.background]="buildPieGradient(empleabilidad.tiempoEmpleo.segments)"></div>
+        <div class="legend">
+          <div class="legend-item" *ngFor="let item of empleabilidad.tiempoEmpleo.segments">
+            <span class="legend-swatch" [style.background]="item.color"></span>
+            <span class="legend-label">{{ item.label }}</span>
+            <span class="legend-value">{{ item.pct }}%</span>
+            <span class="legend-count">({{ item.count }})</span>
+          </div>
+        </div>
+        <div class="chart-count">Total encuestas: {{ empleabilidad.tiempoEmpleo.total }}</div>
+      </div>
+
+      <div class="chart-card chart-card--pie">
+        <div class="chart-title">Empleo por género</div>
+        <div class="pie" [style.background]="buildPieGradient(empleabilidad.empleoGenero.segments)"></div>
+        <div class="legend">
+          <div class="legend-item" *ngFor="let item of empleabilidad.empleoGenero.segments">
+            <span class="legend-swatch" [style.background]="item.color"></span>
+            <span class="legend-label">{{ item.label }}</span>
+            <span class="legend-value">{{ item.pct }}%</span>
+            <span class="legend-count">({{ item.count }})</span>
+          </div>
+        </div>
+        <div class="chart-count">Total encuestas: {{ empleabilidad.empleoGenero.total }}</div>
+      </div>
+
+      <div class="chart-card chart-card--pie">
+        <div class="chart-title">Sector laboral</div>
+        <div class="pie" [style.background]="buildPieGradient(empleabilidad.sector.segments)"></div>
+        <div class="legend">
+          <div class="legend-item" *ngFor="let item of empleabilidad.sector.segments">
+            <span class="legend-swatch" [style.background]="item.color"></span>
+            <span class="legend-label">{{ item.label }}</span>
+            <span class="legend-value">{{ item.pct }}%</span>
+            <span class="legend-count">({{ item.count }})</span>
+          </div>
+        </div>
+        <div class="chart-count">Total encuestas: {{ empleabilidad.sector.total }}</div>
+      </div>
+
+      <div class="chart-card chart-card--pie">
+        <div class="chart-title">Tipo de cargo</div>
+        <div class="pie" [style.background]="buildPieGradient(empleabilidad.cargo.segments)"></div>
+        <div class="legend">
+          <div class="legend-item" *ngFor="let item of empleabilidad.cargo.segments">
+            <span class="legend-swatch" [style.background]="item.color"></span>
+            <span class="legend-label">{{ item.label }}</span>
+            <span class="legend-value">{{ item.pct }}%</span>
+            <span class="legend-count">({{ item.count }})</span>
+          </div>
+        </div>
+        <div class="chart-count">Total encuestas: {{ empleabilidad.cargo.total }}</div>
+      </div>
+
+      <div class="chart-card chart-card--pie">
+        <div class="chart-title">Renta líquida mensual</div>
+        <div class="pie" [style.background]="buildPieGradient(empleabilidad.renta.segments)"></div>
+        <div class="legend">
+          <div class="legend-item" *ngFor="let item of empleabilidad.renta.segments">
+            <span class="legend-swatch" [style.background]="item.color"></span>
+            <span class="legend-label">{{ item.label }}</span>
+            <span class="legend-value">{{ item.pct }}%</span>
+            <span class="legend-count">({{ item.count }})</span>
+          </div>
+        </div>
+        <div class="chart-count">Total encuestas: {{ empleabilidad.renta.total }}</div>
+      </div>
+
+      <div class="chart-card chart-card--pie">
+        <div class="chart-title">Tipo de institución educativa</div>
+        <div class="pie" [style.background]="buildPieGradient(empleabilidad.tipoInstitucion.segments)"></div>
+        <div class="legend">
+          <div class="legend-item" *ngFor="let item of empleabilidad.tipoInstitucion.segments">
+            <span class="legend-swatch" [style.background]="item.color"></span>
+            <span class="legend-label">{{ item.label }}</span>
+            <span class="legend-value">{{ item.pct }}%</span>
+            <span class="legend-count">({{ item.count }})</span>
+          </div>
+        </div>
+        <div class="chart-count">Total encuestas: {{ empleabilidad.tipoInstitucion.total }}</div>
+      </div>
+
+      <div class="chart-card chart-card--pie">
+        <div class="chart-title">Pertinencia de la formación</div>
+        <div class="pie" [style.background]="buildPieGradient(empleabilidad.pertinencia.segments)"></div>
+        <div class="legend">
+          <div class="legend-item" *ngFor="let item of empleabilidad.pertinencia.segments">
+            <span class="legend-swatch" [style.background]="item.color"></span>
+            <span class="legend-label">{{ item.label }}</span>
+            <span class="legend-value">{{ item.pct }}%</span>
+            <span class="legend-count">({{ item.count }})</span>
+          </div>
+        </div>
+        <div class="chart-count">Total encuestas: {{ empleabilidad.pertinencia.total }}</div>
+      </div>
+
+      <div class="chart-card chart-card--pie">
+        <div class="chart-title">Postgrado realizado</div>
+        <div class="pie" [style.background]="buildPieGradient(empleabilidad.postgrado.segments)"></div>
+        <div class="legend">
+          <div class="legend-item" *ngFor="let item of empleabilidad.postgrado.segments">
+            <span class="legend-swatch" [style.background]="item.color"></span>
+            <span class="legend-label">{{ item.label }}</span>
+            <span class="legend-value">{{ item.pct }}%</span>
+            <span class="legend-count">({{ item.count }})</span>
+          </div>
+        </div>
+        <div class="chart-count">Total encuestas: {{ empleabilidad.postgrado.total }}</div>
+      </div>
+
+      <div class="chart-card chart-card--pie">
+        <div class="chart-title">Capacitación adicional</div>
+        <div class="pie" [style.background]="buildPieGradient(empleabilidad.capacitacion.segments)"></div>
+        <div class="legend">
+          <div class="legend-item" *ngFor="let item of empleabilidad.capacitacion.segments">
+            <span class="legend-swatch" [style.background]="item.color"></span>
+            <span class="legend-label">{{ item.label }}</span>
+            <span class="legend-value">{{ item.pct }}%</span>
+            <span class="legend-count">({{ item.count }})</span>
+          </div>
+        </div>
+        <div class="chart-count">Total encuestas: {{ empleabilidad.capacitacion.total }}</div>
+      </div>
+    </div>
+  </mat-card>
+
+  <mat-card class="elev section-card">
+    <div class="section-head">
+      <div class="section-title">
+        <mat-icon>verified</mat-icon>
+        <div>
+          <h2>Encuesta de egresados</h2>
+          <span class="muted">Calidad formativa, recursos y mejora continua.</span>
+        </div>
+      </div>
+      <div class="section-tools">
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Año de egreso</mat-label>
+            <mat-select
+              [value]="anioEgresoFiltroAcreditacion"
+              (selectionChange)="onAnioEgresoAcreditacionChange($event.value)"
+            >
+            <mat-option value="ALL">Todos</mat-option>
+            <mat-option *ngFor="let anio of aniosEgreso" [value]="anio">{{ anio }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <button
+          mat-flat-button
+          color="primary"
+          class="export-btn"
+          [matMenuTriggerFor]="exportMenuAcreditacion"
+        >
+          <mat-icon>picture_as_pdf</mat-icon>
+          Exportar PDF
+        </button>
+        <mat-menu #exportMenuAcreditacion="matMenu">
+          <button mat-menu-item (click)="exportarPdfAcreditacionConGraficos()">
+            <mat-icon>pie_chart</mat-icon>
+            Con gráficos
+          </button>
+          <button mat-menu-item (click)="exportarPdfAcreditacionTabla()">
+            <mat-icon>table_chart</mat-icon>
+            Solo tabla
+          </button>
+        </mat-menu>
+        <div class="chip">
+          <mat-icon>assignment</mat-icon>
+          <span>{{ acreditacion.total }} encuestas</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="ai-summary">
+      <div class="ai-summary__head">
+        <div class="ai-summary__title">
+          <mat-icon>auto_awesome</mat-icon>
+          <span>Conclusion IA · Egresados</span>
+        </div>
+        <button
+          mat-stroked-button
+          color="primary"
+          type="button"
+          (click)="generarConclusionAcreditacion()"
+          [disabled]="generatingAcreditacion || !acreditacion.total">
+          <mat-icon>auto_awesome</mat-icon>
+          {{ generatingAcreditacion ? 'Generando...' : 'Generar' }}
+        </button>
+      </div>
+      <div class="ai-summary__body" *ngIf="showAcreditacionConclusion">
+        {{ conclusionAcreditacion }}
+      </div>
+      <div class="ai-summary__empty muted" *ngIf="!showAcreditacionConclusion">
+        Presiona "Generar" para obtener una conclusion basada en la encuesta de egresados.
+      </div>
+    </div>
+
+    <div class="chart-grid chart-grid--wide">
+      <div class="chart-card chart-card--pie" *ngFor="let item of acreditacion.preguntas">
+        <div class="chart-title">{{ item.label }}</div>
+        <div class="pie" [style.background]="buildPieGradient(item.stat.segments)"></div>
+        <div class="legend">
+          <div class="legend-item" *ngFor="let seg of item.stat.segments">
+            <span class="legend-swatch" [style.background]="seg.color"></span>
+            <span class="legend-label">{{ seg.label }}</span>
+            <span class="legend-value">{{ seg.pct }}%</span>
+            <span class="legend-count">({{ seg.count }})</span>
+          </div>
+        </div>
+        <div class="chart-count">Total respuestas: {{ item.stat.total }}</div>
+      </div>
+    </div>
+  </mat-card>
+</div>
+

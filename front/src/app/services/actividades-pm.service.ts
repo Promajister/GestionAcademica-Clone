@@ -4,9 +4,27 @@ import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 export interface EvidenciasFiles {
-  asistencia?: File | null;
-  documentos?: File | null;
-  fotos?: File | null;
+  asistencia?: File[];
+  documentos?: File[];
+  fotos?: File[];
+}
+
+export interface ActividadOption {
+  id: number;
+  nombre: string;
+  fechaInicio?: string;
+  tipoActividad?: string;
+}
+
+@Injectable({ providedIn: 'root' })
+export class ActividadVinculacionService {
+  private baseUrl = `${environment.apiUrl}/actividad-vinculacion`;
+
+  constructor(private http: HttpClient) {}
+
+  listarParaSelect(): Observable<ActividadOption[]> {
+    return this.http.get<ActividadOption[]>(`${this.baseUrl}/listado`);
+  }
 }
 
 export interface DifusionItem {
@@ -43,17 +61,23 @@ export class ActividadesPmService {
     return this.http.put(`${this.baseUrl}/${id}`, formData);
   }
 
-  listar(filters?: { anio?: number; tipo?: string; q?: string }): Observable<any[]> {
+  listar(filters?: { anio?: number; tipo?: string; q?: string; fechaInicio?: string; fechaTermino?: string }): Observable<any[]> {
     let params = new HttpParams();
     if (filters?.anio) params = params.set('anio', String(filters.anio));
     if (filters?.tipo) params = params.set('tipo', filters.tipo);
     if (filters?.q) params = params.set('q', filters.q);
+    if (filters?.fechaInicio) params = params.set('fechaInicio', filters.fechaInicio);
+    if (filters?.fechaTermino) params = params.set('fechaTermino', filters.fechaTermino);
 
     return this.http.get<any[]>(this.baseUrl, { params });
   }
 
   obtener(id: number | string): Observable<any> {
     return this.http.get<any>(`${this.baseUrl}/${id}`);
+  }
+
+  regenerarResumen(id: number | string): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/${id}/resumen-ia`, {});
   }
 
   obtenerUnidadPorCodigo(codigo: string): Observable<any> {
@@ -85,16 +109,30 @@ export class ActividadesPmService {
 
     fd.append('data', JSON.stringify(data));
 
-    if (req.files?.asistencia) {
-      fd.append('asistencia', req.files.asistencia, req.files.asistencia.name);
+    if (req.files?.asistencia?.length) {
+      for (const file of req.files.asistencia) {
+        fd.append('asistencia', file, file.name);
+      }
     }
-    if (req.files?.documentos) {
-      fd.append('documentos', req.files.documentos, req.files.documentos.name);
+    if (req.files?.documentos?.length) {
+      for (const file of req.files.documentos) {
+        fd.append('documentos', file, file.name);
+      }
     }
-    if (req.files?.fotos) {
-      fd.append('fotos', req.files.fotos, req.files.fotos.name);
+    if (req.files?.fotos?.length) {
+      for (const file of req.files.fotos) {
+        fd.append('fotos', file, file.name);
+      }
     }
 
     return fd;
+  }
+
+  eliminar(id: number | string): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/${id}`);
+  }
+
+  getEncuestasPorActividadPm(actividadId: number | string): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/${actividadId}/encuestas`);
   }
 }

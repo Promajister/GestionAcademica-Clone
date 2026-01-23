@@ -12,17 +12,9 @@
 
       <!-- Header usuario -->
       <div class="side__header">
-        <ng-container *ngIf="profilePhoto; else fallbackAvatar">
-          <div class="side__avatar">
-            <img [src]="profilePhoto" alt="Foto de perfil" />
-          </div>
-        </ng-container>
-
-        <ng-template #fallbackAvatar>
-          <div class="side__avatar side__avatar--fallback">
-            <span>{{ initials }}</span>
-          </div>
-        </ng-template>
+        <div class="side__avatar side__avatar--logo">
+          <img src="assets/img/feh.png" alt="Logo FEH" />
+        </div>
 
         <div class="who" *ngIf="user as u; else userSkeleton">
           <div class="name">{{ u.name }}</div>
@@ -56,7 +48,7 @@
         </a>
 
         <!-- Secciones SOLO Jefatura (estilo portal/accordion) -->
-        <ng-container *ngIf="isJefatura">
+        <ng-container *ngIf="isJefatura || isVinculacion">
 
           <div class="nav-section" *ngFor="let section of navSections">
 
@@ -102,7 +94,7 @@
       <!-- Pie del sidebar -->
       <div class="side__footer">
         <span class="side__footer-text">Sistema de gestión académica</span>
-        <span class="side__footer-version">v1.0 PEDHG</span>
+        <span class="side__footer-version">v3.1 PEDHG</span>
       </div>
     </mat-sidenav>
 

@@ -21,10 +21,12 @@ export class ColaboradoresService {
 
     const { cargo, cargos, ...rest } = dto as any;
 
+    const rut = dto.rut ? normalizeRut(dto.rut) : undefined;
+
     return this.prisma.colaborador.create({
       data: {
         ...rest,
-        rut: normalizeRut(dto.rut),
+        ...(rut ? { rut } : {}),
         ...(cargosList.length ? { cargos: { create: cargosList } } : {}),
       },
       include: { cargos: true },
@@ -92,7 +94,7 @@ export class ColaboradoresService {
 
       const { cargo, cargos, ...rest } = dto as any;
       
-      if (rest.rut !== undefined) {
+      if (rest.rut !== undefined && rest.rut !== null && rest.rut !== '') {
         rest.rut = normalizeRut(rest.rut);
       }
 

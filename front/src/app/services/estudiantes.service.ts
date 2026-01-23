@@ -20,6 +20,7 @@ export interface EstudianteResumen {
   plan?: string | null;
   email?: string | null;
   fono?: number | null;
+  egresado?: boolean | null;
   estadoPractica?: EstadoPractica | null;
   ultimaPractica?: UltimaPractica | null;
 }
@@ -53,6 +54,16 @@ export interface Actividad {
   archivo_adjunto?: string | null;
 }
 
+export interface EmpleabilidadDetalle {
+  lugarTrabajo: string;
+  sector: string;
+  sectorOtro?: string | null;
+  cargo: string;
+  cargoOtro?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface EstudianteDetalle extends EstudianteResumen {
   genero?: string | null;
   anio_nacimiento?: string | null;
@@ -66,6 +77,18 @@ export interface EstudianteDetalle extends EstudianteResumen {
   promedio?: number | null;
   practicas: PracticaDetalle[];
   actividades: Actividad[];
+  empleabilidad?: EmpleabilidadDetalle | null;
+}
+
+export interface EmpleabilidadPayload {
+  lugarTrabajo: string;
+  sector: string;
+  sectorOtro?: string | null;
+  cargo: string;
+  cargoOtro?: string | null;
+  direccion?: string | null;
+  email?: string | null;
+  fono?: number | null;
 }
 
 export interface EstudianteQuery {
@@ -77,6 +100,7 @@ export interface EstudianteQuery {
   semestre?: number;
   anio?: number;
   anioIngreso?: number;
+  egresado?: boolean;
   page?: number;
   limit?: number;
 }
@@ -114,5 +138,13 @@ export class EstudiantesService {
     const formData = new FormData();
     formData.append('file', file);
     return this.http.post<ImportSummary>(`${API_URL}/import`, formData);
+  }
+
+  actualizarEgresado(rut: string, egresado: boolean): Observable<EstudianteResumen> {
+    return this.http.patch<EstudianteResumen>(`${API_URL}/${rut}/egresado`, { egresado });
+  }
+
+  guardarEmpleabilidad(rut: string, payload: EmpleabilidadPayload): Observable<any> {
+    return this.http.put(`${API_URL}/${rut}/empleabilidad`, payload);
   }
 }

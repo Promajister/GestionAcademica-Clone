@@ -11,6 +11,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { formatDateEs, parseDateFlexible } from '../../utils/date-utils';
 
 // Servicios
 import {
@@ -74,10 +75,10 @@ export class EstudiantesEnPracticaComponent implements OnInit {
   terminoBusqueda = '';
   estadoSeleccionado: 'all' | EstadoPractica = 'all';
   nivelSeleccionado: 'all' | string = 'all';
-  
-  // ===== paginaciÃ³n =====
+
+  // ===== paginación =====
   pageIndex = 0;
-  pageSize = 5;
+  pageSize = 10;
   totalItems = 0;
   readonly pageSizeOptions = [5, 10, 20, 50];
 
@@ -85,7 +86,7 @@ export class EstudiantesEnPracticaComponent implements OnInit {
   practicas: PracticaEstudiante[] = [];
   cargando = false;
 
-  // Estado para diÃ¡logo de confirmaciÃ³n
+  // Estado para diálogo de confirmación
   mostrarDialogoNotaFinal = false;
   practicaANotar: PracticaEstudiante | null = null;
 
@@ -94,6 +95,7 @@ export class EstudiantesEnPracticaComponent implements OnInit {
   practicaSeleccionada: PracticaEstudiante | null = null;
   observaciones: Observacion[] = [];
   notaFinalEditada: number | null = null;
+  notaFinalError: string | null = null;
   guardandoNotaFinal = false;
 
   // Opciones de filtros
@@ -119,8 +121,8 @@ export class EstudiantesEnPracticaComponent implements OnInit {
         this.cargando = false;
       },
       error: (err) => {
-        console.error('Error al cargar prÃ¡cticas:', err);
-        this.snack.open('Error al cargar estudiantes en prÃ¡ctica', 'Cerrar', { duration: 3000 });
+        console.error('Error al cargar práticas:', err);
+        this.snack.open('Error al cargar estudiantes en práctica', 'Cerrar', { duration: 3000 });
         this.cargando = false;
       }
     });
@@ -128,9 +130,7 @@ export class EstudiantesEnPracticaComponent implements OnInit {
 
   transformarPractica(p: any): PracticaEstudiante {
     const formatearFecha = (fecha: any): string => {
-      if (!fecha) return '';
-      const date = new Date(fecha);
-      return date.toLocaleDateString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit' });
+      return fecha ? formatDateEs(fecha) : '';
     };
 
     const colaboradores = Array.isArray(p.practicaColaboradores)
@@ -206,7 +206,7 @@ export class EstudiantesEnPracticaComponent implements OnInit {
     return formato[estado] || estado;
   }
 
-  // FunciÃ³n para formatear el tipo de centro educativo
+  // Función para formatear el tipo de centro educativo
   formatearTipoCentro(tipo: string | null | undefined): string {
     if (!tipo) return 'Sin especificar';
     const formato: Record<string, string> = {
@@ -247,10 +247,10 @@ export class EstudiantesEnPracticaComponent implements OnInit {
     return filtradas.slice(startIndex, endIndex);
   }
 
-  // Actualizar paginaciÃ³n cuando cambian los filtros o datos
+  // Actualizar paginación cuando cambian los filtros o datos
   actualizarPaginacion(): void {
     this.totalItems = this.estudiantesFiltrados.length;
-    // Asegurar que pageIndex no exceda el nÃºmero de pÃ¡ginas disponibles
+    // Asegurar que pageIndex no exceda el número de páginas disponibles
     const maxPage = Math.max(0, Math.ceil(this.totalItems / this.pageSize) - 1);
     if (this.pageIndex > maxPage) {
       this.pageIndex = maxPage;
@@ -271,6 +271,7 @@ export class EstudiantesEnPracticaComponent implements OnInit {
   abrirDialogoCambioEstado(practica: PracticaEstudiante) {
     this.practicaANotar = practica;
     this.notaFinalEditada = practica.notaFinal ?? null;
+    this.notaFinalError = null;
     this.mostrarDialogoNotaFinal = true;
   }
 
@@ -278,6 +279,7 @@ export class EstudiantesEnPracticaComponent implements OnInit {
     this.mostrarDialogoNotaFinal = false;
     this.practicaANotar = null;
     this.notaFinalEditada = null;
+    this.notaFinalError = null;
   }
 
   confirmarCambioEstado() {
@@ -293,6 +295,7 @@ export class EstudiantesEnPracticaComponent implements OnInit {
     this.mostrarModalDetalles = true;
     this.cargarObservaciones(practica.id);
     this.notaFinalEditada = practica.notaFinal ?? null;
+    this.notaFinalError = null;
   }
 
   cerrarDetalles() {
@@ -300,25 +303,30 @@ export class EstudiantesEnPracticaComponent implements OnInit {
     this.mostrarModalDetalles = false;
     this.observaciones = [];
     this.notaFinalEditada = null;
+    this.notaFinalError = null;
     this.guardandoNotaFinal = false;
   }
 
   guardarNotaFinal() {
     const practica = this.obtenerPracticaParaNota();
     if (!practica || this.notaFinalEditada === null) {
+      this.notaFinalError = 'Ingresa una nota final válida.';
       this.snack.open('Ingresa una nota final valida.', 'Cerrar', { duration: 3000 });
       return;
     }
 
     const notaFinal = Number(this.notaFinalEditada);
     if (!Number.isFinite(notaFinal)) {
+      this.notaFinalError = 'Ingresa una nota final válida.';
       this.snack.open('Ingresa una nota final valida.', 'Cerrar', { duration: 3000 });
       return;
     }
     if (notaFinal < 1 || notaFinal > 7) {
+      this.notaFinalError = 'La nota final debe estar entre 1 y 7.';
       this.snack.open('La nota final debe estar entre 1 y 7.', 'Cerrar', { duration: 3000 });
       return;
     }
+    this.notaFinalError = null;
 
     if (practica.notaFinal === notaFinal) {
       return;
@@ -366,15 +374,7 @@ export class EstudiantesEnPracticaComponent implements OnInit {
   }
 
   formatearFecha(fecha: string): string {
-    if (!fecha) return '';
-    const date = new Date(fecha);
-    return date.toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return fecha ? formatDateEs(parseDateFlexible(fecha) ?? fecha) : '';
   }
 }
 

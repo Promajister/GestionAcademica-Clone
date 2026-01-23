@@ -1,5 +1,5 @@
 // carta.component.ts
-import { Component, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, inject, ChangeDetectorRef, Injectable } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 // --- LÍNEA CORREGIDA ---
@@ -20,7 +20,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatCardModule } from '@angular/material/card';
 import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatNativeDateModule } from '@angular/material/core';
+import { MatNativeDateModule, NativeDateAdapter, MAT_DATE_FORMATS, DateAdapter, MAT_DATE_LOCALE } from '@angular/material/core';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
@@ -44,6 +44,45 @@ interface PdfAsset {
   height: number;
 }
 
+@Injectable()
+export class CustomDateAdapter extends NativeDateAdapter {
+  override format(date: Date, displayFormat: Object): string {
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  }
+
+  override parse(value: string): Date | null {
+    if (!value) return null;
+    const parts = value.split('/');
+    if (parts.length === 3) {
+      const day = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const year = parseInt(parts[2], 10);
+      if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+        const date = new Date(year, month, day);
+        if (date.getDate() === day && date.getMonth() === month && date.getFullYear() === year) {
+          return date;
+        }
+      }
+    }
+    return super.parse(value);
+  }
+}
+
+export const MY_DATE_FORMATS = {
+  parse: {
+    dateInput: 'DD/MM/YYYY',
+  },
+  display: {
+    dateInput: 'DD/MM/YYYY',
+    monthYearLabel: 'MMMM YYYY',
+    dateA11yLabel: 'LL',
+    monthYearA11yLabel: 'MMMM YYYY',
+  },
+};
+
 @Component({
   selector: 'app-carta',
   standalone: true,
@@ -61,6 +100,11 @@ interface PdfAsset {
     MatDividerModule,
     MatDialogModule,
     MatSnackBarModule,
+  ],
+  providers: [
+    { provide: DateAdapter, useClass: CustomDateAdapter },
+    { provide: MAT_DATE_FORMATS, useValue: MY_DATE_FORMATS },
+    { provide: MAT_DATE_LOCALE, useValue: 'es-ES' },
   ],
   templateUrl: './carta.component.html',
   styleUrls: ['./carta.component.scss'],
@@ -582,8 +626,39 @@ export class CartaComponent {
     }
     const aspect = logo.width > 0 ? logo.height / logo.width : 0.5;
     const scaledHeight = Math.max(1, width * aspect);
-    doc.addImage(logo.dataUrl, 'PNG', x, y, width, scaledHeight);
+    const format = logo.dataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+    doc.addImage(logo.dataUrl, format, x, y, width, scaledHeight);
     return scaledHeight;
+  }
+
+  private blobToPngDataUrl(blob: Blob, maxWidth: number): Promise<string | null> {
+    return new Promise((resolve) => {
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => {
+        const naturalW = img.naturalWidth || img.width;
+        const naturalH = img.naturalHeight || img.height;
+        const scale = naturalW > maxWidth ? maxWidth / naturalW : 1;
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(naturalW * scale));
+        canvas.height = Math.max(1, Math.round(naturalH * scale));
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          URL.revokeObjectURL(url);
+          resolve(null);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/png');
+        URL.revokeObjectURL(url);
+        resolve(dataUrl);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve(null);
+      };
+      img.src = url;
+    });
   }
 
   private async loadAssetAsDataUrl(assetPath: string): Promise<PdfAsset | null> {
@@ -591,26 +666,28 @@ export class CartaComponent {
     return new Promise((resolve) => {
       this.http.get(url, { responseType: 'blob' }).subscribe({
         next: (blob) => {
-          const reader = new FileReader();
-          reader.onload = () => {
-            const dataUrl = reader.result as string;
-            const image = new Image();
-            image.onload = () =>
-              resolve({
-                dataUrl,
-                width: image.width,
-                height: image.height,
-              });
-            image.onerror = () =>
-              resolve({
-                dataUrl,
-                width: 0,
-                height: 0,
-              });
-            image.src = dataUrl;
-          };
-          reader.onerror = () => resolve(null);
-          reader.readAsDataURL(blob);
+          this.blobToPngDataUrl(blob, 256)
+            .then((dataUrl) => {
+              if (!dataUrl) {
+                resolve(null);
+                return;
+              }
+              const image = new Image();
+              image.onload = () =>
+                resolve({
+                  dataUrl,
+                  width: image.width,
+                  height: image.height,
+                });
+              image.onerror = () =>
+                resolve({
+                  dataUrl,
+                  width: 0,
+                  height: 0,
+                });
+              image.src = dataUrl;
+            })
+            .catch(() => resolve(null));
         },
         error: (error) => {
           console.warn('Error cargando asset para PDF', url, error);

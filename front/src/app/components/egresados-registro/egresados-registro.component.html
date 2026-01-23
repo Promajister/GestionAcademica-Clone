@@ -1,0 +1,532 @@
+<div class="Container Section">
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero__bg"></div>
+
+    <div class="hero__content">
+      <div class="hero__left">
+        <div class="hero__icon">
+          <mat-icon>workspace_premium</mat-icon>
+        </div>
+
+        <div class="hero__titles">
+          <h1>Registro de egresados</h1>
+          <p>Gestiona el paso de estudiantes a egresados y revisa su ficha.</p>
+
+          <div class="hero__chips">
+            <span class="chip">
+              <mat-icon>how_to_reg</mat-icon>
+              <span>Total egresados: {{ totalItems || 0 }}</span>
+            </span>
+
+            <span class="chip chip--soft" *ngIf="!cargandoLista">
+              <mat-icon>visibility</mat-icon>
+              <span>{{ egresadosPaginados.length }} en pantalla</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero__actions">
+        <button
+          mat-flat-button
+          color="primary"
+          class="btn-cta"
+          (click)="abrirModal()">
+          <mat-icon>group_add</mat-icon>
+          Registrar egresados
+        </button>
+
+        <button
+          mat-stroked-button
+          class="btn-ghost"
+          type="button"
+          (click)="cargarEgresados()">
+          <mat-icon>refresh</mat-icon>
+          Actualizar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOOLBAR -->
+  <mat-card class="toolbar-card elev">
+    <mat-card-content class="toolbar">
+      <mat-icon class="toolbar__icon">tune</mat-icon>
+
+      <mat-form-field appearance="outline" class="toolbar__search">
+        <mat-label>Buscar por nombre, RUT o plan</mat-label>
+        <input
+          matInput
+          [(ngModel)]="searchTerm"
+          (keyup.enter)="aplicarFiltros()"
+          placeholder="Ej: Ana, 12.345.678-9" />
+      </mat-form-field>
+
+      <button mat-flat-button color="primary" class="btn-pill" (click)="aplicarFiltros()">
+        <mat-icon>search</mat-icon>
+        Buscar
+      </button>
+
+      <button mat-stroked-button class="btn-pill" type="button" (click)="limpiarFiltros()">
+        <mat-icon>close</mat-icon>
+        Limpiar
+      </button>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- GRID (Detalle + Lista) -->
+  <div class="layout">
+    <!-- DETALLE -->
+    <mat-card class="panel elev">
+      <mat-card-header class="panel__head">
+        <mat-card-title class="panel__title">
+          <mat-icon>badge</mat-icon>
+          Ficha del egresado
+        </mat-card-title>
+
+        <div class="panel__actions" *ngIf="detalle && !cargandoDetalle">
+          <button mat-flat-button color="primary" class="btn-pill" (click)="exportarPdf()">
+            <mat-icon>picture_as_pdf</mat-icon>
+            Exportar PDF
+          </button>
+          @if (detalle.empleabilidad) {
+            <button mat-stroked-button class="btn-pill" type="button" (click)="abrirEmpleabilidadModal(true)">
+              <mat-icon>edit</mat-icon>
+              Editar
+            </button>
+          } @else {
+            <button mat-stroked-button class="btn-pill" type="button" (click)="abrirEmpleabilidadModal()">
+              <mat-icon>work</mat-icon>
+              Registrar empleabilidad
+            </button>
+          }
+        </div>
+      </mat-card-header>
+
+      <mat-card-content class="panel__body">
+        @if (!seleccionado && !cargandoDetalle) {
+          <div class="empty-state">
+            <div class="empty-state__icon">
+              <mat-icon>info</mat-icon>
+            </div>
+            <div>
+              <div class="empty-state__title">Sin seleccion</div>
+              <div class="muted">Selecciona un egresado para ver su ficha.</div>
+            </div>
+          </div>
+        }
+
+        @if (cargandoDetalle) {
+          <div class="loader">
+            <mat-spinner diameter="30"></mat-spinner>
+            <span class="muted">Cargando detalle...</span>
+          </div>
+        }
+
+        @if (detalle && !cargandoDetalle) {
+          <div class="detail-top">
+            <div class="detail-top__avatar">
+              <mat-icon>school</mat-icon>
+            </div>
+
+            <div class="detail-top__meta">
+              <div class="detail-top__name">{{ detalle.nombre }}</div>
+              <div class="detail-top__sub muted">
+                {{ formatearRut(detalle.rut) }} • {{ detalle.plan || 'Sin plan' }}
+              </div>
+
+              <div class="detail-top__chips">
+                <span class="tag">Egresado</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="sections">
+            <div class="sec">
+              <div class="sec__head">
+                <mat-icon>person</mat-icon>
+                <h3>Datos personales</h3>
+              </div>
+
+              <div class="kv-grid">
+                <div class="kv">
+                  <div class="k">RUT</div>
+                  <div class="v">{{ formatearRut(detalle.rut) }}</div>
+                </div>
+                <div class="kv">
+                  <div class="k">Genero</div>
+                  <div class="v">{{ detalle.genero || '-' }}</div>
+                </div>
+                <div class="kv">
+                  <div class="k">Año nacimiento</div>
+                  <div class="v">{{ formatearFecha(detalle.anio_nacimiento) }}</div>
+                </div>
+                <div class="kv kv--full">
+                  <div class="k">Dirección</div>
+                  <div class="v">{{ detalle.direccion || '-' }}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="sec">
+              <div class="sec__head">
+                <mat-icon>work</mat-icon>
+                <h3>Empleabilidad</h3>
+              </div>
+
+              @if (detalle.empleabilidad) {
+                <div class="kv-grid">
+                  <div class="kv kv--full">
+                    <div class="k">Lugar de trabajo</div>
+                    <div class="v">{{ detalle.empleabilidad.lugarTrabajo || '-' }}</div>
+                  </div>
+                  <div class="kv">
+                    <div class="k">Sector laboral</div>
+                    <div class="v">{{ formatEmpleabilidadSector(detalle.empleabilidad) }}</div>
+                  </div>
+                  <div class="kv">
+                    <div class="k">Cargo actual</div>
+                    <div class="v">{{ formatEmpleabilidadCargo(detalle.empleabilidad) }}</div>
+                  </div>
+                </div>
+              } @else {
+                <div class="muted">Sin empleabilidad registrada.</div>
+              }
+            </div>
+
+            <div class="sec">
+              <div class="sec__head">
+                <mat-icon>school</mat-icon>
+                <h3>Datos académicos</h3>
+              </div>
+
+              <div class="kv-grid">
+                <div class="kv">
+                  <div class="k">Plan</div>
+                  <div class="v">{{ detalle.plan || '-' }}</div>
+                </div>
+                <div class="kv">
+                  <div class="k">Año de ingreso</div>
+                  <div class="v">{{ detalle.anio_ingreso ?? '-' }}</div>
+                </div>
+                <div class="kv">
+                  <div class="k">Sistema de ingreso</div>
+                  <div class="v">{{ detalle.sistema_ingreso || '-' }}</div>
+                </div>
+                <div class="kv">
+                  <div class="k">Nº inscripciones</div>
+                  <div class="v">{{ detalle.numero_inscripciones ?? '-' }}</div>
+                </div>
+                <div class="kv">
+                  <div class="k">Avance</div>
+                  <div class="v">{{ formatearNumero(detalle.avance) }}</div>
+                </div>
+                <div class="kv">
+                  <div class="k">Promedio</div>
+                  <div class="v">{{ formatearNumero(detalle.promedio) }}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="sec">
+              <div class="sec__head">
+                <mat-icon>contact_phone</mat-icon>
+                <h3>Contacto</h3>
+              </div>
+
+              <div class="kv-grid">
+                <div class="kv kv--full">
+                  <div class="k">Correo</div>
+                  <div class="v">{{ detalle.email || '-' }}</div>
+                </div>
+                <div class="kv">
+                  <div class="k">Telefono</div>
+                  <div class="v">{{ detalle.fono ?? '-' }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      </mat-card-content>
+    </mat-card>
+
+    <!-- LISTA -->
+    <mat-card class="panel elev">
+      <mat-card-header class="panel__head">
+        <mat-card-title class="panel__title">
+          <mat-icon>format_list_bulleted</mat-icon>
+          Egresados registrados
+        </mat-card-title>
+
+        <div class="panel__meta muted">
+          {{ totalItems }} resultado(s)
+        </div>
+      </mat-card-header>
+
+      <mat-card-content class="list-body">
+        @if (cargandoLista) {
+          <div class="loader">
+            <mat-spinner diameter="30"></mat-spinner>
+            <span class="muted">Cargando egresados...</span>
+          </div>
+        }
+
+        @if (mensajeError && !cargandoLista) {
+          <div class="error-box">
+            <mat-icon>error</mat-icon>
+            <span>{{ mensajeError }}</span>
+          </div>
+        }
+
+        @if (!cargandoLista && egresados.length === 0) {
+          <div class="empty-state">
+            <div class="empty-state__icon empty-state__icon--soft">
+              <mat-icon>school</mat-icon>
+            </div>
+            <div>
+              <div class="empty-state__title">Sin egresados</div>
+              <div class="muted">Aún no hay estudiantes marcados como egresados.</div>
+            </div>
+          </div>
+        }
+
+        @if (!cargandoLista && egresados.length > 0) {
+          <div class="cards-stack">
+            @for (s of egresadosPaginados; track s.rut) {
+              <article
+                class="student-card"
+                (click)="seleccionar(s)"
+                [class.student-card--active]="seleccionado?.rut === s.rut">
+
+                <div class="student-card__accent"></div>
+
+                <div class="student-card__top">
+                  <div class="student-card__avatar">
+                    <mat-icon>school</mat-icon>
+                  </div>
+
+                  <div class="student-card__meta">
+                    <div class="student-card__name truncate">{{ s.nombre }}</div>
+
+                    <div class="student-card__sub muted truncate">
+                      {{ formatearRut(s.rut) }}
+                    </div>
+
+                    @if (s.email) {
+                      <div class="student-card__sub muted truncate">
+                        <mat-icon>mail</mat-icon>
+                        <span>{{ s.email }}</span>
+                      </div>
+                    }
+                  </div>
+
+                  <div class="student-card__right">
+                    <span class="tag">Egresado</span>
+                  </div>
+                </div>
+              </article>
+            }
+          </div>
+        }
+      </mat-card-content>
+
+      <div class="list-paginator" *ngIf="totalItems > 0">
+        <mat-paginator
+          [length]="totalItems"
+          [pageIndex]="pageIndex"
+          [pageSize]="pageSize"
+          [pageSizeOptions]="pageSizeOptions"
+          (page)="onPageChange($event)">
+        </mat-paginator>
+      </div>
+    </mat-card>
+  </div>
+</div>
+
+<!-- MODAL REGISTRO -->
+<div class="modal-overlay" *ngIf="modalOpen" (click)="cerrarModal()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-head">
+      <div class="modal-title">
+        <mat-icon>group_add</mat-icon>
+        Registrar egresados
+      </div>
+      <button mat-icon-button (click)="cerrarModal()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="modal-toolbar">
+        <mat-form-field appearance="outline" class="modal-search">
+          <mat-label>Buscar estudiante</mat-label>
+          <input matInput [(ngModel)]="filtroModal" placeholder="Nombre, RUT o plan" />
+        </mat-form-field>
+
+        <div class="modal-count muted">
+          {{ seleccionados.size }} seleccionados
+        </div>
+      </div>
+
+      @if (cargandoModal) {
+        <div class="loader">
+          <mat-spinner diameter="28"></mat-spinner>
+          <span class="muted">Cargando estudiantes...</span>
+        </div>
+      }
+
+      @if (!cargandoModal) {
+        <div class="modal-list">
+          @for (s of estudiantesModalFiltrados; track s.rut) {
+            <label class="modal-row">
+              <mat-checkbox
+                [checked]="seleccionados.has(s.rut)"
+                [disabled]="s.egresado"
+                (change)="toggleSeleccion(s)">
+              </mat-checkbox>
+
+              <div class="modal-row__meta">
+                <div class="modal-row__name truncate">{{ s.nombre }}</div>
+                <div class="modal-row__sub muted truncate">
+                  {{ formatearRut(s.rut) }} • {{ s.plan || 'Sin plan' }}
+                </div>
+              </div>
+
+              @if (s.egresado) {
+                <span class="pill">Egresado</span>
+              }
+            </label>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="modal-actions">
+      <button mat-stroked-button type="button" (click)="cerrarModal()">
+        Cancelar
+      </button>
+      <button
+        mat-flat-button
+        color="primary"
+        [disabled]="seleccionados.size === 0 || isSaving"
+        (click)="marcarComoEgresados()">
+        <mat-icon>how_to_reg</mat-icon>
+        Marcar como egresados
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EMPLEABILIDAD -->
+<div class="modal-overlay" *ngIf="empleabilidadModalOpen" (click)="cerrarEmpleabilidadModal()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-head">
+      <div class="modal-title">
+        <span class="modal-icon">
+          <mat-icon>work</mat-icon>
+        </span>
+        <div>
+          <div class="modal-title-text">
+            {{ empleabilidadEditing ? 'Editar empleabilidad' : 'Registrar empleabilidad' }}
+          </div>
+          <div class="modal-title-sub">
+            {{ empleabilidadEditing ? 'Actualiza empleabilidad, direccion y contacto.' : 'Datos laborales basicos del egresado' }}
+          </div>
+        </div>
+      </div>
+      <button mat-icon-button (click)="cerrarEmpleabilidadModal()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="modal-subhead">
+        <div class="modal-subtitle">Egresado seleccionado</div>
+        <div class="modal-subtext">
+          {{ seleccionado?.nombre }} - {{ formatearRut(seleccionado?.rut) }}
+        </div>
+        <div class="modal-subchips">
+          <span class="modal-chip">
+            <mat-icon>badge</mat-icon>
+            Egresado
+          </span>
+          <span class="modal-chip modal-chip--soft">
+            <mat-icon>domain</mat-icon>
+            Vinculacion laboral
+          </span>
+        </div>
+      </div>
+
+      <div class="grid modal-grid">
+        <mat-form-field appearance="outline" class="field full">
+          <mat-label>Lugar de trabajo</mat-label>
+          <input matInput [(ngModel)]="empleabilidadForm.lugarTrabajo" placeholder="Ej: Colegio San Marcos" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="field">
+          <mat-label>Sector laboral</mat-label>
+          <mat-select [(ngModel)]="empleabilidadForm.sector">
+            @for (opt of sectorOptions; track opt.value) {
+              <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        @if (empleabilidadForm.sector === 'otro') {
+          <mat-form-field appearance="outline" class="field">
+            <mat-label>Especificar sector</mat-label>
+            <input matInput [(ngModel)]="empleabilidadForm.sectorOtro" placeholder="Indica el sector" />
+          </mat-form-field>
+        }
+
+        <mat-form-field appearance="outline" class="field">
+          <mat-label>Cargo actual</mat-label>
+          <mat-select [(ngModel)]="empleabilidadForm.cargo">
+            @for (opt of cargoOptions; track opt.value) {
+              <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        @if (empleabilidadForm.cargo === 'otro') {
+          <mat-form-field appearance="outline" class="field">
+            <mat-label>Especificar cargo</mat-label>
+            <input matInput [(ngModel)]="empleabilidadForm.cargoOtro" placeholder="Indica el cargo" />
+          </mat-form-field>
+        }
+
+        <mat-form-field appearance="outline" class="field full">
+          <mat-label>Direccion</mat-label>
+          <input matInput [(ngModel)]="empleabilidadForm.direccion" placeholder="Direccion del egresado" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="field">
+          <mat-label>Correo</mat-label>
+          <input matInput [(ngModel)]="empleabilidadForm.email" placeholder="correo@ejemplo.cl" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="field">
+          <mat-label>Telefono</mat-label>
+          <input matInput [(ngModel)]="empleabilidadForm.fono" placeholder="Ej: 987654321" />
+        </mat-form-field>
+      </div>
+      <div class="modal-note">
+        Completa los campos de empleabilidad para habilitar el guardado.
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button mat-stroked-button type="button" (click)="cerrarEmpleabilidadModal()">
+        Cancelar
+      </button>
+      <button
+        mat-flat-button
+        color="primary"
+        [disabled]="!empleabilidadValida() || empleabilidadSaving"
+        (click)="guardarEmpleabilidad()">
+        {{ empleabilidadEditing ? 'Guardar cambios' : 'Guardar empleabilidad' }}
+      </button>
+    </div>
+  </div>
+</div>
