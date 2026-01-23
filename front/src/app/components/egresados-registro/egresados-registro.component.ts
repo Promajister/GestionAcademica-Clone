@@ -416,12 +416,8 @@ export class EgresadosRegistroComponent implements OnInit, OnDestroy {
       const response = await fetch(path);
       if (!response.ok) return null;
       const blob = await response.blob();
-      const dataUrl = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(String(reader.result));
-        reader.onerror = () => reject(reader.error);
-        reader.readAsDataURL(blob);
-      });
+      const dataUrl = await this.blobToPngDataUrl(blob, 256);
+      if (!dataUrl) return null;
       const image = await new Promise<HTMLImageElement>((resolve, reject) => {
         const img = new Image();
         img.onload = () => resolve(img);
@@ -432,6 +428,36 @@ export class EgresadosRegistroComponent implements OnInit, OnDestroy {
     } catch {
       return null;
     }
+  }
+
+  private blobToPngDataUrl(blob: Blob, maxWidth: number): Promise<string | null> {
+    return new Promise((resolve) => {
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => {
+        const naturalW = img.naturalWidth || img.width;
+        const naturalH = img.naturalHeight || img.height;
+        const scale = naturalW > maxWidth ? maxWidth / naturalW : 1;
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(naturalW * scale));
+        canvas.height = Math.max(1, Math.round(naturalH * scale));
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          URL.revokeObjectURL(url);
+          resolve(null);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/png');
+        URL.revokeObjectURL(url);
+        resolve(dataUrl);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve(null);
+      };
+      img.src = url;
+    });
   }
 
   async exportarPdf(): Promise<void> {
@@ -487,10 +513,16 @@ export class EgresadosRegistroComponent implements OnInit, OnDestroy {
       const h = logo.height * scale;
       const x = boxX + (boxW - w) / 2;
       const yy = boxY + (boxH - h) / 2;
-      doc.addImage(logo.data, 'PNG', x, yy, w, h);
+      const format = logo.data.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+      doc.addImage(logo.data, format, x, yy, w, h);
     };
 
     const headerH = 92;
+
+    const now = new Date();
+    const fecha = formatDateEs(now);
+    const hora = now.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+    const emitidoText = `Emitido: ${fecha}  ${hora}`;
 
     const drawHeader = () => {
       doc.setFillColor(colors.headerFill);
@@ -504,6 +536,9 @@ export class EgresadosRegistroComponent implements OnInit, OnDestroy {
 
       setFont(10, 'normal', colors.muted);
       doc.text('Registro academico', pageWidth / 2, 56, { align: 'center' as any });
+
+      setFont(9, 'normal', colors.muted);
+      doc.text(emitidoText, pageWidth / 2, 72, { align: 'center' as any });
 
       doc.setDrawColor(colors.line);
       doc.line(margin, headerH, pageWidth - margin, headerH);
@@ -527,9 +562,6 @@ export class EgresadosRegistroComponent implements OnInit, OnDestroy {
     drawHeader();
     y = contentStartY();
 
-    const now = new Date();
-    const fecha = formatDateEs(now);
-    const hora = now.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
     const practicasCount = detalle.practicas?.length || 0;
 
     setFont(13, 'bold', colors.text);
@@ -544,10 +576,6 @@ export class EgresadosRegistroComponent implements OnInit, OnDestroy {
       { align: 'center' as any },
     );
     y += 14;
-
-    setFont(9, 'normal', colors.muted);
-    doc.text(`Emitido: ${fecha}  ${hora}`, pageWidth / 2, y, { align: 'center' as any });
-    y += 18;
 
     drawLine(y);
     y += 18;

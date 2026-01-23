@@ -626,8 +626,39 @@ export class CartaComponent {
     }
     const aspect = logo.width > 0 ? logo.height / logo.width : 0.5;
     const scaledHeight = Math.max(1, width * aspect);
-    doc.addImage(logo.dataUrl, 'PNG', x, y, width, scaledHeight);
+    const format = logo.dataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+    doc.addImage(logo.dataUrl, format, x, y, width, scaledHeight);
     return scaledHeight;
+  }
+
+  private blobToPngDataUrl(blob: Blob, maxWidth: number): Promise<string | null> {
+    return new Promise((resolve) => {
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => {
+        const naturalW = img.naturalWidth || img.width;
+        const naturalH = img.naturalHeight || img.height;
+        const scale = naturalW > maxWidth ? maxWidth / naturalW : 1;
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(naturalW * scale));
+        canvas.height = Math.max(1, Math.round(naturalH * scale));
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          URL.revokeObjectURL(url);
+          resolve(null);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/png');
+        URL.revokeObjectURL(url);
+        resolve(dataUrl);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve(null);
+      };
+      img.src = url;
+    });
   }
 
   private async loadAssetAsDataUrl(assetPath: string): Promise<PdfAsset | null> {
@@ -635,26 +666,28 @@ export class CartaComponent {
     return new Promise((resolve) => {
       this.http.get(url, { responseType: 'blob' }).subscribe({
         next: (blob) => {
-          const reader = new FileReader();
-          reader.onload = () => {
-            const dataUrl = reader.result as string;
-            const image = new Image();
-            image.onload = () =>
-              resolve({
-                dataUrl,
-                width: image.width,
-                height: image.height,
-              });
-            image.onerror = () =>
-              resolve({
-                dataUrl,
-                width: 0,
-                height: 0,
-              });
-            image.src = dataUrl;
-          };
-          reader.onerror = () => resolve(null);
-          reader.readAsDataURL(blob);
+          this.blobToPngDataUrl(blob, 256)
+            .then((dataUrl) => {
+              if (!dataUrl) {
+                resolve(null);
+                return;
+              }
+              const image = new Image();
+              image.onload = () =>
+                resolve({
+                  dataUrl,
+                  width: image.width,
+                  height: image.height,
+                });
+              image.onerror = () =>
+                resolve({
+                  dataUrl,
+                  width: 0,
+                  height: 0,
+                });
+              image.src = dataUrl;
+            })
+            .catch(() => resolve(null));
         },
         error: (error) => {
           console.warn('Error cargando asset para PDF', url, error);

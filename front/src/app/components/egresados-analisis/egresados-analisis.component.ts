@@ -164,7 +164,7 @@ export class EgresadosAnalisisComponent implements OnInit {
     { key: 'secciones.gestionRecursos.p13', label: 'La infraestructura y equipamiento eran adecuados para el aprendizaje.' },
     { key: 'secciones.gestionRecursos.p14', label: 'La biblioteca y recursos digitales eran suficientes.' },
     { key: 'secciones.gestionRecursos.p15', label: 'Existian mecanismos formalizados para atender solicitudes de estudiantes.' },
-    { key: 'secciones.gestionRecursos.p16', label: 'La gestion del cuerpo directivo permitia una conduccion eficaz.' },
+    { key: 'secciones.gestionRecursos.p16', label: 'La gestión del cuerpo directivo permitia una conduccion eficaz.' },
     { key: 'secciones.autorregulacion.p17', label: 'Participe en procesos de autoevaluacion de la carrera.' },
     { key: 'secciones.autorregulacion.p18', label: 'Observe mejoras durante mi formacion por aseguramiento de calidad.' },
     { key: 'secciones.autorregulacion.p19', label: 'La carrera apoya insercion profesional y seguimiento de titulados.' },
@@ -433,15 +433,67 @@ export class EgresadosAnalisisComponent implements OnInit {
       const res = await fetch(path);
       if (!res.ok) return null;
       const blob = await res.blob();
-      return await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
+      return await this.blobToPngDataUrl(blob, 256);
     } catch {
       return null;
     }
+  }
+
+  private blobToJpegDataUrl(blob: Blob, quality: number): Promise<string | null> {
+    return new Promise((resolve) => {
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth || img.width;
+        canvas.height = img.naturalHeight || img.height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          URL.revokeObjectURL(url);
+          resolve(null);
+          return;
+        }
+        ctx.drawImage(img, 0, 0);
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+        URL.revokeObjectURL(url);
+        resolve(dataUrl);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve(null);
+      };
+      img.src = url;
+    });
+  }
+
+  private blobToPngDataUrl(blob: Blob, maxWidth: number): Promise<string | null> {
+    return new Promise((resolve) => {
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => {
+        const naturalW = img.naturalWidth || img.width;
+        const naturalH = img.naturalHeight || img.height;
+        const scale = naturalW > maxWidth ? maxWidth / naturalW : 1;
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(naturalW * scale));
+        canvas.height = Math.max(1, Math.round(naturalH * scale));
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          URL.revokeObjectURL(url);
+          resolve(null);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/png');
+        URL.revokeObjectURL(url);
+        resolve(dataUrl);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve(null);
+      };
+      img.src = url;
+    });
   }
 
   private drawPdfHeader(
@@ -468,7 +520,8 @@ export class EgresadosAnalisisComponent implements OnInit {
 
     const drawLogo = (dataUrl: string | null | undefined, x: number, y: number, w: number, h: number) => {
       if (!dataUrl) return;
-      doc.addImage(dataUrl, 'PNG', x, y, w, h);
+      const format = dataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+      doc.addImage(dataUrl, format, x, y, w, h);
     };
 
     drawLogo(opts.logoLeft, margin, 16, 76, 56);
@@ -537,6 +590,9 @@ export class EgresadosAnalisisComponent implements OnInit {
     const radius = Math.floor(size / 2) - 2;
     let start = -Math.PI / 2;
 
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, size, size);
+
     for (const seg of segments) {
       const angle = (seg.pct / 100) * Math.PI * 2;
       ctx.beginPath();
@@ -554,7 +610,7 @@ export class EgresadosAnalisisComponent implements OnInit {
     ctx.lineWidth = 1;
     ctx.stroke();
 
-    return canvas.toDataURL('image/png');
+    return canvas.toDataURL('image/jpeg', 0.75);
   }
 
   private drawConclusionBlock(
@@ -741,7 +797,8 @@ export class EgresadosAnalisisComponent implements OnInit {
       const imgX = x + padding;
       const imgY = yPos + padding + titleLines.length * titleLineH + 6;
       if (imgData) {
-        doc.addImage(imgData, 'PNG', imgX, imgY, chartSize, chartSize);
+        const format = imgData.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+        doc.addImage(imgData, format, imgX, imgY, chartSize, chartSize);
       }
 
       let ly = imgY + chartSize + 10;
@@ -1101,7 +1158,8 @@ export class EgresadosAnalisisComponent implements OnInit {
       const imgX = x + padding;
       const imgY = yPos + padding + titleLines.length * titleLineH + 6;
       if (imgData) {
-        doc.addImage(imgData, 'PNG', imgX, imgY, chartSize, chartSize);
+        const format = imgData.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+        doc.addImage(imgData, format, imgX, imgY, chartSize, chartSize);
       }
 
       let ly = imgY + chartSize + 10;
