@@ -197,7 +197,7 @@ export const routes: Routes = [
   {
     path: 'egresados/registro',
     canActivate: [authGuard, roleGuard],
-    data: { allowedRoles: ['jefatura'] },
+    data: { allowedRoles: ['jefatura', 'vinculacion'] },
     loadComponent: () =>
       import('./components/egresados-registro/egresados-registro.component')
         .then(m => m.EgresadosRegistroComponent),
@@ -205,7 +205,7 @@ export const routes: Routes = [
   {
     path: 'egresados/actividades',
     canActivate: [authGuard, roleGuard],
-    data: { allowedRoles: ['jefatura'], soloEgresados: true },
+    data: { allowedRoles: ['jefatura', 'vinculacion'], soloEgresados: true },
     loadComponent: () =>
       import('./components/actividades-estudiantes/actividades-estudiantes.component')
         .then(m => m.ActividadesEstudiantesComponent),
@@ -213,7 +213,7 @@ export const routes: Routes = [
   {
     path: 'egresados/encuestas',
     canActivate: [authGuard, roleGuard],
-    data: { allowedRoles: ['jefatura'] },
+    data: { allowedRoles: ['jefatura', 'vinculacion'] },
     loadComponent: () =>
       import('./components/egresados-encuestas/egresados-encuestas.component')
         .then(m => m.EgresadosEncuestasComponent),
@@ -221,7 +221,7 @@ export const routes: Routes = [
   {
     path: 'egresados/encuestas-actividades',
     canActivate: [authGuard, roleGuard],
-    data: { allowedRoles: ['jefatura'] },
+    data: { allowedRoles: ['jefatura', 'vinculacion'] },
     loadComponent: () =>
       import('./components/egresados-encuestas-actividades/egresados-encuestas-actividades.component')
         .then(m => m.EgresadosEncuestasActividadesComponent),
@@ -229,7 +229,7 @@ export const routes: Routes = [
   {
     path: 'egresados/analisis',
     canActivate: [authGuard, roleGuard],
-    data: { allowedRoles: ['jefatura'] },
+    data: { allowedRoles: ['jefatura', 'vinculacion'] },
     loadComponent: () =>
       import('./components/egresados-analisis/egresados-analisis.component')
         .then(m => m.EgresadosAnalisisComponent),

@@ -311,12 +311,12 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
             route: '/egresados/encuestas-actividades',
           },
           {
-            label: 'Encuestas',
+            label: 'Encuestas de egresados',
             icon: 'assignment',
             route: '/egresados/encuestas',
           },
           {
-            label: 'Analisis de datos',
+            label: 'Análisis de datos',
             icon: 'analytics',
             route: '/egresados/analisis',
           },
@@ -348,6 +348,18 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
           { label: 'Registrar actividad', icon: 'playlist_add', route: '/vinculacion/actividades-pm' },
           { label: 'Gestionar actividad', icon: 'manage_search', route: '/vinculacion/actividades-pm/gestion' },
           { label: 'Encuestas de actividad', icon: 'assignment', route: '/encuestas-vinculacion' },
+        ],
+      },
+      {
+        id: 'egresados',
+        title: 'Egresados y Empleabilidad',
+        icon: 'work',
+        items: [
+          { label: 'Registro de egresados', icon: 'how_to_reg', route: '/egresados/registro' },
+          { label: 'Actividades', icon: 'event_note', route: '/egresados/actividades' },
+          { label: 'Encuestas de actividades', icon: 'assignment', route: '/egresados/encuestas-actividades' },
+          { label: 'Encuestas de egresados', icon: 'assignment', route: '/egresados/encuestas' },
+          { label: 'Análisis de datos', icon: 'analytics', route: '/egresados/analisis' },
         ],
       },
     ];
