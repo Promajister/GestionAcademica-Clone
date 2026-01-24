@@ -36,6 +36,19 @@ enum TipoPregunta {
   CERRADA
 }
 
+enum TipoPostgrado {
+  DIPLOMADO
+  MAGISTER
+  DOCTORADO
+  OTRO
+}
+
+enum EstadoPostgrado {
+  EN_CURSO
+  FINALIZADO
+}
+
+
 /////////////////////////////////
 //     MODELOS PRINCIPALES
 /////////////////////////////////
@@ -61,6 +74,8 @@ model Estudiante {
   practicas  Practica[]
   historial  HistorialEvento[]
   empleabilidad Empleabilidad?
+  egresadoFicha EgresadoFicha?
+
   actividadesEgresado ActividadEgresadoParticipante[]
 
   @@map("estudiante")
@@ -796,4 +811,47 @@ model EstudianteActividadVinculacion {
   actividadVinculacion   ActividadVinculacion @relation(fields: [actividadVinculacionId], references: [id], onDelete: Cascade)
 
   @@map("actividad_vinculacion_estudiante")
+}
+
+model EgresadoFicha {
+  id            Int        @id @default(autoincrement())
+  estudianteRut String     @unique
+  estudiante    Estudiante @relation(fields: [estudianteRut], references: [rut], onDelete: Cascade)
+
+  // Datos egresado (extra a Estudiante)
+  nacionalidad    String?
+  anioEgreso      Int?
+  notaTitulacion  Float?
+  fechaDefensa    DateTime?
+
+  // Contacto “final”
+  celular   String?
+  email     String?
+  direccion String?
+  region    String?
+  ciudad    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  postgrados EgresadoPostgrado[]
+
+  @@map("egresado_ficha")
+}
+
+model EgresadoPostgrado {
+  id             Int           @id @default(autoincrement())
+  egresadoFichaId Int
+  egresadoFicha  EgresadoFicha @relation(fields: [egresadoFichaId], references: [id], onDelete: Cascade)
+
+  tipo        TipoPostgrado
+  institucion String
+  anioInicio  Int?
+  anioTermino Int?
+  estado      EstadoPostgrado
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("egresado_postgrado")
 }

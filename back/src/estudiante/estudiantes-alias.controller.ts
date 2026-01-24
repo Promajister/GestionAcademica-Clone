@@ -1,18 +1,4 @@
-import {
-  BadRequestException,
-  Body,
-  Controller,
-  Get,
-  Patch,
-  Post,
-  Put,
-  Query,
-  UploadedFile,
-  UseGuards,
-  UseInterceptors,
-  UsePipes,
-  ValidationPipe,
-} from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Patch, Post, Put, Query, UploadedFile, UseGuards, UseInterceptors, UsePipes, ValidationPipe, Delete, ParseIntPipe } from '@nestjs/common';
 import { EstudianteService } from './estudiante.service';
 import { QueryEstudianteDto } from './dto/query-estudiante.dto';
 import { UpdateEgresadoDto } from './dto/update-egresado.dto';
@@ -23,6 +9,10 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
+import { UpsertEgresadoFichaDto } from './dto/upsert-egresado-ficha.dto';
+import { CreatePostgradoDto } from './dto/create-postgrado.dto';
+import { UpdatePostgradoDto } from './dto/update-postgrado.dto';
+
 
 @Controller('estudiantes')
 @UseGuards(JwtCookieAuthGuard, RolesGuard)
@@ -51,6 +41,38 @@ export class EstudiantesAliasController {
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   upsertEmpleabilidad(@Param('rut') rut: string, @Body() body: UpdateEmpleabilidadDto) {
     return this.service.upsertEmpleabilidad(rut, body);
+  }
+
+  @Put(':rut/egresado-ficha')
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  upsertEgresadoFicha(
+    @Param('rut') rut: string,
+    @Body() body: UpsertEgresadoFichaDto,
+  ) {
+    return this.service.upsertEgresadoFicha(rut, body);
+  }
+
+  @Post(':rut/postgrados')
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  createPostgrado(
+    @Param('rut') rut: string,
+    @Body() body: CreatePostgradoDto,
+  ) {
+    return this.service.createPostgrado(rut, body);
+  }
+
+  @Put('postgrados/:id')
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  updatePostgrado(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: UpdatePostgradoDto,
+  ) {
+    return this.service.updatePostgrado(id, body);
+  }
+
+  @Delete('postgrados/:id')
+  deletePostgrado(@Param('id', ParseIntPipe) id: number) {
+    return this.service.deletePostgrado(id);
   }
 
   @Post('import')

@@ -1,21 +1,19 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { QueryEstudianteDto } from './dto/query-estudiante.dto';
 import dayjs from 'dayjs';
 import { Workbook } from 'exceljs';
 
+import { TipoPostgrado, EstadoPostgrado } from '@prisma/client';
+import { UpsertEgresadoFichaDto } from './dto/upsert-egresado-ficha.dto';
+import { CreatePostgradoDto } from './dto/create-postgrado.dto';
+import { UpdatePostgradoDto } from './dto/update-postgrado.dto';
+
 @Injectable()
 export class EstudianteService {
   constructor(private prisma: PrismaService) {}
 
-  /* ============================
-     LISTADO
-  ============================ */
   async findAll(q: QueryEstudianteDto) {
     const nombreTerm = q.nombre?.trim();
     const rutRaw = q.rut?.trim();
@@ -113,9 +111,6 @@ export class EstudianteService {
     }));
   }
 
-  /* ============================
-     DETALLE
-  ============================ */
   async findOne(rut: string) {
     const normalizedRut = this.normalizeRut(rut);
 
@@ -125,26 +120,31 @@ export class EstudianteService {
       },
       include: {
         practicas: {
-  orderBy: { fecha_inicio: 'desc' },
-  include: {
-    centro: {
-      select: {
-        id: true,
-        nombre: true,
-        tipo: true,
-        region: true,
-        comuna: true,
-        direccion: true,
-        telefono: true,
-        correo: true,
-      },
-    },
-    practicaColaboradores: { include: { colaborador: true } },
-    practicaTutores: { include: { tutor: true } },
-  },
-},
+          orderBy: { fecha_inicio: 'desc' },
+          include: {
+            centro: {
+              select: {
+                id: true,
+                nombre: true,
+                tipo: true,
+                region: true,
+                comuna: true,
+                direccion: true,
+                telefono: true,
+                correo: true,
+              },
+            },
+            practicaColaboradores: { include: { colaborador: true } },
+            practicaTutores: { include: { tutor: true } },
+          },
+        },
 
-        
+        empleabilidad: true,
+        egresadoFicha: {
+          include: {
+            postgrados: true,
+          },
+        },
       },
     });
 
@@ -179,23 +179,37 @@ export class EstudianteService {
     return { ...estudiante, actividades };
   }
 
-  /* ============================
-     EGRESADOS
-  ============================ */
   async updateEgresado(rut: string, egresado: boolean) {
     const normalizedRut = this.normalizeRut(rut);
     const estudiante = await this.prisma.estudiante.findFirst({
       where: { OR: [{ rut }, { rut: normalizedRut }] },
+      select: { rut: true, egresado: true, email: true, direccion: true, fono: true },
     });
 
-    if (!estudiante) {
-      throw new NotFoundException('Estudiante no encontrado');
-    }
+    if (!estudiante) throw new NotFoundException('Estudiante no encontrado');
 
-    return this.prisma.estudiante.update({
-      where: { rut: estudiante.rut },
-      data: { egresado },
-      select: { rut: true, nombre: true, egresado: true },
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await tx.estudiante.update({
+        where: { rut: estudiante.rut },
+        data: { egresado },
+        select: { rut: true, nombre: true, egresado: true },
+      });
+
+      // ✅ si pasa a egresado, asegura ficha
+      if (egresado) {
+        await tx.egresadoFicha.upsert({
+          where: { estudianteRut: estudiante.rut },
+          update: {},
+          create: {
+            estudianteRut: estudiante.rut,
+            // opcional: precargar contacto desde Estudiante si quieres
+            email: estudiante.email ?? null,
+            direccion: estudiante.direccion ?? null,
+            celular: estudiante.fono ? String(estudiante.fono) : null, // si quieres celular string
+          },
+        });
+      }
+      return updated;
     });
   }
 
@@ -235,9 +249,6 @@ export class EstudianteService {
     });
   }
 
-  /* ============================
-     IMPORTACIÓN XLSX (SOLUCIONADA)
-  ============================ */
   async importFromXlsx(file: Express.Multer.File) {
     if (!file?.buffer?.length) {
       throw new BadRequestException('Archivo vacío o no recibido');
@@ -374,9 +385,6 @@ try {
     return summary;
   }
 
-  /* ============================
-     HELPERS
-  ============================ */
   private normalizeRut(raw: string): string {
     return raw?.replace(/[.\s-]/g, '').toUpperCase() ?? '';
   }
@@ -471,4 +479,99 @@ try {
     const n = Number(candidate);
     return Number.isFinite(n) ? n : null;
   }
+
+  async upsertEgresadoFicha(rut: string, dto: UpsertEgresadoFichaDto) {
+    const normalizedRut = this.normalizeRut(rut);
+
+    const estudiante = await this.prisma.estudiante.findFirst({
+      where: { OR: [{ rut }, { rut: normalizedRut }] },
+      select: { rut: true, egresado: true },
+    });
+
+    if (!estudiante) {
+      throw new NotFoundException('Estudiante no encontrado');
+    }
+
+    if (!estudiante.egresado) {
+      throw new BadRequestException('El estudiante no está marcado como egresado');
+    }
+
+    const ymdToDateLocal = (ymd: string): Date => {
+      const [y, m, d] = ymd.split('-').map(Number);
+      return new Date(y, m - 1, d);
+    };
+
+    const data = {
+      nacionalidad: dto.nacionalidad?.trim() || null,
+      anioEgreso: dto.anioEgreso ?? null,
+      notaTitulacion: dto.notaTitulacion ?? null,
+      fechaDefensa: dto.fechaDefensa ? ymdToDateLocal(dto.fechaDefensa) : null,
+
+      celular: dto.celular?.trim() || null,
+      email: dto.email?.trim() || null,
+      direccion: dto.direccion?.trim() || null,
+      region: dto.region?.trim() || null,
+      ciudad: dto.ciudad?.trim() || null,
+    };
+
+    return this.prisma.egresadoFicha.upsert({
+      where: { estudianteRut: estudiante.rut },
+      update: data,
+      create: { estudianteRut: estudiante.rut, ...data },
+      include: { postgrados: true },
+    });
+  }
+
+  async createPostgrado(rut: string, dto: CreatePostgradoDto) {
+    const normalizedRut = this.normalizeRut(rut);
+
+    const estudiante = await this.prisma.estudiante.findFirst({
+      where: { OR: [{ rut }, { rut: normalizedRut }] },
+      select: { rut: true, egresado: true },
+    });
+    if (!estudiante) throw new NotFoundException('Estudiante no encontrado');
+    if (!estudiante.egresado) throw new BadRequestException('El estudiante no está marcado como egresado');
+
+    // asegura ficha
+    const ficha = await this.prisma.egresadoFicha.upsert({
+      where: { estudianteRut: estudiante.rut },
+      update: {},
+      create: { estudianteRut: estudiante.rut },
+      select: { id: true },
+    });
+
+    return this.prisma.egresadoPostgrado.create({
+      data: {
+        egresadoFichaId: ficha.id,
+        tipo: dto.tipo as TipoPostgrado,
+        institucion: dto.institucion.trim(),
+        anioInicio: dto.anioInicio ?? null,
+        anioTermino: dto.anioTermino ?? null,
+        estado: dto.estado as EstadoPostgrado,
+      },
+    });
+  }
+
+  async updatePostgrado(id: number, dto: UpdatePostgradoDto) {
+    const exists = await this.prisma.egresadoPostgrado.findUnique({ where: { id } });
+    if (!exists) throw new NotFoundException('Postgrado no encontrado');
+
+    return this.prisma.egresadoPostgrado.update({
+      where: { id },
+      data: {
+        ...(dto.tipo ? { tipo: dto.tipo as any } : {}),
+        ...(dto.institucion !== undefined ? { institucion: dto.institucion?.trim() || '' } : {}),
+        ...(dto.anioInicio !== undefined ? { anioInicio: dto.anioInicio ?? null } : {}),
+        ...(dto.anioTermino !== undefined ? { anioTermino: dto.anioTermino ?? null } : {}),
+        ...(dto.estado ? { estado: dto.estado as any } : {}),
+      },
+    });
+  }
+
+  async deletePostgrado(id: number) {
+    const exists = await this.prisma.egresadoPostgrado.findUnique({ where: { id } });
+    if (!exists) throw new NotFoundException('Postgrado no encontrado');
+    await this.prisma.egresadoPostgrado.delete({ where: { id } });
+    return { ok: true };
+  }  
 }
