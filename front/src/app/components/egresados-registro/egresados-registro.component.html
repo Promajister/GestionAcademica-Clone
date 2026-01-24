@@ -176,32 +176,7 @@
             <!-- ===================== -->
             <!-- DATOS ACADÉMICOS -->
             <!-- ===================== -->
-            <div class="sec">
-              <div class="sec__head">
-                <mat-icon>work</mat-icon>
-                <h3>Empleabilidad</h3>
-              </div>
-
-              @if (detalle.empleabilidad) {
-                <div class="kv-grid">
-                  <div class="kv kv--full">
-                    <div class="k">Lugar de trabajo</div>
-                    <div class="v">{{ detalle.empleabilidad.lugarTrabajo || '-' }}</div>
-                  </div>
-                  <div class="kv">
-                    <div class="k">Sector laboral</div>
-                    <div class="v">{{ formatEmpleabilidadSector(detalle.empleabilidad) }}</div>
-                  </div>
-                  <div class="kv">
-                    <div class="k">Cargo actual</div>
-                    <div class="v">{{ formatEmpleabilidadCargo(detalle.empleabilidad) }}</div>
-                  </div>
-                </div>
-              } @else {
-                <div class="muted">Sin empleabilidad registrada.</div>
-              }
-            </div>
-
+            
             <div class="sec">
               <div class="sec__head">
                 <mat-icon>school</mat-icon>
