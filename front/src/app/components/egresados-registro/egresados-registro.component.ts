@@ -67,9 +67,6 @@ export class EgresadosRegistroComponent implements OnInit, OnDestroy {
   estudiantesModal: EstudianteResumen[] = [];
   seleccionados = new Set<string>();
 
-  empleabilidadModalOpen = false;
-  empleabilidadSaving = false;
-  empleabilidadEditing = false;
   empleabilidadForm = {
     egresadoRut: '',
     lugarTrabajo: '',
@@ -77,9 +74,6 @@ export class EgresadosRegistroComponent implements OnInit, OnDestroy {
     sectorOtro: '',
     cargo: '',
     cargoOtro: '',
-    direccion: '',
-    email: '',
-    fono: '',
   };
   egresadoFichaModalOpen = false;
   egresadoFichaSaving = false;
@@ -163,7 +157,7 @@ export class EgresadosRegistroComponent implements OnInit, OnDestroy {
   }
 
   private syncModalBodyClass(): void {
-    if (this.modalOpen || this.empleabilidadModalOpen) {
+    if (this.modalOpen || this.egresadoFichaModalOpen || this.postgradoModalOpen) {
       this.renderer.addClass(this.doc.body, 'student-modal-open');
       return;
     }
@@ -271,31 +265,6 @@ export class EgresadosRegistroComponent implements OnInit, OnDestroy {
     this.syncModalBodyClass();
   }
 
-  abrirEmpleabilidadModal(editing = false): void {
-    if (!this.seleccionado) return;
-    this.empleabilidadEditing = editing;
-    const empleabilidad = this.detalle?.empleabilidad;
-    this.empleabilidadForm = {
-      egresadoRut: this.seleccionado.rut,
-      lugarTrabajo: empleabilidad?.lugarTrabajo ?? '',
-      sector: empleabilidad?.sector ?? '',
-      sectorOtro: empleabilidad?.sectorOtro ?? '',
-      cargo: empleabilidad?.cargo ?? '',
-      cargoOtro: empleabilidad?.cargoOtro ?? '',
-      direccion: this.detalle?.direccion ?? '',
-      email: this.detalle?.email ?? '',
-      fono: this.detalle?.fono ? String(this.detalle.fono) : '',
-    };
-    this.empleabilidadModalOpen = true;
-    this.syncModalBodyClass();
-  }
-
-  cerrarEmpleabilidadModal(): void {
-    this.empleabilidadModalOpen = false;
-    this.empleabilidadEditing = false;
-    this.syncModalBodyClass();
-  }
-
   empleabilidadValida(): boolean {
     if (!this.empleabilidadForm.egresadoRut) return false;
     if (!this.empleabilidadForm.lugarTrabajo.trim()) return false;
@@ -310,51 +279,11 @@ export class EgresadosRegistroComponent implements OnInit, OnDestroy {
     return true;
   }
 
-  guardarEmpleabilidad(): void {
-    if (!this.empleabilidadValida()) return;
-    const rut = this.empleabilidadForm.egresadoRut;
-    const telefonoRaw = this.empleabilidadForm.fono.trim();
-    const telefonoParsed = telefonoRaw
-      ? Number(telefonoRaw.replace(/[^0-9]/g, ''))
-      : null;
-    const payload = {
-      lugarTrabajo: this.empleabilidadForm.lugarTrabajo.trim(),
-      sector: this.empleabilidadForm.sector,
-      sectorOtro: this.empleabilidadForm.sector === 'otro'
-        ? this.empleabilidadForm.sectorOtro.trim()
-        : null,
-      cargo: this.empleabilidadForm.cargo,
-      cargoOtro: this.empleabilidadForm.cargo === 'otro'
-        ? this.empleabilidadForm.cargoOtro.trim()
-        : null,
-      direccion: this.empleabilidadForm.direccion.trim() || null,
-      email: this.empleabilidadForm.email.trim() || null,
-      fono: Number.isFinite(telefonoParsed) ? telefonoParsed : null,
-    };
-
-    this.empleabilidadSaving = true;
-    this.estudiantesService.guardarEmpleabilidad(rut, payload).subscribe({
-      next: () => {
-        this.empleabilidadSaving = false;
-        this.snack.open('Empleabilidad guardada.', 'OK', { duration: 3000 });
-        this.cerrarEmpleabilidadModal();
-        if (this.seleccionado) {
-          this.obtenerDetalle(this.seleccionado.rut, false);
-        }
-      },
-      error: () => {
-        this.empleabilidadSaving = false;
-        this.snack.open('No se pudo guardar la empleabilidad.', 'Cerrar', {
-          duration: 4000,
-        });
-      },
-    });
-  }
-
   abrirEgresadoFichaModal(): void {
     if (!this.detalle || !this.detalle.egresado) return;
 
     const f = this.detalle.egresadoFicha;
+    const empleabilidad = this.detalle.empleabilidad;
     this.egresadoFichaForm = {
       nacionalidad: f?.nacionalidad ?? '',
       anioEgreso: f?.anioEgreso ?? null,
@@ -366,6 +295,22 @@ export class EgresadosRegistroComponent implements OnInit, OnDestroy {
       direccion: f?.direccion ?? '',
       region: f?.region ?? '',
       ciudad: f?.ciudad ?? '',
+    };
+    this.empleabilidadForm = {
+      egresadoRut: this.seleccionado?.rut ?? '',
+      lugarTrabajo: empleabilidad?.lugarTrabajo ?? '',
+      sector: empleabilidad?.sector ?? '',
+      sectorOtro: empleabilidad?.sectorOtro ?? '',
+      cargo: empleabilidad?.cargo ?? '',
+      cargoOtro: empleabilidad?.cargoOtro ?? '',
+    };
+    this.postgradoEditId = null;
+    this.postgradoForm = {
+      tipo: 'DIPLOMADO',
+      institucion: '',
+      anioInicio: null,
+      anioTermino: null,
+      estado: 'EN_CURSO',
     };
 
     this.egresadoFichaModalOpen = true;
@@ -384,6 +329,34 @@ export class EgresadosRegistroComponent implements OnInit, OnDestroy {
   cerrarEgresadoFichaModal(): void {
     this.egresadoFichaModalOpen = false;
     this.syncModalBodyClass();
+  }
+
+  private hasEmpleabilidadInput(): boolean {
+    return Boolean(
+      this.empleabilidadForm.lugarTrabajo.trim()
+      || this.empleabilidadForm.sector
+      || this.empleabilidadForm.sectorOtro.trim()
+      || this.empleabilidadForm.cargo
+      || this.empleabilidadForm.cargoOtro.trim(),
+    );
+  }
+
+  private hasPostgradoInput(): boolean {
+    return Boolean(
+      this.postgradoForm.institucion.trim()
+      || this.postgradoForm.anioInicio !== null
+      || this.postgradoForm.anioTermino !== null,
+    );
+  }
+
+  private validarAnioPostgrado(valor: number | null): boolean {
+    if (valor === null) return true;
+    return valor >= 1900 && valor <= 2100;
+  }
+
+  private validarRangoPostgrado(anioInicio: number | null, anioTermino: number | null): boolean {
+    if (anioInicio === null || anioTermino === null) return true;
+    return anioTermino >= anioInicio;
   }
 
   guardarEgresadoFicha(): void {
@@ -427,7 +400,64 @@ export class EgresadosRegistroComponent implements OnInit, OnDestroy {
     };
 
     this.egresadoFichaSaving = true;
-    this.estudiantesService.upsertEgresadoFicha(rut, payload).subscribe({
+    const ops = [this.estudiantesService.upsertEgresadoFicha(rut, payload)];
+    if (this.hasEmpleabilidadInput()) {
+      if (!this.empleabilidadValida()) {
+        this.egresadoFichaSaving = false;
+        this.snack.open('Completa los campos obligatorios de empleabilidad.', 'Cerrar', {
+          duration: 3500,
+        });
+        return;
+      }
+      const empleabilidadPayload = {
+        lugarTrabajo: this.empleabilidadForm.lugarTrabajo.trim(),
+        sector: this.empleabilidadForm.sector,
+        sectorOtro: this.empleabilidadForm.sector === 'otro'
+          ? this.empleabilidadForm.sectorOtro.trim()
+          : null,
+        cargo: this.empleabilidadForm.cargo,
+        cargoOtro: this.empleabilidadForm.cargo === 'otro'
+          ? this.empleabilidadForm.cargoOtro.trim()
+          : null,
+      };
+      ops.push(this.estudiantesService.guardarEmpleabilidad(rut, empleabilidadPayload));
+    }
+
+    if (this.hasPostgradoInput()) {
+      if (!this.postgradoForm.institucion.trim()) {
+        this.egresadoFichaSaving = false;
+        this.snack.open('La institucion del postgrado es obligatoria.', 'Cerrar', {
+          duration: 3500,
+        });
+        return;
+      }
+      const anioInicio = toNumOrNull(this.postgradoForm.anioInicio);
+      const anioTermino = toNumOrNull(this.postgradoForm.anioTermino);
+      if (!this.validarAnioPostgrado(anioInicio) || !this.validarAnioPostgrado(anioTermino)) {
+        this.egresadoFichaSaving = false;
+        this.snack.open('El año del postgrado debe estar entre 1900 y 2100.', 'Cerrar', {
+          duration: 3500,
+        });
+        return;
+      }
+      if (!this.validarRangoPostgrado(anioInicio, anioTermino)) {
+        this.egresadoFichaSaving = false;
+        this.snack.open('El año de termino no puede ser menor al de inicio.', 'Cerrar', {
+          duration: 3500,
+        });
+        return;
+      }
+      const postgradoPayload = {
+        tipo: this.postgradoForm.tipo,
+        institucion: this.postgradoForm.institucion.trim(),
+        anioInicio,
+        anioTermino,
+        estado: this.postgradoForm.estado,
+      };
+      ops.push(this.estudiantesService.crearPostgrado(rut, postgradoPayload));
+    }
+
+    forkJoin(ops).subscribe({
       next: () => {
         this.egresadoFichaSaving = false;
         this.snack.open('Ficha de egresado guardada.', 'OK', { duration: 3000 });
@@ -641,6 +671,34 @@ export class EgresadosRegistroComponent implements OnInit, OnDestroy {
     return this.obtenerLabelOpcion(empleabilidad.cargo, this.cargoOptions);
   }
 
+  formatPostgradoEstado(estado?: string | null): string {
+    if (!estado) return '-';
+    return this.obtenerLabelOpcion(estado, this.estadoPostgradoOptions);
+  }
+
+  formatPostgradoTipo(tipo?: string | null): string {
+    if (!tipo) return '-';
+    return this.obtenerLabelOpcion(tipo, this.tipoPostgradoOptions);
+  }
+
+  formatSistemaIngreso(value?: string | null): string {
+    if (!value) return '-';
+    return value
+      .toString()
+      .toLowerCase()
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, (match) => match.toUpperCase());
+  }
+
+  formatGenero(value?: string | null): string {
+    if (!value) return '-';
+    return value
+      .toString()
+      .toLowerCase()
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, (match) => match.toUpperCase());
+  }
+
   private async cargarLogo(
     path: string,
   ): Promise<{ data: string; width: number; height: number } | null> {
@@ -767,7 +825,7 @@ export class EgresadosRegistroComponent implements OnInit, OnDestroy {
       doc.text('FICHA DEL EGRESADO', pageWidth / 2, 36, { align: 'center' as any });
 
       setFont(10, 'normal', colors.muted);
-      doc.text('Registro de egresados', pageWidth / 2, 56, { align: 'center' as any });
+      doc.text('Egresados', pageWidth / 2, 56, { align: 'center' as any });
 
       setFont(9, 'normal', colors.muted);
       doc.text(emitidoText, pageWidth / 2, 72, { align: 'center' as any });
@@ -793,10 +851,6 @@ export class EgresadosRegistroComponent implements OnInit, OnDestroy {
 
     drawHeader();
     y = contentStartY();
-
-    const now = new Date();
-    const fecha = formatDateEs(now);
-    const hora = now.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
 
     setFont(13, 'bold', colors.text);
     doc.text(safe(detalle.nombre), pageWidth / 2, y, { align: 'center' as any });

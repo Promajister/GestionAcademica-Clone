@@ -296,7 +296,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
         icon: 'work',
         items: [
           {
-            label: 'Registro de egresados',
+            label: 'Egresados',
             icon: 'how_to_reg',
             route: '/egresados/registro',
           },
