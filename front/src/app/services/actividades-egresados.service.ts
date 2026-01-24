@@ -193,4 +193,35 @@ export class ActividadesEgresadosService {
     const path = archivoPath.startsWith('/') ? archivoPath : `/${archivoPath}`;
     return `${API_BASE_URL}${path}`;
   }
+
+  listarPorEgresadoRut(
+      rut: string,
+      params?: QueryActividadParams
+    ): Observable<ActividadResponse> {
+      let httpParams = new HttpParams();
+
+      // params page/limit/etc
+      if (params) {
+        Object.keys(params).forEach((key) => {
+          const value = params[key as keyof QueryActividadParams];
+          if (value !== undefined && value !== null && value !== '') {
+            httpParams = httpParams.set(key, value.toString());
+          }
+        });
+      }
+
+      // filtro por rut (query param)
+      httpParams = httpParams.set('egresadoRut', rut);
+
+      return this.http
+        .get<ActividadEgresadosResponse>(API_URL, { params: httpParams })
+        .pipe(
+          map((res) => ({
+            ...res,
+            items: (res.items || []).map((item) => this.mapActividad(item)),
+          }))
+        );
+    }
+
+
 }

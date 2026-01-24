@@ -4,6 +4,8 @@ import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 export type EstadoPractica = 'EN_CURSO' | 'APROBADO' | 'REPROBADO';
+export type TipoPostgrado = 'DIPLOMADO' | 'MAGISTER' | 'DOCTORADO' | 'OTRO';
+export type EstadoPostgrado = 'EN_CURSO' | 'FINALIZADO';
 
 const API_URL = `${environment.apiUrl}/estudiantes`;
 
@@ -77,7 +79,8 @@ export interface EstudianteDetalle extends EstudianteResumen {
   promedio?: number | null;
   practicas: PracticaDetalle[];
   actividades: Actividad[];
-  empleabilidad?: EmpleabilidadDetalle | null;
+  empleabilidad?: Empleabilidad | null;
+  egresadoFicha?: EgresadoFicha | null;
 }
 
 export interface EmpleabilidadPayload {
@@ -103,6 +106,69 @@ export interface EstudianteQuery {
   egresado?: boolean;
   page?: number;
   limit?: number;
+}
+
+export interface EgresadoPostgrado {
+  id: number;
+  tipo: 'DIPLOMADO' | 'MAGISTER' | 'DOCTORADO' | 'OTRO';
+  institucion: string;
+  anioInicio?: number | null;
+  anioTermino?: number | null;
+  estado: 'EN_CURSO' | 'FINALIZADO';
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface EgresadoFicha {
+  id: number;
+  estudianteRut: string;
+
+  nacionalidad?: string | null;
+  anioEgreso?: number | null;
+  notaTitulacion?: number | null;
+  fechaDefensa?: string | null;
+
+  celular?: string | null;
+  email?: string | null;
+  direccion?: string | null;
+  region?: string | null;
+  ciudad?: string | null;
+
+  postgrados?: EgresadoPostgrado[];
+}
+
+export interface Empleabilidad {
+  id: number;
+  estudianteRut: string;
+  lugarTrabajo: string;
+  sector: string;
+  sectorOtro?: string | null;
+  cargo: string;
+  cargoOtro?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+
+export interface UpsertEgresadoFichaPayload {
+  nacionalidad?: string | null;
+  anioEgreso?: number | null;
+  notaTitulacion?: number | null;
+  fechaDefensa?: string | null;
+
+  celular?: string | null;
+  email?: string | null;
+  direccion?: string | null;
+  region?: string | null;
+  ciudad?: string | null;
+}
+
+export interface PostgradoPayload {
+  tipo: TipoPostgrado;
+  institucion: string;
+  anioInicio?: number | null;
+  anioTermino?: number | null;
+  estado: EstadoPostgrado;
 }
 
 export interface ImportSummary {
@@ -146,5 +212,21 @@ export class EstudiantesService {
 
   guardarEmpleabilidad(rut: string, payload: EmpleabilidadPayload): Observable<any> {
     return this.http.put(`${API_URL}/${rut}/empleabilidad`, payload);
+  }
+  
+  upsertEgresadoFicha(rut: string, payload: UpsertEgresadoFichaPayload): Observable<any> {
+    return this.http.put(`${API_URL}/${rut}/egresado-ficha`, payload);
+  }
+
+  crearPostgrado(rut: string, payload: PostgradoPayload): Observable<any> {
+    return this.http.post(`${API_URL}/${rut}/postgrados`, payload);
+  }
+
+  actualizarPostgrado(id: number, payload: Partial<PostgradoPayload>): Observable<any> {
+    return this.http.put(`${API_URL}/postgrados/${id}`, payload);
+  }
+
+  eliminarPostgrado(id: number): Observable<any> {
+    return this.http.delete(`${API_URL}/postgrados/${id}`);
   }
 }
