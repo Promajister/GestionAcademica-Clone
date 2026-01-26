@@ -1,4 +1,4 @@
-import { IsDateString, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+﻿import { IsDateString, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class CreateActividadPracticaDto {
   @IsString()
@@ -6,13 +6,13 @@ export class CreateActividadPracticaDto {
   @MaxLength(200)
   titulo: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty({ message: 'La descripción es obligatoria' })
-  descripcion: string;
+  descripcion?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty({ message: 'Debe indicar el tallerista asociado' })
-  tallerista: string;
+  tallerista?: string;
 
   @IsString()
   @IsNotEmpty({ message: 'Debe indicar el estudiante asociado' })
@@ -34,3 +34,8 @@ export class CreateActividadPracticaDto {
   @IsString()
   evidenciaUrl?: string; // PDF o PNG
 }
+
+
+
+
+

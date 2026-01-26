@@ -895,7 +895,7 @@
                     </mat-option>
                   </mat-select>
                   <mat-error *ngIf="form.get('participantes.instTipo')?.touched && form.get('participantes.instTipo')?.invalid">
-                    Obligatorio
+                    Selecciona un tipo valido.
                   </mat-error>
                 </mat-form-field>
 
@@ -903,7 +903,7 @@
                   <mat-label>Nombre</mat-label>
                   <input matInput formControlName="instNombre" placeholder="Nombre institución" />
                   <mat-error *ngIf="form.get('participantes.instNombre')?.touched && form.get('participantes.instNombre')?.invalid">
-                    Obligatorio
+                    Max 150 caracteres
                   </mat-error>
                 </mat-form-field>
 

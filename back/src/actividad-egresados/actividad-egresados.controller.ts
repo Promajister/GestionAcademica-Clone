@@ -26,7 +26,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 
 @Controller('actividades-egresados')
 @UseGuards(JwtCookieAuthGuard, RolesGuard)
-@Roles('jefatura')
+@Roles('jefatura', 'vinculacion')
 export class ActividadEgresadosController {
   constructor(private readonly service: ActividadEgresadosService) {}
 

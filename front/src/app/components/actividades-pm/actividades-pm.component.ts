@@ -227,7 +227,7 @@ export class ActividadesPmComponent implements OnInit {
         fechaTermino: ['', Validators.required],
         sede: ['', Validators.required],
         lugar: [''],
-        proyectoAsociado: ['SELECCIONE', this.noSeleccioneValidator(['SELECCIONE'])],
+        proyectoAsociado: ['SELECCIONE'],
         resultados: ['', [Validators.maxLength(1000)]],
 
         tipoActividad: [null, Validators.required],
@@ -289,8 +289,8 @@ export class ActividadesPmComponent implements OnInit {
       }),
 
       participantes: this.fb.group({
-        instTipo: ['INSTITUCIÓN EXTERNA', Validators.required],
-        instNombre: ['', [Validators.required, Validators.maxLength(150)]],
+        instTipo: ['INSTITUCIÓN EXTERNA'],
+        instNombre: ['', [Validators.maxLength(150)]],
         ...this.buildParticipantesControls(),
       }),
 
@@ -1221,12 +1221,11 @@ export class ActividadesPmComponent implements OnInit {
     const g = this.form?.get('participantes') as FormGroup | null;
     if (!g) return;
 
-    const require = this.instituciones.length === 0;
     const tipoCtrl = g.get('instTipo');
     const nombreCtrl = g.get('instNombre');
 
-    tipoCtrl?.setValidators(require ? [Validators.required] : []);
-    nombreCtrl?.setValidators(require ? [Validators.required, Validators.maxLength(150)] : [Validators.maxLength(150)]);
+    tipoCtrl?.setValidators([]);
+    nombreCtrl?.setValidators([Validators.maxLength(150)]);
 
     tipoCtrl?.updateValueAndValidity({ emitEvent: false });
     nombreCtrl?.updateValueAndValidity({ emitEvent: false });

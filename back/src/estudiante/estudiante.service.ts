@@ -533,10 +533,21 @@ try {
       ciudad: dto.ciudad?.trim() || null,
     };
 
-    return this.prisma.egresadoFicha.upsert({
+    const existing = await this.prisma.egresadoFicha.findUnique({
       where: { estudianteRut: estudiante.rut },
-      update: data,
-      create: { estudianteRut: estudiante.rut, ...data },
+      select: { id: true },
+    });
+
+    if (existing) {
+      return this.prisma.egresadoFicha.update({
+        where: { estudianteRut: estudiante.rut },
+        data,
+        include: { postgrados: true },
+      });
+    }
+
+    return this.prisma.egresadoFicha.create({
+      data: { estudianteRut: estudiante.rut, ...data },
       include: { postgrados: true },
     });
   }
