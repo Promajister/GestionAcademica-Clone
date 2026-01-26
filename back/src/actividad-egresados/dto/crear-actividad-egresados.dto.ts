@@ -1,4 +1,4 @@
-import { IsBoolean, IsDateString, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsDateString, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class CreateActividadEgresadosDto {
   @IsString()
@@ -19,8 +19,8 @@ export class CreateActividadEgresadosDto {
   egresados: string; // JSON array de RUTs
 
   @IsOptional()
-  @IsBoolean()
-  tercerosAsistieron?: boolean;
+  @IsString()
+  tercerosAsistieron?: string;
 
   @IsOptional()
   @IsString()

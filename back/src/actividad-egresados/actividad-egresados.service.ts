@@ -8,6 +8,13 @@ import { QueryActividadEgresadosDto } from './dto/consulta-actividad-egresados.d
 export class ActividadEgresadosService {
   constructor(private prisma: PrismaService) {}
 
+  private parseBoolean(value?: boolean | string): boolean | undefined {
+    if (value === undefined || value === null) return undefined;
+    if (value === true || value === 'true' || value === '1') return true;
+    if (value === false || value === 'false' || value === '0') return false;
+    return undefined;
+  }
+
   private generarRutFicticio(nombre: string, index: number): string {
     const base = nombre
       .toLowerCase()
@@ -82,10 +89,11 @@ export class ActividadEgresadosService {
   async create(dto: CreateActividadEgresadosDto) {
     const fecha = dto.fechaRegistro ? new Date(dto.fechaRegistro) : new Date();
     const mes = this.obtenerMesDesdeFecha(fecha);
-    const terceros = dto.tercerosAsistieron ? this.parseTerceros(dto.terceros) : [];
+    const tercerosAsistieron = this.parseBoolean(dto.tercerosAsistieron) ?? false;
+    const terceros = tercerosAsistieron ? this.parseTerceros(dto.terceros) : [];
     const egresados = this.parseEgresados(dto.egresados);
 
-    if (dto.tercerosAsistieron && terceros.length === 0) {
+    if (tercerosAsistieron && terceros.length === 0) {
       throw new BadRequestException('Debe indicar los terceros asistentes.');
     }
 
@@ -97,7 +105,7 @@ export class ActividadEgresadosService {
         satisfaccion: null,
         lugar: dto.descripcion,
         horario: dto.horario,
-        terceros_asistieron: dto.tercerosAsistieron ?? false,
+        terceros_asistieron: tercerosAsistieron,
         fecha,
         mes,
         archivo_adjunto: dto.evidenciaUrl ?? null,
@@ -180,12 +188,13 @@ export class ActividadEgresadosService {
     const data: any = {};
     const terceros = dto.terceros !== undefined ? this.parseTerceros(dto.terceros) : null;
     const egresados = dto.egresados !== undefined ? this.parseEgresados(dto.egresados) : null;
+    const tercerosAsistieron = this.parseBoolean(dto.tercerosAsistieron);
 
     if (dto.titulo !== undefined) data.nombre_actividad = dto.titulo;
     if (dto.satisfaccion !== undefined) data.satisfaccion = dto.satisfaccion;
     if (dto.descripcion !== undefined) data.lugar = dto.descripcion;
     if (dto.horario !== undefined) data.horario = dto.horario;
-    if (dto.tercerosAsistieron !== undefined) data.terceros_asistieron = dto.tercerosAsistieron;
+    if (tercerosAsistieron !== undefined) data.terceros_asistieron = tercerosAsistieron;
     if (dto.evidenciaUrl !== undefined) data.archivo_adjunto = dto.evidenciaUrl;
 
     if (dto.fechaRegistro !== undefined) {
@@ -194,11 +203,11 @@ export class ActividadEgresadosService {
       data.mes = this.obtenerMesDesdeFecha(fecha);
     }
 
-    if (dto.tercerosAsistieron === true && terceros !== null && terceros.length === 0) {
+    if (tercerosAsistieron === true && terceros !== null && terceros.length === 0) {
       throw new BadRequestException('Debe indicar los terceros asistentes.');
     }
 
-    if (dto.tercerosAsistieron === false) {
+    if (tercerosAsistieron === false) {
       data.terceros = { deleteMany: {} };
     } else if (terceros !== null) {
       data.terceros = {

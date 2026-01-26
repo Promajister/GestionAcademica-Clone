@@ -555,16 +555,29 @@ export class ActividadesEstudiantesComponent implements OnInit {
     const tercerosAsistieron = this.formularioActividad.get('terceros_asistieron')?.value === true;
     const requiere = tercerosAsistieron && this.tercerosSeleccionados.length === 0;
 
-    this.formularioActividad.get('tercero_rut')?.clearValidators();
-    if (requiere) {
-      this.formularioActividad.get('tercero_nombre')?.setValidators([Validators.required]);
-    } else {
-      this.formularioActividad.get('tercero_rut')?.clearValidators();
-      this.formularioActividad.get('tercero_nombre')?.clearValidators();
+    const rutControl = this.formularioActividad.get('tercero_rut');
+    const nombreControl = this.formularioActividad.get('tercero_nombre');
+
+    if (!tercerosAsistieron) {
+      rutControl?.clearValidators();
+      nombreControl?.clearValidators();
+      rutControl?.setErrors(null);
+      nombreControl?.setErrors(null);
+      rutControl?.updateValueAndValidity({ emitEvent: false });
+      nombreControl?.updateValueAndValidity({ emitEvent: false });
+      return;
     }
 
-    this.formularioActividad.get('tercero_rut')?.updateValueAndValidity({ emitEvent: false });
-    this.formularioActividad.get('tercero_nombre')?.updateValueAndValidity({ emitEvent: false });
+    rutControl?.clearValidators();
+    if (requiere) {
+      nombreControl?.setValidators([Validators.required]);
+    } else {
+      nombreControl?.clearValidators();
+      nombreControl?.setErrors(null);
+    }
+
+    rutControl?.updateValueAndValidity({ emitEvent: false });
+    nombreControl?.updateValueAndValidity({ emitEvent: false });
   }
 
   private resetFormularioActividad(): void {
@@ -946,6 +959,7 @@ export class ActividadesEstudiantesComponent implements OnInit {
 
     this.tercerosSeleccionados = actividad.terceros ? [...actividad.terceros] : [];
     this.tercerosListaInvalida = false;
+    this.actualizarValidadoresTerceros();
     
     this.mostrarFormulario = true;
   }
