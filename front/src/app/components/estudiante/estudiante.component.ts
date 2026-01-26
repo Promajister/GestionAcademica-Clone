@@ -209,6 +209,15 @@ export class EstudiantesComponent implements OnInit {
     return parsed ? formatDateEs(parsed) : value;
   }
 
+  formatTextoTitulo(value?: string | null): string {
+    if (!value) return '-';
+    return value
+      .toString()
+      .toLowerCase()
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, (match) => match.toUpperCase());
+  }
+
   private async cargarLogo(
     path: string,
   ): Promise<{ data: string; width: number; height: number } | null> {
@@ -440,7 +449,7 @@ export class EstudiantesComponent implements OnInit {
   section('Datos académicos', [
     ['Carrera / Plan', safe(detalle.plan)],
     ['Año de ingreso', safe((detalle as any).anio_ingreso)],
-    ['Sistema de ingreso', safe((detalle as any).sistema_ingreso)],
+    ['Sistema de ingreso', this.formatTextoTitulo((detalle as any).sistema_ingreso)],
     ['N° inscripciones', safe((detalle as any).numero_inscripciones)],
     ['Avance', this.formatearNumero((detalle as any).avance)],
     ['Puntaje ponderado', this.formatearNumero((detalle as any).puntaje_ponderado)],

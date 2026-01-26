@@ -206,15 +206,12 @@
                     <div class="StudentsPanel">
                       <div class="FormRow FormRow--terceros">
                         <mat-form-field appearance="outline" class="FormField">
-                          <mat-label>RUT tercero</mat-label>
+                          <mat-label>RUT tercero (opcional)</mat-label>
                           <input
                             matInput
                             formControlName="tercero_rut"
                             placeholder="Ej: 12.345.678-9"
                             (blur)="buscarTerceroPorRut()" />
-                          @if (formularioActividad.get('tercero_rut')?.hasError('required') && formularioActividad.get('tercero_rut')?.touched) {
-                            <mat-error>El RUT del tercero es requerido</mat-error>
-                          }
                         </mat-form-field>
 
                         <mat-form-field appearance="outline" class="FormField">
@@ -235,21 +232,23 @@
                         </button>
                       </div>
 
-                      <div class="StudentsSelected">
-                        @if (tercerosSeleccionados.length === 0) {
-                          <div class="StudentsHint">Sin terceros agregados</div>
-                        } @else {
-                          @for (tercero of tercerosSeleccionados; track tercero.rut) {
-                            <span class="StudentChip">
-                              <span class="StudentChipText">{{ tercero.nombre }} ({{ tercero.rut }})</span>
-                              <button
-                                type="button"
-                                class="StudentChipRemove"
-                                (click)="quitarTercero(tercero.rut)"
-                                aria-label="Quitar tercero">
-                                <mat-icon>close</mat-icon>
-                              </button>
-                            </span>
+                        <div class="StudentsSelected">
+                          @if (tercerosSeleccionados.length === 0) {
+                            <div class="StudentsHint">Sin terceros agregados</div>
+                          } @else {
+                            @for (tercero of tercerosSeleccionados; track terceroKey(tercero)) {
+                              <span class="StudentChip">
+                                <span class="StudentChipText">
+                                  {{ tercero.nombre }}{{ tercero.rut ? ' (' + tercero.rut + ')' : '' }}
+                                </span>
+                                <button
+                                  type="button"
+                                  class="StudentChipRemove"
+                                  (click)="quitarTercero(tercero)"
+                                  aria-label="Quitar tercero">
+                                  <mat-icon>close</mat-icon>
+                                </button>
+                              </span>
                           }
                         }
                       </div>
@@ -379,7 +378,7 @@
     </mat-card-header>
 
     <mat-card-content class="list-body">
-      <div class="TableWrapper">
+      <div class="TableWrapper" [class.TableWrapper--egresados]="soloEgresados">
         <!-- ENCABEZADOS -->
         <div class="TableHeader">
           <div class="HeaderCell HeaderCell--name">NOMBRE ACTIVIDAD</div>
@@ -388,7 +387,7 @@
           <div class="HeaderCell HeaderCell--location">UBICACIÓN</div>
           <div class="HeaderCell HeaderCell--students">{{ personasLabelPlural | uppercase }}</div>
           <div class="HeaderCell HeaderCell--terceros">TERCEROS</div>
-          <div class="HeaderCell HeaderCell--satisfaccion">SATISFACCIÓN</div>
+          <div class="HeaderCell HeaderCell--satisfaccion" *ngIf="soloEgresados">SATISFACCIÓN</div>
           <div class="HeaderCell HeaderCell--evidence">RESPALDO</div>
           <div class="HeaderCell HeaderCell--actions">ACCIONES</div>
         </div>
@@ -419,7 +418,7 @@
             <span class="TercerosText">{{ actividad.terceros_asistieron ? 'Si' : 'No' }}</span>
           </div>
 
-          <div class="TableCell TableCell--satisfaccion">
+          <div class="TableCell TableCell--satisfaccion" *ngIf="soloEgresados">
             <span class="SatisfaccionText">{{ actividad.satisfaccion !== null && actividad.satisfaccion !== undefined ? (actividad.satisfaccion + '%') : '—' }}</span>
           </div>
 

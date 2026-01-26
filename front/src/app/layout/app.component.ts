@@ -296,7 +296,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
         icon: 'work',
         items: [
           {
-            label: 'Registro de egresados',
+            label: 'Egresados',
             icon: 'how_to_reg',
             route: '/egresados/registro',
           },
@@ -355,7 +355,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
         title: 'Egresados y Empleabilidad',
         icon: 'work',
         items: [
-          { label: 'Registro de egresados', icon: 'how_to_reg', route: '/egresados/registro' },
+          { label: 'Egresados', icon: 'how_to_reg', route: '/egresados/registro' },
           { label: 'Actividades', icon: 'event_note', route: '/egresados/actividades' },
           { label: 'Encuestas de actividades', icon: 'assignment', route: '/egresados/encuestas-actividades' },
           { label: 'Encuestas de egresados', icon: 'assignment', route: '/egresados/encuestas' },

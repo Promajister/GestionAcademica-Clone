@@ -26,7 +26,7 @@ import JSZip from 'jszip';
 import { formatDateEs, parseDateFlexible } from '../../utils/date-utils';
 
 interface Tercero {
-  rut: string;
+  rut?: string;
   nombre: string;
 }
 
@@ -326,7 +326,7 @@ export class ActividadesEstudiantesComponent implements OnInit {
             rut: typeof item?.rut === 'string' ? item.rut : '',
             nombre: typeof item?.nombre === 'string' ? item.nombre : '',
           }))
-          .filter((item: Tercero) => item.rut && item.nombre)
+          .filter((item: Tercero) => !!item.nombre)
       : [];
 
     return {
@@ -467,7 +467,7 @@ export class ActividadesEstudiantesComponent implements OnInit {
   getTercerosLabel(actividad?: Actividad | null): string {
     const terceros = actividad?.terceros ?? [];
     if (!terceros.length) return '';
-    return terceros.map((t) => `${t.nombre} (${t.rut})`).join(', ');
+    return terceros.map((t) => (t.rut ? `${t.nombre} (${t.rut})` : t.nombre)).join(', ');
   }
 
   alternarFormulario(): void {
@@ -517,10 +517,9 @@ export class ActividadesEstudiantesComponent implements OnInit {
     const rut = (this.formularioActividad.get('tercero_rut')?.value || '').trim();
     const nombre = (this.formularioActividad.get('tercero_nombre')?.value || '').trim();
 
-    if (!rut || !nombre) {
-      this.formularioActividad.get('tercero_rut')?.markAsTouched();
+    if (!nombre) {
       this.formularioActividad.get('tercero_nombre')?.markAsTouched();
-      this.snack.open('Debes ingresar RUT y nombre del tercero.', 'Cerrar', {
+      this.snack.open('Debes ingresar el nombre del tercero.', 'Cerrar', {
         duration: 3000,
         horizontalPosition: 'center',
         verticalPosition: 'bottom',
@@ -529,11 +528,13 @@ export class ActividadesEstudiantesComponent implements OnInit {
       return;
     }
 
-    const index = this.tercerosSeleccionados.findIndex((t) => t.rut === rut);
+    const tercero: Tercero = { nombre, ...(rut ? { rut } : {}) };
+    const key = this.terceroKey(tercero);
+    const index = this.tercerosSeleccionados.findIndex((t) => this.terceroKey(t) === key);
     if (index >= 0) {
-      this.tercerosSeleccionados[index] = { rut, nombre };
+      this.tercerosSeleccionados[index] = tercero;
     } else {
-      this.tercerosSeleccionados = [...this.tercerosSeleccionados, { rut, nombre }];
+      this.tercerosSeleccionados = [...this.tercerosSeleccionados, tercero];
     }
     this.tercerosListaInvalida = false;
     this.formularioActividad.patchValue({ tercero_rut: '', tercero_nombre: '' });
@@ -542,8 +543,11 @@ export class ActividadesEstudiantesComponent implements OnInit {
     this.actualizarValidadoresTerceros();
   }
 
-  quitarTercero(rut: string): void {
-    this.tercerosSeleccionados = this.tercerosSeleccionados.filter((t) => t.rut !== rut);
+  quitarTercero(tercero: Tercero): void {
+    const key = this.terceroKey(tercero);
+    this.tercerosSeleccionados = this.tercerosSeleccionados.filter(
+      (t) => this.terceroKey(t) !== key
+    );
     this.actualizarValidadoresTerceros();
   }
 
@@ -551,16 +555,29 @@ export class ActividadesEstudiantesComponent implements OnInit {
     const tercerosAsistieron = this.formularioActividad.get('terceros_asistieron')?.value === true;
     const requiere = tercerosAsistieron && this.tercerosSeleccionados.length === 0;
 
-    if (requiere) {
-      this.formularioActividad.get('tercero_rut')?.setValidators([Validators.required]);
-      this.formularioActividad.get('tercero_nombre')?.setValidators([Validators.required]);
-    } else {
-      this.formularioActividad.get('tercero_rut')?.clearValidators();
-      this.formularioActividad.get('tercero_nombre')?.clearValidators();
+    const rutControl = this.formularioActividad.get('tercero_rut');
+    const nombreControl = this.formularioActividad.get('tercero_nombre');
+
+    if (!tercerosAsistieron) {
+      rutControl?.clearValidators();
+      nombreControl?.clearValidators();
+      rutControl?.setErrors(null);
+      nombreControl?.setErrors(null);
+      rutControl?.updateValueAndValidity({ emitEvent: false });
+      nombreControl?.updateValueAndValidity({ emitEvent: false });
+      return;
     }
 
-    this.formularioActividad.get('tercero_rut')?.updateValueAndValidity({ emitEvent: false });
-    this.formularioActividad.get('tercero_nombre')?.updateValueAndValidity({ emitEvent: false });
+    rutControl?.clearValidators();
+    if (requiere) {
+      nombreControl?.setValidators([Validators.required]);
+    } else {
+      nombreControl?.clearValidators();
+      nombreControl?.setErrors(null);
+    }
+
+    rutControl?.updateValueAndValidity({ emitEvent: false });
+    nombreControl?.updateValueAndValidity({ emitEvent: false });
   }
 
   private resetFormularioActividad(): void {
@@ -581,6 +598,12 @@ export class ActividadesEstudiantesComponent implements OnInit {
 
   getEstudianteEtiqueta(estudiante: EstudianteResumen): string {
     return estudiante.rut ? `${estudiante.nombre} (${estudiante.rut})` : estudiante.nombre;
+  }
+
+  terceroKey(tercero: Tercero): string {
+    const rut = (tercero.rut || '').trim();
+    if (rut) return rut.toLowerCase();
+    return tercero.nombre.toLowerCase().trim();
   }
 
   private serializarEstudiantes(estudiantesSeleccionados: string[] | null | undefined): string | undefined {
@@ -754,7 +777,12 @@ export class ActividadesEstudiantesComponent implements OnInit {
       lugar: formValue.lugar || undefined,
       estudiantes: this.serializarEstudiantes(formValue.estudiantes),
       terceros_asistieron: formValue.terceros_asistieron === true,
-      terceros: formValue.terceros_asistieron ? this.tercerosSeleccionados : [],
+      terceros: formValue.terceros_asistieron
+        ? this.tercerosSeleccionados.map((tercero) => ({
+            rut: tercero.rut ?? '',
+            nombre: tercero.nombre,
+          }))
+        : [],
     };
 
     if (this.soloEgresados) {
@@ -931,6 +959,7 @@ export class ActividadesEstudiantesComponent implements OnInit {
 
     this.tercerosSeleccionados = actividad.terceros ? [...actividad.terceros] : [];
     this.tercerosListaInvalida = false;
+    this.actualizarValidadoresTerceros();
     
     this.mostrarFormulario = true;
   }

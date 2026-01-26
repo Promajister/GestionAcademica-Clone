@@ -436,10 +436,10 @@ export class DashboardComponent implements OnInit {
           desc: 'Funcionalidades para el seguimiento de egresados y empleabilidad',
           items: [
             {
-              title: 'Registro de egresados',
+              title: 'Egresados',
               icon: 'how_to_reg',
               route: '/egresados/registro',
-              desc: 'Marca estudiantes como egresados',
+              desc: 'Gestión de egresados',
             },
             {
               title: 'Actividades',
@@ -549,10 +549,10 @@ export class DashboardComponent implements OnInit {
           desc: 'Funcionalidades para el seguimiento de egresados y empleabilidad',
           items: [
             {
-              title: 'Registro de egresados',
+              title: 'Egresados',
               icon: 'how_to_reg',
               route: '/egresados/registro',
-              desc: 'Marca estudiantes como egresados',
+              desc: 'Gestión de egresados',
             },
             {
               title: 'Actividades',

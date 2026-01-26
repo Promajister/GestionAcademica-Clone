@@ -473,8 +473,12 @@
 
 .TableHeader, .TableRow{
   display: grid;
-  grid-template-columns: 1.6fr .9fr .8fr 1fr .7fr .7fr .7fr .7fr .8fr;
+  grid-template-columns: 1.6fr .9fr .8fr 1fr .7fr .7fr .7fr .8fr;
   min-width: 0; 
+}
+.TableWrapper--egresados .TableHeader,
+.TableWrapper--egresados .TableRow{
+  grid-template-columns: 1.6fr .9fr .8fr 1fr .7fr .7fr .7fr .7fr .8fr;
 }
 .TableCell--students .StudentsText{
   max-width: 100%;
@@ -498,9 +502,6 @@
   white-space: nowrap;
 }
 .HeaderCell--students{
-  text-align: center;
-}
-.HeaderCell--satisfaccion{
   text-align: center;
 }
 
@@ -967,4 +968,7 @@
 .form-topline{
   height: 6px;
   background: linear-gradient(90deg, #303880, #DEB01F); 
+}
+.HeaderCell--satisfaccion{
+  text-align: center;
 }

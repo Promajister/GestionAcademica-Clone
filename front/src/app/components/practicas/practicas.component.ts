@@ -197,6 +197,7 @@ export class PracticasComponent {
     'PRÁCTICA DE APOYO A LA DOCENCIA IV',
     'PRÁCTICA PROFESIONAL DOCENTE'
   ];
+  tiposPracticaBloqueados = new Set<string>();
 
   // Opciones de niveles/plan (derivadas de los datos cargados)
   niveles: string[] = [];
@@ -214,6 +215,10 @@ export class PracticasComponent {
       'REPROBADO': 'Reprobado'
     };
     return formato[estado] || estado;
+  }
+
+  puedeEditarPractica(estado: EstadoPractica): boolean {
+    return estado === 'EN_CURSO';
   }
 
   // Función para formatear el tipo de centro educativo
@@ -269,6 +274,13 @@ export class PracticasComponent {
     return this.centros.some((c) => c.id === id) ? null : { invalido: true };
   };
 
+  validarTipoPractica = (control: AbstractControl): ValidationErrors | null => {
+    const value = (control.value || '').toString().trim();
+    if (!value) return null;
+    const normalizado = this.normalizarTipoPractica(value);
+    return this.tiposPracticaBloqueados.has(normalizado) ? { bloqueado: true } : null;
+  };
+
   constructor() {
     // Inicializar formulario con validaciones personalizadas
     this.formularioPractica = this.fb.group({
@@ -280,7 +292,7 @@ export class PracticasComponent {
       tutor1Rol: ['', [Validators.required]],
       fecha_inicio: ['', Validators.required],
       fecha_termino: [''],
-      tipo: [''],
+      tipo: ['', [this.validarTipoPractica]],
       anio: [null, [Validators.required, Validators.min(2000)]],
       semestre: [null, [Validators.required]]
     }, { validators: this.validarFechas });
@@ -299,6 +311,11 @@ export class PracticasComponent {
           this.formularioPractica.patchValue({ fecha_termino: '' }, { emitEvent: false });
         }
       }
+    });
+
+    this.formularioPractica.get('estudianteRut')?.valueChanges.subscribe((value) => {
+      const rut = typeof value === 'string' ? value : value?.rut;
+      this.actualizarTiposPracticaBloqueados(rut || '');
     });
 
     // Cargar datos desde las APIs
@@ -325,7 +342,9 @@ export class PracticasComponent {
         // Cargar estudiantes y filtrar solo los que tienen prácticas EN_CURSO
         this.http.get<any[]>(`${environment.apiUrl}/estudiantes`).subscribe({
           next: (estudiantes) => {
-            this.estudiantes = estudiantes.filter(est => !rutConPracticasEnCurso.has(est.rut));
+            this.estudiantes = estudiantes.filter(
+              est => !rutConPracticasEnCurso.has(est.rut) && est.egresado !== true
+            );
             this.estudianteFiltrado = this.estudiantes.slice(0, 5);
             this.formularioPractica.get('estudianteRut')?.updateValueAndValidity({ emitEvent: false });
           },
@@ -345,7 +364,7 @@ export class PracticasComponent {
   cargarTodosEstudiantes() {
     this.http.get<any[]>(`${environment.apiUrl}/estudiantes`).subscribe({
       next: (estudiantes) => {
-        this.estudiantes = estudiantes;
+        this.estudiantes = estudiantes.filter(est => est.egresado !== true);
         this.estudianteFiltrado = this.estudiantes.slice(0, 5);
         this.formularioPractica.get('estudianteRut')?.updateValueAndValidity({ emitEvent: false });
       },
@@ -414,7 +433,9 @@ export class PracticasComponent {
 
     this.http.get<any[]>(`${environment.apiUrl}/estudiantes`).subscribe({
       next: (estudiantes) => {
-        this.estudiantes = estudiantes.filter(est => !rutConPracticasEnCurso.has(est.rut));
+        this.estudiantes = estudiantes.filter(
+          est => !rutConPracticasEnCurso.has(est.rut) && est.egresado !== true
+        );
         this.estudianteFiltrado = this.estudiantes.slice(0, 5);
       },
       error: (err) => { console.error('Error al actualizar estudiantes:', err); }
@@ -575,6 +596,7 @@ export class PracticasComponent {
     this.fechaMinimaTermino = null;
     this.estudianteFiltrado = [...this.estudiantes];
     this.centroFiltrado = [...this.centros];
+    this.actualizarTiposPracticaBloqueados('');
   }
 
   cerrarFormulario() {
@@ -594,6 +616,7 @@ export class PracticasComponent {
   }
 
   abrirEdicion(practica: Practica) {
+    if (!this.puedeEditarPractica(practica.estado)) return;
     this.mostrarFormulario = true;
     this.practicaEditando = practica;
 
@@ -622,6 +645,7 @@ export class PracticasComponent {
       : null;
     this.estudianteFiltrado = [...this.estudiantes];
     this.centroFiltrado = [...this.centros];
+    this.actualizarTiposPracticaBloqueados(practica.estudiante?.rut || '');
   }
 
   // Métodos de filtrado para autocompletado (máximo 5 resultados)
@@ -708,6 +732,28 @@ export class PracticasComponent {
       return `${value.nombre} - ${value.comuna}, ${value.region}`;
     }
     return '';
+  }
+
+  normalizarTipoPractica(tipo: string): string {
+    return tipo.toLowerCase().trim();
+  }
+
+  actualizarTiposPracticaBloqueados(rut: string) {
+    const normalizados = new Set<string>();
+    if (rut) {
+      this.practicas.forEach((p) => {
+        if (p.estudiante?.rut === rut && p.estado === 'APROBADO' && p.tipo) {
+          normalizados.add(this.normalizarTipoPractica(p.tipo));
+        }
+      });
+    }
+    this.tiposPracticaBloqueados = normalizados;
+    this.formularioPractica.get('tipo')?.updateValueAndValidity({ emitEvent: false });
+  }
+
+  isTipoPracticaBloqueado(tipo: string): boolean {
+    if (this.practicaEditando?.tipo && this.practicaEditando.tipo === tipo) return false;
+    return this.tiposPracticaBloqueados.has(this.normalizarTipoPractica(tipo));
   }
 
   // Single select (compatibilidad en otros campos)
