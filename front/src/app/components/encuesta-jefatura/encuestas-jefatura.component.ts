@@ -1,4 +1,4 @@
-import { CommonModule, DOCUMENT } from '@angular/common';
+﻿import { CommonModule, DOCUMENT } from '@angular/common';
 import { Component, Inject, OnInit, OnDestroy, Renderer2 } from '@angular/core';
 import { HttpClientModule } from '@angular/common/http';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
@@ -213,68 +213,49 @@ export class EncuestaJefaturaComponent implements OnInit, OnDestroy {
     }
     return clean || 'Hoja';
   }
-
   downloadEstadisticasExcel(): void {
+    if (this.filtroSubtipo === 'ALL') {
+      this.snack.open('Selecciona un tipo de encuesta para exportar.', 'Cerrar', { duration: 3000 });
+      return;
+    }
+
     const encuestas = this.encuestasFiltradas || [];
     if (!encuestas.length) {
-      this.snack.open('No hay encuestas para exportar.', 'Cerrar', { duration: 3000 });
+      this.snack.open('No hay encuestas para exportar con los filtros actuales.', 'Cerrar', { duration: 3000 });
       return;
     }
 
-    const stats = new Map<string, { label: string; counts: Record<number, number> }>();
-
-    encuestas.forEach((encuesta) => {
-      const cerradas = this.getRespuestasCerradas(encuesta?.respuestas);
-      cerradas.forEach((r: any) => {
-        const key = r?.pregunta?.descripcion;
-        if (!key) return;
-        const val = Number(this.mapRespuestaValor(r));
-        if (!Number.isFinite(val)) return;
-
-        const label = this.mapPreguntaDescripcion(key);
-        if (!stats.has(key)) {
-          stats.set(key, { label, counts: {} });
-        }
-        const entry = stats.get(key)!;
-        entry.counts[val] = (entry.counts[val] || 0) + 1;
-      });
-    });
-
-    if (!stats.size) {
-      this.snack.open('No hay respuestas cerradas para exportar.', 'Cerrar', { duration: 3000 });
+    const survey = this.SURVEYS.find((s) => s.subtipo === this.filtroSubtipo);
+    if (!survey) {
+      this.snack.open('Tipo de encuesta no válido para exportar.', 'Cerrar', { duration: 3000 });
       return;
     }
 
-    const header = [
-      'Aspecto a evaluar',
-      'No aplica',
-      'Muy insatisfecho',
-      'Insatisfecho',
-      'Ni insatisfecho',
-      'Satisfecho',
-      'Muy satisfecho',
-      'Total encuestas',
-    ];
+    const wb = XLSX.utils.book_new();
+    const header = ['Aspecto a evaluar', '1', '2', '3', '4', '5', 'Total encuestas'];
 
-    const data: any[][] = [header];
+    survey.sections.forEach((section) => {
+      const data: any[][] = [header];
 
-    Array.from(stats.values())
-      .sort((a, b) => a.label.localeCompare(b.label))
-      .forEach((entry) => {
-        const counts = {
-          0: entry.counts[0] || 0,
-          1: entry.counts[1] || 0,
-          2: entry.counts[2] || 0,
-          3: entry.counts[3] || 0,
-          4: entry.counts[4] || 0,
-          5: entry.counts[5] || 0,
-        };
-        const total =
-          counts[0] + counts[1] + counts[2] + counts[3] + counts[4] + counts[5];
+      section.questions.forEach((q) => {
+        const key = `${section.id}.${q.key}`;
+        const counts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } as Record<number, number>;
 
+        encuestas.forEach((encuesta) => {
+          const respuesta = (encuesta?.respuestas || []).find(
+            (r: any) => r?.pregunta?.descripcion === key
+          );
+          if (!respuesta) return;
+          const val = Number(this.mapRespuestaValor(respuesta));
+          if (!Number.isFinite(val)) return;
+          if (val >= 1 && val <= 5) {
+            counts[val] = (counts[val] || 0) + 1;
+          }
+        });
+
+        const total = counts[1] + counts[2] + counts[3] + counts[4] + counts[5];
         data.push([
-          entry.label,
-          counts[0],
+          q.text,
           counts[1],
           counts[2],
           counts[3],
@@ -284,9 +265,85 @@ export class EncuestaJefaturaComponent implements OnInit, OnDestroy {
         ]);
       });
 
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet(data);
-    XLSX.utils.book_append_sheet(wb, ws, this.sanitizeSheetName('Estadísticas'));
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      ws['!cols'] = [
+        { wch: 70 }, // Aspecto a evaluar
+        { wch: 6 },
+        { wch: 6 },
+        { wch: 6 },
+        { wch: 6 },
+        { wch: 6 },
+        { wch: 16 }, // Total encuestas
+      ];
+      XLSX.utils.book_append_sheet(wb, ws, this.sanitizeSheetName(section.title));
+    });
+
+    const identHeaders = [
+      'Fecha',
+      'Actividad',
+      ...survey.identificacion.map((i) => i.label),
+    ];
+    const identData: any[][] = [identHeaders];
+
+    const abiertasHeaders = [
+      'Fecha',
+      'Actividad',
+      ...survey.abiertas.map((a) => a.label),
+    ];
+    const abiertasData: any[][] = [abiertasHeaders];
+
+    encuestas.forEach((encuesta) => {
+      const ident = encuesta?.identificacion || {};
+      const actividad = this.getActividadLabel(encuesta).replace('Actividad: ', '');
+
+      const identValues = survey.identificacion.map((i) =>
+        this.formatIdentificacionValue(ident?.[i.key])
+      );
+
+      const abiertasValues = survey.abiertas.map((a) => {
+        const key = `abiertas.${a.key}`;
+        const respuesta = (encuesta?.respuestas || []).find(
+          (r: any) => r?.pregunta?.descripcion === key
+        );
+        return respuesta ? this.mapRespuestaValor(respuesta) : '';
+      });
+
+      identData.push([
+        encuesta?.fecha ? this.formatFecha(encuesta.fecha) : '',
+        actividad,
+        ...identValues,
+      ]);
+
+      abiertasData.push([
+        encuesta?.fecha ? this.formatFecha(encuesta.fecha) : '',
+        actividad,
+        ...abiertasValues,
+      ]);
+    });
+
+    const identSheet = XLSX.utils.aoa_to_sheet(identData);
+    identSheet['!cols'] = [
+      { wch: 14 }, // Fecha
+      { wch: 32 }, // Actividad
+      ...survey.identificacion.map(() => ({ wch: 34 })),
+    ];
+    XLSX.utils.book_append_sheet(
+      wb,
+      identSheet,
+      this.sanitizeSheetName('Identificacion')
+    );
+
+    const abiertasSheet = XLSX.utils.aoa_to_sheet(abiertasData);
+    abiertasSheet['!cols'] = [
+      { wch: 14 }, // Fecha
+      { wch: 32 }, // Actividad
+      ...survey.abiertas.map(() => ({ wch: 60 })),
+    ];
+    XLSX.utils.book_append_sheet(
+      wb,
+      abiertasSheet,
+      this.sanitizeSheetName('Preguntas abiertas')
+    );
 
     const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
     const blob = new Blob([wbout], {
@@ -907,4 +964,5 @@ export class EncuestaJefaturaComponent implements OnInit, OnDestroy {
   }
 
 }
+
 
