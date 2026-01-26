@@ -382,7 +382,11 @@
         </span>
 
         @if (esCoordinadoraPracticas) {
-          <button mat-stroked-button class="btn-details" (click)="abrirEdicion(assignment)">
+          <button
+            mat-stroked-button
+            class="btn-details"
+            (click)="abrirEdicion(assignment)"
+            [disabled]="!puedeEditarPractica(assignment.estado)">
             Editar
           </button>
         }

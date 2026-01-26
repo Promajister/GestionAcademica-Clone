@@ -216,6 +216,10 @@ export class PracticasComponent {
     return formato[estado] || estado;
   }
 
+  puedeEditarPractica(estado: EstadoPractica): boolean {
+    return estado === 'EN_CURSO';
+  }
+
   // Función para formatear el tipo de centro educativo
   formatearTipoCentro(tipo: string | null | undefined): string {
     if (!tipo) return 'Sin especificar';
@@ -325,7 +329,9 @@ export class PracticasComponent {
         // Cargar estudiantes y filtrar solo los que tienen prácticas EN_CURSO
         this.http.get<any[]>(`${environment.apiUrl}/estudiantes`).subscribe({
           next: (estudiantes) => {
-            this.estudiantes = estudiantes.filter(est => !rutConPracticasEnCurso.has(est.rut));
+            this.estudiantes = estudiantes.filter(
+              est => !rutConPracticasEnCurso.has(est.rut) && est.egresado !== true
+            );
             this.estudianteFiltrado = this.estudiantes.slice(0, 5);
             this.formularioPractica.get('estudianteRut')?.updateValueAndValidity({ emitEvent: false });
           },
@@ -345,7 +351,7 @@ export class PracticasComponent {
   cargarTodosEstudiantes() {
     this.http.get<any[]>(`${environment.apiUrl}/estudiantes`).subscribe({
       next: (estudiantes) => {
-        this.estudiantes = estudiantes;
+        this.estudiantes = estudiantes.filter(est => est.egresado !== true);
         this.estudianteFiltrado = this.estudiantes.slice(0, 5);
         this.formularioPractica.get('estudianteRut')?.updateValueAndValidity({ emitEvent: false });
       },
@@ -414,7 +420,9 @@ export class PracticasComponent {
 
     this.http.get<any[]>(`${environment.apiUrl}/estudiantes`).subscribe({
       next: (estudiantes) => {
-        this.estudiantes = estudiantes.filter(est => !rutConPracticasEnCurso.has(est.rut));
+        this.estudiantes = estudiantes.filter(
+          est => !rutConPracticasEnCurso.has(est.rut) && est.egresado !== true
+        );
         this.estudianteFiltrado = this.estudiantes.slice(0, 5);
       },
       error: (err) => { console.error('Error al actualizar estudiantes:', err); }
@@ -594,6 +602,7 @@ export class PracticasComponent {
   }
 
   abrirEdicion(practica: Practica) {
+    if (!this.puedeEditarPractica(practica.estado)) return;
     this.mostrarFormulario = true;
     this.practicaEditando = practica;
 
