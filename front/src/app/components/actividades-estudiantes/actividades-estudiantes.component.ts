@@ -26,7 +26,7 @@ import JSZip from 'jszip';
 import { formatDateEs, parseDateFlexible } from '../../utils/date-utils';
 
 interface Tercero {
-  rut: string;
+  rut?: string;
   nombre: string;
 }
 
@@ -326,7 +326,7 @@ export class ActividadesEstudiantesComponent implements OnInit {
             rut: typeof item?.rut === 'string' ? item.rut : '',
             nombre: typeof item?.nombre === 'string' ? item.nombre : '',
           }))
-          .filter((item: Tercero) => item.rut && item.nombre)
+          .filter((item: Tercero) => !!item.nombre)
       : [];
 
     return {
@@ -467,7 +467,7 @@ export class ActividadesEstudiantesComponent implements OnInit {
   getTercerosLabel(actividad?: Actividad | null): string {
     const terceros = actividad?.terceros ?? [];
     if (!terceros.length) return '';
-    return terceros.map((t) => `${t.nombre} (${t.rut})`).join(', ');
+    return terceros.map((t) => (t.rut ? `${t.nombre} (${t.rut})` : t.nombre)).join(', ');
   }
 
   alternarFormulario(): void {
@@ -517,10 +517,9 @@ export class ActividadesEstudiantesComponent implements OnInit {
     const rut = (this.formularioActividad.get('tercero_rut')?.value || '').trim();
     const nombre = (this.formularioActividad.get('tercero_nombre')?.value || '').trim();
 
-    if (!rut || !nombre) {
-      this.formularioActividad.get('tercero_rut')?.markAsTouched();
+    if (!nombre) {
       this.formularioActividad.get('tercero_nombre')?.markAsTouched();
-      this.snack.open('Debes ingresar RUT y nombre del tercero.', 'Cerrar', {
+      this.snack.open('Debes ingresar el nombre del tercero.', 'Cerrar', {
         duration: 3000,
         horizontalPosition: 'center',
         verticalPosition: 'bottom',
@@ -529,11 +528,13 @@ export class ActividadesEstudiantesComponent implements OnInit {
       return;
     }
 
-    const index = this.tercerosSeleccionados.findIndex((t) => t.rut === rut);
+    const tercero: Tercero = { nombre, ...(rut ? { rut } : {}) };
+    const key = this.terceroKey(tercero);
+    const index = this.tercerosSeleccionados.findIndex((t) => this.terceroKey(t) === key);
     if (index >= 0) {
-      this.tercerosSeleccionados[index] = { rut, nombre };
+      this.tercerosSeleccionados[index] = tercero;
     } else {
-      this.tercerosSeleccionados = [...this.tercerosSeleccionados, { rut, nombre }];
+      this.tercerosSeleccionados = [...this.tercerosSeleccionados, tercero];
     }
     this.tercerosListaInvalida = false;
     this.formularioActividad.patchValue({ tercero_rut: '', tercero_nombre: '' });
@@ -542,8 +543,11 @@ export class ActividadesEstudiantesComponent implements OnInit {
     this.actualizarValidadoresTerceros();
   }
 
-  quitarTercero(rut: string): void {
-    this.tercerosSeleccionados = this.tercerosSeleccionados.filter((t) => t.rut !== rut);
+  quitarTercero(tercero: Tercero): void {
+    const key = this.terceroKey(tercero);
+    this.tercerosSeleccionados = this.tercerosSeleccionados.filter(
+      (t) => this.terceroKey(t) !== key
+    );
     this.actualizarValidadoresTerceros();
   }
 
@@ -551,8 +555,8 @@ export class ActividadesEstudiantesComponent implements OnInit {
     const tercerosAsistieron = this.formularioActividad.get('terceros_asistieron')?.value === true;
     const requiere = tercerosAsistieron && this.tercerosSeleccionados.length === 0;
 
+    this.formularioActividad.get('tercero_rut')?.clearValidators();
     if (requiere) {
-      this.formularioActividad.get('tercero_rut')?.setValidators([Validators.required]);
       this.formularioActividad.get('tercero_nombre')?.setValidators([Validators.required]);
     } else {
       this.formularioActividad.get('tercero_rut')?.clearValidators();
@@ -581,6 +585,12 @@ export class ActividadesEstudiantesComponent implements OnInit {
 
   getEstudianteEtiqueta(estudiante: EstudianteResumen): string {
     return estudiante.rut ? `${estudiante.nombre} (${estudiante.rut})` : estudiante.nombre;
+  }
+
+  terceroKey(tercero: Tercero): string {
+    const rut = (tercero.rut || '').trim();
+    if (rut) return rut.toLowerCase();
+    return tercero.nombre.toLowerCase().trim();
   }
 
   private serializarEstudiantes(estudiantesSeleccionados: string[] | null | undefined): string | undefined {

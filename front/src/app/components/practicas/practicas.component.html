@@ -287,9 +287,14 @@
               <mat-select formControlName="tipo">
                 <mat-option [value]="null">Sin especificar</mat-option>
                 @for (tipo of tiposPractica; track tipo) {
-                  <mat-option [value]="tipo">{{ tipo }}</mat-option>
+                  <mat-option [value]="tipo" [disabled]="isTipoPracticaBloqueado(tipo)">
+                    {{ tipo }}
+                  </mat-option>
                 }
               </mat-select>
+              @if (formularioPractica.get('tipo')?.hasError('bloqueado')) {
+                <mat-error>Este tipo ya fue aprobado para el estudiante seleccionado</mat-error>
+              }
             </mat-form-field>
           </div>
 

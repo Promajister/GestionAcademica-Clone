@@ -8,6 +8,17 @@ import { QueryActividadEgresadosDto } from './dto/consulta-actividad-egresados.d
 export class ActividadEgresadosService {
   constructor(private prisma: PrismaService) {}
 
+  private generarRutFicticio(nombre: string, index: number): string {
+    const base = nombre
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 30) || 'tercero';
+    const suffix = `${Date.now()}-${index}-${Math.floor(Math.random() * 1000)}`;
+    return `SIN-RUT-${base}-${suffix}`;
+  }
+
   private parseTerceros(raw?: string): { rut: string; nombre: string }[] {
     if (!raw) return [];
     try {
@@ -18,7 +29,11 @@ export class ActividadEgresadosService {
           rut: typeof item?.rut === 'string' ? item.rut.trim() : '',
           nombre: typeof item?.nombre === 'string' ? item.nombre.trim() : '',
         }))
-        .filter((item) => item.rut && item.nombre);
+        .filter((item) => item.nombre)
+        .map((item, index) => ({
+          rut: item.rut || this.generarRutFicticio(item.nombre, index),
+          nombre: item.nombre,
+        }));
     } catch {
       return [];
     }
