@@ -764,7 +764,12 @@ export class ActividadesEstudiantesComponent implements OnInit {
       lugar: formValue.lugar || undefined,
       estudiantes: this.serializarEstudiantes(formValue.estudiantes),
       terceros_asistieron: formValue.terceros_asistieron === true,
-      terceros: formValue.terceros_asistieron ? this.tercerosSeleccionados : [],
+      terceros: formValue.terceros_asistieron
+        ? this.tercerosSeleccionados.map((tercero) => ({
+            rut: tercero.rut ?? '',
+            nombre: tercero.nombre,
+          }))
+        : [],
     };
 
     if (this.soloEgresados) {
