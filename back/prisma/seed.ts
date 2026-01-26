@@ -246,6 +246,153 @@ async function seedColaboradores() {
   }
 }
 
+async function seedCentrosEducativos() {
+  await prisma.centroEducativo.createMany({
+    data: [
+      {
+        nombre: 'Archivo Histórico Vicente Dagnino',
+        tipo: 'SLEP',
+        direccion: '5to Piso Biblioteca Central Universidad de Tarapacá',
+        comuna: 'Arica',
+        region: 'Arica y Parinacota',
+      },
+      {
+        nombre: 'Colegio Alemán Arica',
+        tipo: 'PARTICULAR_SUBVENCIONADO',
+        direccion: 'Av. Senador Humberto Palza Corvacho 3727',
+        comuna: 'Arica',
+        region: 'Arica y Parinacota',
+      },
+      {
+        nombre: 'Colegio Bicentenario Miramar',
+        tipo: 'PARTICULAR_SUBVENCIONADO',
+        direccion: 'San Ignacio de Loyola 750',
+        comuna: 'Arica',
+        region: 'Arica y Parinacota',
+      },
+      {
+        nombre: 'Colegio Centenario de Arica',
+        tipo: 'SLEP',
+        direccion: 'Av. El Roble 4016',
+        comuna: 'Arica',
+        region: 'Arica y Parinacota',
+      },
+      {
+        nombre: 'Colegio Chile Norte',
+        tipo: 'PARTICULAR_SUBVENCIONADO',
+        direccion: 'Linderos 3650',
+        comuna: 'Arica',
+        region: 'Arica y Parinacota',
+      },
+      {
+        nombre: 'Colegio Ford College',
+        tipo: 'PARTICULAR_SUBVENCIONADO',
+        direccion: 'Calle Menandro Urrutia 2311',
+        comuna: 'Arica',
+        region: 'Arica y Parinacota',
+      },
+      {
+        nombre: 'Colegio Integrado Eduardo Frei Montalva',
+        tipo: 'SLEP',
+        direccion: 'San Marcos 611',
+        comuna: 'Arica',
+        region: 'Arica y Parinacota',
+      },
+      {
+        nombre: 'Colegio Saucache',
+        tipo: 'PARTICULAR_SUBVENCIONADO',
+        direccion: 'Los Flamencos 024',
+        comuna: 'Arica',
+        region: 'Arica y Parinacota',
+      },
+      {
+        nombre: 'Colegio Tecnológico Don Bosco',
+        tipo: 'PARTICULAR_SUBVENCIONADO',
+        direccion: 'Capitán Ávalos 2606',
+        comuna: 'Arica',
+        region: 'Arica y Parinacota',
+      },
+      {
+        nombre: 'Escuela América',
+        tipo: 'SLEP',
+        direccion: 'Av. Balmaceda 2450',
+        comuna: 'Arica',
+        region: 'Arica y Parinacota',
+      },
+      {
+        nombre: 'Escuela Manuel Rodríguez Erdozya',
+        tipo: 'SLEP',
+        direccion: 'Av. Balmaceda 2450',
+        comuna: 'Arica',
+        region: 'Arica y Parinacota',
+      },
+      {
+        nombre: 'Escuela República de Francia',
+        tipo: 'SLEP',
+        direccion: 'María Lilia del Pino 728',
+        comuna: 'Arica',
+        region: 'Arica y Parinacota',
+      },
+      {
+        nombre: 'Escuela República de Israel',
+        tipo: 'SLEP',
+        direccion: 'Magallanes 1860',
+        comuna: 'Arica',
+        region: 'Arica y Parinacota',
+      },
+      {
+        nombre: 'Escuela Rómulo Peña Maturana',
+        tipo: 'SLEP',
+        direccion: 'Las Acacias 2099',
+        comuna: 'Arica',
+        region: 'Arica y Parinacota',
+      },
+      {
+        nombre: 'Juan Pablo Segundo',
+        tipo: 'PARTICULAR_SUBVENCIONADO',
+        direccion: 'San Marcos 57',
+        comuna: 'Arica',
+        region: 'Arica y Parinacota',
+      },
+      {
+        nombre: 'Liceo Bicentenario Antonio Varas de la Barra',
+        tipo: 'SLEP',
+        direccion: 'Av. Loa 2200',
+        comuna: 'Arica',
+        region: 'Arica y Parinacota',
+      },
+      {
+        nombre: 'Liceo Bicentenario Artístico Dr. Juan Noé Crevani',
+        tipo: 'SLEP',
+        direccion: 'Barros Arana 2154',
+        comuna: 'Arica',
+        region: 'Arica y Parinacota',
+      },
+      {
+        nombre: 'Liceo Bicentenario Jovino Naranjo Fernández',
+        tipo: 'SLEP',
+        direccion: 'Dr. Juan Noé 555',
+        comuna: 'Arica',
+        region: 'Arica y Parinacota',
+      },
+      {
+        nombre: 'Liceo Octavio Palma Pérez',
+        tipo: 'SLEP',
+        direccion: 'Avenida Santa María 1697',
+        comuna: 'Arica',
+        region: 'Arica y Parinacota',
+      },
+      {
+        nombre: 'North American College',
+        tipo: 'PARTICULAR_SUBVENCIONADO',
+        direccion: 'Rafael Sotomayor 754',
+        comuna: 'Arica',
+        region: 'Arica y Parinacota',
+      },
+    ],
+  });
+}
+
 async function main() {
   // Solo lo mínimo para login (roles/permisos/usuarios)
   const plainPassword = '123456';
@@ -285,8 +432,9 @@ async function main() {
   ]);
 
   await seedColaboradores();
+  await seedCentrosEducativos();
 
-  console.log('Seed OK: usuarios/roles/permisos/colaboradores.');
+  console.log('Seed OK: usuarios/roles/permisos/colaboradores/centros.');
 }
 
 main()
