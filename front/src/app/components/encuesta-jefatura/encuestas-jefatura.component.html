@@ -1,4 +1,4 @@
-<div class="container section">
+﻿<div class="container section">
   <div class="header hero">
     <div class="hero__bg"></div>
     <div class="hero__content">
@@ -61,52 +61,62 @@
 
   <mat-card class="elev registered-list-card">
     <mat-card-title>Encuestas registradas</mat-card-title>
-    <div class="filters">
-      <mat-form-field appearance="outline" class="field">
-        <mat-label>Tipo de encuesta</mat-label>
-        <mat-select [(ngModel)]="filtroSubtipo">
-          <mat-option [value]="'ALL'">Todas</mat-option>
-          <mat-option [value]="'AULA_ABIERTA_RECORRIDO_PEDAGOGICO'">Aulas Abiertas</mat-option>
-          <mat-option [value]="'ALTERNANCIAS_PREGRADO'">Alternancias - Pregrado</mat-option>
-          <mat-option [value]="'ALTERNANCIAS_RECEPTORES'">Alternancias - Receptores</mat-option>
-        </mat-select>
-      </mat-form-field>
+    <div class="filters-shell">
+      <div class="filters-header">
+        <mat-icon>search</mat-icon>
+        <span>Filtros de búsqueda</span>
+      </div>
 
-      <mat-form-field appearance="outline" class="field">
-        <mat-label>Actividad</mat-label>
-        <mat-select [(ngModel)]="filtroActividadId">
-          <mat-option [value]="'ALL'">Todas</mat-option>
-          <mat-option *ngFor="let a of actividades" [value]="a.id">
-            {{ a.nombre }}
-          </mat-option>
-        </mat-select>
-      </mat-form-field>
+      <div class="filters-row filters-row--search">
+        <mat-form-field appearance="outline" class="search-field">
+          <mat-label>Buscar encuestas</mat-label>
+          <input matInput [(ngModel)]="filtroBusqueda" placeholder="Centro, actividad, nombre..." />
+          <button mat-icon-button matSuffix type="button" (click)="filtroBusqueda=''" *ngIf="filtroBusqueda">
+            <mat-icon>close</mat-icon>
+          </button>
+        </mat-form-field>
 
-      <mat-form-field appearance="outline" class="field">
-        <mat-label>Nivel</mat-label>
-        <mat-select [(ngModel)]="filtroNivel">
-          <mat-option value="">Todos</mat-option>
-          <mat-option *ngFor="let n of nivelesFiltro" [value]="n">{{ n }}</mat-option>
-        </mat-select>
-      </mat-form-field>
+        <div class="filters-actions">
+          <button mat-stroked-button type="button" (click)="downloadEstadisticasExcel()">
+            <mat-icon>download</mat-icon>
+            Exportar Excel
+          </button>
+          <button mat-stroked-button type="button" (click)="limpiarFiltros()">
+            <mat-icon>restart_alt</mat-icon>
+            Limpiar
+          </button>
+        </div>
+      </div>
 
-      <mat-form-field appearance="outline" class="field search">
-        <mat-label>Búsqueda (nombre)</mat-label>
-        <input matInput [(ngModel)]="filtroBusqueda" placeholder="Escribe para filtrar..." />
-        <button mat-icon-button matSuffix type="button" (click)="filtroBusqueda=''" *ngIf="filtroBusqueda">
-          <mat-icon>close</mat-icon>
-        </button>
-      </mat-form-field>
+      <div class="filters-row filters-row--selects">
+        <mat-form-field appearance="outline" class="field">
+          <mat-label>Tipo de encuesta</mat-label>
+          <mat-select [(ngModel)]="filtroSubtipo">
+            <mat-option [value]="'ALL'">Todas</mat-option>
+            <mat-option [value]="'AULA_ABIERTA_RECORRIDO_PEDAGOGICO'">Aulas Abiertas</mat-option>
+            <mat-option [value]="'ALTERNANCIAS_PREGRADO'">Alternancias - Pregrado</mat-option>
+            <mat-option [value]="'ALTERNANCIAS_RECEPTORES'">Alternancias - Receptores</mat-option>
+          </mat-select>
+        </mat-form-field>
 
-      <button mat-stroked-button type="button" class="filters-clear" (click)="downloadEstadisticasExcel()">
-        <mat-icon>download</mat-icon>
-        Exportar Excel
-      </button>
+        <mat-form-field appearance="outline" class="field">
+          <mat-label>Actividad</mat-label>
+          <mat-select [(ngModel)]="filtroActividadId">
+            <mat-option [value]="'ALL'">Todas</mat-option>
+            <mat-option *ngFor="let a of actividades" [value]="a.id">
+              {{ a.nombre }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
 
-      <button mat-stroked-button type="button" class="filters-clear" (click)="limpiarFiltros()">
-        <mat-icon>restart_alt</mat-icon>
-        Limpiar
-      </button>
+        <mat-form-field appearance="outline" class="field">
+          <mat-label>Nivel</mat-label>
+          <mat-select [(ngModel)]="filtroNivel">
+            <mat-option value="">Todos</mat-option>
+            <mat-option *ngFor="let n of nivelesFiltro" [value]="n">{{ n }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
     </div>
 
     <div *ngIf="encuestasFiltradas.length > 0; else noEncuestas">
@@ -506,3 +516,4 @@
     </mat-card-actions>
   </mat-card>
 </div>
+
