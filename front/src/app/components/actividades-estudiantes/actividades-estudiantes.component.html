@@ -378,7 +378,7 @@
     </mat-card-header>
 
     <mat-card-content class="list-body">
-      <div class="TableWrapper">
+      <div class="TableWrapper" [class.TableWrapper--egresados]="soloEgresados">
         <!-- ENCABEZADOS -->
         <div class="TableHeader">
           <div class="HeaderCell HeaderCell--name">NOMBRE ACTIVIDAD</div>
@@ -387,7 +387,7 @@
           <div class="HeaderCell HeaderCell--location">UBICACIÓN</div>
           <div class="HeaderCell HeaderCell--students">{{ personasLabelPlural | uppercase }}</div>
           <div class="HeaderCell HeaderCell--terceros">TERCEROS</div>
-          <div class="HeaderCell HeaderCell--satisfaccion">SATISFACCIÓN</div>
+          <div class="HeaderCell HeaderCell--satisfaccion" *ngIf="soloEgresados">SATISFACCIÓN</div>
           <div class="HeaderCell HeaderCell--evidence">RESPALDO</div>
           <div class="HeaderCell HeaderCell--actions">ACCIONES</div>
         </div>
@@ -418,7 +418,7 @@
             <span class="TercerosText">{{ actividad.terceros_asistieron ? 'Si' : 'No' }}</span>
           </div>
 
-          <div class="TableCell TableCell--satisfaccion">
+          <div class="TableCell TableCell--satisfaccion" *ngIf="soloEgresados">
             <span class="SatisfaccionText">{{ actividad.satisfaccion !== null && actividad.satisfaccion !== undefined ? (actividad.satisfaccion + '%') : '—' }}</span>
           </div>
 
