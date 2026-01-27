@@ -361,6 +361,7 @@ export class EncuestasEgresadosService {
       const anio = rawAnio && rawAnio !== 'ALL' ? rawAnio : 'Todos';
       return [
         'Eres un analista de datos educativos. Redacta una conclusion relevante (10 a 15 oraciones) en espanol formal.',
+        'Debes mencionar TODOS los indicadores listados, usando porcentaje y conteo cuando exista.',
         'No enumeres todos los graficos ni repitas datos crudos. Prioriza hallazgos, riesgos y oportunidades.',
         'Usa solo la informacion entregada. No inventes porcentajes ni hechos.',
         `Contexto: encuesta de empleabilidad. Anio egreso: ${safe(anio)}.`,
