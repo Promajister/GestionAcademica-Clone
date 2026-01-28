@@ -769,9 +769,11 @@ export class ActividadesPmComponent implements OnInit {
     let rejectedType = 0;
     let rejectedSize = 0;
     let rejectedDup = 0;
+    let rejectedLimit = 0;
     const rejectedTypeNames: string[] = [];
     const rejectedSizeNames: string[] = [];
     const rejectedDupNames: string[] = [];
+    const rejectedLimitNames: string[] = [];
 
     const validFiles = files.filter((file) => {
       const ext = (file.name.split('.').pop() ?? '').toLowerCase();
@@ -796,6 +798,19 @@ export class ActividadesPmComponent implements OnInit {
       return true;
     });
 
+    const merged = [...current, ...validFiles];
+    const unique = new Map<string, File>();
+    for (const file of merged) {
+      const key = `${file.name}__${file.size}__${file.lastModified}`;
+      if (!unique.has(key)) unique.set(key, file);
+    }
+    const finalFiles = Array.from(unique.values());
+    const limited = finalFiles.slice(0, 10);
+    if (finalFiles.length > 10) {
+      rejectedLimit = finalFiles.length - 10;
+      rejectedLimitNames.push(...finalFiles.slice(10).map((f) => f.name));
+    }
+
     const maxNames = 5;
     const formatNames = (names: string[]) => {
       if (names.length <= maxNames) return names.join(', ');
@@ -807,6 +822,7 @@ export class ActividadesPmComponent implements OnInit {
       if (rejectedType) parts.push(`tipo: ${formatNames(rejectedTypeNames)}`);
       if (rejectedSize) parts.push(`tamaño: ${formatNames(rejectedSizeNames)}`);
       if (rejectedDup) parts.push(`duplicados: ${formatNames(rejectedDupNames)}`);
+      if (rejectedLimit) parts.push(`límite (10): ${formatNames(rejectedLimitNames)}`);
       return parts.length ? `${prefix} ${parts.join(' | ')}` : '';
     };
 
@@ -823,17 +839,17 @@ export class ActividadesPmComponent implements OnInit {
     }
 
     if (tipo == 'asistencia') {
-      this.asistenciaFile = [...this.asistenciaFile, ...validFiles];
+      this.asistenciaFile = limited;
       this.asistenciaFileName = this.formatFileCount(this.asistenciaFile);
     } else if (tipo == 'documentos') {
-      this.documentosFile = [...this.documentosFile, ...validFiles];
+      this.documentosFile = limited;
       this.documentosFileName = this.formatFileCount(this.documentosFile);
     } else {
-      this.fotosFile = [...this.fotosFile, ...validFiles];
+      this.fotosFile = limited;
       this.fotosFileName = this.formatFileCount(this.fotosFile);
     }
     input.value = '';
-    if (rejectedType + rejectedSize + rejectedDup > 0) {
+    if (rejectedType + rejectedSize + rejectedDup + rejectedLimit > 0) {
       this.snack.open(
         buildRejectedMessage('Algunos archivos fueron rechazados:'),
         'OK',
