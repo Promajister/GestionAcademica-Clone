@@ -49,6 +49,7 @@ interface SurveyConfig {
   objetivo: string;
   identificacion: Array<
     | { key: string; label: string; type: 'text'; required?: boolean }
+    | { key: string; label: string; type: 'email'; required?: boolean }
     | { key: string; label: string; type: 'yesno'; required?: boolean }
     | { key: string; label: string; type: 'activity-select'; required?: boolean }
     | { key: string; label: string; type: 'select'; required?: boolean }   
@@ -361,6 +362,7 @@ export class EncuestaJefaturaComponent implements OnInit, OnDestroy {
       identificacion: [
         { key: 'actividadVinculacionId', label: 'Actividad asociada', type: 'activity-select', required: true },
         { key: 'escuelaOLiceo', label: 'Escuela o liceo', type: 'text', required: true },
+        { key: 'correo', label: 'Correo electrónico', type: 'email' },
         { key: 'nivelEducacional', label: 'Nivel educacional', type: 'select', required: true },
         { key: 'haVisitadoAntes', label: '¿Has visitado antes la universidad?', type: 'yesno', required: true },
       ],
@@ -402,6 +404,7 @@ export class EncuestaJefaturaComponent implements OnInit, OnDestroy {
       identificacion: [
         { key: 'actividadVinculacionId', label: 'Actividad asociada', type: 'activity-select', required: true },
         { key: 'nombre', label: 'Nombre', type: 'text', required: true },
+        { key: 'correo', label: 'Correo electrónico', type: 'email' },
         { key: 'nivel', label: 'Nivel', type: 'select', required: true },
         { key: 'haParticipadoAntes', label: '¿Has participado antes en alternancias?', type: 'yesno', required: true },
       ],
@@ -445,6 +448,7 @@ export class EncuestaJefaturaComponent implements OnInit, OnDestroy {
       identificacion: [
         { key: 'actividadVinculacionId', label: 'Actividad asociada', type: 'activity-select', required: true },
         { key: 'escuelaOLiceo', label: 'Escuela o liceo', type: 'text', required: true },
+        { key: 'correo', label: 'Correo electrónico', type: 'email' },
         { key: 'nivelEducacional', label: 'Nivel educacional', type: 'select', required: true },
         { key: 'haParticipadoAntes', label: '¿Has participado antes en una actividad con estudiantes universitarios?', type: 'yesno', required: true },
       ],
@@ -710,6 +714,7 @@ export class EncuestaJefaturaComponent implements OnInit, OnDestroy {
       nivelEducacional: 'Nivel educacional',
       haVisitadoAntes: 'Ha visitado antes la universidad',
       nombre: 'Nombre',
+      correo: 'Correo electrónico',
       nivel: 'Nivel',
       haParticipadoAntes: 'Ha participado antes en alternancias',
     };
@@ -829,9 +834,13 @@ export class EncuestaJefaturaComponent implements OnInit, OnDestroy {
 
     const identificacionGroup: Record<string, FormControl> = {};
     for (const f of cfg.identificacion) {
+      const validators = f.required ? [Validators.required] : [];
+      if (f.type === 'email') {
+        validators.push(Validators.email);
+      }
       identificacionGroup[f.key] = new FormControl(
         null,
-        f.required ? [Validators.required] : []
+        validators
       );
     }
 
