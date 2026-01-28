@@ -46,7 +46,7 @@ export class TrabajadoresService {
     const centro = await this.prisma.centroEducativo.findUnique({ where: { id: dto.centroId } });
     if (!centro) throw new NotFoundException('Centro educativo no encontrado');
 
-    const rutNormalizado = normalizeRut(dto.rut);
+    const rutNormalizado = this.buildRut(dto.rut, dto.centroId);
 
     return this.prisma.trabajadorEduc.create({
       data: {
@@ -83,7 +83,10 @@ export class TrabajadoresService {
 
     if (dto.rut !== undefined) {
       // Normalizar RUT antes de actualizar
-      data.rut = normalizeRut(dto.rut);
+      const trimmed = (dto.rut ?? '').toString().trim();
+      if (trimmed !== '') {
+        data.rut = normalizeRut(trimmed);
+      }
     }
     if (dto.nombre !== undefined) data.nombre = dto.nombre;
     if (dto.rol !== undefined) data.rol = dto.rol;
@@ -109,5 +112,15 @@ export class TrabajadoresService {
     } catch {
       throw new NotFoundException('Trabajador no encontrado');
     }
+  }
+
+  private buildRut(rut: string | undefined, centroId: number): string {
+    const trimmed = (rut ?? '').toString().trim();
+    if (trimmed !== '') return normalizeRut(trimmed);
+
+    // Genera un RUT temporal corto para cumplir con el campo único
+    const centroPart = String(centroId).slice(-4);
+    const timePart = Date.now().toString(36).slice(-6);
+    return `TMP-${centroPart}-${timePart}`.toUpperCase();
   }
 }

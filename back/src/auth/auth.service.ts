@@ -20,7 +20,7 @@ type SafeUser = {
 
 @Injectable()
 export class AuthService {
-  private accessTtl = Number(process.env.ACCESS_TTL ?? 900); // seconds
+  private accessTtl = Number(process.env.ACCESS_TTL ?? 3600); // seconds
   private refreshTtl = Number(process.env.REFRESH_TTL ?? 1209600); // seconds (14d)
 
   constructor(
