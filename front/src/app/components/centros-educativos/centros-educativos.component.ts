@@ -204,16 +204,27 @@ export class CentrosEducativosComponent implements OnInit, OnDestroy {
     directorNombre: '',
     directorRut: '',
     directorCorreo: '',
+    directorCorreo2: '',
+    directorCorreo3: '',
     directorTelefono: '',
     utpNombre: '',
     utpRut: '',
     utpCorreo: '',
+    utpCorreo2: '',
+    utpCorreo3: '',
     utpTelefono: '',
   };
   showContactErrors = false;
   contactErrors = {
-    director: { nombre: '', rut: '', telefono: '', correo: '' },
-    utp: { nombre: '', rut: '', telefono: '', correo: '' },
+    director: {
+      nombre: '',
+      rut: '',
+      telefono: '',
+      correo: '',
+      correo2: '',
+      correo3: '',
+    },
+    utp: { nombre: '', rut: '', telefono: '', correo: '', correo2: '', correo3: '' },
   };
   private contactoDirectorId: number | null = null;
   private contactoUtpId: number | null = null;
@@ -416,10 +427,14 @@ export class CentrosEducativosComponent implements OnInit, OnDestroy {
       directorNombre: '',
       directorRut: '',
       directorCorreo: '',
+      directorCorreo2: '',
+      directorCorreo3: '',
       directorTelefono: '',
       utpNombre: '',
       utpRut: '',
       utpCorreo: '',
+      utpCorreo2: '',
+      utpCorreo3: '',
       utpTelefono: '',
     };
     this.contactoDirectorId = null;
@@ -613,10 +628,14 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
       directorNombre: '',
       directorRut: '',
       directorCorreo: '',
+      directorCorreo2: '',
+      directorCorreo3: '',
       directorTelefono: '',
       utpNombre: '',
       utpRut: '',
       utpCorreo: '',
+      utpCorreo2: '',
+      utpCorreo3: '',
       utpTelefono: '',
     };
 
@@ -629,8 +648,11 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
           if (d) {
             this.contactoDirectorId = d.id;
             this.contactosForm.directorNombre = d.nombre || '';
-            this.contactosForm.directorRut = d.rut || '';
-            this.contactosForm.directorCorreo = d.correo || '';
+            this.contactosForm.directorRut = this.isTempRut(d.rut) ? '' : d.rut || '';
+            const directorCorreos = this.splitEmails(d.correo);
+            this.contactosForm.directorCorreo = directorCorreos[0] || '';
+            this.contactosForm.directorCorreo2 = directorCorreos[1] || '';
+            this.contactosForm.directorCorreo3 = directorCorreos[2] || '';
             this.contactosForm.directorTelefono =
               d.telefono != null ? String(d.telefono) : '';
           }
@@ -646,8 +668,11 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
           if (u) {
             this.contactoUtpId = u.id;
             this.contactosForm.utpNombre = u.nombre || '';
-            this.contactosForm.utpRut = u.rut || '';
-            this.contactosForm.utpCorreo = u.correo || '';
+            this.contactosForm.utpRut = this.isTempRut(u.rut) ? '' : u.rut || '';
+            const utpCorreos = this.splitEmails(u.correo);
+            this.contactosForm.utpCorreo = utpCorreos[0] || '';
+            this.contactosForm.utpCorreo2 = utpCorreos[1] || '';
+            this.contactosForm.utpCorreo3 = utpCorreos[2] || '';
             this.contactosForm.utpTelefono =
               u.telefono != null ? String(u.telefono) : '';
           }
@@ -731,6 +756,19 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
     }
   }
 
+  displayRut(value?: string | null): string {
+    if (!value) return '—';
+    return value.startsWith('TMP-') || value.startsWith('TEMP-') ? '—' : value;
+  }
+
+  displayEmails(value?: string | null): string[] {
+    if (!value) return [];
+    return value
+      .split(/[;,]/)
+      .map((v) => v.trim())
+      .filter((v) => v !== '');
+  }
+
   formatFechaPractica(value?: string | null): string {
     return this.formatFecha(value);
   }
@@ -765,13 +803,22 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
     const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
     const validateContact = (
       contacto: 'director' | 'utp',
-      data: { nombre?: string; rut?: string; telefono?: string; correo?: string }
+      data: {
+        nombre?: string;
+        rut?: string;
+        telefono?: string;
+        correo?: string;
+        correo2?: string;
+        correo3?: string;
+      }
     ) => {
       const nombre = (data.nombre || '').trim();
       const rut = (data.rut || '').trim();
       const telefono = (data.telefono || '').toString().trim();
       const correo = (data.correo || '').trim();
-      const hasAny = !!(nombre || rut || telefono || correo);
+      const correo2 = (data.correo2 || '').trim();
+      const correo3 = (data.correo3 || '').trim();
+      const hasAny = !!(nombre || rut || telefono || correo || correo2 || correo3);
       if (!hasAny) return true;
 
       const errs = this.contactErrors[contacto];
@@ -779,10 +826,21 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
       if (telefono && !/^\d{6,13}$/.test(telefono)) {
         errs.telefono = 'Teléfono debe tener entre 6 y 13 dígitos';
       }
-      if (correo && !isValidEmail(correo)) {
-        errs.correo = 'Correo no tiene formato válido';
+      if (correo && !isValidEmail(correo)) errs.correo = 'Correo no tiene formato válido';
+      if (correo && correo2 && !isValidEmail(correo2)) {
+        errs.correo2 = 'Correo no tiene formato válido';
       }
-      return !(errs.nombre || errs.rut || errs.telefono || errs.correo);
+      if (correo2 && correo3 && !isValidEmail(correo3)) {
+        errs.correo3 = 'Correo no tiene formato válido';
+      }
+      return !(
+        errs.nombre ||
+        errs.rut ||
+        errs.telefono ||
+        errs.correo ||
+        errs.correo2 ||
+        errs.correo3
+      );
     };
 
     const toNum = (v?: string | number | null) => {
@@ -796,12 +854,16 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
       rut: this.contactosForm.directorRut,
       telefono: this.contactosForm.directorTelefono,
       correo: this.contactosForm.directorCorreo,
+      correo2: this.contactosForm.directorCorreo2,
+      correo3: this.contactosForm.directorCorreo3,
     });
     const utpOk = validateContact('utp', {
       nombre: this.contactosForm.utpNombre,
       rut: this.contactosForm.utpRut,
       telefono: this.contactosForm.utpTelefono,
       correo: this.contactosForm.utpCorreo,
+      correo2: this.contactosForm.utpCorreo2,
+      correo3: this.contactosForm.utpCorreo3,
     });
     if (!directorOk || !utpOk) {
       this.snack.open(
@@ -814,12 +876,15 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
 
     // DIRECTOR
     if ((this.contactosForm.directorNombre || '').trim() !== '') {
+      const correosDirector = this.joinEmailsSequential([
+        this.contactosForm.directorCorreo,
+        this.contactosForm.directorCorreo2,
+        this.contactosForm.directorCorreo3,
+      ]);
       const base = {
-        rut:
-          (this.contactosForm.directorRut ||
-            `TEMP-Director-${centroId}-${Date.now()}`).trim(),
+        rut: (this.contactosForm.directorRut || '').trim() || undefined,
         nombre: this.contactosForm.directorNombre.trim(),
-        correo: this.contactosForm.directorCorreo?.trim() || undefined,
+        correo: correosDirector || undefined,
         telefono: toNum(this.contactosForm.directorTelefono),
         rol: 'Director',
         centroId,
@@ -835,12 +900,15 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
 
     // UTP
     if ((this.contactosForm.utpNombre || '').trim() !== '') {
+      const correosUtp = this.joinEmailsSequential([
+        this.contactosForm.utpCorreo,
+        this.contactosForm.utpCorreo2,
+        this.contactosForm.utpCorreo3,
+      ]);
       const base = {
-        rut:
-          (this.contactosForm.utpRut ||
-            `TEMP-UTP-${centroId}-${Date.now()}`).trim(),
+        rut: (this.contactosForm.utpRut || '').trim() || undefined,
         nombre: this.contactosForm.utpNombre.trim(),
-        correo: this.contactosForm.utpCorreo?.trim() || undefined,
+        correo: correosUtp || undefined,
         telefono: toNum(this.contactosForm.utpTelefono),
         rol: 'UTP',
         centroId,
@@ -880,9 +948,39 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
 
   private resetContactErrors() {
     this.contactErrors = {
-      director: { nombre: '', rut: '', telefono: '', correo: '' },
-      utp: { nombre: '', rut: '', telefono: '', correo: '' },
+      director: {
+        nombre: '',
+        rut: '',
+        telefono: '',
+        correo: '',
+        correo2: '',
+        correo3: '',
+      },
+      utp: { nombre: '', rut: '', telefono: '', correo: '', correo2: '', correo3: '' },
     };
+  }
+
+  private splitEmails(value?: string | null): string[] {
+    if (!value) return [];
+    return value
+      .split(/[;,]/)
+      .map((v) => v.trim())
+      .filter((v) => v !== '');
+  }
+
+  private isTempRut(value?: string | null): boolean {
+    if (!value) return false;
+    return value.startsWith('TMP-') || value.startsWith('TEMP-');
+  }
+
+  private joinEmailsSequential(values: Array<string | undefined | null>): string | null {
+    const emails: string[] = [];
+    for (const v of values) {
+      const s = (v ?? '').toString().trim();
+      if (!s) break;
+      emails.push(s);
+    }
+    return emails.length ? emails.join(', ') : null;
   }
 
   // ===== orden, filtros y paginador =====

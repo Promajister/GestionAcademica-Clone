@@ -46,7 +46,7 @@ export class TrabajadoresApiService {
   }
 
   create(body: {
-    rut: string;
+    rut?: string;
     nombre: string;
     rol?: string;
     correo?: string;
