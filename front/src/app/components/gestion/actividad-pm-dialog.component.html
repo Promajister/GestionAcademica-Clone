@@ -991,6 +991,31 @@
                     Descargar
                   </button>
                 </div>
+
+                <div class="SrvFiles" *ngIf="archivosAsistenciaSrv?.length">
+                  <div class="SrvFile" *ngFor="let a of archivosAsistenciaSrv">
+                    <button
+                      type="button"
+                      mat-button
+                      class="SrvFile__link"
+                      (click)="openUrl(a?.url); $event.preventDefault(); $event.stopPropagation()"
+                    >
+                      <mat-icon>attach_file</mat-icon>
+                      <span>{{ getArchivoNombre(a) }}</span>
+                    </button>
+
+                    <button
+                      *ngIf="!isView"
+                      type="button"
+                      mat-icon-button
+                      color="warn"
+                      matTooltip="Quitar"
+                      (click)="removeArchivoServidor(a, 'asistencia'); $event.preventDefault(); $event.stopPropagation()"
+                    >
+                      <mat-icon>close</mat-icon>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1036,6 +1061,31 @@
                     Descargar
                   </button>
                 </div>
+
+                <div class="SrvFiles" *ngIf="archivosDocumentosSrv?.length">
+                  <div class="SrvFile" *ngFor="let a of archivosDocumentosSrv">
+                    <button
+                      type="button"
+                      mat-button
+                      class="SrvFile__link"
+                      (click)="openUrl(a?.url); $event.preventDefault(); $event.stopPropagation()"
+                    >
+                      <mat-icon>attach_file</mat-icon>
+                      <span>{{ getArchivoNombre(a) }}</span>
+                    </button>
+
+                    <button
+                      *ngIf="!isView"
+                      type="button"
+                      mat-icon-button
+                      color="warn"
+                      matTooltip="Quitar"
+                      (click)="removeArchivoServidor(a, 'documentos'); $event.preventDefault(); $event.stopPropagation()"
+                    >
+                      <mat-icon>close</mat-icon>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1080,6 +1130,31 @@
                     <mat-icon>download</mat-icon>
                     Descargar
                   </button>
+                </div>
+
+                <div class="SrvFiles" *ngIf="archivosFotosSrv?.length">
+                  <div class="SrvFile" *ngFor="let a of archivosFotosSrv">
+                    <button
+                      type="button"
+                      mat-button
+                      class="SrvFile__link"
+                      (click)="openUrl(a?.url); $event.preventDefault(); $event.stopPropagation()"
+                    >
+                      <mat-icon>image</mat-icon>
+                      <span>{{ getArchivoNombre(a) }}</span>
+                    </button>
+
+                    <button
+                      *ngIf="!isView"
+                      type="button"
+                      mat-icon-button
+                      color="warn"
+                      matTooltip="Quitar"
+                      (click)="removeArchivoServidor(a, 'fotos'); $event.preventDefault(); $event.stopPropagation()"
+                    >
+                      <mat-icon>close</mat-icon>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
