@@ -19,6 +19,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActividadesPmService } from '../../services/actividades-pm.service';
 import { saveAs } from 'file-saver';
 import { environment } from '../../../environments/environment';
+import { finalize } from 'rxjs/operators';
 
 export interface ActividadPmDialogData {
   id: number;
@@ -33,6 +34,7 @@ type CentroCostoRow = { tipo: string };
 type InstRow = { tipo: string; nombre: string };
 type DifusionRow = { medio: string; url: string };
 type EstudianteRow = { rut?: string; nombre?: string };
+type EvidenciaTipo = 'asistencia' | 'documentos' | 'fotos';
 
 type TipoActividad =
   | 'FERIA_VOCACIONAL'
@@ -95,8 +97,11 @@ export class ActividadPmDialogComponent implements OnInit {
   difusionCols: string[] = [];
   estudianteCols: string[] = [];
 
-  tiposResponsable = ['Académicos', 'Funcionarios', 'Jefe de carrera', 'Director de departamento', 'Externo'];
+  archivosEvidenciaSrv: any[] = [];
+  removeArchivoIds: number[] = [];
 
+
+  tiposResponsable = ['Académicos', 'Funcionarios', 'Jefe de carrera', 'Director de departamento', 'Externo'];
   tiposVinculacion = ['Extensión (unidireccional)', 'VcM (bidireccional)'];
 
   areasVinculacion = [
@@ -107,6 +112,7 @@ export class ActividadPmDialogComponent implements OnInit {
     'Integración cultural y desarrollo social',
     'Investigación e innovación',
   ];
+
   areasImpacto = [
     'SELECCIONE',
     'Desarrollo social y comunitario',
@@ -114,6 +120,7 @@ export class ActividadPmDialogComponent implements OnInit {
     'Cultural y patrimonio',
     'Educación regional',
   ];
+
   sedes = ['CASA MATRIZ ARICA', 'SEDE IQUIQUE'];
   proyectos = ['SELECCIONE', 'PLAN DE MEJORA', 'PRÁCTICAS', 'OTRO'];
 
@@ -285,7 +292,7 @@ export class ActividadPmDialogComponent implements OnInit {
         difusionUrl: ['', [this.urlOptionalValidator()]],
       }),
     });
-    
+
     this.fProy('tipoVinculacion').valueChanges.subscribe((v: string) => {
       if (this.isView) return;
       const otroCtrl = this.fProy('tipoVinculacionOtro');
@@ -300,6 +307,7 @@ export class ActividadPmDialogComponent implements OnInit {
       otroCtrl.updateValueAndValidity({ emitEvent: false });
     });
 
+    // Validadores por tipo actividad
     this.fProy('tipoActividad').valueChanges.subscribe((t: TipoActividad) => {
       if (this.isView) return;
       this.aplicarValidadoresTipoActividad(t);
@@ -310,6 +318,7 @@ export class ActividadPmDialogComponent implements OnInit {
     this.updateEquipoValidators();
     this.updateInstitucionValidators();
 
+    // Autocomplete unidad
     this.fProy('unidadCod')
       .valueChanges.pipe(
         debounceTime(300),
@@ -327,6 +336,7 @@ export class ActividadPmDialogComponent implements OnInit {
         }
       });
 
+    // Autocomplete responsable
     this.fProy('responsableRut')
       .valueChanges.pipe(
         debounceTime(300),
@@ -344,6 +354,7 @@ export class ActividadPmDialogComponent implements OnInit {
         }
       });
 
+    // Autocomplete equipo trabajo
     this.fEq('rut')
       .valueChanges.pipe(
         debounceTime(300),
@@ -365,20 +376,14 @@ export class ActividadPmDialogComponent implements OnInit {
   }
 
   private disableEditOnlyControls(): void {
-    // 1) Deshabilita “barras de ingreso” (aunque en view están ocultas)
     (this.form.get('equipoTrabajo') as FormGroup)?.disable({ emitEvent: false });
     (this.form.get('financiamiento') as FormGroup)?.disable({ emitEvent: false });
     (this.form.get('difusion') as FormGroup)?.disable({ emitEvent: false });
 
-    // 2) Asegura que el “Otro” quede deshabilitado siempre en vista
     this.fProy('tipoVinculacionOtro')?.disable({ emitEvent: false });
 
-    // 3) Instituciones inline (oculto en view), igual lo bloqueamos
     this.form.get('participantes.instTipo')?.disable({ emitEvent: false });
     this.form.get('participantes.instNombre')?.disable({ emitEvent: false });
-
-    // 4) No deshabilitamos “proyecto / evidencias / impacto” porque se verían grises.
-    //    Esos quedan bloqueados por readonly + reemplazo de mat-select por input readonly en el HTML.
   }
 
   private setTableCols(): void {
@@ -415,25 +420,43 @@ export class ActividadPmDialogComponent implements OnInit {
     return v ? v : fallback;
   }
 
-  private toDateLabel(v?: any): string {
-    if (!v) return '-';
+  private parseDateFlexible(raw: string): Date | null {
+    const v = String(raw ?? '').trim();
+    if (!v) return null;
+
+    // YYYY-MM-DD (o YYYY/MM/DD)
+    const iso = v.match(/^(\d{4})[-\/](\d{2})[-\/](\d{2})$/);
+    if (iso) {
+      const d = new Date(`${iso[1]}-${iso[2]}-${iso[3]}T00:00:00`);
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    // DD-MM-YYYY (o DD/MM/YYYY)
+    const lat = v.match(/^(\d{2})[-\/](\d{2})[-\/](\d{4})$/);
+    if (lat) {
+      const d = new Date(`${lat[3]}-${lat[2]}-${lat[1]}T00:00:00`);
+      return isNaN(d.getTime()) ? null : d;
+    }
+
     const d = new Date(v);
-    return isNaN(d.getTime()) ? String(v) : d.toLocaleDateString('es-CL');
+    return isNaN(d.getTime()) ? null : d;
   }
 
   private toDateInput(value?: string): string {
     if (!value) return '';
 
     if (typeof value === 'string' && value.includes('T')) {
-      return value.split('T')[0]; // ← CLAVE
+      return value.split('T')[0]; // CLAVE
     }
 
     if (typeof value === 'string') {
-      return value;
+      const parsed = this.parseDateFlexible(value);
+      return parsed ? parsed.toISOString().split('T')[0] : value;
     }
 
     return '';
   }
+
 
   private getArchivosEvidencia(archivos: any[], tipo: string) {
     return (archivos ?? []).filter((a) => a?.tipo === tipo);
@@ -449,31 +472,54 @@ export class ActividadPmDialogComponent implements OnInit {
     return parts[parts.length - 1] ?? '';
   }
 
-  removeSelectedFile(tipo: 'asistencia' | 'documentos' | 'fotos', index: number): void {
+  removeSelectedFile(tipo: EvidenciaTipo, index: number): void {
     if (tipo === 'asistencia') {
-      this.asistenciaFile = this.asistenciaFile.filter((_, i) => i !== index);
-      this.asistenciaFilesCount = this.asistenciaFile.length;
-      this.asistenciaFileName = this.formatFileNames(this.asistenciaFile);
+      this.asistenciaFile = [];
     }
 
     if (tipo === 'documentos') {
       this.documentosFile = this.documentosFile.filter((_, i) => i !== index);
-      this.documentosFilesCount = this.documentosFile.length;
-      this.documentosFileName = this.formatFileNames(this.documentosFile);
     }
 
     if (tipo === 'fotos') {
       this.fotosFile = this.fotosFile.filter((_, i) => i !== index);
-      this.fotosFilesCount = this.fotosFile.length;
-      this.fotosFileName = this.formatFileNames(this.fotosFile);
     }
+
+    this.refreshEvidenciasMeta();
+  }
+
+  removeArchivoServidor(archivo: any, tipo: EvidenciaTipo): void {
+    if (!archivo?.id) return;
+
+    if (!this.removeArchivoIds.includes(archivo.id)) {
+      this.removeArchivoIds.push(archivo.id);
+    }
+
+    // 2️⃣ lo sacamos de la lista visible (feedback inmediato)
+    if (tipo === 'asistencia') {
+      this.archivosAsistenciaSrv =
+        this.archivosAsistenciaSrv.filter(a => a.id !== archivo.id);
+    }
+
+    if (tipo === 'documentos') {
+      this.archivosDocumentosSrv =
+        this.archivosDocumentosSrv.filter(a => a.id !== archivo.id);
+    }
+
+    if (tipo === 'fotos') {
+      this.archivosFotosSrv =
+        this.archivosFotosSrv.filter(a => a.id !== archivo.id);
+    }
+
+    // 3️⃣ refrescamos contadores
+    this.refreshEvidenciasMeta();
   }
 
   private formatArchivoNombres(archivos: any[]): string {
     const names = (archivos ?? []).map((a) => this.getArchivoNombre(a)).filter((n) => n);
     if (!names.length) return '';
     if (names.length <= 2) return names.join(', ');
-    return `${names[0]}, ${names[1]} (+${names.length - 2} mas)`;
+    return `${names[0]}, ${names[1]} (+${names.length - 2} más)`;
   }
 
   private buildValoracionObservaciones(evidencias: any): string {
@@ -496,12 +542,15 @@ export class ActividadPmDialogComponent implements OnInit {
       /aspectos\s+positivos\s*:/i.test(text) ||
       /aspectos\s+negativos\s*:/i.test(text) ||
       /aspectos\s+a\s+mejorar\s*:/i.test(text);
-    if (!hasLabels) {
-      return { positivos: text, negativos: '', mejorar: '' };
-    }
+
+    if (!hasLabels) return { positivos: text, negativos: '', mejorar: '' };
 
     const extract = (label: string) => {
-      const re = new RegExp(`${label}\\s*:\\s*([\\s\\S]*?)(?=\\n\\s*Aspectos\\s+(positivos|negativos|a\\s+mejorar)\\s*:|$)`, 'i');
+      const re = new RegExp(
+        `${label}\\s*:\\s*([\\s\\S]*?)(?=\\n\\s*Aspectos\\s+(positivos|negativos|a\\s+mejorar)\\s*:|$)`,
+        'i',
+      );
+
       const match = text.match(re);
       return match ? match[1].trim() : '';
     };
@@ -513,7 +562,7 @@ export class ActividadPmDialogComponent implements OnInit {
     };
   }
 
-  downloadZip(tipo: 'asistencia' | 'documentos' | 'fotos'): void {
+  downloadZip(tipo: EvidenciaTipo): void {
     const id = Number(this.data?.id ?? this.actividad?.id);
     if (!Number.isFinite(id) || id <= 0) return;
     const url = `${this.apiBaseUrl}/api/actividades-pm/${id}/archivos/${tipo}/zip`;
@@ -540,6 +589,7 @@ export class ActividadPmDialogComponent implements OnInit {
     const base = this.apiBaseUrl.replace(/\/$/, '');
     if (trimmed.startsWith('/')) return `${base}${trimmed}`;
     return `${base}/${trimmed}`;
+
   }
 
   private getFileNameFromUrl(url: string): string {
@@ -709,16 +759,61 @@ export class ActividadPmDialogComponent implements OnInit {
     return obj;
   }
 
+  private refreshEvidenciasMeta(): void {
+    const srvA = this.archivosAsistenciaSrv ?? [];
+    const newA = this.asistenciaFile ?? [];
+
+    this.asistenciaFileName =
+      this.formatArchivoNombres(srvA) + (newA.length ? ` (+${newA.length} nuevos)` : '');
+
+    const srvD = this.archivosDocumentosSrv ?? [];
+    const newD = this.documentosFile ?? [];
+
+    this.documentosFileName =
+      this.formatArchivoNombres(srvD) + (newD.length ? ` (+${newD.length} nuevos)` : '');
+
+    const srvF = this.archivosFotosSrv ?? [];
+    const newF = this.fotosFile ?? [];
+
+    this.fotosFileName =
+      this.formatArchivoNombres(srvF) + (newF.length ? ` (+${newF.length} nuevos)` : '');
+
+    this.asistenciaFilesCount = srvA.length + newA.length;
+    this.documentosFilesCount = srvD.length + newD.length;
+    this.fotosFilesCount = srvF.length + newF.length;
+  }
+
   cargar(): void {
+    this.removeArchivoIds = [];
+    this.asistenciaFile = [];
+    this.documentosFile = [];
+    this.fotosFile = [];
+
+    this.archivosAsistenciaSrv = [];
+    this.archivosDocumentosSrv = [];
+    this.archivosFotosSrv = [];
+
+    this.refreshEvidenciasMeta();
+
     this.loading = true;
     this.errorMsg = '';
 
     this.api.obtener(this.data.id).subscribe({
       next: (a: any) => {
         const root = a?.payload ?? a ?? {};
+        const archivos = Array.isArray(root?.archivosEvidencia) ? root.archivosEvidencia : [];
 
-        const proyBase =
-          root?.proyecto && typeof root.proyecto === 'object' ? root.proyecto : {};
+        this.archivosEvidenciaSrv = archivos;
+
+        const archivosAsistencia = this.getArchivosEvidencia(archivos, 'LISTA_ASISTENCIA');
+        const archivosDocumentos = this.getArchivosEvidencia(archivos, 'DOCUMENTO');
+        const archivosFotos = this.getArchivosEvidencia(archivos, 'FOTOGRAFIA');
+
+        this.archivosAsistenciaSrv = archivosAsistencia;
+        this.archivosDocumentosSrv = archivosDocumentos;
+        this.archivosFotosSrv = archivosFotos;
+
+        const proyBase = root?.proyecto && typeof root.proyecto === 'object' ? root.proyecto : {};
 
         const tipoActividad = this.normalizeTipoActividad(proyBase?.tipoActividad ?? root?.tipoActividad);
         const tipoVinculacion = this.normalizeSelectValue(
@@ -777,14 +872,6 @@ export class ActividadPmDialogComponent implements OnInit {
           salidaProfesorResponsable: proyBase?.salidaProfesorResponsable ?? root?.profesorResponsable,
         };
 
-        const archivos = root?.archivosEvidencia ?? a?.archivosEvidencia ?? [];
-        const archivosAsistencia = this.getArchivosEvidencia(archivos, 'LISTA_ASISTENCIA');
-        const archivosDocumentos = this.getArchivosEvidencia(archivos, 'DOCUMENTO');
-        const archivosFotos = this.getArchivosEvidencia(archivos, 'FOTOGRAFIA');
-        this.archivosAsistenciaSrv = archivosAsistencia;
-        this.archivosDocumentosSrv = archivosDocumentos;
-        this.archivosFotosSrv = archivosFotos;
-
         this.actividad = { ...root, ...proy };
         this.resumenIa = root?.resumenIa ?? a?.resumenIa ?? null;
 
@@ -799,52 +886,44 @@ export class ActividadPmDialogComponent implements OnInit {
           fechaTermino: this.toDateInput(proy?.fechaTermino ?? proyBase?.fechaTermino ?? root?.fechaTermino),
         };
 
-        if (tipoActividad === 'JORNADA_PEDAGOGICA') {
-          // campos de asistentes/satisfacción se obtienen en otra sección
-        }
-        if (tipoActividad === 'CONGRESO_ACADEMICO') {
-          // campos de asistentes/satisfacción se obtienen en otra sección
-        }
-
         const valoracion = this.parseValoracionObservaciones(
           root?.evidencias?.observaciones ?? root?.observaciones ?? '',
         );
+
+        const isLocalUpload = (u: string) => /^\/?(api\/)?uploads\//i.test(u) || /\/(api\/)?uploads\//i.test(u);
+
+        const pickExternalRef = (url?: string) => {
+          const u = String(url ?? '').trim();
+          if (!u) return '';
+          if (isLocalUpload(u)) return '';
+          return u;
+        };
 
         this.form.patchValue({
           proyecto: proyectoForm,
           evidencias: {
             ...(root?.evidencias ?? {}),
-            listaAsistenciaRef: root?.evidencias?.listaAsistenciaRef ?? archivosAsistencia[0]?.url ?? '',
-            documentosRef: root?.evidencias?.documentosRef ?? archivosDocumentos[0]?.url ?? '',
-            fotosRef: root?.evidencias?.fotosRef ?? archivosFotos[0]?.url ?? '',
+            listaAsistenciaRef: pickExternalRef(root?.evidencias?.listaAsistenciaRef),
+            documentosRef: pickExternalRef(root?.evidencias?.documentosRef),
+            fotosRef: pickExternalRef(root?.evidencias?.fotosRef),
             enlaceNoticia: root?.evidencias?.enlaceNoticia ?? root?.enlaceNoticia ?? '',
             valoracionPositivos: valoracion.positivos,
             valoracionNegativos: valoracion.negativos,
             valoracionMejorar: valoracion.mejorar,
           },
-          participantes: {
-            ...(root?.participantes ?? {}),
-          },
+          participantes: { ...(root?.participantes ?? {}) },
           impacto: {
             medidaImpacto: root?.impacto?.medidaImpacto ?? root?.medidaImpacto ?? 'ENCUESTA',
             indicadorImpacto: root?.impacto?.indicadorImpacto ?? root?.indicadorImpacto ?? '',
           },
           difusion: {
             difusionEquipo:
-              root?.difusion?.difusionEquipo ??
-              root?.difusion?.medio ??
-              root?.medioDifusion ??
-              'SELECCIONE',
+              root?.difusion?.difusionEquipo ?? root?.difusion?.medio ?? root?.medioDifusion ?? 'SELECCIONE',
             difusionUrl: root?.difusion?.difusionUrl ?? root?.difusion?.url ?? root?.urlDifusion ?? '',
           },
         });
 
-        this.asistenciaFileName = this.formatArchivoNombres(archivosAsistencia);
-        this.asistenciaFilesCount = archivosAsistencia.length;
-        this.documentosFileName = this.formatArchivoNombres(archivosDocumentos);
-        this.documentosFilesCount = archivosDocumentos.length;
-        this.fotosFileName = this.formatArchivoNombres(archivosFotos);
-        this.fotosFilesCount = archivosFotos.length;
+        this.refreshEvidenciasMeta();
 
         const matrices = root?.matricesParticipantes ?? a?.matricesParticipantes ?? [];
         if (Array.isArray(matrices) && matrices.length > 0) {
@@ -874,8 +953,7 @@ export class ActividadPmDialogComponent implements OnInit {
           tipo: r?.tipo ?? r?.responsable?.tipo ?? '',
         }));
 
-        const equipoRaw =
-          a?.equiposTrabajo ?? root?.equiposTrabajo ?? a?.equipoTrabajo ?? root?.equipoTrabajo ?? [];
+        const equipoRaw = a?.equiposTrabajo ?? root?.equiposTrabajo ?? a?.equipoTrabajo ?? root?.equipoTrabajo ?? [];
         this.equipoTrabajo = (equipoRaw ?? []).map((e: any) => ({
           rut: e?.rut ?? e?.equipoTrabajo?.rut ?? '',
           nombre: e?.nombre ?? e?.equipoTrabajo?.nombre ?? '',
@@ -890,9 +968,7 @@ export class ActividadPmDialogComponent implements OnInit {
         }));
 
         const ccRaw = a?.centrosCosto ?? root?.centrosCosto ?? [];
-        this.centrosCosto = (ccRaw ?? []).map((c: any) => ({
-          tipo: c?.tipo ?? c?.nombre ?? '',
-        }));
+        this.centrosCosto = (ccRaw ?? []).map((c: any) => ({ tipo: c?.tipo ?? c?.nombre ?? '' }));
 
         const difusionesRaw = a?.difusiones ?? root?.difusiones ?? [];
         if (Array.isArray(difusionesRaw) && difusionesRaw.length > 0) {
@@ -907,10 +983,7 @@ export class ActividadPmDialogComponent implements OnInit {
         }
 
         const instRaw = a?.instituciones ?? root?.instituciones ?? [];
-        this.instituciones = (instRaw ?? []).map((i: any) => ({
-          tipo: i?.tipo ?? '',
-          nombre: i?.nombre ?? '',
-        }));
+        this.instituciones = (instRaw ?? []).map((i: any) => ({ tipo: i?.tipo ?? '', nombre: i?.nombre ?? '' }));
 
         const est = a?.estudiantes ?? root?.estudiantes ?? [];
         this.estudiantesFeria = est ?? [];
@@ -926,7 +999,6 @@ export class ActividadPmDialogComponent implements OnInit {
         this.loading = false;
 
         this.cargarIndicadorImpactoDesdeEncuestas(this.data.id);
-
       },
       error: () => {
         this.errorMsg = 'No se pudo cargar la actividad.';
@@ -945,8 +1017,7 @@ export class ActividadPmDialogComponent implements OnInit {
         const encuestas =
           Array.isArray(resp?.payload) ? resp.payload :
           Array.isArray(resp?.data) ? resp.data :
-          Array.isArray(resp) ? resp :
-          [];
+          Array.isArray(resp) ? resp : [];
 
         if (!encuestas.length) {
           this.fImp('indicadorImpacto').setValue('Sin encuestas', { emitEvent: false });
@@ -956,10 +1027,7 @@ export class ActividadPmDialogComponent implements OnInit {
         const calc = this.calcularSatisfaccionActividad(encuestas);
         this.indicadorSatisfaccion = calc;
 
-        this.fImp('indicadorImpacto').setValue(
-          calc !== null ? this.formatPct(calc) : 'Sin datos',
-          { emitEvent: false },
-        );
+        this.fImp('indicadorImpacto').setValue(calc !== null ? this.formatPct(calc) : 'Sin datos', { emitEvent: false });
       },
       error: () => {
         this.fImp('indicadorImpacto').setValue('Error al cargar', { emitEvent: false });
@@ -987,15 +1055,15 @@ export class ActividadPmDialogComponent implements OnInit {
     if (!values.length) return null;
 
     const avg = values.reduce((acc, n) => acc + n, 0) / values.length;
-
     return ((avg - 1) / 4) * 100;
   }
 
-
   private formatPct(n: number): string {
     const v = Math.round(n * 100) / 100;
-    return `${v.toFixed(2)}%`
+    return `${v.toFixed(2)}%`;
   }
+
+  // -------------------- IA --------------------
 
   regenerarResumenIa(): void {
     if (!this.actividad?.id || this.regenerandoResumen) return;
@@ -1014,11 +1082,14 @@ export class ActividadPmDialogComponent implements OnInit {
   guardar(): void {
     if (this.isView) return;
     this.formError = '';
+    this.errorMsg = '';
 
+    // Si no hay responsables en tabla, intenta “autocompletar” desde el formulario
     if (this.responsables.length === 0) {
       const rut = this.formatRut(String(this.fProy('responsableRut').value ?? '').trim());
       const nombre = String(this.fProy('responsableNombre').value ?? '').trim();
       const tipo = String(this.fProy('responsableTipo').value ?? 'Académicos');
+
       if (rut && nombre) {
         this.responsables = [...this.responsables, { rut, nombre, tipo }];
         this.fProy('responsableRut').setValue('');
@@ -1027,6 +1098,7 @@ export class ActividadPmDialogComponent implements OnInit {
       }
     }
 
+    // Validaciones por secciones
     if (this.unidades.length === 0) {
       this.form.markAllAsTouched();
       this.showUnidadError = true;
@@ -1034,12 +1106,14 @@ export class ActividadPmDialogComponent implements OnInit {
       this.formError = 'Debes agregar al menos una unidad.';
       return;
     }
+
     if (this.responsables.length === 0) {
       this.form.markAllAsTouched();
       this.goToSection('sec-responsables', 0);
       this.formError = 'Debes agregar al menos un responsable.';
       return;
     }
+
     if (this.equipoTrabajo.length === 0) {
       this.form.markAllAsTouched();
       this.goToSection('sec-equipo', 2);
@@ -1047,6 +1121,7 @@ export class ActividadPmDialogComponent implements OnInit {
       return;
     }
 
+    // Validación del form
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       this.focusFirstInvalid();
@@ -1056,9 +1131,14 @@ export class ActividadPmDialogComponent implements OnInit {
       return;
     }
 
+    // Evitar doble submit
+    if (this.saving) return;
+    this.saving = true;
+
     const estudiantes = [...this.estudiantesFeria, ...this.estudiantesSalida];
 
     const evidencias = this.form.value.evidencias;
+
     const request = {
       payload: {
         proyecto: this.form.value.proyecto,
@@ -1078,6 +1158,7 @@ export class ActividadPmDialogComponent implements OnInit {
       difusiones: this.difusiones,
       instituciones: this.instituciones,
       estudiantes,
+      removeArchivoIds: this.removeArchivoIds,
       files: {
         asistencia: this.asistenciaFile,
         documentos: this.documentosFile,
@@ -1085,19 +1166,16 @@ export class ActividadPmDialogComponent implements OnInit {
       },
     };
 
-    this.saving = true;
-
-    this.api.actualizar(this.data.id, request as any).subscribe({
-      next: () => {
-        this.saving = false;
-        this.dialogRef.close({ refresh: true });
-      },
-      error: (err) => {
-        console.error(err);
-        this.errorMsg = 'No se pudo guardar los cambios.';
-        this.saving = false;
-      },
-    });
+    this.api
+      .actualizar(this.data.id, request as any)
+      .pipe(finalize(() => (this.saving = false)))
+      .subscribe({
+        next: () => this.dialogRef.close({ refresh: true }),
+        error: (err) => {
+          console.error(err);
+          this.errorMsg = 'No se pudo guardar los cambios.';
+        },
+      });
   }
 
   key(tipo: string, col: string): string {
@@ -1289,11 +1367,14 @@ export class ActividadPmDialogComponent implements OnInit {
     if (!files.length) return;
 
     const maxMb = 10;
-    const allow = {
+
+    const allowByTipo: Record<typeof tipo, string[]> = {
       asistencia: ['pdf', 'xls', 'xlsx'],
       documentos: ['pdf', 'xls', 'xlsx'],
       fotos: ['jpg', 'jpeg', 'png'],
-    }[tipo];
+    };
+
+    const allow = allowByTipo[tipo];
 
     const validFiles = files.filter((file) => {
       const sizeOk = file.size <= maxMb * 1024 * 1024;
@@ -1301,48 +1382,43 @@ export class ActividadPmDialogComponent implements OnInit {
       return allow.includes(ext) && sizeOk;
     });
 
+    // Si nada pasa validación, limpiamos input y salimos
     if (!validFiles.length) {
       input.value = '';
       return;
     }
 
-    const current =
-      tipo === 'asistencia'
-        ? this.asistenciaFile
-        : tipo === 'documentos'
-        ? this.documentosFile
-        : this.fotosFile;
+    // ✅ Asistencia: solo 1 (el último válido seleccionado)
+    if (tipo === 'asistencia') {
+      const last = validFiles[validFiles.length - 1];
+      this.asistenciaFile = last ? [last] : [];
+      this.refreshEvidenciasMeta();
+      input.value = '';
+      return;
+    }
+
+    // ✅ Documentos/Fotos: acumulables + únicos + máx 10
+    const current = tipo === 'documentos' ? (this.documentosFile ?? []) : (this.fotosFile ?? []);
     const merged = [...current, ...validFiles];
+
     const unique = new Map<string, File>();
     for (const file of merged) {
       const key = `${file.name}__${file.size}__${file.lastModified}`;
       if (!unique.has(key)) unique.set(key, file);
     }
+
     const finalFiles = Array.from(unique.values()).slice(0, 10);
 
-    if (tipo == 'asistencia') {
-      this.asistenciaFile = finalFiles;
-      this.asistenciaFileName = this.formatFileNames(finalFiles);
-      this.asistenciaFilesCount = finalFiles.length;
-    } else if (tipo == 'documentos') {
+    if (tipo === 'documentos') {
       this.documentosFile = finalFiles;
-      this.documentosFileName = this.formatFileNames(finalFiles);
-      this.documentosFilesCount = finalFiles.length;
     } else {
       this.fotosFile = finalFiles;
-      this.fotosFileName = this.formatFileNames(finalFiles);
-      this.fotosFilesCount = finalFiles.length;
     }
+
+    this.refreshEvidenciasMeta();
     input.value = '';
   }
-
-  private formatFileNames(files: File[]): string {
-    const names = files.map((f) => f.name).filter((n) => n);
-    if (!names.length) return '';
-    if (names.length <= 2) return names.join(', ');
-    return `${names[0]}, ${names[1]} (+${names.length - 2} mas)`;
-  }
-
+  
   onRutInputEquipo(ev: Event): void {
     const input = ev.target as HTMLInputElement;
     const formatted = this.formatRut(input.value);
@@ -1366,7 +1442,6 @@ export class ActividadPmDialogComponent implements OnInit {
   private formatRut(value: string): string {
     const clean = value.toUpperCase().replace(/[^0-9K]/g, '');
     if (clean.length < 2) return clean;
-
     const body = clean.slice(0, -1);
     const dv = clean.slice(-1);
     const withDots = body.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
@@ -1378,8 +1453,7 @@ export class ActividadPmDialogComponent implements OnInit {
       const v = String(control.value ?? '').trim();
       if (!v) return null;
       const okFormat = /^\d{1,2}(\.\d{3}){2}-[0-9K]$/i.test(v);
-      if (!okFormat) return { rut: true };
-      return null;
+      return okFormat ? null : { rut: true };
     };
   }
 

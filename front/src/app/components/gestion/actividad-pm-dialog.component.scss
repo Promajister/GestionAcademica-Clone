@@ -402,6 +402,10 @@
   .FormRow{ grid-template-columns: 1fr; }
 }
 
+.SrvFiles { margin-top: 10px; display: grid; gap: 6px; }
+.SrvFile { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.SrvFile__link { flex: 1; justify-content: flex-start; gap: 8px; }
+
 .EvidenceTop{
   display:flex;
   align-items:flex-start;

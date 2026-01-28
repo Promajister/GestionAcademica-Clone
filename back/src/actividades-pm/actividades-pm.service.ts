@@ -151,8 +151,20 @@ export class ActividadesPmService {
     await this.prisma.centroCostoVinculacion.deleteMany({ where: { actividadVinculacionId: id } });
     await this.prisma.matrizParticipantesVinculacion.deleteMany({ where: { actividadVinculacionId: id } });
     await this.prisma.institucionVinculacion.deleteMany({ where: { actividadVinculacionId: id } });
-    await this.prisma.archivoEvidenciaVinculacion.deleteMany({ where: { actividadVinculacionId: id } });
     await this.prisma.estudianteActividadVinculacion.deleteMany({ where: { actividadVinculacionId: id } });
+
+    const removeIds = Array.isArray(payload?.removeArchivoIds)
+      ? payload.removeArchivoIds.map((n: any) => Number(n)).filter((n: number) => Number.isFinite(n))
+      : [];
+
+    if (removeIds.length) {
+      await this.prisma.archivoEvidenciaVinculacion.deleteMany({
+        where: {
+          actividadVinculacionId: id,
+          id: { in: removeIds },
+        },
+      });
+    }
 
     const updated = await this.prisma.actividadVinculacion.update({
       where: { id },

@@ -43,6 +43,7 @@ export interface GuardarActividadPmRequest {
   instituciones: any[];
   estudiantes?: any[];
   files?: EvidenciasFiles;
+  removeArchivoIds?: number[]; 
 }
 
 @Injectable({ providedIn: 'root' })
@@ -105,6 +106,7 @@ export class ActividadesPmService {
       difusiones: req.difusiones,
       instituciones: req.instituciones,
       estudiantes: req.estudiantes ?? [],
+      removeArchivoIds: req.removeArchivoIds ?? [], 
     };
 
     fd.append('data', JSON.stringify(data));
