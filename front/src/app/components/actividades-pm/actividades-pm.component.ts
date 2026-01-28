@@ -203,6 +203,7 @@ export class ActividadesPmComponent implements OnInit {
     private fb: FormBuilder,
     private actividadesPmService: ActividadesPmService,
     private dialog: MatDialog,
+    private snack: MatSnackBar,
   ) {}
 
 
@@ -751,42 +752,101 @@ export class ActividadesPmComponent implements OnInit {
     const files = Array.from(input.files ?? []);
     if (!files.length) return;
 
-    const maxMb = 10;
+    const maxMb = 25;
     const allow = {
       asistencia: ['pdf', 'xls', 'xlsx'],
       documentos: ['pdf', 'xls', 'xlsx'],
       fotos: ['jpg', 'jpeg', 'png'],
     }[tipo];
 
+    const current =
+      tipo === 'asistencia'
+        ? this.asistenciaFile
+        : tipo === 'documentos'
+          ? this.documentosFile
+          : this.fotosFile;
+
+    let rejectedType = 0;
+    let rejectedSize = 0;
+    let rejectedDup = 0;
+    const rejectedTypeNames: string[] = [];
+    const rejectedSizeNames: string[] = [];
+    const rejectedDupNames: string[] = [];
+
     const validFiles = files.filter((file) => {
-      const sizeOk = file.size <= maxMb * 1024 * 1024;
       const ext = (file.name.split('.').pop() ?? '').toLowerCase();
-      return allow.includes(ext) && sizeOk;
+      const typeOk = allow.includes(ext);
+      if (!typeOk) {
+        rejectedType += 1;
+        rejectedTypeNames.push(file.name);
+        return false;
+      }
+      const sizeOk = file.size <= maxMb * 1024 * 1024;
+      const exists = current.some((f) => f.name === file.name && f.size === file.size);
+      if (!sizeOk) {
+        rejectedSize += 1;
+        rejectedSizeNames.push(file.name);
+        return false;
+      }
+      if (exists) {
+        rejectedDup += 1;
+        rejectedDupNames.push(file.name);
+        return false;
+      }
+      return true;
     });
+
+    const maxNames = 5;
+    const formatNames = (names: string[]) => {
+      if (names.length <= maxNames) return names.join(', ');
+      return `${names.slice(0, maxNames).join(', ')} (+${names.length - maxNames} más)`;
+    };
+
+    const buildRejectedMessage = (prefix: string) => {
+      const parts: string[] = [];
+      if (rejectedType) parts.push(`tipo: ${formatNames(rejectedTypeNames)}`);
+      if (rejectedSize) parts.push(`tamaño: ${formatNames(rejectedSizeNames)}`);
+      if (rejectedDup) parts.push(`duplicados: ${formatNames(rejectedDupNames)}`);
+      return parts.length ? `${prefix} ${parts.join(' | ')}` : '';
+    };
 
     if (!validFiles.length) {
       input.value = '';
+      if (rejectedType + rejectedSize + rejectedDup > 0) {
+        this.snack.open(
+          buildRejectedMessage('No se agregaron archivos. Rechazados:'),
+          'OK',
+          { duration: 4000 },
+        );
+      }
       return;
     }
 
     if (tipo == 'asistencia') {
-      this.asistenciaFile = validFiles;
-      this.asistenciaFileName = this.formatFileNames(validFiles);
+      this.asistenciaFile = [...this.asistenciaFile, ...validFiles];
+      this.asistenciaFileName = this.formatFileCount(this.asistenciaFile);
     } else if (tipo == 'documentos') {
-      this.documentosFile = validFiles;
-      this.documentosFileName = this.formatFileNames(validFiles);
+      this.documentosFile = [...this.documentosFile, ...validFiles];
+      this.documentosFileName = this.formatFileCount(this.documentosFile);
     } else {
-      this.fotosFile = validFiles;
-      this.fotosFileName = this.formatFileNames(validFiles);
+      this.fotosFile = [...this.fotosFile, ...validFiles];
+      this.fotosFileName = this.formatFileCount(this.fotosFile);
+    }
+    input.value = '';
+    if (rejectedType + rejectedSize + rejectedDup > 0) {
+      this.snack.open(
+        buildRejectedMessage('Algunos archivos fueron rechazados:'),
+        'OK',
+        { duration: 4000 },
+      );
     }
     this.scheduleDraftSave();
   }
 
-  private formatFileNames(files: File[]): string {
-    const names = files.map((f) => f.name).filter((n) => n);
-    if (!names.length) return '';
-    if (names.length <= 2) return names.join(', ');
-    return `${names[0]}, ${names[1]} (+${names.length - 2} mas)`;
+  private formatFileCount(files: File[]): string {
+    const count = files.length;
+    if (!count) return '';
+    return count === 1 ? '1 archivo seleccionado' : `${count} archivos seleccionados`;
   }
 
   private buildValoracionObservaciones(evidencias: any): string {
