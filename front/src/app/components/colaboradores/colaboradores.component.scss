@@ -351,7 +351,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 1000;
+  z-index: 9999;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -664,6 +664,15 @@
   width: 95%;
   border: 1px solid #e5e7eb;
   overflow: hidden;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.DialogContent--details .DialogBody {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
 }
 
 /* Header con avatar + subtítulo */
@@ -883,7 +892,30 @@
   background: #fff;
   border-top: 1px solid #eef2f7;
   margin-top: 0;
-  padding: 14px 18px 16px;
+  padding: 16px 18px 24px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  align-items: center;
+  box-sizing: border-box;
+  min-height: 64px;
+}
+
+.DialogActions--details button {
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 999px !important;
+  text-transform: none !important;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.DialogActions--details button mat-icon {
+  margin-right: 6px;
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  line-height: 18px;
 }
 
 /* Responsive */

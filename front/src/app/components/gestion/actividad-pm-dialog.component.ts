@@ -268,8 +268,8 @@ export class ActividadPmDialogComponent implements OnInit {
       }),
 
       participantes: this.fb.group({
-        instTipo: ['INSTITUCIÓN EXTERNA', Validators.required],
-        instNombre: ['', [Validators.required, Validators.maxLength(150)]],
+        instTipo: ['INSTITUCIÓN EXTERNA'],
+        instNombre: ['', [Validators.maxLength(150)]],
         ...this.buildParticipantesControls(),
       }),
 
@@ -422,10 +422,9 @@ export class ActividadPmDialogComponent implements OnInit {
   }
 
   private formatArchivoNombres(archivos: any[]): string {
-    const names = (archivos ?? []).map((a) => this.getArchivoNombre(a)).filter((n) => n);
-    if (!names.length) return '';
-    if (names.length <= 2) return names.join(', ');
-    return `${names[0]}, ${names[1]} (+${names.length - 2} mas)`;
+    const count = archivos?.length ?? 0;
+    if (!count) return '';
+    return count === 1 ? '1 archivo seleccionado' : `${count} archivos seleccionados`;
   }
 
   private buildValoracionObservaciones(evidencias: any): string {
@@ -1258,26 +1257,25 @@ export class ActividadPmDialogComponent implements OnInit {
 
     if (tipo == 'asistencia') {
       this.asistenciaFile = finalFiles;
-      this.asistenciaFileName = this.formatFileNames(finalFiles);
+      this.asistenciaFileName = this.formatFileCount(finalFiles);
       this.asistenciaFilesCount = finalFiles.length;
     } else if (tipo == 'documentos') {
       this.documentosFile = finalFiles;
-      this.documentosFileName = this.formatFileNames(finalFiles);
+      this.documentosFileName = this.formatFileCount(finalFiles);
       this.documentosFilesCount = finalFiles.length;
     } else {
       this.fotosFile = finalFiles;
-      this.fotosFileName = this.formatFileNames(finalFiles);
+      this.fotosFileName = this.formatFileCount(finalFiles);
       this.fotosFilesCount = finalFiles.length;
     }
 
     input.value = '';
   }
 
-  private formatFileNames(files: File[]): string {
-    const names = files.map((f) => f.name).filter((n) => n);
-    if (!names.length) return '';
-    if (names.length <= 2) return names.join(', ');
-    return `${names[0]}, ${names[1]} (+${names.length - 2} mas)`;
+  private formatFileCount(files: File[]): string {
+    const count = files.length;
+    if (!count) return '';
+    return count === 1 ? '1 archivo seleccionado' : `${count} archivos seleccionados`;
   }
 
   onRutInputEquipo(ev: Event): void {
@@ -1369,12 +1367,11 @@ export class ActividadPmDialogComponent implements OnInit {
     const g = this.form?.get('participantes') as FormGroup | null;
     if (!g) return;
 
-    const require = this.instituciones.length === 0;
     const tipoCtrl = g.get('instTipo');
     const nombreCtrl = g.get('instNombre');
 
-    tipoCtrl?.setValidators(require ? [Validators.required] : []);
-    nombreCtrl?.setValidators(require ? [Validators.required, Validators.maxLength(150)] : [Validators.maxLength(150)]);
+    tipoCtrl?.setValidators([]);
+    nombreCtrl?.setValidators([Validators.maxLength(150)]);
 
     tipoCtrl?.updateValueAndValidity({ emitEvent: false });
     nombreCtrl?.updateValueAndValidity({ emitEvent: false });

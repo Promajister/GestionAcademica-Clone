@@ -460,8 +460,13 @@
           <span class="role-pill">{{ t.rol }}</span>
         </div>
         <div class="cell">{{ t.nombre }}</div>
-        <div class="cell">{{ t.rut || '—' }}</div>
-        <div class="cell">{{ t.correo || '—' }}</div>
+        <div class="cell">{{ displayRut(t.rut) }}</div>
+        <div class="cell">
+          <ng-container *ngIf="displayEmails(t.correo).length; else noCorreo">
+            <div *ngFor="let email of displayEmails(t.correo)">{{ email }}</div>
+          </ng-container>
+          <ng-template #noCorreo>—</ng-template>
+        </div>
         <div class="cell">{{ t.telefono || '—' }}</div>
       </div>
     </div>
@@ -520,10 +525,7 @@
             <mat-form-field appearance="outline" class="w-100 kv">
               <mat-label>RUT</mat-label>
               <input matInput [(ngModel)]="contactosForm.directorRut" name="directorRut" />
-              <mat-hint>Obligatorio si completas el contacto</mat-hint>
-              <mat-error *ngIf="showContactErrors && contactErrors.director.rut">
-                {{ contactErrors.director.rut }}
-              </mat-error>
+              <mat-hint>Opcional</mat-hint>
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-100 kv">
@@ -541,6 +543,32 @@
               <mat-hint>Opcional. Formato correo&#64;dominio</mat-hint>
               <mat-error *ngIf="showContactErrors && contactErrors.director.correo">
                 {{ contactErrors.director.correo }}
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field
+              appearance="outline"
+              class="w-100 kv kv--full"
+              *ngIf="contactosForm.directorCorreo?.trim()"
+            >
+              <mat-label>Correo 2</mat-label>
+              <input matInput type="email" [(ngModel)]="contactosForm.directorCorreo2" name="directorCorreo2" />
+              <mat-hint>Opcional. Formato correo&#64;dominio</mat-hint>
+              <mat-error *ngIf="showContactErrors && contactErrors.director.correo2">
+                {{ contactErrors.director.correo2 }}
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field
+              appearance="outline"
+              class="w-100 kv kv--full"
+              *ngIf="contactosForm.directorCorreo2?.trim()"
+            >
+              <mat-label>Correo 3</mat-label>
+              <input matInput type="email" [(ngModel)]="contactosForm.directorCorreo3" name="directorCorreo3" />
+              <mat-hint>Opcional. Formato correo&#64;dominio</mat-hint>
+              <mat-error *ngIf="showContactErrors && contactErrors.director.correo3">
+                {{ contactErrors.director.correo3 }}
               </mat-error>
             </mat-form-field>
           </div>
@@ -566,10 +594,7 @@
             <mat-form-field appearance="outline" class="w-100 kv">
               <mat-label>RUT</mat-label>
               <input matInput [(ngModel)]="contactosForm.utpRut" name="utpRut" />
-              <mat-hint>Obligatorio si completas el contacto</mat-hint>
-              <mat-error *ngIf="showContactErrors && contactErrors.utp.rut">
-                {{ contactErrors.utp.rut }}
-              </mat-error>
+              <mat-hint>Opcional</mat-hint>
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-100 kv">
@@ -587,6 +612,32 @@
               <mat-hint>Opcional. Formato correo&#64;dominio</mat-hint>
               <mat-error *ngIf="showContactErrors && contactErrors.utp.correo">
                 {{ contactErrors.utp.correo }}
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field
+              appearance="outline"
+              class="w-100 kv kv--full"
+              *ngIf="contactosForm.utpCorreo?.trim()"
+            >
+              <mat-label>Correo 2</mat-label>
+              <input matInput type="email" [(ngModel)]="contactosForm.utpCorreo2" name="utpCorreo2" />
+              <mat-hint>Opcional. Formato correo&#64;dominio</mat-hint>
+              <mat-error *ngIf="showContactErrors && contactErrors.utp.correo2">
+                {{ contactErrors.utp.correo2 }}
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field
+              appearance="outline"
+              class="w-100 kv kv--full"
+              *ngIf="contactosForm.utpCorreo2?.trim()"
+            >
+              <mat-label>Correo 3</mat-label>
+              <input matInput type="email" [(ngModel)]="contactosForm.utpCorreo3" name="utpCorreo3" />
+              <mat-hint>Opcional. Formato correo&#64;dominio</mat-hint>
+              <mat-error *ngIf="showContactErrors && contactErrors.utp.correo3">
+                {{ contactErrors.utp.correo3 }}
               </mat-error>
             </mat-form-field>
           </div>
