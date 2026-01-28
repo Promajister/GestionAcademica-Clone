@@ -1,5 +1,5 @@
-import { Component, inject, OnInit, PLATFORM_ID } from '@angular/core';
-import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { Component, inject, OnDestroy, OnInit, PLATFORM_ID, Renderer2 } from '@angular/core';
+import { CommonModule, DOCUMENT, isPlatformBrowser } from '@angular/common';
 
 
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
@@ -41,11 +41,13 @@ interface ColaboradorForm {
     MatSnackBarModule, MatPaginatorModule
   ]
 })
-export class ColaboradoresComponent implements OnInit {
+export class ColaboradoresComponent implements OnInit, OnDestroy {
   private snack = inject(MatSnackBar);
   private colaboradoresService = inject(ColaboradoresService);
   private fb = inject(FormBuilder);
   private platformId = inject(PLATFORM_ID);
+  private renderer = inject(Renderer2);
+  private doc = inject(DOCUMENT);
 
   // Interfaz de usuario
   mostrarFormulario = false;
@@ -103,6 +105,19 @@ export class ColaboradoresComponent implements OnInit {
       this.mostrarFormulario = false;
       this.estaEditando = false;
     }
+  }
+
+  ngOnDestroy(): void {
+    this.renderer.removeClass(this.doc.body, 'student-modal-open');
+  }
+
+  private syncModalBodyClass(): void {
+    const isOpen = !!(this.colaboradorSeleccionado || this.mostrarConfirmarEliminar);
+    if (isOpen) {
+      this.renderer.addClass(this.doc.body, 'student-modal-open');
+      return;
+    }
+    this.renderer.removeClass(this.doc.body, 'student-modal-open');
   }
 
   private esRolVinculacionSoloLectura(): boolean {
@@ -235,10 +250,12 @@ export class ColaboradoresComponent implements OnInit {
   // Detalles
   verDetalles(colaborador: Colaborador) {
     this.colaboradorSeleccionado = colaborador;
+    this.syncModalBodyClass();
   }
 
   cerrarDetalles() {
     this.colaboradorSeleccionado = null;
+    this.syncModalBodyClass();
   }
 
   // Interfaz de usuario
@@ -343,6 +360,7 @@ export class ColaboradoresComponent implements OnInit {
     if (this.esSoloLectura) return;
     this.colaboradorAEliminar = c;
     this.mostrarConfirmarEliminar = true;
+    this.syncModalBodyClass();
   }
 
   confirmarEliminar() {
@@ -381,6 +399,7 @@ export class ColaboradoresComponent implements OnInit {
   cerrarConfirmarEliminar() {
     this.mostrarConfirmarEliminar = false;
     this.colaboradorAEliminar = null;
+    this.syncModalBodyClass();
   }
 
   // ===== filtros - aplicados localmente en el frontend =====
