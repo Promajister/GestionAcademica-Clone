@@ -520,10 +520,7 @@
             <mat-form-field appearance="outline" class="w-100 kv">
               <mat-label>RUT</mat-label>
               <input matInput [(ngModel)]="contactosForm.directorRut" name="directorRut" />
-              <mat-hint>Obligatorio si completas el contacto</mat-hint>
-              <mat-error *ngIf="showContactErrors && contactErrors.director.rut">
-                {{ contactErrors.director.rut }}
-              </mat-error>
+              <mat-hint>Opcional</mat-hint>
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-100 kv">
@@ -566,10 +563,7 @@
             <mat-form-field appearance="outline" class="w-100 kv">
               <mat-label>RUT</mat-label>
               <input matInput [(ngModel)]="contactosForm.utpRut" name="utpRut" />
-              <mat-hint>Obligatorio si completas el contacto</mat-hint>
-              <mat-error *ngIf="showContactErrors && contactErrors.utp.rut">
-                {{ contactErrors.utp.rut }}
-              </mat-error>
+              <mat-hint>Opcional</mat-hint>
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-100 kv">

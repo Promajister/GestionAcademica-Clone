@@ -776,7 +776,6 @@ tipoLabel(tipo: TipoCentro | string | null | undefined): string {
 
       const errs = this.contactErrors[contacto];
       if (!nombre) errs.nombre = 'Nombre es obligatorio';
-      if (!rut) errs.rut = 'RUT es obligatorio';
       if (telefono && !/^\d{6,13}$/.test(telefono)) {
         errs.telefono = 'Teléfono debe tener entre 6 y 13 dígitos';
       }
