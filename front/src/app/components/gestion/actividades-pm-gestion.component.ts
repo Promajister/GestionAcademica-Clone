@@ -141,39 +141,35 @@ export class ActividadesPmGestionComponent implements OnInit {
       });
   }
 
+  private openActividad(id: number, mode: 'view' | 'edit') {
+    return this.dialog.open(ActividadPmDialogComponent, {
+      width: '1100px',
+      maxWidth: '96vw',
+      height: '80vh',
+      maxHeight: '90vh',
+      panelClass: ['ga-dialog', 'actividad-dialog'], // puedes dejar solo ga-dialog si quieres
+      backdropClass: 'ga-dialog-backdrop',
+      disableClose: true,
+      autoFocus: false,
+      restoreFocus: true,
+      data: { id, mode },
+    });
+  }
+
   abrirVer(row: any): void {
-    this.dialog
-        .open(ActividadPmDialogComponent, {
-        width: '900px',
-        maxWidth: '92vw',
-        data: { id: row.id, mode: 'view' },
-        disableClose: true,
-        panelClass: 'ga-dialog',
-        backdropClass: 'ga-dialog-backdrop',
-        autoFocus: false,
-        })
-        .afterClosed()
-        .subscribe((result) => {
+    this.openActividad(row.id, 'view')
+      .afterClosed()
+      .subscribe((result) => {
         if (result?.refresh) this.cargar();
-        });
+      });
   }
 
   abrirEditar(row: any): void {
-    this.dialog.open(ActividadPmDialogComponent, {
-        width: '980px',
-        maxWidth: '96vw',
-        maxHeight: '90vh',
-        height: '90vh',      
-        data: { id: row.id, mode: 'edit' },
-        disableClose: true,
-        panelClass: 'ga-dialog',
-        backdropClass: 'ga-dialog-backdrop',
-        autoFocus: false,
-    })
-    .afterClosed()
-    .subscribe((result) => {
-    if (result?.refresh) this.cargar();
-    });
+    this.openActividad(row.id, 'edit')
+      .afterClosed()
+      .subscribe((result) => {
+        if (result?.refresh) this.cargar();
+      });
   }
 
   limpiarFiltros(): void {

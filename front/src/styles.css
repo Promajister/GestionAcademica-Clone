@@ -95,11 +95,15 @@ body.student-modal-open .mat-drawer-content {
   display: flex !important;
   flex-direction: column !important;
   max-height: 90vh !important;
+  height: 100%;
 }
 
 .ga-dialog .mat-mdc-dialog-content{
   padding: 0 !important;
   margin: 0 !important;
+  flex: 1 1 auto !important;
+  overflow: auto !important;
+  max-height: none !important;
 }
 
 .ga-dialog .mat-mdc-dialog-actions{
@@ -113,7 +117,9 @@ body.student-modal-open .mat-drawer-content {
   border-radius: 22px !important;
   overflow: hidden;
   box-shadow: 0 30px 80px rgba(15,23,42,.35) !important;
+  height: 100%;
 }
+
 .ga-dialog .mdc-dialog__surface{
   border-radius: 22px !important;
 }

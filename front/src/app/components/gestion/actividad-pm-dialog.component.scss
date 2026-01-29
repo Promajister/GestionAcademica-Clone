@@ -638,4 +638,196 @@
 }
 
 
+/* GRID */
+.EvidenceGridV2{
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+@media (max-width: 1200px){
+  .EvidenceGridV2{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 900px){
+  .EvidenceGridV2{ grid-template-columns: 1fr; }
+}
+
+.EvCard{
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  background: #fff;
+  padding: 14px;
+
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+
+  min-height: 290px;
+}
+
+.EvCard--view{
+  min-height: 270px;
+}
+
+.EvHead{
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.EvTitle{
+  display:flex;
+  gap: 10px;
+  min-width: 0;
+}
+
+.EvIcon{
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  display:grid;
+  place-items:center;
+  background: #eef2ff;
+  border: 1px solid #dbeafe;
+  color: #446BA9;
+  flex: 0 0 auto;
+}
+
+.EvText{
+  min-width: 0;
+}
+.EvText h4{
+  margin: 0;
+  font-size: 14px;
+  font-weight: 900;
+  color: #0f172a;
+}
+.EvText p{
+  margin: 4px 0 0;
+  font-size: 12.5px;
+  color:#475569;
+}
+
+.EvMeta{
+  display:flex;
+  align-items:flex-start;
+  justify-content:flex-end;
+  gap: 10px;
+  min-width: 0;
+  flex-wrap: wrap;
+  row-gap: 6px;
+}
+
+@media (max-width: 520px){
+  .EvMeta{ flex-wrap: wrap; row-gap: 6px; }
+}
+
+.EvCount{
+  font-size: 12px;
+  color:#64748b;
+  white-space: nowrap;
+}
+
+.EvMiniBtn{
+  height: 36px !important;
+  padding: 0 10px !important;
+}
+
+.EvActions{
+  margin-top: 12px;
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
+.EvPrimaryBtn{
+  height: 40px !important;
+  border-radius: 12px !important;
+}
+
+.EvHint{
+  font-size: 13px;
+  color:#64748b;
+}
+
+.EvList{
+  margin-top: 12px;
+  border: 1px solid #e5e7eb;
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 8px;
+  height: 180px; 
+  flex: 1 1 auto;  
+  min-height: 120px;    
+  overflow: auto;
+  display: grid;
+  gap: 6px;
+}
+
+.EvItem{
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto; /* icono | nombre | acciones */
+  align-items: center;
+  gap: 10px;
+}
+
+.EvItemIcon{
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+  color: #446BA9;
+  flex: 0 0 auto;
+}
+
+.EvItemName{
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  color:#0f172a;
+}
+
+/* El link no debe romper la fila */
+.EvLink{
+  flex: 1 1 auto;
+  justify-content: flex-start !important;
+  padding: 0 !important;
+  min-width: 0;
+}
+.EvLink .EvItemName{ width: 100%; }
+
+.EvItemBtn{
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 10px;
+}
+
+.EvItemBtn:hover{
+  background: rgba(15, 23, 42, 0.06);
+}
+
+@media (hover:hover){
+  .EvItemBtn{ opacity: .85; }
+  .EvItem:hover .EvItemBtn{ opacity: 1; }
+}
+
+/* EMPTY */
+.EvEmpty{
+  margin-top: 12px;
+  border: 1px dashed #e2e8f0;
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 12px;
+  display:flex;
+  align-items:center;
+  gap: 8px;
+  color:#64748b;
+  font-size: 13px;
+}
 
