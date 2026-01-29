@@ -25,6 +25,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatTableModule } from '@angular/material/table';
 import { ActividadesPmService } from '../../services/actividades-pm.service';
+import { EstudiantesService, EstudianteResumen } from '../../services/estudiantes.service';
 
 type UnidadRow = { cod: string; unidad: string };
 type ResponsableRow = { rut: string; nombre: string; tipo: string };
@@ -131,6 +132,9 @@ export class ActividadesPmComponent implements OnInit {
 
   estudiantesFeria: EstudianteRow[] = [];
   estudiantesSalida: EstudianteRow[] = [];
+  estudiantesCatalogo: EstudianteResumen[] = [];
+  estudiantesLoading = false;
+  estudiantesError = '';
 
   unidadCols = ['n', 'cod', 'unidad', 'accion'];
   responsableCols = ['n', 'rut', 'nombre', 'tipo', 'accion'];
@@ -204,6 +208,7 @@ export class ActividadesPmComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private actividadesPmService: ActividadesPmService,
+    private estudiantesService: EstudiantesService,
     private dialog: MatDialog,
     private snack: MatSnackBar,
   ) {}
@@ -273,6 +278,7 @@ export class ActividadesPmComponent implements OnInit {
         rut: ['', [Validators.required, this.rutValidator()]],
         nombre: ['', [Validators.required, Validators.maxLength(120)]],
         tipo: ['', Validators.required],
+        estudianteRut: [''],
       }),
 
       evidencias: this.fb.group({
@@ -326,6 +332,14 @@ export class ActividadesPmComponent implements OnInit {
     this.aplicarValidadoresTipoActividad(initial);
     this.updateEquipoValidators();
     this.updateInstitucionValidators();
+
+    this.fEq('tipo').valueChanges.subscribe((value) => {
+      this.handleEquipoTipoChange(String(value ?? ''));
+    });
+    this.fEq('estudianteRut').valueChanges.subscribe((rut) => {
+      this.syncEstudianteEquipo(String(rut ?? ''));
+    });
+    this.handleEquipoTipoChange(String(this.fEq('tipo').value ?? ''));
 
     this.fProy('unidadCod')
       .valueChanges.pipe(
@@ -394,6 +408,10 @@ export class ActividadesPmComponent implements OnInit {
 
   fEq(name: string) {
     return (this.form.get('equipoTrabajo') as FormGroup).get(name)!;
+  }
+
+  get isEquipoEstudiantes(): boolean {
+    return this.isTipoEstudiantes(String(this.fEq('tipo').value ?? ''));
   }
 
   private aplicarValidadoresTipoActividad(t?: TipoActividad | null) {
@@ -548,7 +566,7 @@ export class ActividadesPmComponent implements OnInit {
     if (exists) return;
 
     this.equipoTrabajo = [...this.equipoTrabajo, { rut, nombre, tipo }];
-    g.reset({ rut: '', nombre: '', tipo: '' });
+    g.reset({ rut: '', nombre: '', tipo: '', estudianteRut: '' });
     g.markAsPristine();
     g.markAsUntouched();
     this.updateEquipoValidators();
@@ -562,6 +580,7 @@ export class ActividadesPmComponent implements OnInit {
   }
 
   onRutInputEquipo(ev: Event): void {
+    if (this.isEquipoEstudiantes) return;
     const input = ev.target as HTMLInputElement;
     const formatted = this.formatRut(input.value);
     if (formatted !== this.fEq('rut').value) {
@@ -1292,7 +1311,7 @@ export class ActividadesPmComponent implements OnInit {
         valoracionNegativos: '',
         valoracionMejorar: '',
       },
-      equipoTrabajo: { rut: '', nombre: '', tipo: '' },
+      equipoTrabajo: { rut: '', nombre: '', tipo: '', estudianteRut: '' },
       financiamiento: { finCategoria: '', finTipoFinanciamiento: '', finMonto: 0 },
       difusion: { difusionEquipo: 'SELECCIONE', difusionUrl: '' },
       participantes: { instTipo: 'INSTITUCIÓN EXTERNA', instNombre: '' },
@@ -1305,22 +1324,78 @@ export class ActividadesPmComponent implements OnInit {
     this.clearDraft();
   }
 
+  private isTipoEstudiantes(value: string): boolean {
+    const clean = String(value ?? '').toUpperCase();
+    return clean.includes('ESTUDIANTE');
+  }
+
+  private handleEquipoTipoChange(value: string): void {
+    const isEstudiantes = this.isTipoEstudiantes(value);
+    if (isEstudiantes) {
+      this.loadEstudiantesCatalogo();
+      if (!this.fEq('estudianteRut').value) {
+        this.fEq('rut').setValue('', { emitEvent: false });
+        this.fEq('nombre').setValue('', { emitEvent: false });
+      }
+    } else {
+      this.fEq('estudianteRut').setValue('', { emitEvent: false });
+    }
+    this.updateEquipoValidators();
+  }
+
+  private loadEstudiantesCatalogo(): void {
+    if (this.estudiantesLoading || this.estudiantesCatalogo.length) return;
+    this.estudiantesLoading = true;
+    this.estudiantesError = '';
+    this.estudiantesService.listar().subscribe({
+      next: (data) => {
+        const items = (data ?? []).filter((e) => e?.rut && e?.nombre);
+        this.estudiantesCatalogo = items.sort((a, b) =>
+          String(a.nombre).localeCompare(String(b.nombre), 'es'),
+        );
+        this.estudiantesLoading = false;
+      },
+      error: () => {
+        this.estudiantesLoading = false;
+        this.estudiantesError = 'No se pudo cargar estudiantes.';
+      },
+    });
+  }
+
+  private syncEstudianteEquipo(rut: string): void {
+    if (!this.isEquipoEstudiantes) return;
+    const clean = String(rut ?? '').trim();
+    if (!clean) {
+      this.fEq('rut').setValue('', { emitEvent: false });
+      this.fEq('nombre').setValue('', { emitEvent: false });
+      return;
+    }
+    const found = this.estudiantesCatalogo.find((e) => String(e.rut) === clean);
+    if (!found) return;
+    this.fEq('rut').setValue(this.formatRut(String(found.rut)), { emitEvent: false });
+    this.fEq('nombre').setValue(found.nombre, { emitEvent: false });
+  }
+
   private updateEquipoValidators() {
     const g = this.form?.get('equipoTrabajo') as FormGroup | null;
     if (!g) return;
 
     const require = this.equipoTrabajo.length === 0;
+    const isEstudiantes = this.isTipoEstudiantes(String(g.get('tipo')?.value ?? ''));
     const rutCtrl = g.get('rut');
     const nombreCtrl = g.get('nombre');
     const tipoCtrl = g.get('tipo');
+    const estudianteCtrl = g.get('estudianteRut');
 
     rutCtrl?.setValidators(require ? [Validators.required, this.rutValidator()] : [this.rutValidator()]);
     nombreCtrl?.setValidators(require ? [Validators.required, Validators.maxLength(120)] : [Validators.maxLength(120)]);
     tipoCtrl?.setValidators(require ? [Validators.required] : []);
+    estudianteCtrl?.setValidators(isEstudiantes && require ? [Validators.required] : []);
 
     rutCtrl?.updateValueAndValidity({ emitEvent: false });
     nombreCtrl?.updateValueAndValidity({ emitEvent: false });
     tipoCtrl?.updateValueAndValidity({ emitEvent: false });
+    estudianteCtrl?.updateValueAndValidity({ emitEvent: false });
   }
 
   private updateInstitucionValidators() {

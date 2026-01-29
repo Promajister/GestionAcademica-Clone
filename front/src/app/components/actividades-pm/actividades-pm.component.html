@@ -584,6 +584,7 @@
                     matInput
                     formControlName="rut"
                     placeholder="21.073.336-1"
+                    [readonly]="isEquipoEstudiantes"
                     (input)="onRutInputEquipo($event)"
                     autocomplete="off"
                   />
@@ -596,7 +597,7 @@
 
                 <mat-form-field appearance="outline" class="InlineField">
                   <mat-label>Nombre </mat-label>
-                  <input matInput formControlName="nombre" placeholder="Nombre completo" maxlength="120" />
+                  <input matInput formControlName="nombre" placeholder="Nombre completo" maxlength="120" [readonly]="isEquipoEstudiantes" />
                   <mat-error *ngIf="fEq('nombre').touched && fEq('nombre').invalid">Obligatorio</mat-error>
                 </mat-form-field>
 
@@ -612,6 +613,20 @@
                     </mat-option>
                   </mat-select>
                   <mat-error *ngIf="fEq('tipo').touched && fEq('tipo').invalid">Obligatorio</mat-error>
+                </mat-form-field>
+
+                <mat-form-field *ngIf="isEquipoEstudiantes" appearance="outline" class="InlineField">
+                  <mat-label>Estudiante </mat-label>
+                  <mat-select formControlName="estudianteRut" [disabled]="estudiantesLoading">
+                    <mat-option *ngIf="estudiantesLoading" disabled>Cargando estudiantes...</mat-option>
+                    <mat-option *ngIf="!estudiantesLoading && estudiantesCatalogo.length === 0" disabled>
+                      Sin estudiantes disponibles
+                    </mat-option>
+                    <mat-option *ngFor="let e of estudiantesCatalogo" [value]="e.rut">
+                      {{ e.nombre }} ({{ e.rut }})
+                    </mat-option>
+                  </mat-select>
+                  <mat-error *ngIf="fEq('estudianteRut').touched && fEq('estudianteRut').invalid">Obligatorio</mat-error>
                 </mat-form-field>
 
                 <button mat-stroked-button type="button" (click)="addEquipo()" class="AlignBtn">
