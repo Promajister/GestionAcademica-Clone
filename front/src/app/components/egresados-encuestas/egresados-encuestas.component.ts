@@ -216,6 +216,7 @@ export class EgresadosEncuestasComponent implements OnInit, OnDestroy {
       anioEgreso: ['', Validators.required],
       edad: ['', Validators.required],
       sexo: ['', Validators.required],
+      correo: ['', [Validators.required, Validators.email]],
     }),
     insercion: this.fb.group({
       trabajaActualmente: ['', Validators.required],
@@ -385,7 +386,8 @@ export class EgresadosEncuestasComponent implements OnInit, OnDestroy {
   getGeneralesLinea2(encuesta: any): string {
     const generales = encuesta?.generales || {};
     const sexo = generales?.sexo ?? 'Sin dato';
-    return `Sexo: ${sexo}`;
+    const correo = generales?.correo ?? 'Sin dato';
+    return `Sexo: ${sexo} - Correo: ${correo}`;
   }
 
   getGeneralesRows(encuesta: any): Array<{ key: string; value: string }> {
@@ -400,6 +402,7 @@ export class EgresadosEncuestasComponent implements OnInit, OnDestroy {
     push('Año de egreso', generales.anioEgreso);
     push('Edad', generales.edad);
     push('Sexo', generales.sexo);
+    push('Correo electronico', generales.correo);
     return rows;
   }
 
@@ -499,6 +502,7 @@ export class EgresadosEncuestasComponent implements OnInit, OnDestroy {
         anioEgreso: ['', Validators.required],
         edad: ['', Validators.required],
         sexo: ['', Validators.required],
+        correo: ['', [Validators.required, Validators.email]],
       }),
       secciones: this.fb.group(seccionesGroup),
       abiertas: this.fb.group({
