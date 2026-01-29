@@ -42,7 +42,8 @@ type TipoActividad =
   | 'TALLER_REMEDIAL'
   | 'CONGRESO_ACADEMICO'
   | 'ALTERNANCIA_PEDAGOGICA'
-  | 'SALIDA_A_TERRENO';
+  | 'SALIDA_A_TERRENO'
+  | 'OTRO';
 
 @Injectable()
 export class CustomDateAdapter extends NativeDateAdapter {
@@ -187,6 +188,7 @@ export class ActividadesPmComponent implements OnInit {
     { value: 'CONGRESO_ACADEMICO', label: 'Congreso Académico' },
     { value: 'ALTERNANCIA_PEDAGOGICA', label: 'Alternancia Pedagógica' },
     { value: 'SALIDA_A_TERRENO', label: 'Salida a Terreno' },
+    { value: 'OTRO', label: 'Otros' },
   ];
 
   asistenciaFile: File[] = [];
@@ -232,6 +234,7 @@ export class ActividadesPmComponent implements OnInit {
         resultados: ['', [Validators.maxLength(1000)]],
 
         tipoActividad: [null, Validators.required],
+        tipoActividadOtro: [''],
 
         feriaInstitucionVisitada: [''],
         feriaEstRut: [''],
@@ -420,6 +423,7 @@ export class ActividadesPmComponent implements OnInit {
       'salidaObjetivoPedagogico',
       'salidaAsignaturaVinculada',
       'salidaProfesorResponsable',
+      'tipoActividadOtro',
     ];
 
     for (const k of allSpecific) {
@@ -469,6 +473,10 @@ export class ActividadesPmComponent implements OnInit {
       reqText('salidaObjetivoPedagogico', 300);
       reqText('salidaAsignaturaVinculada', 200);
       reqText('salidaProfesorResponsable', 200);
+    }
+
+    if (t === 'OTRO') {
+      reqText('tipoActividadOtro', 150);
     }
   }
 
@@ -1222,6 +1230,7 @@ export class ActividadesPmComponent implements OnInit {
         proyectoAsociado: 'SELECCIONE',
         resultados: '',
         tipoActividad: null,
+        tipoActividadOtro: '',
 
         feriaInstitucionVisitada: '',
         feriaEstRut: '',

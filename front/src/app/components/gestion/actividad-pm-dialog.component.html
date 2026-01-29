@@ -226,6 +226,15 @@
             </mat-form-field>
           </div>
 
+          <div *ngIf="fProy('tipoActividad').value === 'OTRO'">
+            <div class="FormRow">
+              <mat-form-field appearance="outline" class="FormField FullWidth">
+                <mat-label>Nombre del tipo de actividad *</mat-label>
+                <input matInput formControlName="tipoActividadOtro" maxlength="150" [readonly]="isView" />
+              </mat-form-field>
+            </div>
+          </div>
+
           <div *ngIf="fProy('tipoActividad').value === 'FERIA_VOCACIONAL'">
             <div class="FormRow">
               <mat-form-field appearance="outline" class="FormField FullWidth">

@@ -84,6 +84,7 @@ export class ActividadesPmGestionComponent implements OnInit {
     { value: 'CONGRESO_ACADEMICO', label: 'Congreso Académico' },
     { value: 'ALTERNANCIA_PEDAGOGICA', label: 'Alternancia Pedagógica' },
     { value: 'SALIDA_A_TERRENO', label: 'Salida a Terreno' },
+    { value: 'OTRO', label: 'Otros' },
   ];
 
   private tipoActividadLabelMap: Record<string, string> = {};
