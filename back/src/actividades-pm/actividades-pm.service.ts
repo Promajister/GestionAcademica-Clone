@@ -221,8 +221,13 @@ export class ActividadesPmService {
     const instituciones = Array.isArray(payload?.instituciones) ? payload.instituciones : [];
     const estudiantes = this.buildEstudiantes(payload);
 
+    const tipoActividad = this.requiredText(proyecto?.tipoActividad);
+    const tipoActividadOtro =
+      tipoActividad === 'OTRO' ? this.normalizeText(proyecto?.tipoActividadOtro) : null;
+
     return {
-      tipoActividad: this.requiredText(proyecto?.tipoActividad),
+      tipoActividad,
+      tipoActividadOtro,
       nombre: this.requiredText(proyecto?.nombre),
       objetivo: this.requiredText(proyecto?.objetivo),
       descripcion: this.requiredText(proyecto?.descripcion),

@@ -1417,7 +1417,6 @@ mostrarEstadisticas(tipo: TipoEncuesta): void {
   }
 
 
-  // Calcula todas las estadísticas para la encuesta ESTUDIANTIL
    // Calcula todas las estadísticas para la encuesta ESTUDIANTIL
 private computeEstadisticasEstudiantiles(): void {
   const encuestasEstTodas = this.encuestas.filter(

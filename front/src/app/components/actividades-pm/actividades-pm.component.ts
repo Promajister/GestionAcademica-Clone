@@ -42,7 +42,8 @@ type TipoActividad =
   | 'TALLER_REMEDIAL'
   | 'CONGRESO_ACADEMICO'
   | 'ALTERNANCIA_PEDAGOGICA'
-  | 'SALIDA_A_TERRENO';
+  | 'SALIDA_A_TERRENO'
+  | 'OTRO';
 
 @Injectable()
 export class CustomDateAdapter extends NativeDateAdapter {
@@ -187,6 +188,7 @@ export class ActividadesPmComponent implements OnInit {
     { value: 'CONGRESO_ACADEMICO', label: 'Congreso Académico' },
     { value: 'ALTERNANCIA_PEDAGOGICA', label: 'Alternancia Pedagógica' },
     { value: 'SALIDA_A_TERRENO', label: 'Salida a Terreno' },
+    { value: 'OTRO', label: 'Otros' },
   ];
 
   asistenciaFile: File[] = [];
@@ -232,6 +234,7 @@ export class ActividadesPmComponent implements OnInit {
         resultados: ['', [Validators.maxLength(1000)]],
 
         tipoActividad: [null, Validators.required],
+        tipoActividadOtro: [''],
 
         feriaInstitucionVisitada: [''],
         feriaEstRut: [''],
@@ -420,6 +423,7 @@ export class ActividadesPmComponent implements OnInit {
       'salidaObjetivoPedagogico',
       'salidaAsignaturaVinculada',
       'salidaProfesorResponsable',
+      'tipoActividadOtro',
     ];
 
     for (const k of allSpecific) {
@@ -469,6 +473,10 @@ export class ActividadesPmComponent implements OnInit {
       reqText('salidaObjetivoPedagogico', 300);
       reqText('salidaAsignaturaVinculada', 200);
       reqText('salidaProfesorResponsable', 200);
+    }
+
+    if (t === 'OTRO') {
+      reqText('tipoActividadOtro', 150);
     }
   }
 
@@ -838,16 +846,7 @@ export class ActividadesPmComponent implements OnInit {
       return;
     }
 
-    if (tipo == 'asistencia') {
-      this.asistenciaFile = limited;
-      this.asistenciaFileName = this.formatFileCount(this.asistenciaFile);
-    } else if (tipo == 'documentos') {
-      this.documentosFile = limited;
-      this.documentosFileName = this.formatFileCount(this.documentosFile);
-    } else {
-      this.fotosFile = limited;
-      this.fotosFileName = this.formatFileCount(this.fotosFile);
-    }
+    this.updateSelectedFiles(tipo, limited);
     input.value = '';
     if (rejectedType + rejectedSize + rejectedDup + rejectedLimit > 0) {
       this.snack.open(
@@ -857,6 +856,36 @@ export class ActividadesPmComponent implements OnInit {
       );
     }
     this.scheduleDraftSave();
+  }
+
+  removeSelectedFile(tipo: 'asistencia' | 'documentos' | 'fotos', index: number): void {
+    const current =
+      tipo === 'asistencia'
+        ? this.asistenciaFile
+        : tipo === 'documentos'
+          ? this.documentosFile
+          : this.fotosFile;
+
+    if (!current.length || index < 0 || index >= current.length) return;
+    const next = current.filter((_, i) => i !== index);
+    this.updateSelectedFiles(tipo, next);
+    this.scheduleDraftSave();
+  }
+
+  private updateSelectedFiles(tipo: 'asistencia' | 'documentos' | 'fotos', files: File[]): void {
+    if (tipo === 'asistencia') {
+      this.asistenciaFile = files;
+      this.asistenciaFileName = this.formatFileCount(files);
+      return;
+    }
+    if (tipo === 'documentos') {
+      this.documentosFile = files;
+      this.documentosFileName = this.formatFileCount(files);
+      return;
+    }
+
+    this.fotosFile = files;
+    this.fotosFileName = this.formatFileCount(files);
   }
 
   private formatFileCount(files: File[]): string {
@@ -1222,6 +1251,7 @@ export class ActividadesPmComponent implements OnInit {
         proyectoAsociado: 'SELECCIONE',
         resultados: '',
         tipoActividad: null,
+        tipoActividadOtro: '',
 
         feriaInstitucionVisitada: '',
         feriaEstRut: '',

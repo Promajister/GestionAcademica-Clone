@@ -582,6 +582,7 @@ model ActividadVinculacion {
 
   // tipo de actividad (controlado por front)
   tipoActividad String // "Feria Vocacional" | "Jornada Pedagogica" | "Taller Remedial" | "Congreso Academico" | "Alternancia Pedagogica" | "Salida a Terreno"
+  tipoActividadOtro String?
 
   nombre      String
   objetivo    String @db.Text

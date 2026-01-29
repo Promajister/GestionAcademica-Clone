@@ -193,6 +193,16 @@
                 </mat-form-field>
               </div>
 
+              <div *ngIf="fProy('tipoActividad').value === 'OTRO'">
+                <div class="FormRow">
+                  <mat-form-field appearance="outline" class="FormField FullWidth">
+                    <mat-label>Nombre del tipo de actividad *</mat-label>
+                    <input matInput formControlName="tipoActividadOtro" maxlength="150" />
+                    <mat-error *ngIf="fProy('tipoActividadOtro').touched && fProy('tipoActividadOtro').invalid">Obligatorio</mat-error>
+                  </mat-form-field>
+                </div>
+              </div>
+
               <div *ngIf="fProy('tipoActividad').value === 'FERIA_VOCACIONAL'">
                 <div class="FormRow">
                   <mat-form-field appearance="outline" class="FormField FullWidth">
@@ -1006,6 +1016,21 @@
                   <span class="FileName muted">Sin archivo</span>
                 </ng-template>
               </div>
+
+              <div class="FileList" *ngIf="asistenciaFile.length">
+                <div class="FileItem" *ngFor="let file of asistenciaFile; let i = index">
+                  <span class="FileItemName" [title]="file.name">{{ file.name }}</span>
+                  <button
+                    mat-icon-button
+                    type="button"
+                    class="FileRemoveBtn"
+                    (click)="removeSelectedFile('asistencia', i)"
+                    aria-label="Quitar archivo"
+                  >
+                    <mat-icon>close</mat-icon>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -1040,6 +1065,21 @@
                   <span class="FileName muted">Sin archivo</span>
                 </ng-template>
               </div>
+
+              <div class="FileList" *ngIf="documentosFile.length">
+                <div class="FileItem" *ngFor="let file of documentosFile; let i = index">
+                  <span class="FileItemName" [title]="file.name">{{ file.name }}</span>
+                  <button
+                    mat-icon-button
+                    type="button"
+                    class="FileRemoveBtn"
+                    (click)="removeSelectedFile('documentos', i)"
+                    aria-label="Quitar archivo"
+                  >
+                    <mat-icon>close</mat-icon>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -1073,6 +1113,21 @@
                 <ng-template #noFoto>
                   <span class="FileName muted">Sin archivo</span>
                 </ng-template>
+              </div>
+
+              <div class="FileList" *ngIf="fotosFile.length">
+                <div class="FileItem" *ngFor="let file of fotosFile; let i = index">
+                  <span class="FileItemName" [title]="file.name">{{ file.name }}</span>
+                  <button
+                    mat-icon-button
+                    type="button"
+                    class="FileRemoveBtn"
+                    (click)="removeSelectedFile('fotos', i)"
+                    aria-label="Quitar archivo"
+                  >
+                    <mat-icon>close</mat-icon>
+                  </button>
+                </div>
               </div>
             </div>
           </div>

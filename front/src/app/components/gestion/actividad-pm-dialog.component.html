@@ -226,6 +226,15 @@
             </mat-form-field>
           </div>
 
+          <div *ngIf="fProy('tipoActividad').value === 'OTRO'">
+            <div class="FormRow">
+              <mat-form-field appearance="outline" class="FormField FullWidth">
+                <mat-label>Nombre del tipo de actividad *</mat-label>
+                <input matInput formControlName="tipoActividadOtro" maxlength="150" [readonly]="isView" />
+              </mat-form-field>
+            </div>
+          </div>
+
           <div *ngIf="fProy('tipoActividad').value === 'FERIA_VOCACIONAL'">
             <div class="FormRow">
               <mat-form-field appearance="outline" class="FormField FullWidth">
@@ -752,7 +761,7 @@
           </div>
 
           <div class="TableCard">
-            <table mat-table [dataSource]="difusiones" class="mat-elevation-z0 SimpleTable">
+            <table mat-table [dataSource]="difusiones" class="mat-elevation-z0 SimpleTable SimpleTable--fixed">
               <ng-container matColumnDef="n">
                 <th mat-header-cell *matHeaderCellDef>#</th>
                 <td mat-cell *matCellDef="let row; let i = index">{{ i + 1 }}</td>
@@ -764,9 +773,16 @@
               </ng-container>
 
               <ng-container matColumnDef="url">
-                <th mat-header-cell *matHeaderCellDef>URL</th>
-                <td mat-cell *matCellDef="let row">
-                  <a *ngIf="row.url" [href]="row.url" target="_blank">{{ row.url }}</a>
+                <th mat-header-cell *matHeaderCellDef class="UrlCell">URL</th>
+                <td mat-cell *matCellDef="let row" class="UrlCell">
+                  <a
+                    *ngIf="row.url"
+                    class="UrlEllipsis"
+                    [href]="row.url"
+                    target="_blank"
+                    rel="noopener"
+                    [title]="row.url"
+                  >{{ row.url }}</a>
                   <span *ngIf="!row.url">-</span>
                 </td>
               </ng-container>
@@ -991,6 +1007,21 @@
                     Descargar
                   </button>
                 </div>
+
+                <div class="FileList" *ngIf="!isView && asistenciaFile.length">
+                  <div class="FileItem" *ngFor="let file of asistenciaFile; let i = index">
+                    <span class="FileItemName" [title]="file.name">{{ file.name }}</span>
+                    <button
+                      mat-icon-button
+                      type="button"
+                      class="FileRemoveBtn"
+                      (click)="removeSelectedFile('asistencia', i)"
+                      aria-label="Quitar archivo"
+                    >
+                      <mat-icon>close</mat-icon>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1036,6 +1067,21 @@
                     Descargar
                   </button>
                 </div>
+
+                <div class="FileList" *ngIf="!isView && documentosFile.length">
+                  <div class="FileItem" *ngFor="let file of documentosFile; let i = index">
+                    <span class="FileItemName" [title]="file.name">{{ file.name }}</span>
+                    <button
+                      mat-icon-button
+                      type="button"
+                      class="FileRemoveBtn"
+                      (click)="removeSelectedFile('documentos', i)"
+                      aria-label="Quitar archivo"
+                    >
+                      <mat-icon>close</mat-icon>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1080,6 +1126,21 @@
                     <mat-icon>download</mat-icon>
                     Descargar
                   </button>
+                </div>
+
+                <div class="FileList" *ngIf="!isView && fotosFile.length">
+                  <div class="FileItem" *ngFor="let file of fotosFile; let i = index">
+                    <span class="FileItemName" [title]="file.name">{{ file.name }}</span>
+                    <button
+                      mat-icon-button
+                      type="button"
+                      class="FileRemoveBtn"
+                      (click)="removeSelectedFile('fotos', i)"
+                      aria-label="Quitar archivo"
+                    >
+                      <mat-icon>close</mat-icon>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

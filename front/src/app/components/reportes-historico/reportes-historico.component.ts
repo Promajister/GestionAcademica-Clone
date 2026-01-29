@@ -252,15 +252,78 @@ export class ReportesHistoricoComponent {
       const res = await fetch(path);
       if (!res.ok) return null;
       const blob = await res.blob();
-      return await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
+      return await this.blobToJpegDataUrl(blob, 0.75);
     } catch {
       return null;
     }
+  }
+
+  private async loadLogoAsDataURLSafe(path: string): Promise<string | null> {
+    try {
+      const res = await fetch(path);
+      if (!res.ok) return null;
+      const blob = await res.blob();
+      return await this.blobToPngDataUrl(blob, 256);
+    } catch {
+      return null;
+    }
+  }
+
+  private blobToJpegDataUrl(blob: Blob, quality: number): Promise<string | null> {
+    return new Promise((resolve) => {
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth || img.width;
+        canvas.height = img.naturalHeight || img.height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          URL.revokeObjectURL(url);
+          resolve(null);
+          return;
+        }
+        ctx.drawImage(img, 0, 0);
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+        URL.revokeObjectURL(url);
+        resolve(dataUrl);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve(null);
+      };
+      img.src = url;
+    });
+  }
+
+  private blobToPngDataUrl(blob: Blob, maxWidth: number): Promise<string | null> {
+    return new Promise((resolve) => {
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => {
+        const naturalW = img.naturalWidth || img.width;
+        const naturalH = img.naturalHeight || img.height;
+        const scale = naturalW > maxWidth ? maxWidth / naturalW : 1;
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(naturalW * scale));
+        canvas.height = Math.max(1, Math.round(naturalH * scale));
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          URL.revokeObjectURL(url);
+          resolve(null);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/png');
+        URL.revokeObjectURL(url);
+        resolve(dataUrl);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve(null);
+      };
+      img.src = url;
+    });
   }
 
   private drawPdfHeader(
@@ -287,7 +350,8 @@ export class ReportesHistoricoComponent {
 
     const drawLogo = (dataUrl: string | null | undefined, x: number, y: number, w: number, h: number) => {
       if (!dataUrl) return;
-      doc.addImage(dataUrl, 'PNG', x, y, w, h);
+      const format = dataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+      doc.addImage(dataUrl, format, x, y, w, h);
     };
 
     drawLogo(opts.logoLeft, margin, 16, 76, 56);
@@ -367,8 +431,8 @@ export class ReportesHistoricoComponent {
       const safe = (v: any) => (v === null || v === undefined || v === '' ? '—' : String(v));
 
       const [logoUta, logoFeh] = await Promise.all([
-        this.loadImageAsDataURLSafe('assets/img/uta.png'),
-        this.loadImageAsDataURLSafe('assets/img/feh.png'),
+        this.loadLogoAsDataURLSafe('assets/img/uta.png'),
+        this.loadLogoAsDataURLSafe('assets/img/feh.png'),
       ]);
 
       const now = new Date();

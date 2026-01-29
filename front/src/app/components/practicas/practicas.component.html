@@ -165,33 +165,60 @@
           <div class="row-2">
             <mat-form-field appearance="outline">
               <mat-label>Colaborador 1 *</mat-label>
-              <mat-select formControlName="colaborador1Id">
-                <mat-option [value]="null">Seleccionar colaborador...</mat-option>
-                @for (colaborador of colaboradores; track colaborador.id) {
+              <input
+                matInput
+                placeholder="Escriba nombre o correo del colaborador..."
+                (input)="filtrarColaboradores($event, 'colaborador1Id')"
+                (focus)="mostrarTodosColaboradores('colaborador1Id')"
+                [matAutocomplete]="autoColaborador1"
+                formControlName="colaborador1Id" />
+
+              <mat-autocomplete
+                #autoColaborador1="matAutocomplete"
+                [displayWith]="mostrarColaborador.bind(this)"
+                (optionSelected)="onColaboradorSeleccionado($event, 'colaborador1Id')">
+                @for (colaborador of colaboradorFiltrado1; track colaborador.id) {
                   <mat-option
-                    [value]="colaborador.id"
+                    [value]="colaborador"
                     [disabled]="isColaboradorSeleccionado(colaborador.id, 'colaborador1Id')">
-                    {{ colaborador.nombre }}
+                    {{ colaborador.nombre }}{{ colaborador.cargo ? ' (' + colaborador.cargo + ')' : '' }}
                   </mat-option>
                 }
-              </mat-select>
+              </mat-autocomplete>
+
               @if (formularioPractica.get('colaborador1Id')?.hasError('required')) {
                 <mat-error>Debes seleccionar al menos un colaborador</mat-error>
+              } @else if (formularioPractica.get('colaborador1Id')?.hasError('invalido')) {
+                <mat-error>Selecciona un colaborador valido</mat-error>
               }
             </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Colaborador 2 (opcional)</mat-label>
-              <mat-select formControlName="colaborador2Id">
-                <mat-option [value]="null">Sin asignar</mat-option>
-                @for (colaborador of colaboradores; track colaborador.id) {
+              <input
+                matInput
+                placeholder="Escriba nombre o correo del colaborador..."
+                (input)="filtrarColaboradores($event, 'colaborador2Id')"
+                (focus)="mostrarTodosColaboradores('colaborador2Id')"
+                [matAutocomplete]="autoColaborador2"
+                formControlName="colaborador2Id" />
+
+              <mat-autocomplete
+                #autoColaborador2="matAutocomplete"
+                [displayWith]="mostrarColaborador.bind(this)"
+                (optionSelected)="onColaboradorSeleccionado($event, 'colaborador2Id')">
+                @for (colaborador of colaboradorFiltrado2; track colaborador.id) {
                   <mat-option
-                    [value]="colaborador.id"
+                    [value]="colaborador"
                     [disabled]="isColaboradorSeleccionado(colaborador.id, 'colaborador2Id')">
                     {{ colaborador.nombre }}{{ colaborador.cargo ? ' (' + colaborador.cargo + ')' : '' }}
                   </mat-option>
                 }
-              </mat-select>
+              </mat-autocomplete>
+
+              @if (formularioPractica.get('colaborador2Id')?.hasError('invalido')) {
+                <mat-error>Selecciona un colaborador valido</mat-error>
+              }
               <mat-hint align="start">Puedes registrar hasta 2 colaboradores.</mat-hint>
             </mat-form-field>
           </div>

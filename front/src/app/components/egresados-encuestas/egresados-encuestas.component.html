@@ -172,7 +172,7 @@
               <div class="objetivo-desc">
                 El objetivo de esta encuesta es conocer la situación laboral de nuestros egresados
                 y evaluar la pertinencia de la formación en relación con su inserción profesional.
-                La información recogida es anónima y se utilizará solo para acciones de apoyo y
+                La información recogida se utilizará solo para acciones de apoyo y
                 seguimiento de titulados, además de aportar evidencia en procesos de acreditación.
               </div>
             </div>
@@ -211,6 +211,17 @@
                 </mat-select>
                 <mat-error *ngIf="form.get('generales.sexo')?.touched && form.get('generales.sexo')?.invalid">
                   Campo obligatorio
+                </mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="field">
+                <mat-label>Correo electronico</mat-label>
+                <input matInput type="email" formControlName="correo" />
+                <mat-error *ngIf="form.get('generales.correo')?.touched && form.get('generales.correo')?.hasError('required')">
+                  Campo obligatorio
+                </mat-error>
+                <mat-error *ngIf="form.get('generales.correo')?.touched && form.get('generales.correo')?.hasError('email')">
+                  Correo invalido
                 </mat-error>
               </mat-form-field>
             </div>
@@ -442,7 +453,7 @@
               <div class="objetivo-title">Objetivo de la encuesta</div>
               <div class="objetivo-desc">
                 Esta encuesta recoge la opinión de egresados sobre formación, recursos y
-                mejora continua. Las respuestas son anónimas y se usan como evidencia para
+                mejora continua. Las respuestas se utilizará como evidencia para
                 la autoevaluación y acreditación.
               </div>
             </div>
@@ -481,6 +492,17 @@
                 </mat-select>
                 <mat-error *ngIf="acreditacionForm.get('generales.sexo')?.touched && acreditacionForm.get('generales.sexo')?.invalid">
                   Campo obligatorio
+                </mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="field">
+                <mat-label>Correo electronico</mat-label>
+                <input matInput type="email" formControlName="correo" />
+                <mat-error *ngIf="acreditacionForm.get('generales.correo')?.touched && acreditacionForm.get('generales.correo')?.hasError('required')">
+                  Campo obligatorio
+                </mat-error>
+                <mat-error *ngIf="acreditacionForm.get('generales.correo')?.touched && acreditacionForm.get('generales.correo')?.hasError('email')">
+                  Correo invalido
                 </mat-error>
               </mat-form-field>
             </div>
