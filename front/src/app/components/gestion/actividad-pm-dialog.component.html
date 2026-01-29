@@ -761,7 +761,7 @@
           </div>
 
           <div class="TableCard">
-            <table mat-table [dataSource]="difusiones" class="mat-elevation-z0 SimpleTable">
+            <table mat-table [dataSource]="difusiones" class="mat-elevation-z0 SimpleTable SimpleTable--fixed">
               <ng-container matColumnDef="n">
                 <th mat-header-cell *matHeaderCellDef>#</th>
                 <td mat-cell *matCellDef="let row; let i = index">{{ i + 1 }}</td>
@@ -773,9 +773,16 @@
               </ng-container>
 
               <ng-container matColumnDef="url">
-                <th mat-header-cell *matHeaderCellDef>URL</th>
-                <td mat-cell *matCellDef="let row">
-                  <a *ngIf="row.url" [href]="row.url" target="_blank">{{ row.url }}</a>
+                <th mat-header-cell *matHeaderCellDef class="UrlCell">URL</th>
+                <td mat-cell *matCellDef="let row" class="UrlCell">
+                  <a
+                    *ngIf="row.url"
+                    class="UrlEllipsis"
+                    [href]="row.url"
+                    target="_blank"
+                    rel="noopener"
+                    [title]="row.url"
+                  >{{ row.url }}</a>
                   <span *ngIf="!row.url">-</span>
                 </td>
               </ng-container>
