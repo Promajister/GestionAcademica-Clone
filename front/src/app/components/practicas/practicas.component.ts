@@ -182,6 +182,8 @@ export class PracticasComponent {
   // Propiedades para autocompletado
   estudianteFiltrado: Estudiante[] = [];
   centroFiltrado: CentroEducativo[] = [];
+  colaboradorFiltrado1: Colaborador[] = [];
+  colaboradorFiltrado2: Colaborador[] = [];
 
   // Datos para los selects (se cargan desde la API)
   estudiantes: Estudiante[] = [];
@@ -274,6 +276,14 @@ export class PracticasComponent {
     return this.centros.some((c) => c.id === id) ? null : { invalido: true };
   };
 
+  validarColaboradorSeleccionado = (control: AbstractControl): ValidationErrors | null => {
+    const value = control.value;
+    if (value === null || value === undefined || value === '') return null;
+    const id = typeof value === 'number' ? value : value?.id ?? Number(value);
+    if (!id || Number.isNaN(id)) return { invalido: true };
+    return this.colaboradores.some((c) => c.id === id) ? null : { invalido: true };
+  };
+
   validarTipoPractica = (control: AbstractControl): ValidationErrors | null => {
     const value = (control.value || '').toString().trim();
     if (!value) return null;
@@ -286,8 +296,8 @@ export class PracticasComponent {
     this.formularioPractica = this.fb.group({
       estudianteRut: ['', [Validators.required, this.validarEstudianteSeleccionado]],
       centroId: ['', [Validators.required, this.validarCentroSeleccionado]],
-      colaborador1Id: [null, [Validators.required]],
-      colaborador2Id: [null],
+      colaborador1Id: [null, [Validators.required, this.validarColaboradorSeleccionado]],
+      colaborador2Id: [null, [this.validarColaboradorSeleccionado]],
       tutor1Id: [null, [Validators.required]],
       tutor1Rol: ['', [Validators.required]],
       fecha_inicio: ['', Validators.required],
@@ -393,6 +403,10 @@ export class PracticasComponent {
     this.colaboradoresService.listar({ page: 1, limit: 100 }).subscribe({
       next: (response) => {
         this.colaboradores = response.items || [];
+        this.colaboradorFiltrado1 = this.colaboradores.slice(0, 5);
+        this.colaboradorFiltrado2 = this.colaboradores.slice(0, 5);
+        this.formularioPractica.get('colaborador1Id')?.updateValueAndValidity({ emitEvent: false });
+        this.formularioPractica.get('colaborador2Id')?.updateValueAndValidity({ emitEvent: false });
       },
       error: (err) => { console.error('Error al cargar colaboradores:', err); }
     });
@@ -596,6 +610,8 @@ export class PracticasComponent {
     this.fechaMinimaTermino = null;
     this.estudianteFiltrado = [...this.estudiantes];
     this.centroFiltrado = [...this.centros];
+    this.colaboradorFiltrado1 = [...this.colaboradores].slice(0, 5);
+    this.colaboradorFiltrado2 = [...this.colaboradores].slice(0, 5);
     this.actualizarTiposPracticaBloqueados('');
   }
 
@@ -613,6 +629,8 @@ export class PracticasComponent {
       semestre: null
     });
     this.fechaMinimaTermino = null;
+    this.colaboradorFiltrado1 = [...this.colaboradores].slice(0, 5);
+    this.colaboradorFiltrado2 = [...this.colaboradores].slice(0, 5);
   }
 
   abrirEdicion(practica: Practica) {
@@ -645,6 +663,8 @@ export class PracticasComponent {
       : null;
     this.estudianteFiltrado = [...this.estudiantes];
     this.centroFiltrado = [...this.centros];
+    this.colaboradorFiltrado1 = [...this.colaboradores].slice(0, 5);
+    this.colaboradorFiltrado2 = [...this.colaboradores].slice(0, 5);
     this.actualizarTiposPracticaBloqueados(practica.estudiante?.rut || '');
   }
 
@@ -676,9 +696,29 @@ export class PracticasComponent {
     this.centroFiltrado = filtrados;
   }
 
+  filtrarColaboradores(event: any, control: 'colaborador1Id' | 'colaborador2Id') {
+    const filtro = (event?.target?.value || '').toLowerCase();
+    let filtrados: Colaborador[];
+    if (!filtro) filtrados = this.colaboradores.slice(0, 5);
+    else {
+      filtrados = this.colaboradores.filter(c =>
+        (c.nombre || '').toLowerCase().includes(filtro) ||
+        (c.correo || '').toLowerCase().includes(filtro) ||
+        (c.cargo || '').toLowerCase().includes(filtro)
+      ).slice(0, 5);
+    }
+    if (control === 'colaborador1Id') this.colaboradorFiltrado1 = filtrados;
+    else this.colaboradorFiltrado2 = filtrados;
+  }
+
   // Mostrar los primeros 5 elementos al enfocar
   mostrarTodosEstudiantes() { this.estudianteFiltrado = this.estudiantes.slice(0, 5); }
   mostrarTodosCentros() { this.centroFiltrado = this.centros.slice(0, 5); }
+  mostrarTodosColaboradores(control: 'colaborador1Id' | 'colaborador2Id') {
+    const top = this.colaboradores.slice(0, 5);
+    if (control === 'colaborador1Id') this.colaboradorFiltrado1 = top;
+    else this.colaboradorFiltrado2 = top;
+  }
 
   // displayWith helpers
   mostrarEstudiante(value: any): string {
@@ -691,10 +731,30 @@ export class PracticasComponent {
     return '';
   }
 
+  mostrarColaborador(value: any): string {
+    if (!value) return '';
+    if (typeof value === 'string') {
+      const maybeId = Number(value);
+      if (Number.isNaN(maybeId)) return value;
+      const c = this.colaboradores.find(x => x.id === maybeId);
+      if (!c) return value;
+      const extra = c.cargo ? ` (${c.cargo})` : '';
+      return `${c.nombre}${extra}`;
+    }
+    const id = typeof value === 'number' ? value : value?.id ?? Number(value);
+    if (!id || Number.isNaN(id)) return '';
+    const c = this.colaboradores.find(x => x.id === id);
+    if (!c) return '';
+    const extra = c.cargo ? ` (${c.cargo})` : '';
+    return `${c.nombre}${extra}`;
+  }
+
   isColaboradorSeleccionado(colaboradorId: number | null, control: 'colaborador1Id' | 'colaborador2Id'): boolean {
     if (colaboradorId === null || colaboradorId === undefined) return false;
     const otroControl = control === 'colaborador1Id' ? 'colaborador2Id' : 'colaborador1Id';
-    return this.formularioPractica.get(otroControl)?.value === colaboradorId;
+    const otherValue = this.formularioPractica.get(otroControl)?.value;
+    const otherId = typeof otherValue === 'number' ? otherValue : otherValue?.id ?? Number(otherValue);
+    return otherId === colaboradorId;
   }
 
   formatColaboradores(colaboradores?: Colaborador[]): string {
@@ -765,6 +825,11 @@ export class PracticasComponent {
   onCentroSeleccionado(event: any) {
     const centro = event.option.value;
     this.formularioPractica.patchValue({ centroId: centro.id.toString() });
+  }
+
+  onColaboradorSeleccionado(event: any, control: 'colaborador1Id' | 'colaborador2Id') {
+    const colaborador = event.option.value;
+    this.formularioPractica.patchValue({ [control]: colaborador.id });
   }
 
   guardarPractica() {
