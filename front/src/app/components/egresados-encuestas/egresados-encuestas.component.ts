@@ -78,7 +78,7 @@ export class EgresadosEncuestasComponent implements OnInit, OnDestroy {
       title: 'Encuesta de empleabilidad',
       subtitle: 'Indicadores laborales y percepcion de la formacion.',
       description:
-        'Esta encuesta busca conocer la situación laboral de los egresados y evaluar la pertinencia de la formación para su inserción profesional. La información es anónima y se utilizará como apoyo al seguimiento de titulados y a los procesos de autoevaluación y acreditación.',
+        'Esta encuesta busca conocer la situación laboral de los egresados y evaluar la pertinencia de la formación para su inserción profesional. La información se utilizará como apoyo al seguimiento de titulados y a los procesos de autoevaluación y acreditación.',
       icon: 'work_outline',
       cardClass: 'green-card',
     },
@@ -87,7 +87,7 @@ export class EgresadosEncuestasComponent implements OnInit, OnDestroy {
       title: 'Encuesta de egresados',
       subtitle: 'Evidencia para procesos de autoevaluacion.',
       description:
-        'Esta encuesta recoge la opinión de los egresados sobre la formación, los recursos y las oportunidades de mejora continua. Las respuestas son anónimas y se utilizan como evidencia en los procesos de autoevaluación y acreditación.',
+        'Esta encuesta recoge la opinión de los egresados sobre la formación, los recursos y las oportunidades de mejora continua. Las respuestas se utilizará como evidencia en los procesos de autoevaluación y acreditación.',
       icon: 'verified',
     },
   ];
