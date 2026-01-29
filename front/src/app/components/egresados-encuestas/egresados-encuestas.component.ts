@@ -93,7 +93,15 @@ export class EgresadosEncuestasComponent implements OnInit, OnDestroy {
   ];
 
   readonly opcionesSiNo = ['Si', 'No'];
-  readonly opcionesSexo = ['Mujer', 'Hombre', 'Prefiere no responder'];
+  readonly opcionesSexo = [
+    'Mujer',
+    'Hombre',
+    'No binario',
+    'Transgénero',
+    'Intersexual',
+    'Otro',
+    'Prefiere no responder'
+  ];
   readonly tiemposPrimerTrabajo = [
     'Menos de 2 meses',
     'Entre 2 y 6 meses',

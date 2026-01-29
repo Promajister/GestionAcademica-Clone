@@ -12,6 +12,14 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 type SurveyTipo = 'EMPLEABILIDAD' | 'ACREDITACION';
+type GeneroCountKey =
+  | 'mujer'
+  | 'hombre'
+  | 'noBinario'
+  | 'transgenero'
+  | 'intersexual'
+  | 'otro'
+  | 'noResponde';
 
 interface EgresadoEncuestaRow {
   id: number;
@@ -271,14 +279,6 @@ export class EgresadosAnalisisComponent implements OnInit {
       'Entre 6 meses y 1 año',
     );
 
-    const generoCounts = { mujer: 0, hombre: 0, noResponde: 0 };
-    for (const encuesta of encuestas) {
-      const sexo = String((encuesta?.generales ?? {})['sexo'] ?? '').trim();
-      if (sexo === 'Mujer') generoCounts.mujer += 1;
-      else if (sexo === 'Hombre') generoCounts.hombre += 1;
-      else if (sexo === 'Prefiere no responder') generoCounts.noResponde += 1;
-    }
-
     const sectorPublico = this.countByRespuesta(encuestas, 'insercion.sectorTrabajo', 'Publico');
     const sectorPrivado = this.countByRespuesta(encuestas, 'insercion.sectorTrabajo', 'Privado');
     const sectorOtro = this.countByRespuesta(encuestas, 'insercion.sectorTrabajo', 'Otro');
@@ -371,6 +371,22 @@ export class EgresadosAnalisisComponent implements OnInit {
       teal: '#0f766e',
     };
 
+    const generoCounts: Record<GeneroCountKey, number> = {
+      mujer: 0,
+      hombre: 0,
+      noBinario: 0,
+      transgenero: 0,
+      intersexual: 0,
+      otro: 0,
+      noResponde: 0,
+    };
+
+    for (const encuesta of encuestas) {
+      const sexoRaw = (encuesta?.generales ?? {})['sexo'];
+      const key = this.normalizarSexo(sexoRaw);
+      generoCounts[key] += 1;
+    }
+
     return {
       total,
       estadoLaboral: this.buildPieStat([
@@ -385,7 +401,11 @@ export class EgresadosAnalisisComponent implements OnInit {
       empleoGenero: this.buildPieStat([
         { label: 'Mujer', count: generoCounts.mujer, color: palette.blue },
         { label: 'Hombre', count: generoCounts.hombre, color: palette.yellow },
-        { label: 'No responde', count: generoCounts.noResponde, color: palette.red },
+        { label: 'No binario', count: generoCounts.noBinario, color: palette.purple },
+        { label: 'Transgénero', count: generoCounts.transgenero, color: palette.teal },
+        { label: 'Intersexual', count: generoCounts.intersexual, color: palette.orange },
+        { label: 'Otro', count: generoCounts.otro, color: palette.green },
+        { label: 'Prefiere no responder', count: generoCounts.noResponde, color: palette.red },
       ]),
       sector: this.buildPieStat([
         { label: 'Publico', count: sectorPublico, color: palette.blue },
@@ -565,6 +585,26 @@ export class EgresadosAnalisisComponent implements OnInit {
 
     doc.text(`Gesti\u00f3n Acad\u00e9mica \u2022 ${title}`, margin, pageHeight - 18);
     doc.text(`P\u00e1gina ${page} / ${totalPages}`, pageWidth - margin, pageHeight - 18, { align: 'right' as any });
+  }
+
+  private normalizarSexo(valor: unknown): GeneroCountKey {
+    const v = String(valor ?? '')
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, ''); 
+
+    if (!v) return 'noResponde';
+    if (v === 'prefiere no responder') return 'noResponde';
+
+    if (v === 'mujer' || v === 'femenino') return 'mujer';
+    if (v === 'hombre' || v === 'masculino') return 'hombre';
+
+    if (v.includes('no binar')) return 'noBinario';
+    if (v.includes('trans')) return 'transgenero';
+    if (v.includes('intersex') || v.includes('intersexual')) return 'intersexual';
+
+    return 'otro';
   }
 
   private hexToRgb(hex: string): [number, number, number] {
