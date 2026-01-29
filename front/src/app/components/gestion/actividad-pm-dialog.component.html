@@ -1007,6 +1007,21 @@
                     Descargar
                   </button>
                 </div>
+
+                <div class="FileList" *ngIf="!isView && asistenciaFile.length">
+                  <div class="FileItem" *ngFor="let file of asistenciaFile; let i = index">
+                    <span class="FileItemName" [title]="file.name">{{ file.name }}</span>
+                    <button
+                      mat-icon-button
+                      type="button"
+                      class="FileRemoveBtn"
+                      (click)="removeSelectedFile('asistencia', i)"
+                      aria-label="Quitar archivo"
+                    >
+                      <mat-icon>close</mat-icon>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1052,6 +1067,21 @@
                     Descargar
                   </button>
                 </div>
+
+                <div class="FileList" *ngIf="!isView && documentosFile.length">
+                  <div class="FileItem" *ngFor="let file of documentosFile; let i = index">
+                    <span class="FileItemName" [title]="file.name">{{ file.name }}</span>
+                    <button
+                      mat-icon-button
+                      type="button"
+                      class="FileRemoveBtn"
+                      (click)="removeSelectedFile('documentos', i)"
+                      aria-label="Quitar archivo"
+                    >
+                      <mat-icon>close</mat-icon>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1096,6 +1126,21 @@
                     <mat-icon>download</mat-icon>
                     Descargar
                   </button>
+                </div>
+
+                <div class="FileList" *ngIf="!isView && fotosFile.length">
+                  <div class="FileItem" *ngFor="let file of fotosFile; let i = index">
+                    <span class="FileItemName" [title]="file.name">{{ file.name }}</span>
+                    <button
+                      mat-icon-button
+                      type="button"
+                      class="FileRemoveBtn"
+                      (click)="removeSelectedFile('fotos', i)"
+                      aria-label="Quitar archivo"
+                    >
+                      <mat-icon>close</mat-icon>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

@@ -315,6 +315,7 @@
   border: 1px solid #e5e7eb;
   background: #fff;
   align-items: flex-start;
+  min-width: 0;
 }
 
 .EvidenceCard--full{ grid-column: 1 / -1; }
@@ -331,7 +332,7 @@
   flex: 0 0 auto;
 }
 
-.EvidenceBody{ flex: 1 1 auto; }
+.EvidenceBody{ flex: 1 1 auto; min-width: 0; }
 .EvidenceBody h4{ margin: 0; font-size: 14px; font-weight: 800; color: #0f172a; }
 .EvidenceBody p{ margin: 4px 0 10px; font-size: 13px; color: #475569; }
 
@@ -371,6 +372,45 @@
   gap: 6px;
   margin-top: 8px;
   flex-wrap: nowrap;
+}
+
+.FileList{
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.FileItem{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 4px 6px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #f8fafc;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.FileItemName{
+  font-size: 11.5px;
+  color: #0f172a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  max-width: 100%;
+  flex: 1 1 0;
+}
+
+.FileRemoveBtn{
+  width: 26px;
+  height: 26px;
+  flex: 0 0 auto;
 }
 
 .FileName{

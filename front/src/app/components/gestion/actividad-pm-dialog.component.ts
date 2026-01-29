@@ -1264,21 +1264,41 @@ export class ActividadPmDialogComponent implements OnInit {
     }
     const finalFiles = Array.from(unique.values()).slice(0, 10);
 
-    if (tipo == 'asistencia') {
-      this.asistenciaFile = finalFiles;
-      this.asistenciaFileName = this.formatFileCount(finalFiles);
-      this.asistenciaFilesCount = finalFiles.length;
-    } else if (tipo == 'documentos') {
-      this.documentosFile = finalFiles;
-      this.documentosFileName = this.formatFileCount(finalFiles);
-      this.documentosFilesCount = finalFiles.length;
-    } else {
-      this.fotosFile = finalFiles;
-      this.fotosFileName = this.formatFileCount(finalFiles);
-      this.fotosFilesCount = finalFiles.length;
-    }
+    this.updateSelectedFiles(tipo, finalFiles);
 
     input.value = '';
+  }
+
+  removeSelectedFile(tipo: 'asistencia' | 'documentos' | 'fotos', index: number): void {
+    const current =
+      tipo === 'asistencia'
+        ? this.asistenciaFile
+        : tipo === 'documentos'
+        ? this.documentosFile
+        : this.fotosFile;
+
+    if (!current.length || index < 0 || index >= current.length) return;
+    const next = current.filter((_, i) => i !== index);
+    this.updateSelectedFiles(tipo, next);
+  }
+
+  private updateSelectedFiles(tipo: 'asistencia' | 'documentos' | 'fotos', files: File[]): void {
+    if (tipo === 'asistencia') {
+      this.asistenciaFile = files;
+      this.asistenciaFileName = this.formatFileCount(files);
+      this.asistenciaFilesCount = files.length;
+      return;
+    }
+    if (tipo === 'documentos') {
+      this.documentosFile = files;
+      this.documentosFileName = this.formatFileCount(files);
+      this.documentosFilesCount = files.length;
+      return;
+    }
+
+    this.fotosFile = files;
+    this.fotosFileName = this.formatFileCount(files);
+    this.fotosFilesCount = files.length;
   }
 
   private formatFileCount(files: File[]): string {

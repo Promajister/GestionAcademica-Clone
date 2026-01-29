@@ -846,16 +846,7 @@ export class ActividadesPmComponent implements OnInit {
       return;
     }
 
-    if (tipo == 'asistencia') {
-      this.asistenciaFile = limited;
-      this.asistenciaFileName = this.formatFileCount(this.asistenciaFile);
-    } else if (tipo == 'documentos') {
-      this.documentosFile = limited;
-      this.documentosFileName = this.formatFileCount(this.documentosFile);
-    } else {
-      this.fotosFile = limited;
-      this.fotosFileName = this.formatFileCount(this.fotosFile);
-    }
+    this.updateSelectedFiles(tipo, limited);
     input.value = '';
     if (rejectedType + rejectedSize + rejectedDup + rejectedLimit > 0) {
       this.snack.open(
@@ -865,6 +856,36 @@ export class ActividadesPmComponent implements OnInit {
       );
     }
     this.scheduleDraftSave();
+  }
+
+  removeSelectedFile(tipo: 'asistencia' | 'documentos' | 'fotos', index: number): void {
+    const current =
+      tipo === 'asistencia'
+        ? this.asistenciaFile
+        : tipo === 'documentos'
+          ? this.documentosFile
+          : this.fotosFile;
+
+    if (!current.length || index < 0 || index >= current.length) return;
+    const next = current.filter((_, i) => i !== index);
+    this.updateSelectedFiles(tipo, next);
+    this.scheduleDraftSave();
+  }
+
+  private updateSelectedFiles(tipo: 'asistencia' | 'documentos' | 'fotos', files: File[]): void {
+    if (tipo === 'asistencia') {
+      this.asistenciaFile = files;
+      this.asistenciaFileName = this.formatFileCount(files);
+      return;
+    }
+    if (tipo === 'documentos') {
+      this.documentosFile = files;
+      this.documentosFileName = this.formatFileCount(files);
+      return;
+    }
+
+    this.fotosFile = files;
+    this.fotosFileName = this.formatFileCount(files);
   }
 
   private formatFileCount(files: File[]): string {
