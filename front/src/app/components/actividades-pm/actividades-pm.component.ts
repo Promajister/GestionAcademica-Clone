@@ -205,7 +205,6 @@ export class ActividadesPmComponent implements OnInit {
     private dialog: MatDialog,
   ) {}
 
-
   ngOnInit(): void {
     this.form = this.fb.group({
       proyecto: this.fb.group({
@@ -517,7 +516,6 @@ export class ActividadesPmComponent implements OnInit {
     this.scheduleDraftSave();
   }
 
-
   addEquipo(): void {
     const g = this.form.get('equipoTrabajo') as FormGroup;
 
@@ -661,7 +659,6 @@ export class ActividadesPmComponent implements OnInit {
     return dv === dvEsperado;
   }
 
-
   private rutValidator() {
     return (control: AbstractControl): ValidationErrors | null => {
       const v = String(control.value ?? '').trim();
@@ -769,17 +766,40 @@ export class ActividadesPmComponent implements OnInit {
       return;
     }
 
-    if (tipo == 'asistencia') {
-      this.asistenciaFile = validFiles;
-      this.asistenciaFileName = this.formatFileNames(validFiles);
-    } else if (tipo == 'documentos') {
-      this.documentosFile = validFiles;
-      this.documentosFileName = this.formatFileNames(validFiles);
-    } else {
-      this.fotosFile = validFiles;
-      this.fotosFileName = this.formatFileNames(validFiles);
+    // asistencia: max 1 (se reemplaza)
+    if (tipo === 'asistencia') {
+      const picked = [validFiles[0]];
+      this.asistenciaFile = picked;
+      this.asistenciaFileName = this.formatFileNames(picked);
+      input.value = '';
+      this.scheduleDraftSave();
+      return;
     }
+
+    // documentos / fotos: acumular + evitar duplicados
+    const current = tipo === 'documentos' ? this.documentosFile : this.fotosFile;
+    const currentKeys = new Set(current.map((f) => this.fileKey(f)));
+
+    const toAdd = validFiles.filter((f) => !currentKeys.has(this.fileKey(f)));
+
+    // (opcional) limita a 10 como tu backend
+    const maxCount = 10;
+    const merged = [...current, ...toAdd].slice(0, maxCount);
+
+    if (tipo === 'documentos') {
+      this.documentosFile = merged;
+      this.documentosFileName = this.formatFileNames(merged);
+    } else {
+      this.fotosFile = merged;
+      this.fotosFileName = this.formatFileNames(merged);
+    }
+
+    input.value = '';
     this.scheduleDraftSave();
+
+    console.log('DOCS seleccionados:', this.documentosFile);
+    console.log('FOTOS seleccionadas:', this.fotosFile);
+
   }
 
   private formatFileNames(files: File[]): string {
@@ -787,6 +807,33 @@ export class ActividadesPmComponent implements OnInit {
     if (!names.length) return '';
     if (names.length <= 2) return names.join(', ');
     return `${names[0]}, ${names[1]} (+${names.length - 2} mas)`;
+  }
+
+  private fileKey(f: File): string {
+    return `${f.name}_${f.size}_${f.lastModified}`;
+  }
+
+  removeSelectedFile(tipo: 'asistencia' | 'documentos' | 'fotos', idx: number): void {
+    if (tipo === 'asistencia') {
+      this.asistenciaFile = [];
+      this.asistenciaFileName = '';
+    } else if (tipo === 'documentos') {
+      this.documentosFile = this.documentosFile.filter((_, i) => i !== idx);
+      this.documentosFileName = this.formatFileNames(this.documentosFile);
+    } else {
+      this.fotosFile = this.fotosFile.filter((_, i) => i !== idx);
+      this.fotosFileName = this.formatFileNames(this.fotosFile);
+    }
+
+    this.scheduleDraftSave();
+  }
+
+  formatSize(bytes: number): string {
+    if (!Number.isFinite(bytes)) return '';
+    const kb = bytes / 1024;
+    if (kb < 1024) return `${Math.round(kb)} KB`;
+    const mb = kb / 1024;
+    return `${mb.toFixed(1)} MB`;
   }
 
   private buildValoracionObservaciones(evidencias: any): string {
@@ -1099,7 +1146,6 @@ export class ActividadesPmComponent implements OnInit {
       panelClass: 'ok-dialog',
     });
   }
-
 
   limpiar(): void {
     this.unidades = [];

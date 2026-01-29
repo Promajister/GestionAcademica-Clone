@@ -216,14 +216,23 @@
           </div>
 
           <div class="FormRow">
-            <mat-form-field appearance="outline" class="FormField FullWidth">
-              <mat-label>Tipo de actividad</mat-label>
-              <mat-select formControlName="tipoActividad" [disabled]="isView">
-                <mat-option *ngFor="let t of tipoActividadCatalogo" [value]="t.value">
-                  {{ t.label }}
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
+            <ng-container *ngIf="!isView; else tipoActividadView">
+              <mat-form-field appearance="outline" class="FormField FullWidth">
+                <mat-label>Tipo de actividad</mat-label>
+                <mat-select formControlName="tipoActividad">
+                  <mat-option *ngFor="let t of tipoActividadCatalogo" [value]="t.value">
+                    {{ t.label }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+            </ng-container>
+
+            <ng-template #tipoActividadView>
+              <mat-form-field appearance="outline" class="FormField FullWidth">
+                <mat-label>Tipo de actividad</mat-label>
+                <input matInput [readonly]="true" [value]="getTipoActividadLabel(fProy('tipoActividad').value)" />
+              </mat-form-field>
+            </ng-template>
           </div>
 
           <div *ngIf="fProy('tipoActividad').value === 'FERIA_VOCACIONAL'">
@@ -378,20 +387,41 @@
           </div>
 
           <div class="FormRow">
-            <mat-form-field appearance="outline" class="FormField">
-              <mat-label>Tipo Vinculación *</mat-label>
-              <mat-select formControlName="tipoVinculacion" [disabled]="isView">
-                <mat-option *ngFor="let o of tiposVinculacion" [value]="o">{{ o }}</mat-option>
-              </mat-select>
-            </mat-form-field>
+            <!-- Tipo Vinculación -->
+            <ng-container *ngIf="!isView; else tipoVincView">
+              <mat-form-field appearance="outline" class="FormField">
+                <mat-label>Tipo Vinculación *</mat-label>
+                <mat-select formControlName="tipoVinculacion">
+                  <mat-option *ngFor="let o of tiposVinculacion" [value]="o">{{ o }}</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </ng-container>
 
-            <mat-form-field appearance="outline" class="FormField">
-              <mat-label>Área Vinculación *</mat-label>
-              <mat-select formControlName="areaVinculacion" [disabled]="isView">
-                <mat-option *ngFor="let o of areasVinculacion" [value]="o">{{ o }}</mat-option>
-              </mat-select>
-            </mat-form-field>
+            <ng-template #tipoVincView>
+              <mat-form-field appearance="outline" class="FormField">
+                <mat-label>Tipo Vinculación *</mat-label>
+                <input matInput [readonly]="true" [value]="getSelectLabel(fProy('tipoVinculacion').value)" />
+              </mat-form-field>
+            </ng-template>
+
+            <!-- Área Vinculación -->
+            <ng-container *ngIf="!isView; else areaVincView">
+              <mat-form-field appearance="outline" class="FormField">
+                <mat-label>Área Vinculación *</mat-label>
+                <mat-select formControlName="areaVinculacion">
+                  <mat-option *ngFor="let o of areasVinculacion" [value]="o">{{ o }}</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </ng-container>
+
+            <ng-template #areaVincView>
+              <mat-form-field appearance="outline" class="FormField">
+                <mat-label>Área Vinculación *</mat-label>
+                <input matInput [readonly]="true" [value]="getSelectLabel(fProy('areaVinculacion').value)" />
+              </mat-form-field>
+            </ng-template>
           </div>
+
 
           <div *ngIf="fProy('tipoVinculacion').value === 'Otro'" class="FormRow">
             <mat-form-field appearance="outline" class="FormField FullWidth">
@@ -408,19 +438,39 @@
           </div>
 
           <div class="FormRow">
-            <mat-form-field appearance="outline" class="FormField">
-              <mat-label>Área Impacto *</mat-label>
-              <mat-select formControlName="areaImpacto" [disabled]="isView">
-                <mat-option *ngFor="let o of areasImpacto" [value]="o">{{ o }}</mat-option>
-              </mat-select>
-            </mat-form-field>
+            <!-- Área Impacto -->
+            <ng-container *ngIf="!isView; else areaImpactoView">
+              <mat-form-field appearance="outline" class="FormField">
+                <mat-label>Área Impacto *</mat-label>
+                <mat-select formControlName="areaImpacto">
+                  <mat-option *ngFor="let o of areasImpacto" [value]="o">{{ o }}</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </ng-container>
 
-            <mat-form-field appearance="outline" class="FormField">
-              <mat-label>Sede *</mat-label>
-              <mat-select formControlName="sede" [disabled]="isView">
-                <mat-option *ngFor="let o of sedes" [value]="o">{{ o }}</mat-option>
-              </mat-select>
-            </mat-form-field>
+            <ng-template #areaImpactoView>
+              <mat-form-field appearance="outline" class="FormField">
+                <mat-label>Área Impacto *</mat-label>
+                <input matInput [readonly]="true" [value]="getSelectLabel(fProy('areaImpacto').value)" />
+              </mat-form-field>
+            </ng-template>
+
+            <!-- Sede -->
+            <ng-container *ngIf="!isView; else sedeView">
+              <mat-form-field appearance="outline" class="FormField">
+                <mat-label>Sede *</mat-label>
+                <mat-select formControlName="sede">
+                  <mat-option *ngFor="let o of sedes" [value]="o">{{ o }}</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </ng-container>
+
+            <ng-template #sedeView>
+              <mat-form-field appearance="outline" class="FormField">
+                <mat-label>Sede *</mat-label>
+                <input matInput [readonly]="true" [value]="getSelectLabel(fProy('sede').value)" />
+              </mat-form-field>
+            </ng-template>
           </div>
 
           <div class="SectionDivider"></div>
@@ -433,12 +483,26 @@
           <div class="FormRow">
             <mat-form-field appearance="outline" class="FormField">
               <mat-label>Fecha Inicio *</mat-label>
-              <input matInput type="date" formControlName="fechaInicio" [readonly]="isView" />
+              <input
+                matInput
+                type="date"
+                formControlName="fechaInicio"
+                [readonly]="isView"
+                (click)="blockIfView($event)"
+                (keydown)="blockIfView($event)"
+              />
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="FormField">
               <mat-label>Fecha Término *</mat-label>
-              <input matInput type="date" formControlName="fechaTermino" [readonly]="isView" />
+              <input
+                matInput
+                type="date"
+                formControlName="fechaTermino"
+                [readonly]="isView"
+                (click)="blockIfView($event)"
+                (keydown)="blockIfView($event)"
+              />
             </mat-form-field>
           </div>
 
@@ -448,12 +512,22 @@
               <input matInput formControlName="lugar" [readonly]="isView" />
             </mat-form-field>
 
-            <mat-form-field appearance="outline" class="FormField">
-              <mat-label>Proyecto</mat-label>
-              <mat-select formControlName="proyectoAsociado" [disabled]="isView">
-                <mat-option *ngFor="let o of proyectos" [value]="o">{{ o }}</mat-option>
-              </mat-select>
-            </mat-form-field>
+            <ng-container *ngIf="!isView; else proyectoAsocView">
+              <mat-form-field appearance="outline" class="FormField">
+                <mat-label>Proyecto</mat-label>
+                <mat-select formControlName="proyectoAsociado">
+                  <mat-option *ngFor="let o of proyectos" [value]="o">{{ o }}</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </ng-container>
+
+            <ng-template #proyectoAsocView>
+              <mat-form-field appearance="outline" class="FormField">
+                <mat-label>Proyecto</mat-label>
+                <input matInput [readonly]="true" [value]="getSelectLabel(fProy('proyectoAsociado').value)" />
+              </mat-form-field>
+            </ng-template>
+
           </div>
 
           <div class="SectionDivider"></div>
@@ -918,7 +992,8 @@
         <div class="TabBody" formGroupName="impacto" data-tab="7">
           <div class="SectionHead">
             <mat-icon>analytics</mat-icon>
-            <h3>Evaluación de Impacto *</h3>
+            <h3>Evaluación de Impacto
+            </h3>
           </div>
 
           <div class="FormRow">
@@ -928,7 +1003,7 @@
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="FormField">
-              <mat-label>Porcentaje de satisfacción (*)</mat-label>
+              <mat-label>Porcentaje de satisfacción</mat-label>
               <input matInput formControlName="indicadorImpacto" readonly />
             </mat-form-field>
           </div>
@@ -949,47 +1024,111 @@
 
           <div class="EvidenceGrid">
 
-            <div class="EvidenceCard">
+            <div class="EvidenceCard EvidenceUpload">
               <div class="EvidenceIcon">
                 <mat-icon>groups</mat-icon>
               </div>
 
-              <div class="EvidenceBody">
-                <h4>Lista de asistencia</h4>
-                <p>Sube Excel o PDF.</p>
+              <div class="EvidenceBody EvidenceUpload__body">
+                <div class="EvidenceUpload__head">
+                  <div>
+                    <h4>Lista de asistencia</h4>
+                    <p>Sube Excel o PDF.</p>
+                  </div>
+
+                  <div class="EvidenceUpload__meta">
+                    <span class="CountPill" *ngIf="asistenciaFilesCount > 0">
+                      {{ asistenciaFilesCount }} archivo(s)
+                    </span>
+
+                    <button
+                      *ngIf="form.get('evidencias.listaAsistenciaRef')?.value"
+                      mat-stroked-button
+                      type="button"
+                      class="MiniBtn"
+                      (click)="openUrl(form.get('evidencias.listaAsistenciaRef')?.value)"
+                    >
+                      <mat-icon>download</mat-icon>
+                      Descargar
+                    </button>
+                  </div>
+                </div>
 
                 <input
                   #fileAsistencia
                   type="file"
                   class="FileInputHidden"
                   accept=".pdf,.xls,.xlsx"
-                  multiple
                   (change)="onFileSelected($event, 'asistencia')"
                 />
 
-                <div class="FileRow">
+                <div class="EvidenceUpload__actions">
                   <button mat-stroked-button type="button" (click)="fileAsistencia.click()" [disabled]="isView">
                     <mat-icon>upload</mat-icon>
                     Subir archivo
                   </button>
 
-                  <span class="FileName" *ngIf="asistenciaFileName; else noAsis">
-                    {{ asistenciaFileName }}
+                  <span class="EvidenceUpload__hint" *ngIf="!asistenciaFilesCount">
+                    Sin archivo
                   </span>
-                  <ng-template #noAsis>
-                    <span class="FileName muted">Sin archivo</span>
-                  </ng-template>
+                </div>
 
-                  <button
-                    *ngIf="isView && asistenciaFilesCount > 0"
-                    mat-stroked-button
-                    type="button"
-                    class="MiniBtn"
-                    (click)="downloadZip('asistencia')"
-                  >
-                    <mat-icon>download</mat-icon>
-                    Descargar
-                  </button>
+                <div class="EvidenceUpload__list" *ngIf="asistenciaFile.length || archivosAsistenciaSrv.length">
+                  <ul class="FileList FileList--dense">
+                    <ng-container *ngIf="asistenciaFile.length; else AsisSrvNew">
+                      <li class="FileItem FileItem--dense" *ngFor="let f of asistenciaFile; let i = index">
+                        <mat-icon class="FileItem__icon">description</mat-icon>
+                        <div class="FileItem__name" [matTooltip]="f.name" matTooltipPosition="above">
+                          {{ f.name }}
+                        </div>
+
+                        <button
+                          mat-icon-button
+                          type="button"
+                          class="FileItem__remove"
+                          (click)="removeSelectedFile('asistencia', i)"
+                          *ngIf="!isView"
+                          matTooltip="Quitar"
+                        >
+                          <mat-icon>close</mat-icon>
+                        </button>
+                      </li>
+                    </ng-container>
+
+                    <ng-template #AsisSrvNew>
+                      <li class="FileItem FileItem--dense" *ngFor="let a of archivosAsistenciaSrv">
+                        <mat-icon class="FileItem__icon">description</mat-icon>
+                        <div class="FileItem__name" [matTooltip]="getArchivoNombre(a)" matTooltipPosition="above">
+                          {{ getArchivoNombre(a) }}
+                        </div>
+                      </li>
+                    </ng-template>
+                  </ul>
+                </div>
+
+                <div class="SrvFiles" *ngIf="archivosAsistenciaSrv?.length">
+                  <div class="SrvFile" *ngFor="let a of archivosAsistenciaSrv">
+                    <button
+                      type="button"
+                      mat-button
+                      class="SrvFile__link"
+                      (click)="openUrl(a?.url); $event.preventDefault(); $event.stopPropagation()"
+                    >
+                      <mat-icon>attach_file</mat-icon>
+                      <span>{{ getArchivoNombre(a) }}</span>
+                    </button>
+
+                    <button
+                      *ngIf="!isView"
+                      type="button"
+                      mat-icon-button
+                      color="warn"
+                      matTooltip="Quitar"
+                      (click)="removeArchivoServidor(a, 'asistencia'); $event.preventDefault(); $event.stopPropagation()"
+                    >
+                      <mat-icon>close</mat-icon>
+                    </button>
+                  </div>
                 </div>
 
                 <div class="SrvFiles" *ngIf="archivosAsistenciaSrv?.length">
@@ -1019,14 +1158,35 @@
               </div>
             </div>
 
-            <div class="EvidenceCard">
+            <div class="EvidenceCard EvidenceUpload">
               <div class="EvidenceIcon">
                 <mat-icon>description</mat-icon>
               </div>
 
-              <div class="EvidenceBody">
-                <h4>Documentos</h4>
-                <p>Sube PDF o Excel.</p>
+              <div class="EvidenceBody EvidenceUpload__body">
+                <div class="EvidenceUpload__head">
+                  <div>
+                    <h4>Documentos</h4>
+                    <p>Sube PDF o Excel.</p>
+                  </div>
+
+                  <div class="EvidenceUpload__meta">
+                    <span class="CountPill" *ngIf="documentosFilesCount > 0">
+                      {{ documentosFilesCount }} archivo(s)
+                    </span>
+
+                    <button
+                      *ngIf="documentosFilesCount > 0"
+                      mat-stroked-button
+                      type="button"
+                      class="MiniBtn"
+                      (click)="downloadZip('documentos')"
+                    >
+                      <mat-icon>download</mat-icon>
+                      ZIP
+                    </button>
+                  </div>
+                </div>
 
                 <input
                   #fileDocs
@@ -1037,29 +1197,73 @@
                   (change)="onFileSelected($event, 'documentos')"
                 />
 
-                <div class="FileRow">
+                <div class="EvidenceUpload__actions">
                   <button mat-stroked-button type="button" (click)="fileDocs.click()" [disabled]="isView">
                     <mat-icon>upload_file</mat-icon>
                     Subir archivo
                   </button>
 
-                  <span class="FileName" *ngIf="documentosFileName; else noDoc">
-                    {{ documentosFileName }}
+                  <span class="EvidenceUpload__hint" *ngIf="!documentosFilesCount">
+                    Sin archivo
                   </span>
-                  <ng-template #noDoc>
-                    <span class="FileName muted">Sin archivo</span>
-                  </ng-template>
+                </div>
 
-                  <button
-                    *ngIf="isView && documentosFilesCount > 0"
-                    mat-stroked-button
-                    type="button"
-                    class="MiniBtn"
-                    (click)="downloadZip('documentos')"
-                  >
-                    <mat-icon>download</mat-icon>
-                    Descargar
-                  </button>
+                <div class="EvidenceUpload__list" *ngIf="documentosFile.length || archivosDocumentosSrv.length">
+                  <ul class="FileList FileList--dense">
+                    <ng-container *ngIf="documentosFile.length; else DocsSrvNew">
+                      <li class="FileItem FileItem--dense" *ngFor="let f of documentosFile; let i = index">
+                        <mat-icon class="FileItem__icon">description</mat-icon>
+                        <div class="FileItem__name" [matTooltip]="f.name" matTooltipPosition="above">
+                          {{ f.name }}
+                        </div>
+
+                        <button
+                          mat-icon-button
+                          type="button"
+                          class="FileItem__remove"
+                          (click)="removeSelectedFile('documentos', i)"
+                          *ngIf="!isView"
+                          matTooltip="Quitar"
+                        >
+                          <mat-icon>close</mat-icon>
+                        </button>
+                      </li>
+                    </ng-container>
+
+                    <ng-template #DocsSrvNew>
+                      <li class="FileItem FileItem--dense" *ngFor="let a of archivosDocumentosSrv">
+                        <mat-icon class="FileItem__icon">description</mat-icon>
+                        <div class="FileItem__name" [matTooltip]="getArchivoNombre(a)" matTooltipPosition="above">
+                          {{ getArchivoNombre(a) }}
+                        </div>
+                      </li>
+                    </ng-template>
+                  </ul>
+                </div>
+
+                <div class="SrvFiles" *ngIf="archivosDocumentosSrv?.length">
+                  <div class="SrvFile" *ngFor="let a of archivosDocumentosSrv">
+                    <button
+                      type="button"
+                      mat-button
+                      class="SrvFile__link"
+                      (click)="openUrl(a?.url); $event.preventDefault(); $event.stopPropagation()"
+                    >
+                      <mat-icon>attach_file</mat-icon>
+                      <span>{{ getArchivoNombre(a) }}</span>
+                    </button>
+
+                    <button
+                      *ngIf="!isView"
+                      type="button"
+                      mat-icon-button
+                      color="warn"
+                      matTooltip="Quitar"
+                      (click)="removeArchivoServidor(a, 'documentos'); $event.preventDefault(); $event.stopPropagation()"
+                    >
+                      <mat-icon>close</mat-icon>
+                    </button>
+                  </div>
                 </div>
 
                 <div class="SrvFiles" *ngIf="archivosDocumentosSrv?.length">
@@ -1089,14 +1293,35 @@
               </div>
             </div>
 
-            <div class="EvidenceCard">
+            <div class="EvidenceCard EvidenceUpload">
               <div class="EvidenceIcon">
                 <mat-icon>photo_camera</mat-icon>
               </div>
 
-              <div class="EvidenceBody">
-                <h4>Fotografías</h4>
-                <p>Sube JPG (también acepta PNG/JPEG).</p>
+              <div class="EvidenceBody EvidenceUpload__body">
+                <div class="EvidenceUpload__head">
+                  <div>
+                    <h4>Fotografías</h4>
+                    <p>Sube JPG (también PNG/JPEG).</p>
+                  </div>
+
+                  <div class="EvidenceUpload__meta">
+                    <span class="CountPill" *ngIf="fotosFilesCount > 0">
+                      {{ fotosFilesCount }} archivo(s)
+                    </span>
+
+                    <button
+                      *ngIf="fotosFilesCount > 0"
+                      mat-stroked-button
+                      type="button"
+                      class="MiniBtn"
+                      (click)="downloadZip('fotos')"
+                    >
+                      <mat-icon>download</mat-icon>
+                      ZIP
+                    </button>
+                  </div>
+                </div>
 
                 <input
                   #fileFotos
@@ -1107,29 +1332,73 @@
                   (change)="onFileSelected($event, 'fotos')"
                 />
 
-                <div class="FileRow">
+                <div class="EvidenceUpload__actions">
                   <button mat-stroked-button type="button" (click)="fileFotos.click()" [disabled]="isView">
                     <mat-icon>photo_library</mat-icon>
                     Subir foto
                   </button>
 
-                  <span class="FileName" *ngIf="fotosFileName; else noFoto">
-                    {{ fotosFileName }}
+                  <span class="EvidenceUpload__hint" *ngIf="!fotosFilesCount">
+                    Sin archivo
                   </span>
-                  <ng-template #noFoto>
-                    <span class="FileName muted">Sin archivo</span>
-                  </ng-template>
+                </div>
 
-                  <button
-                    *ngIf="isView && fotosFilesCount > 0"
-                    mat-stroked-button
-                    type="button"
-                    class="MiniBtn"
-                    (click)="downloadZip('fotos')"
-                  >
-                    <mat-icon>download</mat-icon>
-                    Descargar
-                  </button>
+                <div class="EvidenceUpload__list" *ngIf="fotosFile.length || archivosFotosSrv.length">
+                  <ul class="FileList FileList--dense">
+                    <ng-container *ngIf="fotosFile.length; else FotosSrvNew">
+                      <li class="FileItem FileItem--dense" *ngFor="let f of fotosFile; let i = index">
+                        <mat-icon class="FileItem__icon">photo</mat-icon>
+                        <div class="FileItem__name" [matTooltip]="f.name" matTooltipPosition="above">
+                          {{ f.name }}
+                        </div>
+
+                        <button
+                          mat-icon-button
+                          type="button"
+                          class="FileItem__remove"
+                          (click)="removeSelectedFile('fotos', i)"
+                          *ngIf="!isView"
+                          matTooltip="Quitar"
+                        >
+                          <mat-icon>close</mat-icon>
+                        </button>
+                      </li>
+                    </ng-container>
+
+                    <ng-template #FotosSrvNew>
+                      <li class="FileItem FileItem--dense" *ngFor="let a of archivosFotosSrv">
+                        <mat-icon class="FileItem__icon">photo</mat-icon>
+                        <div class="FileItem__name" [matTooltip]="getArchivoNombre(a)" matTooltipPosition="above">
+                          {{ getArchivoNombre(a) }}
+                        </div>
+                      </li>
+                    </ng-template>
+                  </ul>
+                </div>
+
+                <div class="SrvFiles" *ngIf="archivosFotosSrv?.length">
+                  <div class="SrvFile" *ngFor="let a of archivosFotosSrv">
+                    <button
+                      type="button"
+                      mat-button
+                      class="SrvFile__link"
+                      (click)="openUrl(a?.url); $event.preventDefault(); $event.stopPropagation()"
+                    >
+                      <mat-icon>image</mat-icon>
+                      <span>{{ getArchivoNombre(a) }}</span>
+                    </button>
+
+                    <button
+                      *ngIf="!isView"
+                      type="button"
+                      mat-icon-button
+                      color="warn"
+                      matTooltip="Quitar"
+                      (click)="removeArchivoServidor(a, 'fotos'); $event.preventDefault(); $event.stopPropagation()"
+                    >
+                      <mat-icon>close</mat-icon>
+                    </button>
+                  </div>
                 </div>
 
                 <div class="SrvFiles" *ngIf="archivosFotosSrv?.length">
