@@ -1383,7 +1383,9 @@ export class ActividadesPmGestionComponent implements OnInit {
     if (!trimmed || trimmed === '-') return null;
     if (/^https?:\/\//i.test(trimmed)) return trimmed;
 
-    const origin = this.apiBaseUrl.replace(/\/$/, '');
+    const pageOrigin = typeof window !== 'undefined' ? window.location.origin.replace(/\/$/, '') : '';
+    const apiOrigin = this.apiBaseUrl.replace(/\/$/, '');
+    const origin = pageOrigin || apiOrigin;
     if (trimmed.startsWith('/')) return `${origin}${trimmed}`;
     return `${origin}/${trimmed}`;
 
