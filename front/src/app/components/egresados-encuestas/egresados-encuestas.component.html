@@ -213,6 +213,17 @@
                   Campo obligatorio
                 </mat-error>
               </mat-form-field>
+
+              <mat-form-field appearance="outline" class="field">
+                <mat-label>Correo electronico</mat-label>
+                <input matInput type="email" formControlName="correo" />
+                <mat-error *ngIf="form.get('generales.correo')?.touched && form.get('generales.correo')?.hasError('required')">
+                  Campo obligatorio
+                </mat-error>
+                <mat-error *ngIf="form.get('generales.correo')?.touched && form.get('generales.correo')?.hasError('email')">
+                  Correo invalido
+                </mat-error>
+              </mat-form-field>
             </div>
           </section>
 
@@ -481,6 +492,17 @@
                 </mat-select>
                 <mat-error *ngIf="acreditacionForm.get('generales.sexo')?.touched && acreditacionForm.get('generales.sexo')?.invalid">
                   Campo obligatorio
+                </mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="field">
+                <mat-label>Correo electronico</mat-label>
+                <input matInput type="email" formControlName="correo" />
+                <mat-error *ngIf="acreditacionForm.get('generales.correo')?.touched && acreditacionForm.get('generales.correo')?.hasError('required')">
+                  Campo obligatorio
+                </mat-error>
+                <mat-error *ngIf="acreditacionForm.get('generales.correo')?.touched && acreditacionForm.get('generales.correo')?.hasError('email')">
+                  Correo invalido
                 </mat-error>
               </mat-form-field>
             </div>
