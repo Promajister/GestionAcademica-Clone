@@ -1437,6 +1437,7 @@ export class ActividadesPmGestionComponent implements OnInit {
         fontSize: 9,
         cellPadding: 3,
         overflow: 'linebreak',
+        halign: 'left',
         textColor: colors.text as any,
         lineColor: colors.line as any,
         lineWidth: 0.8,
