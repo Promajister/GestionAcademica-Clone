@@ -391,7 +391,7 @@ export class ActividadesPmGestionComponent implements OnInit {
                     label === 'DescripciÇün' ||
                     label === 'Resultados'
                   ) {
-                    cell.cell.styles.halign = 'justify';
+                    // sin justificado para evitar corte de texto
                   }
                 },
               });
@@ -1255,6 +1255,13 @@ export class ActividadesPmGestionComponent implements OnInit {
       body: bodyNormalized,
       margin: { left: margin, right: margin, top, bottom },
       tableWidth: contentW,
+      columnStyles:
+        title === 'Difusión'
+          ? {
+              0: { cellWidth: 140 },
+              1: { cellWidth: contentW - 140, overflow: 'ellipsize' as any },
+            }
+          : undefined,
       styles: {
         fontSize: 9,
         cellPadding: 3,
@@ -1319,6 +1326,16 @@ export class ActividadesPmGestionComponent implements OnInit {
 
     const headNormalized = head.map((h) => this.normalizeTableText(h));
     const bodyNormalized = items.map(mapRow).map((row) => this.normalizeTableRow(row));
+    const hasUrlColumn = headNormalized.some(
+      (h) => String(h ?? '').trim().toUpperCase() === 'URL',
+    );
+    const difusionStyles =
+      title === 'Difusión' || title === 'Difusi¢n' || hasUrlColumn
+        ? {
+            0: { cellWidth: 180, overflow: 'linebreak' as any },
+            1: { cellWidth: contentW - 180, overflow: 'ellipsize' as any },
+          }
+        : undefined;
 
     autoTable(doc, {
       startY: y,
@@ -1326,6 +1343,7 @@ export class ActividadesPmGestionComponent implements OnInit {
       body: bodyNormalized,
       margin: { left: margin, right: margin, top, bottom },
       tableWidth: contentW,
+      columnStyles: difusionStyles as any,
       styles: {
         fontSize: 9,
         cellPadding: 3,
