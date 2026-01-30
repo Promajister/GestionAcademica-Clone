@@ -1,5 +1,5 @@
-import { Component, inject, PLATFORM_ID, Injectable } from '@angular/core';
-import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { Component, inject, Injectable, OnDestroy, PLATFORM_ID, Renderer2 } from '@angular/core';
+import { CommonModule, DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule, AbstractControl, ValidationErrors } from '@angular/forms';
 
 // Angular Material
@@ -16,6 +16,8 @@ import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatDialogModule } from '@angular/material/dialog';
 import { formatDateEs, parseDateFlexible } from '../../utils/date-utils';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 // Servicios
 import {
@@ -43,6 +45,10 @@ interface Actividad {
   completada: boolean;
 }
 
+type CentroEducativoPractica = CentroEducativo & {
+  fechaInicioAsociacion?: string | null;
+};
+
 // Interface local para compatibilidad con la vista (mapeo de API)
 interface Practica {
   id: number;
@@ -55,11 +61,20 @@ interface Practica {
   anio?: number;
   semestre?: number;
   estudiante: Estudiante;
-  centro: CentroEducativo;
+  centro: CentroEducativoPractica;
   colaboradores: Colaborador[];
   tutores: { tutor: Tutor; rol: TutorRol }[];
   actividades?: Actividad[];
   observaciones?: Observacion[];
+}
+
+interface ReporteCentroRow {
+  centro: string;
+  anioInicio: string;
+  convenio: string;
+  tipoPractica: string;
+  colaboradores: string;
+  totalEstudiantes: number;
 }
 
 @Injectable()
@@ -129,7 +144,7 @@ export const MY_DATE_FORMATS = {
     { provide: MAT_DATE_LOCALE, useValue: 'es-ES' },
   ],
 })
-export class PracticasComponent {
+export class PracticasComponent implements OnDestroy {
   private fb = inject(FormBuilder);
   private snack = inject(MatSnackBar);
   private practicasService = inject(PracticasService);
@@ -138,11 +153,15 @@ export class PracticasComponent {
   private observacionesService = inject(ObservacionesService);
   private http = inject(HttpClient);
   private platformId = inject(PLATFORM_ID);
+  private renderer = inject(Renderer2);
+  private doc = inject(DOCUMENT);
 
   // Filtros
   terminoBusqueda = '';
   colegioSeleccionado: 'all' | string = 'all';
-  nivelSeleccionado: 'all' | string = 'all';
+  estadoSeleccionado: 'all' | EstadoPractica = 'all';
+  anioSeleccionado: 'all' | number = 'all';
+  semestreSeleccionado: 'all' | number = 'all';
   
   // ===== paginación =====
   pageIndex = 0;
@@ -201,10 +220,21 @@ export class PracticasComponent {
   ];
   tiposPracticaBloqueados = new Set<string>();
 
-  // Opciones de niveles/plan (derivadas de los datos cargados)
-  niveles: string[] = [];
   // Tipos de centro educativo (derivados de los datos cargados)
   tiposCentro: string[] = [];
+  anios: number[] = [];
+
+  estadosPractica: EstadoPractica[] = [
+    'EN_CURSO',
+    'APROBADO',
+    'REPROBADO'
+  ];
+
+  readonly semestresFiltro: Array<{ value: 'all' | number; label: string }> = [
+    { value: 'all', label: 'Todos los semestres' },
+    { value: 1, label: 'Semestre 1' },
+    { value: 2, label: 'Semestre 2' },
+  ];
 
   rolesTutor: TutorRol[] = ['Supervisor', 'Tallerista'];
   semestres: number[] = [1, 2];
@@ -332,13 +362,26 @@ export class PracticasComponent {
     this.cargarDatosIniciales();
   }
 
+  ngOnDestroy(): void {
+    this.renderer.removeClass(this.doc.body, 'student-modal-open');
+  }
+
+  private syncModalBodyClass(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    if (this.mostrarModalDetalles) {
+      this.renderer.addClass(this.doc.body, 'student-modal-open');
+      return;
+    }
+    this.renderer.removeClass(this.doc.body, 'student-modal-open');
+  }
+
   // Cargar datos iniciales desde las APIs
   cargarDatosIniciales() {
     // Cargar prácticas primero para filtrar estudiantes
     this.practicasService.listar().subscribe({
       next: (practicas) => {
         this.practicas = practicas.map((p: any) => this.transformarPractica(p));
-        this.recalcularNivelesDesdeDatos();
+        this.recalcularAniosDesdeDatos();
         this.actualizarPaginacion();
         
         // Extraer RUTs de estudiantes con prácticas EN_CURSO
@@ -425,7 +468,7 @@ export class PracticasComponent {
     this.practicasService.listar().subscribe({
       next: (practicas) => {
         this.practicas = practicas.map((p: any) => this.transformarPractica(p));
-        this.recalcularNivelesDesdeDatos();
+        this.recalcularAniosDesdeDatos();
         this.actualizarEstudiantesDisponibles();
         this.actualizarPaginacion();
       },
@@ -521,7 +564,8 @@ export class PracticasComponent {
         tipo: p.centro?.tipo,
         region: p.centro?.region,
         comuna: p.centro?.comuna,
-        convenio: p.centro?.convenio
+        convenio: p.centro?.convenio,
+        fechaInicioAsociacion: p.centro?.fecha_inicio_asociacion ?? null,
       },
       colaboradores,
       tutores,
@@ -532,6 +576,10 @@ export class PracticasComponent {
 
   // Datos de prácticas (se cargan desde la API)
   practicas: Practica[] = [];
+
+  get canExportarPDF(): boolean {
+    return this.asignacionesFiltradas.length > 0;
+  }
 
   // FILTROS
   get asignacionesFiltradas(): Practica[] {
@@ -549,10 +597,16 @@ export class PracticasComponent {
       const coincideColegio = this.colegioSeleccionado === 'all' ||
         (practica.centro.tipo || '').toLowerCase() === this.colegioSeleccionado.toLowerCase();
 
-      const coincideNivel = this.nivelSeleccionado === 'all' ||
-        (practica.estudiante.nivel || '').toLowerCase() === this.nivelSeleccionado.toLowerCase();
+      const coincideEstado = this.estadoSeleccionado === 'all' ||
+        practica.estado === this.estadoSeleccionado;
 
-      return coincideBusqueda && coincideColegio && coincideNivel;
+      const coincideAnio = this.anioSeleccionado === 'all' ||
+        practica.anio === this.anioSeleccionado;
+
+      const coincideSemestre = this.semestreSeleccionado === 'all' ||
+        practica.semestre === this.semestreSeleccionado;
+
+      return coincideBusqueda && coincideColegio && coincideEstado && coincideAnio && coincideSemestre;
     });
   }
 
@@ -585,13 +639,12 @@ export class PracticasComponent {
     this.actualizarPaginacion();
   }
 
-  private recalcularNivelesDesdeDatos() {
-    const set = new Set<string>();
+  private recalcularAniosDesdeDatos() {
+    const set = new Set<number>();
     this.practicas.forEach(p => {
-      const n = (p.estudiante?.nivel || '').trim();
-      if (n) set.add(n);
+      if (typeof p.anio === 'number') set.add(p.anio);
     });
-    this.niveles = Array.from(set).sort((a, b) => a.localeCompare(b));
+    this.anios = Array.from(set).sort((a, b) => b - a);
   }
 
   abrirNuevaAsignacion() {
@@ -1013,12 +1066,14 @@ export class PracticasComponent {
   verDetalles(practica: Practica) {
     this.practicaSeleccionada = practica;
     this.mostrarModalDetalles = true;
+    this.syncModalBodyClass();
     this.cargarObservaciones(practica.id);
   }
 
   cerrarDetalles() {
     this.practicaSeleccionada = null;
     this.mostrarModalDetalles = false;
+    this.syncModalBodyClass();
     this.observaciones = [];
     this.mostrarFormularioObservacion = false;
     this.observacionEditando = null;
@@ -1152,6 +1207,282 @@ export class PracticasComponent {
 
   formatearFecha(fecha: string): string {
     return fecha ? formatDateEs(parseDateFlexible(fecha) ?? fecha) : '';
+  }
+
+  private getYearFromDate(value?: string | null): string {
+    if (!value) return '—';
+    const parsed = parseDateFlexible(value) ?? new Date(value);
+    if (Number.isNaN(parsed.getTime())) return '—';
+    return String(parsed.getFullYear());
+  }
+
+  private buildReporteRows(practicas: Practica[]): ReporteCentroRow[] {
+    const rows = new Map<string, {
+      centro: string;
+      anioInicio: string;
+      convenio: string;
+      tipoPractica: string;
+      colaboradores: Set<string>;
+      estudiantes: Set<string>;
+    }>();
+
+    for (const p of practicas) {
+      if (!p?.centro?.nombre) continue;
+      const tipo = (p.tipo || '').toString().trim();
+      if (!tipo) continue;
+
+      const centroId = p.centro?.id ?? 0;
+      const key = `${centroId}__${tipo}`;
+      if (!rows.has(key)) {
+        rows.set(key, {
+          centro: p.centro.nombre,
+          anioInicio: this.getYearFromDate(p.centro?.fechaInicioAsociacion),
+          convenio: (p.centro.convenio || '').toString().trim() || '—',
+          tipoPractica: tipo,
+          colaboradores: new Set<string>(),
+          estudiantes: new Set<string>(),
+        });
+      }
+
+      const row = rows.get(key)!;
+      const nombres = (p.colaboradores || [])
+        .map((c) => (c?.nombre || '').toString().trim())
+        .filter((nombre) => nombre);
+      nombres.forEach((nombre) => row.colaboradores.add(nombre));
+
+      const rut = (p.estudiante?.rut || '').toString().trim();
+      if (rut) row.estudiantes.add(rut);
+    }
+
+    return Array.from(rows.values())
+      .map((r) => ({
+        centro: r.centro,
+        anioInicio: r.anioInicio,
+        convenio: r.convenio || '—',
+        tipoPractica: r.tipoPractica,
+        colaboradores: r.colaboradores.size ? Array.from(r.colaboradores).join(', ') : 'Sin colaborador',
+        totalEstudiantes: r.estudiantes.size,
+      }))
+      .sort((a, b) => {
+        const byCentro = a.centro.localeCompare(b.centro);
+        if (byCentro !== 0) return byCentro;
+        return a.tipoPractica.localeCompare(b.tipoPractica);
+      });
+  }
+
+  private async loadLogoAsDataURLSafe(path: string): Promise<string | null> {
+    if (!isPlatformBrowser(this.platformId)) return null;
+    try {
+      const res = await fetch(path);
+      if (!res.ok) return null;
+      const blob = await res.blob();
+      return await this.blobToPngDataUrl(blob, 256);
+    } catch {
+      return null;
+    }
+  }
+
+  private blobToPngDataUrl(blob: Blob, maxWidth: number): Promise<string | null> {
+    return new Promise((resolve) => {
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => {
+        const naturalW = img.naturalWidth || img.width;
+        const naturalH = img.naturalHeight || img.height;
+        const scale = naturalW > maxWidth ? maxWidth / naturalW : 1;
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(naturalW * scale));
+        canvas.height = Math.max(1, Math.round(naturalH * scale));
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          URL.revokeObjectURL(url);
+          resolve(null);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/png');
+        URL.revokeObjectURL(url);
+        resolve(dataUrl);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve(null);
+      };
+      img.src = url;
+    });
+  }
+
+  private drawPdfHeader(
+    doc: jsPDF,
+    opts: {
+      title: string;
+      subtitle: string;
+      generatedText: string;
+      logoLeft?: string | null;
+      logoRight?: string | null;
+    }
+  ) {
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 52;
+    const headerH = 92;
+
+    const headerFill: [number, number, number] = [248, 250, 252];
+    const line: [number, number, number] = [229, 231, 235];
+    const text: [number, number, number] = [17, 24, 39];
+    const muted: [number, number, number] = [100, 116, 139];
+
+    doc.setFillColor(...headerFill);
+    doc.rect(0, 0, pageWidth, headerH, 'F');
+
+    const drawLogo = (dataUrl: string | null | undefined, x: number, y: number, w: number, h: number) => {
+      if (!dataUrl) return;
+      const format = dataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+      doc.addImage(dataUrl, format, x, y, w, h);
+    };
+
+    drawLogo(opts.logoLeft, margin, 16, 76, 56);
+    drawLogo(opts.logoRight, pageWidth - margin - 76, 10, 76, 76);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.setTextColor(...text);
+    doc.text(opts.title, pageWidth / 2, 36, { align: 'center' as any });
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(...muted);
+    doc.text(opts.subtitle, pageWidth / 2, 56, { align: 'center' as any });
+
+    doc.setFontSize(9);
+    doc.text(opts.generatedText, pageWidth / 2, 72, { align: 'center' as any });
+
+    doc.setDrawColor(...line);
+    doc.setLineWidth(1);
+    doc.line(margin, headerH, pageWidth - margin, headerH);
+  }
+
+  private drawPdfFooter(doc: jsPDF, page: number, totalPages: number) {
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 52;
+
+    const line: [number, number, number] = [229, 231, 235];
+    const muted: [number, number, number] = [100, 116, 139];
+
+    const footerY = pageHeight - 34;
+
+    doc.setDrawColor(...line);
+    doc.setLineWidth(1);
+    doc.line(margin, footerY, pageWidth - margin, footerY);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(...muted);
+
+    doc.text('Gestión Académica • Reporte de acreditación de prácticas', margin, pageHeight - 18);
+    doc.text(`Página ${page} / ${totalPages}`, pageWidth - margin, pageHeight - 18, { align: 'right' as any });
+  }
+
+  exportarPDF() {
+    const practicas = this.asignacionesFiltradas;
+    if (!practicas.length) return;
+
+    (async () => {
+      const doc = new jsPDF({ unit: 'pt', format: 'letter' });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+
+      const margin = 52;
+      const headerH = 92;
+      const top = headerH + 22;
+      const bottom = 54;
+      const contentW = pageWidth - margin * 2;
+
+      const colors = {
+        text: [17, 24, 39] as [number, number, number],
+        line: [229, 231, 235] as [number, number, number],
+        border: [209, 213, 219] as [number, number, number],
+        tableHead: [241, 245, 249] as [number, number, number],
+        zebra: [248, 250, 252] as [number, number, number],
+      };
+
+      const [logoUta, logoFeh] = await Promise.all([
+        this.loadLogoAsDataURLSafe('assets/img/uta.png'),
+        this.loadLogoAsDataURLSafe('assets/img/feh.png'),
+      ]);
+
+      const now = new Date();
+      const generatedText = `Generado: ${formatDateEs(now)} ${now.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}`;
+      const headerData = {
+        title: 'REPORTE DE ACREDITACIÓN DE PRÁCTICAS',
+        subtitle: 'Centros educativos con prácticas asignadas',
+        generatedText,
+        logoLeft: logoUta,
+        logoRight: logoFeh,
+      };
+
+      this.drawPdfHeader(doc, headerData);
+
+      const rows = this.buildReporteRows(practicas);
+      if (!rows.length) return;
+
+      const upper = (v: string) => v.toUpperCase();
+      const tableBody = rows.map((r) => [
+        upper(r.centro),
+        upper(r.anioInicio),
+        upper(r.convenio),
+        upper(r.tipoPractica),
+        upper(r.colaboradores),
+        upper(String(r.totalEstudiantes)),
+      ]);
+
+      autoTable(doc, {
+        startY: top,
+        head: [[
+          'CENTRO DE PRÁCTICA',
+          'AÑO DE INICIO DEL CONVENIO',
+          'TIPO DE CONVENIO',
+          'TIPO DE PRÁCTICA',
+          'COLABORADOR',
+          'N° DE ESTUDIANTES',
+        ]],
+        body: tableBody,
+        margin: { left: margin, right: margin, top, bottom },
+        tableWidth: contentW,
+        styles: {
+          font: 'helvetica',
+          fontSize: 8,
+          cellPadding: 5,
+          textColor: colors.text as any,
+          lineColor: colors.line as any,
+          lineWidth: 0.8,
+          overflow: 'linebreak',
+          valign: 'top',
+        },
+        headStyles: {
+          fillColor: colors.tableHead as any,
+          textColor: colors.text as any,
+          fontStyle: 'bold',
+          fontSize: 8,
+          lineColor: colors.border as any,
+          lineWidth: 1,
+        },
+        alternateRowStyles: { fillColor: colors.zebra as any },
+        columnStyles: {
+          1: { halign: 'center' },
+          5: { halign: 'center' },
+        },
+      });
+
+      const totalPages = (doc as any).getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        this.drawPdfHeader(doc, headerData);
+        this.drawPdfFooter(doc, i, totalPages);
+      }
+
+      doc.save('reporte_acreditacion_practicas.pdf');
+    })();
   }
 
   // Formatear fecha a ISO string

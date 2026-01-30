@@ -26,6 +26,16 @@
       </div>
 
       <div class="hero__actions">
+        <button
+          mat-stroked-button
+          color="primary"
+          class="btn-cta"
+          (click)="exportarPDF()"
+          [disabled]="!canExportarPDF">
+          <mat-icon>picture_as_pdf</mat-icon>
+          Reporte de acreditación
+        </button>
+
         <button mat-flat-button color="primary" (click)="abrirNuevaAsignacion()" class="btn-cta">
           <mat-icon>person_add</mat-icon>
           Nueva Asignación
@@ -50,24 +60,45 @@
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="toolbar__select">
-          <mat-label>Nivel</mat-label>
-          <mat-select [(ngModel)]="nivelSeleccionado" (ngModelChange)="onFiltersChange()">
-            <mat-option value="all">Todos los niveles</mat-option>
-            @for (n of niveles; track n) {
-              <mat-option [value]="n">{{ n }}</mat-option>
+          <mat-label>Estado</mat-label>
+          <mat-select [(ngModel)]="estadoSeleccionado" (ngModelChange)="onFiltersChange()">
+            <mat-option value="all">Todos los estados</mat-option>
+            @for (estado of estadosPractica; track estado) {
+              <mat-option [value]="estado">
+                {{ formatearEstado(estado) }}
+              </mat-option>
             }
           </mat-select>
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="toolbar__select">
-          <mat-label>Tipo de Centro Educativo</mat-label>
+          <mat-label>Tipo de Centro</mat-label>
           <mat-select [(ngModel)]="colegioSeleccionado" (ngModelChange)="onFiltersChange()">
             <mat-select-trigger>
-              {{ colegioSeleccionado === 'all' ? 'Todos los tipos' : (colegioSeleccionado | lowercase) }}
+              {{ colegioSeleccionado === 'all' ? 'Todos los tipos' : formatearTipoCentro(colegioSeleccionado) }}
             </mat-select-trigger>
             <mat-option value="all">Todos los tipos</mat-option>
             @for (t of tiposCentro; track t) {
-              <mat-option [value]="t">{{ t | lowercase }}</mat-option>
+              <mat-option [value]="t">{{ formatearTipoCentro(t) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="toolbar__select">
+          <mat-label>Año</mat-label>
+          <mat-select [(ngModel)]="anioSeleccionado" (ngModelChange)="onFiltersChange()">
+            <mat-option value="all">Todos los años</mat-option>
+            @for (y of anios; track y) {
+              <mat-option [value]="y">{{ y }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="toolbar__select">
+          <mat-label>Semestre</mat-label>
+          <mat-select [(ngModel)]="semestreSeleccionado" (ngModelChange)="onFiltersChange()">
+            @for (s of semestresFiltro; track s.value) {
+              <mat-option [value]="s.value">{{ s.label }}</mat-option>
             }
           </mat-select>
         </mat-form-field>
