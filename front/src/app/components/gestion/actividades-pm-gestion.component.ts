@@ -1516,11 +1516,15 @@ export class ActividadesPmGestionComponent implements OnInit {
         fontSize: 9,
         cellPadding: 4,
         overflow: 'linebreak',
+        halign: 'left',
         textColor: colors.text as any,
         lineColor: colors.line as any,
         lineWidth: 0.8,
       },
-      columnStyles: { 0: { cellWidth: 170, fontStyle: 'bold' } },
+      columnStyles: {
+        0: { cellWidth: 170, fontStyle: 'bold' },
+        1: { halign: 'left' },
+      },
       alternateRowStyles: { fillColor: colors.zebra as any },
       showHead: 'never',
       didParseCell: (cell) => {
@@ -1534,7 +1538,7 @@ export class ActividadesPmGestionComponent implements OnInit {
           .replace(/[\u0300-\u036f]/g, '')
           .toUpperCase();
         if (labelNorm === 'DESCRIPCION') {
-          cell.cell.styles.halign = 'justify';
+          cell.cell.styles.halign = 'left';
         }
       },
     });
@@ -1730,7 +1734,14 @@ export class ActividadesPmGestionComponent implements OnInit {
   }
 
   private buildGeneratedText(): string {
-    return `Fecha: ${formatDateEs(new Date())}`;
+    const now = new Date();
+    const fecha = formatDateEs(now);
+    const hora = new Intl.DateTimeFormat('es-CL', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }).format(now);
+    return `Fecha: ${fecha} ${hora}`;
   }
 
   private buildPdfFileName(base: string, items: any[]): string {
