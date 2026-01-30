@@ -91,6 +91,7 @@ model Empleabilidad {
   sectorOtro   String?
   cargo        String
   cargoOtro    String?
+  situacionLaboral String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

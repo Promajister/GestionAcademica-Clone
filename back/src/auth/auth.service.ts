@@ -228,13 +228,7 @@ Inicia sesion y cambia tu contrasena cuanto antes.
 
 Si no solicitaste este cambio, contacta al administrador.`;
 
-    const html = `<p>Hola ${safeName},</p>
-<p>Se gener&oacute; una contrase&ntilde;a provisional para tu cuenta:</p>
-<p><strong>${provisional}</strong></p>
-<p>Inicia sesi&oacute;n y cambia tu contrase&ntilde;a cuanto antes.</p>
-<p>Si no solicitaste este cambio, contacta al administrador.</p>`;
-
-    await transporter.sendMail({ from, to, subject, text, html });
+    await transporter.sendMail({ from, to, subject, text });
   }
 
   async forgotPassword(email: string) {
