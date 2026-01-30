@@ -94,7 +94,7 @@ export class AuthController {
     await this.auth.forgotPassword(dto.email);
     return {
       ok: true,
-      message: 'Si el correo existe, enviaremos una contrasena provisional al correo registrado.',
+      message: 'Si el correo existe, enviaremos una contraseña provisional al correo registrado.',
     };
   }
 
