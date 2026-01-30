@@ -41,6 +41,8 @@ interface PracticaEstudiante {
   fechaInicio: string;
   fechaTermino?: string;
   tipo?: string;
+  anio?: number;
+  semestre?: number;
   estudiante: Estudiante;
   centro: CentroEducativoPractica;
   colaboradores?: Colaborador[];
@@ -89,7 +91,8 @@ export class EstudiantesEnPracticaComponent implements OnInit {
   // Filtros
   terminoBusqueda = '';
   estadoSeleccionado: 'all' | EstadoPractica = 'all';
-  nivelSeleccionado: 'all' | string = 'all';
+  anioSeleccionado: 'all' | number = 'all';
+  semestreSeleccionado: 'all' | number = 'all';
 
   // ===== paginación =====
   pageIndex = 0;
@@ -120,7 +123,12 @@ export class EstudiantesEnPracticaComponent implements OnInit {
     'REPROBADO'
   ];
 
-  niveles: string[] = [];
+  anios: number[] = [];
+  readonly semestres: Array<{ value: 'all' | number; label: string }> = [
+    { value: 'all', label: 'Todos los semestres' },
+    { value: 1, label: 'Semestre 1' },
+    { value: 2, label: 'Semestre 2' },
+  ];
 
   ngOnInit(): void {
     this.cargarPracticas();
@@ -135,7 +143,7 @@ export class EstudiantesEnPracticaComponent implements OnInit {
     this.practicasService.listar().subscribe({
       next: (practicas) => {
         this.practicas = practicas.map((p: any) => this.transformarPractica(p));
-        this.recalcularNivelesDesdeDatos();
+        this.recalcularAniosDesdeDatos();
         this.actualizarPaginacion();
         this.cargando = false;
       },
@@ -186,6 +194,8 @@ export class EstudiantesEnPracticaComponent implements OnInit {
       fechaInicio: formatearFecha(p.fecha_inicio) || p.fecha_inicio,
       fechaTermino: p.fecha_termino ? formatearFecha(p.fecha_termino) : undefined,
       tipo: p.tipo,
+      anio: typeof p.anio === 'number' ? p.anio : undefined,
+      semestre: typeof p.semestre === 'number' ? p.semestre : undefined,
       estudiante: {
         rut: p.estudiante?.rut || '',
         nombre: p.estudiante?.nombre || '',
@@ -208,13 +218,12 @@ export class EstudiantesEnPracticaComponent implements OnInit {
     };
   }
 
-  private recalcularNivelesDesdeDatos() {
-    const set = new Set<string>();
+  private recalcularAniosDesdeDatos() {
+    const set = new Set<number>();
     this.practicas.forEach(p => {
-      const n = (p.estudiante?.nivel || '').trim();
-      if (n) set.add(n);
+      if (typeof p.anio === 'number') set.add(p.anio);
     });
-    this.niveles = Array.from(set).sort((a, b) => a.localeCompare(b));
+    this.anios = Array.from(set).sort((a, b) => b - a);
   }
 
   formatearEstado(estado: EstadoPractica): string {
@@ -252,10 +261,13 @@ export class EstudiantesEnPracticaComponent implements OnInit {
       const coincideEstado = this.estadoSeleccionado === 'all' ||
         practica.estado === this.estadoSeleccionado;
 
-      const coincideNivel = this.nivelSeleccionado === 'all' ||
-        (practica.estudiante.nivel || '').toLowerCase() === this.nivelSeleccionado.toLowerCase();
+      const coincideAnio = this.anioSeleccionado === 'all' ||
+        practica.anio === this.anioSeleccionado;
 
-      return coincideBusqueda && coincideEstado && coincideNivel;
+      const coincideSemestre = this.semestreSeleccionado === 'all' ||
+        practica.semestre === this.semestreSeleccionado;
+
+      return coincideBusqueda && coincideEstado && coincideAnio && coincideSemestre;
     });
   }
 
@@ -634,7 +646,7 @@ export class EstudiantesEnPracticaComponent implements OnInit {
           'TIPO DE CONVENIO',
           'TIPO DE PRÁCTICA',
           'COLABORADOR',
-          'NRO. DE ESTUDIANTES',
+          'N° DE ESTUDIANTES',
         ]],
         body: tableBody,
         margin: { left: margin, right: margin, top, bottom },

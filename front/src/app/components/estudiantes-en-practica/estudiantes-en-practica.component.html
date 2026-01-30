@@ -33,7 +33,7 @@
           (click)="exportarPDF()"
           [disabled]="!canExportarPDF">
           <mat-icon>picture_as_pdf</mat-icon>
-          PDF
+          Reporte de acreditación
         </button>
       </div>
     </div>
@@ -66,11 +66,20 @@
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="toolbar__filter">
-        <mat-label>Nivel</mat-label>
-        <mat-select [(ngModel)]="nivelSeleccionado" (ngModelChange)="onFiltersChange()">
-          <mat-option value="all">Todos los niveles</mat-option>
-          @for (n of niveles; track n) {
-            <mat-option [value]="n">{{ n }}</mat-option>
+        <mat-label>Año</mat-label>
+        <mat-select [(ngModel)]="anioSeleccionado" (ngModelChange)="onFiltersChange()">
+          <mat-option value="all">Todos los años</mat-option>
+          @for (y of anios; track y) {
+            <mat-option [value]="y">{{ y }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="toolbar__filter">
+        <mat-label>Semestre</mat-label>
+        <mat-select [(ngModel)]="semestreSeleccionado" (ngModelChange)="onFiltersChange()">
+          @for (s of semestres; track s.value) {
+            <mat-option [value]="s.value">{{ s.label }}</mat-option>
           }
         </mat-select>
       </mat-form-field>
@@ -358,6 +367,16 @@
               <div class="KV">
                 <div class="K">Fecha de término</div>
                 <div class="V">{{ practicaSeleccionada.fechaTermino || 'Sin fecha de término' }}</div>
+              </div>
+
+              <div class="KV">
+                <div class="K">Año</div>
+                <div class="V">{{ practicaSeleccionada.anio ?? 'Sin año' }}</div>
+              </div>
+
+              <div class="KV">
+                <div class="K">Semestre</div>
+                <div class="V">{{ practicaSeleccionada.semestre ?? 'Sin semestre' }}</div>
               </div>
             </div>
           </div>
