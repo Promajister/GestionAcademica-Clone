@@ -599,7 +599,8 @@ export class EstudiantesEnPracticaComponent implements OnInit {
         this.loadLogoAsDataURLSafe('assets/img/feh.png'),
       ]);
 
-      const generatedText = `Generado: ${formatDateEs(new Date())}`;
+      const now = new Date();
+      const generatedText = `Generado: ${formatDateEs(now)} ${now.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}`;
       const headerData = {
         title: 'REPORTE DE ACREDITACIÓN DE PRÁCTICAS',
         subtitle: 'Centros educativos con prácticas asignadas',
@@ -615,32 +616,33 @@ export class EstudiantesEnPracticaComponent implements OnInit {
         this.snack.open('No hay datos con tipo de practica para exportar.', 'Cerrar', { duration: 3000 });
         return;
       }
+      const upper = (v: string) => v.toUpperCase();
       const tableBody = rows.map((r) => [
-        r.centro,
-        r.anioInicio,
-        r.convenio,
-        r.tipoPractica,
-        r.colaboradores,
-        String(r.totalEstudiantes),
+        upper(r.centro),
+        upper(r.anioInicio),
+        upper(r.convenio),
+        upper(r.tipoPractica),
+        upper(r.colaboradores),
+        upper(String(r.totalEstudiantes)),
       ]);
 
       autoTable(doc, {
         startY: top,
         head: [[
-          'Centro educativo',
-          'Año inicio convenio',
-          'Tipo convenio',
-          'Tipo práctica',
-          'Colaborador',
-          'Nro. estudiantes',
+          'CENTRO DE PRÁCTICA',
+          'AÑO DE INICIO DEL CONVENIO',
+          'TIPO DE CONVENIO',
+          'TIPO DE PRÁCTICA',
+          'COLABORADOR',
+          'NRO. DE ESTUDIANTES',
         ]],
         body: tableBody,
         margin: { left: margin, right: margin, top, bottom },
         tableWidth: contentW,
         styles: {
           font: 'helvetica',
-          fontSize: 9,
-          cellPadding: 6,
+          fontSize: 8,
+          cellPadding: 5,
           textColor: colors.text as any,
           lineColor: colors.line as any,
           lineWidth: 0.8,
@@ -651,10 +653,15 @@ export class EstudiantesEnPracticaComponent implements OnInit {
           fillColor: colors.tableHead as any,
           textColor: colors.text as any,
           fontStyle: 'bold',
+          fontSize: 8,
           lineColor: colors.border as any,
           lineWidth: 1,
         },
         alternateRowStyles: { fillColor: colors.zebra as any },
+        columnStyles: {
+          1: { halign: 'center' },
+          5: { halign: 'center' },
+        },
       });
 
       const totalPages = (doc as any).getNumberOfPages();
@@ -668,4 +675,3 @@ export class EstudiantesEnPracticaComponent implements OnInit {
     })();
   }
 }
-
