@@ -328,13 +328,12 @@
 
                   <div class="kv">
                     <div class="k">Cargo actual</div>
-                    <div class="v">
-                      @if (detalle.empleabilidad?.cargo === 'otro') {
-                        {{ detalle.empleabilidad?.cargoOtro || 'Otro' }}
-                      } @else {
-                        {{ detalle.empleabilidad?.cargo || '-' }}
-                      }
-                    </div>
+                    <div class="v">{{ detalle.empleabilidad?.cargo || '-' }}</div>
+                  </div>
+
+                  <div class="kv">
+                    <div class="k">Situación laboral</div>
+                    <div class="v">{{ formatEmpleabilidadSituacion(detalle.empleabilidad) }}</div>
                   </div>
                 </div>
               </div>
@@ -697,19 +696,17 @@
 
         <mat-form-field appearance="outline" class="field">
           <mat-label>Cargo actual</mat-label>
-          <mat-select [(ngModel)]="empleabilidadForm.cargo">
-            @for (opt of cargoOptions; track opt.value) {
+          <input matInput [(ngModel)]="empleabilidadForm.cargo" placeholder="Indica el cargo" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="field">
+          <mat-label>Situación laboral</mat-label>
+          <mat-select [(ngModel)]="empleabilidadForm.situacionLaboral">
+            @for (opt of situacionLaboralOptions; track opt.value) {
               <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
             }
           </mat-select>
         </mat-form-field>
-
-        @if (empleabilidadForm.cargo === 'otro') {
-          <mat-form-field appearance="outline" class="field">
-            <mat-label>Especificar cargo</mat-label>
-            <input matInput [(ngModel)]="empleabilidadForm.cargoOtro" placeholder="Indica el cargo" />
-          </mat-form-field>
-        }
 
       </div>
 

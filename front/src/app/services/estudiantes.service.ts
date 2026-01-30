@@ -62,6 +62,7 @@ export interface EmpleabilidadDetalle {
   sectorOtro?: string | null;
   cargo: string;
   cargoOtro?: string | null;
+  situacionLaboral?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -89,6 +90,7 @@ export interface EmpleabilidadPayload {
   sectorOtro?: string | null;
   cargo: string;
   cargoOtro?: string | null;
+  situacionLaboral?: string | null;
   direccion?: string | null;
   email?: string | null;
   fono?: number | null;

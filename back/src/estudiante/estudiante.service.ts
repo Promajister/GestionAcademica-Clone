@@ -218,6 +218,7 @@ export class EstudianteService {
     sectorOtro?: string | null;
     cargo: string;
     cargoOtro?: string | null;
+    situacionLaboral?: string | null;
     direccion?: string | null;
     email?: string | null;
     fono?: number | null;
@@ -242,6 +243,7 @@ export class EstudianteService {
       sectorOtro: payload.sectorOtro?.trim() || null,
       cargo: payload.cargo.trim(),
       cargoOtro: payload.cargoOtro?.trim() || null,
+      situacionLaboral: payload.situacionLaboral?.trim() || null,
     };
 
     const estudianteData: Prisma.EstudianteUpdateInput = {};

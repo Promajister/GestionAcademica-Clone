@@ -21,6 +21,10 @@ export class UpdateEmpleabilidadDto {
 
   @IsOptional()
   @IsString()
+  situacionLaboral?: string | null;
+
+  @IsOptional()
+  @IsString()
   direccion?: string | null;
 
   @IsOptional()

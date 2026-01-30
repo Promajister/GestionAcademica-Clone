@@ -73,7 +73,7 @@ export class EgresadosRegistroComponent implements OnInit, OnDestroy {
     sector: '',
     sectorOtro: '',
     cargo: '',
-    cargoOtro: '',
+    situacionLaboral: '',
   };
   egresadoFichaModalOpen = false;
   egresadoFichaSaving = false;
@@ -121,11 +121,9 @@ export class EgresadosRegistroComponent implements OnInit, OnDestroy {
     { value: 'otro', label: 'Otro' },
   ];
 
-  readonly cargoOptions = [
-    { value: 'jefatura', label: 'Jefatura' },
+  readonly situacionLaboralOptions = [
     { value: 'dependiente', label: 'Dependiente' },
     { value: 'independiente', label: 'Independiente' },
-    { value: 'otro', label: 'Otro' },
   ];
 
   readonly REGIONES: { nombre: string; comunas: string[] }[] = [
@@ -272,10 +270,8 @@ export class EgresadosRegistroComponent implements OnInit, OnDestroy {
     if (this.empleabilidadForm.sector === 'otro' && !this.empleabilidadForm.sectorOtro.trim()) {
       return false;
     }
-    if (!this.empleabilidadForm.cargo) return false;
-    if (this.empleabilidadForm.cargo === 'otro' && !this.empleabilidadForm.cargoOtro.trim()) {
-      return false;
-    }
+    if (!this.empleabilidadForm.cargo.trim()) return false;
+    if (!this.empleabilidadForm.situacionLaboral) return false;
     return true;
   }
 
@@ -302,7 +298,7 @@ export class EgresadosRegistroComponent implements OnInit, OnDestroy {
       sector: empleabilidad?.sector ?? '',
       sectorOtro: empleabilidad?.sectorOtro ?? '',
       cargo: empleabilidad?.cargo ?? '',
-      cargoOtro: empleabilidad?.cargoOtro ?? '',
+      situacionLaboral: (empleabilidad as any)?.situacionLaboral ?? '',
     };
     this.postgradoEditId = null;
     this.postgradoForm = {
@@ -336,8 +332,8 @@ export class EgresadosRegistroComponent implements OnInit, OnDestroy {
       this.empleabilidadForm.lugarTrabajo.trim()
       || this.empleabilidadForm.sector
       || this.empleabilidadForm.sectorOtro.trim()
-      || this.empleabilidadForm.cargo
-      || this.empleabilidadForm.cargoOtro.trim(),
+      || this.empleabilidadForm.cargo.trim()
+      || this.empleabilidadForm.situacionLaboral,
     );
   }
 
@@ -415,10 +411,8 @@ export class EgresadosRegistroComponent implements OnInit, OnDestroy {
         sectorOtro: this.empleabilidadForm.sector === 'otro'
           ? this.empleabilidadForm.sectorOtro.trim()
           : null,
-        cargo: this.empleabilidadForm.cargo,
-        cargoOtro: this.empleabilidadForm.cargo === 'otro'
-          ? this.empleabilidadForm.cargoOtro.trim()
-          : null,
+        cargo: this.empleabilidadForm.cargo.trim(),
+        situacionLaboral: this.empleabilidadForm.situacionLaboral,
       };
       ops.push(this.estudiantesService.guardarEmpleabilidad(rut, empleabilidadPayload));
     }
@@ -665,10 +659,15 @@ export class EgresadosRegistroComponent implements OnInit, OnDestroy {
 
   formatEmpleabilidadCargo(empleabilidad?: EmpleabilidadDetalle | null): string {
     if (!empleabilidad) return '-';
-    if (empleabilidad.cargo === 'otro') {
-      return empleabilidad.cargoOtro?.trim() || 'Otro';
-    }
-    return this.obtenerLabelOpcion(empleabilidad.cargo, this.cargoOptions);
+    return empleabilidad.cargo?.trim() || '-';
+  }
+
+  formatEmpleabilidadSituacion(empleabilidad?: EmpleabilidadDetalle | null): string {
+    if (!empleabilidad) return '-';
+    return this.obtenerLabelOpcion(
+      (empleabilidad as any).situacionLaboral,
+      this.situacionLaboralOptions,
+    );
   }
 
   formatPostgradoEstado(estado?: string | null): string {
@@ -921,8 +920,10 @@ export class EgresadosRegistroComponent implements OnInit, OnDestroy {
     const labelSector = () =>
       emp?.sector === 'otro' ? (emp?.sectorOtro || 'Otro') : (emp?.sector || '-');
 
-    const labelCargo = () =>
-      emp?.cargo === 'otro' ? (emp?.cargoOtro || 'Otro') : (emp?.cargo || '-');
+    const labelCargo = () => emp?.cargo || '-';
+
+    const labelSituacion = () =>
+      this.obtenerLabelOpcion(emp?.situacionLaboral, this.situacionLaboralOptions);
 
     const drawSimpleTitle = (title: string) => {
       y += 18;
@@ -1049,6 +1050,7 @@ export class EgresadosRegistroComponent implements OnInit, OnDestroy {
       ['Lugar de trabajo', safe(emp?.lugarTrabajo)],
       ['Sector laboral', safe(labelSector())],
       ['Cargo actual', safe(labelCargo())],
+      ['Situación laboral', safe(labelSituacion())],
     ]);
 
     addPageWithHeader();
