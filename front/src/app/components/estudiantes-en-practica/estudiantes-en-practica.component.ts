@@ -1,5 +1,5 @@
-﻿import { Component, inject, OnInit, PLATFORM_ID } from '@angular/core';
-import { CommonModule, isPlatformBrowser } from '@angular/common';
+﻿import { Component, inject, OnDestroy, OnInit, PLATFORM_ID, Renderer2 } from '@angular/core';
+import { CommonModule, DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 // Angular Material
@@ -82,11 +82,13 @@ interface ReporteCentroRow {
     MatPaginatorModule
   ]
 })
-export class EstudiantesEnPracticaComponent implements OnInit {
+export class EstudiantesEnPracticaComponent implements OnInit, OnDestroy {
   private practicasService = inject(PracticasService);
   private observacionesService = inject(ObservacionesService);
   private snack = inject(MatSnackBar);
   private platformId = inject(PLATFORM_ID);
+  private renderer = inject(Renderer2);
+  private doc = inject(DOCUMENT);
 
   // Filtros
   terminoBusqueda = '';
@@ -132,6 +134,20 @@ export class EstudiantesEnPracticaComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargarPracticas();
+  }
+
+  ngOnDestroy(): void {
+    this.renderer.removeClass(this.doc.body, 'student-modal-open');
+  }
+
+  private syncModalBodyClass(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    const isOpen = this.mostrarModalDetalles || this.mostrarDialogoNotaFinal;
+    if (isOpen) {
+      this.renderer.addClass(this.doc.body, 'student-modal-open');
+      return;
+    }
+    this.renderer.removeClass(this.doc.body, 'student-modal-open');
   }
 
   get canExportarPDF(): boolean {
@@ -305,6 +321,7 @@ export class EstudiantesEnPracticaComponent implements OnInit {
     this.notaFinalEditada = practica.notaFinal ?? null;
     this.notaFinalError = null;
     this.mostrarDialogoNotaFinal = true;
+    this.syncModalBodyClass();
   }
 
   cerrarDialogoCambioEstado() {
@@ -312,6 +329,7 @@ export class EstudiantesEnPracticaComponent implements OnInit {
     this.practicaANotar = null;
     this.notaFinalEditada = null;
     this.notaFinalError = null;
+    this.syncModalBodyClass();
   }
 
   confirmarCambioEstado() {
@@ -325,6 +343,7 @@ export class EstudiantesEnPracticaComponent implements OnInit {
   verDetalles(practica: PracticaEstudiante) {
     this.practicaSeleccionada = practica;
     this.mostrarModalDetalles = true;
+    this.syncModalBodyClass();
     this.cargarObservaciones(practica.id);
     this.notaFinalEditada = practica.notaFinal ?? null;
     this.notaFinalError = null;
@@ -337,6 +356,7 @@ export class EstudiantesEnPracticaComponent implements OnInit {
     this.notaFinalEditada = null;
     this.notaFinalError = null;
     this.guardandoNotaFinal = false;
+    this.syncModalBodyClass();
   }
 
   guardarNotaFinal() {
@@ -687,3 +707,4 @@ export class EstudiantesEnPracticaComponent implements OnInit {
     })();
   }
 }
+

@@ -1,5 +1,5 @@
-import { Component, inject, PLATFORM_ID, Injectable } from '@angular/core';
-import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { Component, inject, Injectable, OnDestroy, PLATFORM_ID, Renderer2 } from '@angular/core';
+import { CommonModule, DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule, AbstractControl, ValidationErrors } from '@angular/forms';
 
 // Angular Material
@@ -144,7 +144,7 @@ export const MY_DATE_FORMATS = {
     { provide: MAT_DATE_LOCALE, useValue: 'es-ES' },
   ],
 })
-export class PracticasComponent {
+export class PracticasComponent implements OnDestroy {
   private fb = inject(FormBuilder);
   private snack = inject(MatSnackBar);
   private practicasService = inject(PracticasService);
@@ -153,6 +153,8 @@ export class PracticasComponent {
   private observacionesService = inject(ObservacionesService);
   private http = inject(HttpClient);
   private platformId = inject(PLATFORM_ID);
+  private renderer = inject(Renderer2);
+  private doc = inject(DOCUMENT);
 
   // Filtros
   terminoBusqueda = '';
@@ -358,6 +360,19 @@ export class PracticasComponent {
 
     // Cargar datos desde las APIs
     this.cargarDatosIniciales();
+  }
+
+  ngOnDestroy(): void {
+    this.renderer.removeClass(this.doc.body, 'student-modal-open');
+  }
+
+  private syncModalBodyClass(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    if (this.mostrarModalDetalles) {
+      this.renderer.addClass(this.doc.body, 'student-modal-open');
+      return;
+    }
+    this.renderer.removeClass(this.doc.body, 'student-modal-open');
   }
 
   // Cargar datos iniciales desde las APIs
@@ -1051,12 +1066,14 @@ export class PracticasComponent {
   verDetalles(practica: Practica) {
     this.practicaSeleccionada = practica;
     this.mostrarModalDetalles = true;
+    this.syncModalBodyClass();
     this.cargarObservaciones(practica.id);
   }
 
   cerrarDetalles() {
     this.practicaSeleccionada = null;
     this.mostrarModalDetalles = false;
+    this.syncModalBodyClass();
     this.observaciones = [];
     this.mostrarFormularioObservacion = false;
     this.observacionEditando = null;

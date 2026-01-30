@@ -1,5 +1,5 @@
-import { Component, inject, PLATFORM_ID, OnInit } from '@angular/core';
-import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { Component, inject, OnDestroy, OnInit, PLATFORM_ID, Renderer2 } from '@angular/core';
+import { CommonModule, DOCUMENT, isPlatformBrowser } from '@angular/common';
 import {
   FormsModule,
   ReactiveFormsModule,
@@ -49,11 +49,13 @@ interface TutorForm {
     MatPaginatorModule,
   ],
 })
-export class TutoresComponent implements OnInit {
+export class TutoresComponent implements OnInit, OnDestroy {
   private snack = inject(MatSnackBar);
   private tutoresService = inject(TutoresService);
   private fb = inject(FormBuilder);
   private platformId = inject(PLATFORM_ID);
+  private renderer = inject(Renderer2);
+  private doc = inject(DOCUMENT);
 
   mostrarFormulario = false;
   tutorSeleccionado: Tutor | null = null;
@@ -123,6 +125,20 @@ export class TutoresComponent implements OnInit {
       this.mostrarFormulario = false;
       this.estaEditando = false;
     }
+  }
+
+  ngOnDestroy(): void {
+    this.renderer.removeClass(this.doc.body, 'student-modal-open');
+  }
+
+  private syncModalBodyClass(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    const isOpen = !!(this.tutorSeleccionado || this.mostrarConfirmarEliminar);
+    if (isOpen) {
+      this.renderer.addClass(this.doc.body, 'student-modal-open');
+      return;
+    }
+    this.renderer.removeClass(this.doc.body, 'student-modal-open');
   }
 
   showField(label: string, value: string) {
@@ -270,10 +286,12 @@ export class TutoresComponent implements OnInit {
 
   verDetalles(tutor: Tutor) {
     this.tutorSeleccionado = tutor;
+    this.syncModalBodyClass();
   }
 
   cerrarDetalles() {
     this.tutorSeleccionado = null;
+    this.syncModalBodyClass();
   }
 
   alternarFormulario() {
@@ -371,6 +389,7 @@ export class TutoresComponent implements OnInit {
 
     this.tutorAEliminar = tutor;
     this.mostrarConfirmarEliminar = true;
+    this.syncModalBodyClass();
   }
 
   confirmarEliminar() {
@@ -412,6 +431,7 @@ export class TutoresComponent implements OnInit {
   cerrarConfirmarEliminar() {
     this.mostrarConfirmarEliminar = false;
     this.tutorAEliminar = null;
+    this.syncModalBodyClass();
   }
 
   // ===== filtros - aplicados localmente en el frontend =====
