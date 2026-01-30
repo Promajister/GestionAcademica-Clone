@@ -25,7 +25,17 @@
         </div>
       </div>
 
-      <div class="hero__actions"></div>
+      <div class="hero__actions">
+        <button
+          mat-stroked-button
+          color="primary"
+          class="btn-cta"
+          (click)="exportarPDF()"
+          [disabled]="!canExportarPDF">
+          <mat-icon>picture_as_pdf</mat-icon>
+          PDF
+        </button>
+      </div>
     </div>
   </div>
 

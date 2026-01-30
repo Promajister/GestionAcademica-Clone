@@ -12,6 +12,8 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { formatDateEs, parseDateFlexible } from '../../utils/date-utils';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 // Servicios
 import {
@@ -40,11 +42,24 @@ interface PracticaEstudiante {
   fechaTermino?: string;
   tipo?: string;
   estudiante: Estudiante;
-  centro: CentroEducativo;
+  centro: CentroEducativoPractica;
   colaboradores?: Colaborador[];
   tutores?: { tutor: Tutor; rol: string }[];
   actividades?: Actividad[];
   observaciones?: Observacion[];
+}
+
+type CentroEducativoPractica = CentroEducativo & {
+  fechaInicioAsociacion?: string | null;
+};
+
+interface ReporteCentroRow {
+  centro: string;
+  anioInicio: string;
+  convenio: string;
+  tipoPractica: string;
+  colaboradores: string;
+  totalEstudiantes: number;
 }
 
 @Component({
@@ -109,6 +124,10 @@ export class EstudiantesEnPracticaComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargarPracticas();
+  }
+
+  get canExportarPDF(): boolean {
+    return !this.cargando && this.estudiantesFiltrados.length > 0;
   }
 
   cargarPracticas() {
@@ -180,8 +199,9 @@ export class EstudiantesEnPracticaComponent implements OnInit {
         tipo: p.centro?.tipo,
         region: p.centro?.region,
         comuna: p.centro?.comuna,
-        convenio: p.centro?.convenio
-      },
+        convenio: p.centro?.convenio,
+        fechaInicioAsociacion: p.centro?.fecha_inicio_asociacion ?? null,
+      } as CentroEducativoPractica,
       colaboradores,
       tutores,
       actividades: p.actividades || []
@@ -375,6 +395,277 @@ export class EstudiantesEnPracticaComponent implements OnInit {
 
   formatearFecha(fecha: string): string {
     return fecha ? formatDateEs(parseDateFlexible(fecha) ?? fecha) : '';
+  }
+
+  private getYearFromDate(value?: string | null): string {
+    if (!value) return '—';
+    const parsed = parseDateFlexible(value) ?? new Date(value);
+    if (Number.isNaN(parsed.getTime())) return '—';
+    return String(parsed.getFullYear());
+  }
+
+  private buildReporteRows(practicas: PracticaEstudiante[]): ReporteCentroRow[] {
+    const rows = new Map<string, {
+      centro: string;
+      anioInicio: string;
+      convenio: string;
+      tipoPractica: string;
+      colaboradores: Set<string>;
+      estudiantes: Set<string>;
+    }>();
+
+    for (const p of practicas) {
+      if (!p?.centro?.nombre) continue;
+      const tipo = (p.tipo || '').toString().trim();
+      if (!tipo) continue;
+
+      const centroId = p.centro?.id ?? 0;
+      const key = `${centroId}__${tipo}`;
+      if (!rows.has(key)) {
+        rows.set(key, {
+          centro: p.centro.nombre,
+          anioInicio: this.getYearFromDate((p.centro as CentroEducativoPractica)?.fechaInicioAsociacion),
+          convenio: (p.centro.convenio || '').toString().trim() || '—',
+          tipoPractica: tipo,
+          colaboradores: new Set<string>(),
+          estudiantes: new Set<string>(),
+        });
+      }
+
+      const row = rows.get(key)!;
+      const nombres = (p.colaboradores || [])
+        .map((c) => (c?.nombre || '').toString().trim())
+        .filter((nombre) => nombre);
+      nombres.forEach((nombre) => row.colaboradores.add(nombre));
+
+      const rut = (p.estudiante?.rut || '').toString().trim();
+      if (rut) row.estudiantes.add(rut);
+    }
+
+    return Array.from(rows.values())
+      .map((r) => ({
+        centro: r.centro,
+        anioInicio: r.anioInicio,
+        convenio: r.convenio || '—',
+        tipoPractica: r.tipoPractica,
+        colaboradores: r.colaboradores.size ? Array.from(r.colaboradores).join(', ') : 'Sin colaborador',
+        totalEstudiantes: r.estudiantes.size,
+      }))
+      .sort((a, b) => {
+        const byCentro = a.centro.localeCompare(b.centro);
+        if (byCentro !== 0) return byCentro;
+        return a.tipoPractica.localeCompare(b.tipoPractica);
+      });
+  }
+
+  private async loadLogoAsDataURLSafe(path: string): Promise<string | null> {
+    if (!isPlatformBrowser(this.platformId)) return null;
+    try {
+      const res = await fetch(path);
+      if (!res.ok) return null;
+      const blob = await res.blob();
+      return await this.blobToPngDataUrl(blob, 256);
+    } catch {
+      return null;
+    }
+  }
+
+  private blobToPngDataUrl(blob: Blob, maxWidth: number): Promise<string | null> {
+    return new Promise((resolve) => {
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => {
+        const naturalW = img.naturalWidth || img.width;
+        const naturalH = img.naturalHeight || img.height;
+        const scale = naturalW > maxWidth ? maxWidth / naturalW : 1;
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(naturalW * scale));
+        canvas.height = Math.max(1, Math.round(naturalH * scale));
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          URL.revokeObjectURL(url);
+          resolve(null);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/png');
+        URL.revokeObjectURL(url);
+        resolve(dataUrl);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve(null);
+      };
+      img.src = url;
+    });
+  }
+
+  private drawPdfHeader(
+    doc: jsPDF,
+    opts: {
+      title: string;
+      subtitle: string;
+      generatedText: string;
+      logoLeft?: string | null;
+      logoRight?: string | null;
+    }
+  ) {
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 52;
+    const headerH = 92;
+
+    const headerFill: [number, number, number] = [248, 250, 252];
+    const line: [number, number, number] = [229, 231, 235];
+    const text: [number, number, number] = [17, 24, 39];
+    const muted: [number, number, number] = [100, 116, 139];
+
+    doc.setFillColor(...headerFill);
+    doc.rect(0, 0, pageWidth, headerH, 'F');
+
+    const drawLogo = (dataUrl: string | null | undefined, x: number, y: number, w: number, h: number) => {
+      if (!dataUrl) return;
+      const format = dataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+      doc.addImage(dataUrl, format, x, y, w, h);
+    };
+
+    drawLogo(opts.logoLeft, margin, 16, 76, 56);
+    drawLogo(opts.logoRight, pageWidth - margin - 76, 10, 76, 76);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.setTextColor(...text);
+    doc.text(opts.title, pageWidth / 2, 36, { align: 'center' as any });
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(...muted);
+    doc.text(opts.subtitle, pageWidth / 2, 56, { align: 'center' as any });
+
+    doc.setFontSize(9);
+    doc.text(opts.generatedText, pageWidth / 2, 72, { align: 'center' as any });
+
+    doc.setDrawColor(...line);
+    doc.setLineWidth(1);
+    doc.line(margin, headerH, pageWidth - margin, headerH);
+  }
+
+  private drawPdfFooter(doc: jsPDF, page: number, totalPages: number) {
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 52;
+
+    const line: [number, number, number] = [229, 231, 235];
+    const muted: [number, number, number] = [100, 116, 139];
+
+    const footerY = pageHeight - 34;
+
+    doc.setDrawColor(...line);
+    doc.setLineWidth(1);
+    doc.line(margin, footerY, pageWidth - margin, footerY);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(...muted);
+
+    doc.text('Gestión Académica • Reporte de acreditación de prácticas', margin, pageHeight - 18);
+    doc.text(`Página ${page} / ${totalPages}`, pageWidth - margin, pageHeight - 18, { align: 'right' as any });
+  }
+
+  exportarPDF() {
+    const practicas = this.estudiantesFiltrados;
+    if (!practicas.length) return;
+
+    (async () => {
+      const doc = new jsPDF({ unit: 'pt', format: 'letter' });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+
+      const margin = 52;
+      const headerH = 92;
+      const top = headerH + 22;
+      const bottom = 54;
+      const contentW = pageWidth - margin * 2;
+
+      const colors = {
+        text: [17, 24, 39] as [number, number, number],
+        line: [229, 231, 235] as [number, number, number],
+        border: [209, 213, 219] as [number, number, number],
+        tableHead: [241, 245, 249] as [number, number, number],
+        zebra: [248, 250, 252] as [number, number, number],
+      };
+
+      const [logoUta, logoFeh] = await Promise.all([
+        this.loadLogoAsDataURLSafe('assets/img/uta.png'),
+        this.loadLogoAsDataURLSafe('assets/img/feh.png'),
+      ]);
+
+      const generatedText = `Generado: ${formatDateEs(new Date())}`;
+      const headerData = {
+        title: 'REPORTE DE ACREDITACIÓN DE PRÁCTICAS',
+        subtitle: 'Centros educativos con prácticas asignadas',
+        generatedText,
+        logoLeft: logoUta,
+        logoRight: logoFeh,
+      };
+
+      this.drawPdfHeader(doc, headerData);
+
+      const rows = this.buildReporteRows(practicas);
+      if (!rows.length) {
+        this.snack.open('No hay datos con tipo de practica para exportar.', 'Cerrar', { duration: 3000 });
+        return;
+      }
+      const tableBody = rows.map((r) => [
+        r.centro,
+        r.anioInicio,
+        r.convenio,
+        r.tipoPractica,
+        r.colaboradores,
+        String(r.totalEstudiantes),
+      ]);
+
+      autoTable(doc, {
+        startY: top,
+        head: [[
+          'Centro educativo',
+          'Año inicio convenio',
+          'Tipo convenio',
+          'Tipo práctica',
+          'Colaborador',
+          'Nro. estudiantes',
+        ]],
+        body: tableBody,
+        margin: { left: margin, right: margin, top, bottom },
+        tableWidth: contentW,
+        styles: {
+          font: 'helvetica',
+          fontSize: 9,
+          cellPadding: 6,
+          textColor: colors.text as any,
+          lineColor: colors.line as any,
+          lineWidth: 0.8,
+          overflow: 'linebreak',
+          valign: 'top',
+        },
+        headStyles: {
+          fillColor: colors.tableHead as any,
+          textColor: colors.text as any,
+          fontStyle: 'bold',
+          lineColor: colors.border as any,
+          lineWidth: 1,
+        },
+        alternateRowStyles: { fillColor: colors.zebra as any },
+      });
+
+      const totalPages = (doc as any).getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        this.drawPdfHeader(doc, headerData);
+        this.drawPdfFooter(doc, i, totalPages);
+      }
+
+      doc.save('reporte_acreditacion_practicas.pdf');
+    })();
   }
 }
 
