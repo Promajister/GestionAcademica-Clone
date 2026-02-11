@@ -150,7 +150,7 @@ export class ActividadesPmComponent implements OnInit {
   areasVinculacion = ['Docencia de pregrado', 'Comunidad educativa', 'Educación continua', 'Institucional y entidades externas', 'Integración cultural y desarrollo social', 'Investigación e innovación'];
   areasImpacto = ['SELECCIONE', 'Desarrollo social y comunitario', 'Fortalecimiento educativo y formativo', 'Cultural y patrimonio', 'Educación regional'];
   sedes = ['CASA MATRIZ ARICA', 'SEDE IQUIQUE'];
-  proyectos = ['SELECCIONE', 'PLAN DE MEJORA', 'PRACTICAS', 'OTRO'];
+  proyectos = ['PLAN DE MEJORA', 'PRACTICAS', 'OTRO'];
 
   equiposCatalogo = [
     'DOCENTES (UTA)',

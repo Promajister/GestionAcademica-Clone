@@ -124,7 +124,7 @@ export class ActividadPmDialogComponent implements OnInit {
     'Educación regional',
   ];
   sedes = ['CASA MATRIZ ARICA', 'SEDE IQUIQUE'];
-  proyectos = ['SELECCIONE', 'PLAN DE MEJORA', 'PRÁCTICAS', 'OTRO'];
+  proyectos = ['PLAN DE MEJORA', 'PRÁCTICAS', 'OTRO'];
 
   equiposCatalogo = [
     'DOCENTES (UTA)',
