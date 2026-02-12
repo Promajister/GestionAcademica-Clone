@@ -158,7 +158,7 @@ export class EgresadosEncuestasComponent implements OnInit, OnDestroy {
       id: 'perfilEgreso',
       title: 'Seccion II: Perfil de egreso',
       questions: [
-        { key: 'p1', text: 'Conoci el perfil de egreso de la carrera.' },
+        { key: 'p1', text: 'Conocí el perfil de egreso de la carrera.' },
         { key: 'p2', text: 'La formacion recibida corresponde al perfil de egreso declarado.' },
       ],
     },
@@ -402,7 +402,7 @@ export class EgresadosEncuestasComponent implements OnInit, OnDestroy {
     push('Año de egreso', generales.anioEgreso);
     push('Edad', generales.edad);
     push('Sexo', generales.sexo);
-    push('Correo electronico', generales.correo);
+    push('Correo electrónico', generales.correo);
     return rows;
   }
 
@@ -434,7 +434,7 @@ export class EgresadosEncuestasComponent implements OnInit, OnDestroy {
         'Aspectos que ayudaron mas en la insercion laboral',
       'abiertas.mejoras':
         'Mejoras sugeridas para fortalecer la empleabilidad',
-      'secciones.perfilEgreso.p1': 'Conoci el perfil de egreso de la carrera.',
+      'secciones.perfilEgreso.p1': 'Conocí el perfil de egreso de la carrera.',
       'secciones.perfilEgreso.p2':
         'La formacion recibida corresponde al perfil de egreso declarado.',
       'secciones.planEstudios.p3': 'El plan de estudios fue consistente con el perfil de egreso.',

@@ -260,15 +260,25 @@ export class EgresadosAnalisisComponent implements OnInit {
       'insercion.tiempoPrimerTrabajo',
       'Menos de 2 meses',
     );
-    const tiempoMenos6 = this.countByRespuesta(
+    const tiempoEntre2y6 = this.countByRespuesta(
       encuestas,
       'insercion.tiempoPrimerTrabajo',
       'Entre 2 y 6 meses',
     );
-    const tiempoMenos1 = this.countByRespuesta(
+    const tiempoEntre6y1 = this.countByRespuesta(
       encuestas,
       'insercion.tiempoPrimerTrabajo',
       'Entre 6 meses y 1 año',
+    );
+    const tiempoMas1 = this.countByRespuesta(
+      encuestas,
+      'insercion.tiempoPrimerTrabajo',
+      'Mas de 1 año',
+    );
+    const tiempoNoEncontrado = this.countByRespuesta(
+      encuestas,
+      'insercion.tiempoPrimerTrabajo',
+      'No he encontrado trabajo',
     );
 
     const generoCounts = { mujer: 0, hombre: 0, noResponde: 0 };
@@ -379,8 +389,10 @@ export class EgresadosAnalisisComponent implements OnInit {
       ]),
       tiempoEmpleo: this.buildPieStat([
         { label: 'Menos de 2 meses', count: tiempoMenos2, color: palette.blue },
-        { label: 'Menos de 6 meses', count: tiempoMenos6, color: palette.yellow },
-        { label: 'Menos de 1 año', count: tiempoMenos1, color: palette.green },
+        { label: 'Entre 2 y 6 meses', count: tiempoEntre2y6, color: palette.yellow },
+        { label: 'Entre 6 meses y 1 año', count: tiempoEntre6y1, color: palette.green },
+        { label: 'Mas de 1 año', count: tiempoMas1, color: palette.orange },
+        { label: 'No he encontrado trabajo', count: tiempoNoEncontrado, color: palette.red },
       ]),
       empleoGenero: this.buildPieStat([
         { label: 'Mujer', count: generoCounts.mujer, color: palette.blue },
@@ -1535,7 +1547,7 @@ export class EgresadosAnalisisComponent implements OnInit {
       );
     }
     if (tiempo) {
-      const rapidez = tiempo.label.includes('Menos de 2') || tiempo.label.includes('Menos de 6')
+      const rapidez = tiempo.label.includes('Menos de 2') || tiempo.label.includes('Entre 2 y 6')
         ? 'accesible'
         : 'lenta';
       partes.push(
