@@ -12,7 +12,8 @@ import { UpdateAsignaturaDto } from './dto/update-asignatura.dto';
 import { QueryAsignaturaDto } from './dto/query-asignatura.dto';
 import { BloquesService } from '../bloques/bloques.service';
 
-const CODIGO_DUPLICADO = 'Ya existe una asignatura registrada con ese código.';
+const CODIGO_DUPLICADO =
+  'Ya existe una asignatura con ese código en el mismo plan y semestre.';
 
 const INCLUDE_ASIGNATURA = {
   plan: { include: { carrera: true } },
@@ -20,7 +21,7 @@ const INCLUDE_ASIGNATURA = {
     include: {
       bloques_horarios: {
         include: { sala: true },
-        orderBy: [{ dia: 'asc' }, { hora_inicio: 'asc' }],
+        orderBy: [{ dia: 'asc' }, { bloque_numero: 'asc' }],
       },
     },
   },
@@ -72,10 +73,14 @@ export class AsignaturasService {
     }
   }
 
-  private async assertCodigoLibre(codigo: string, excluirId?: number) {
+  // Un mismo código puede repetirse entre planes (ej. HG417 en 311 y 336)
+  private async assertCodigoLibre(
+    clave: { id_plan: number; codigo: string; semestre: number },
+    excluirId?: number,
+  ) {
     const existente = await this.prisma.asignatura.findFirst({
       where: {
-        codigo,
+        ...clave,
         ...(excluirId !== undefined && { NOT: { id_asignatura: excluirId } }),
       },
     });
@@ -99,7 +104,11 @@ export class AsignaturasService {
   async create(dto: CreateAsignaturaDto) {
     this.assertBloquesSoloExternas(dto.origen, dto.bloques_externos);
     await this.assertPlanVigente(dto.id_plan);
-    await this.assertCodigoLibre(dto.codigo);
+    await this.assertCodigoLibre({
+      id_plan: dto.id_plan,
+      codigo: dto.codigo,
+      semestre: dto.semestre,
+    });
 
     try {
       const asignatura = await this.prisma.$transaction(async (tx) => {
@@ -177,8 +186,19 @@ export class AsignaturasService {
     if (dto.id_plan !== undefined && dto.id_plan !== actual.id_plan) {
       await this.assertPlanVigente(dto.id_plan);
     }
-    if (dto.codigo !== undefined) {
-      await this.assertCodigoLibre(dto.codigo, id);
+    if (
+      dto.codigo !== undefined ||
+      dto.id_plan !== undefined ||
+      dto.semestre !== undefined
+    ) {
+      await this.assertCodigoLibre(
+        {
+          id_plan: dto.id_plan ?? actual.id_plan,
+          codigo: dto.codigo ?? actual.codigo,
+          semestre: dto.semestre ?? actual.semestre,
+        },
+        id,
+      );
     }
 
     const cambiaOrigen =
