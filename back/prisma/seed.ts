@@ -440,16 +440,22 @@ async function main() {
 
 // ---------- MÓDULO HORARIO ----------
 // ADM-F01-T4: 6 salas oficiales del departamento
-// ADM-F02-T1: carreras 311 y 336 con su plan vigente
+// ADM-F02-T1: carreras 311 y 336 con sus planes vigentes (según las mallas oficiales)
 async function seedHorario() {
   const salas: { codigo: string; nombre: string; tipo: TipoSala; capacidad: number }[] = [
     { codigo: 'S-121', nombre: 'Sala 121', tipo: TipoSala.CLASES, capacidad: 22 },
     { codigo: 'S-104', nombre: 'Sala 104', tipo: TipoSala.CLASES, capacidad: 22 },
-    { codigo: 'S-19', nombre: 'Sala 19', tipo: TipoSala.CLASES, capacidad: 22 },
+    { codigo: 'S-319', nombre: 'Sala 319', tipo: TipoSala.CLASES, capacidad: 22 },
     { codigo: 'S-MULTI', nombre: 'Sala multifunción', tipo: TipoSala.CLASES, capacidad: 22 },
     { codigo: 'S-NUCLEO', nombre: 'Sala Núcleo', tipo: TipoSala.REUNION, capacidad: 10 },
     { codigo: 'S-CONSEJO', nombre: 'Sala de Consejo', tipo: TipoSala.REUNION, capacidad: 12 },
   ];
+
+  // La primera versión del seed cargaba "Sala 19"; corresponde a la Sala 319
+  await prisma.sala.updateMany({
+    where: { codigo: 'S-19' },
+    data: { codigo: 'S-319', nombre: 'Sala 319' },
+  });
 
   for (const sala of salas) {
     await prisma.sala.upsert({
@@ -460,22 +466,40 @@ async function seedHorario() {
   }
 
   const carreras = [
-    { codigo: '311', nombre: 'Pedagogía en Historia y Geografía' },
-    { codigo: '336', nombre: 'Licenciatura en Historia y Geografía' },
+    {
+      codigo: '311',
+      nombre: 'Pedagogía en Historia, Geografía y Ciencias Sociales',
+      planes: [
+        { nombre: 'Plan 2016 v3 (D.E. 0.375/2015)', anio: 2016 },
+        { nombre: 'Plan 2025 v1 (D.E. 188/2025)', anio: 2025 },
+      ],
+    },
+    {
+      codigo: '336',
+      nombre: 'Licenciatura en Historia y Geografía',
+      planes: [{ nombre: 'Plan 2005 v3 (D.E. 00.79/2005)', anio: 2005 }],
+    },
   ];
 
-  for (const carrera of carreras) {
-    await prisma.carrera.upsert({
+  for (const { planes, ...carrera } of carreras) {
+    const { id_carrera } = await prisma.carrera.upsert({
       where: { codigo: carrera.codigo },
-      update: {},
-      create: {
-        ...carrera,
-        planes: {
-          create: [{ nombre: `Plan Vigente Carrera ${carrera.codigo}`, anio: 2026, vigente: true }],
-        },
-      },
+      update: { nombre: carrera.nombre },
+      create: carrera,
     });
+
+    for (const plan of planes) {
+      const existe = await prisma.plan.findFirst({ where: { id_carrera, anio: plan.anio } });
+      if (!existe) {
+        await prisma.plan.create({ data: { ...plan, id_carrera, vigente: true } });
+      }
+    }
   }
+
+  // La primera versión del seed creaba planes genéricos; se quitan si no tienen asignaturas
+  await prisma.plan.deleteMany({
+    where: { nombre: { startsWith: 'Plan Vigente Carrera' }, asignaturas: { none: {} } },
+  });
 }
 
 main()
