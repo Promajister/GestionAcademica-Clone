@@ -1,0 +1,38 @@
+### Pruebas manuales ADM-F01 (Salas) — extensión REST Client de VS Code
+### REST Client guarda las cookies del login para las siguientes peticiones.
+@api = http://localhost:3000/api
+
+### Login (cualquier usuario activo)
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "email": "pedhg@gestion.uta.cl", "password": "123456" }
+
+### ADM-F01-T4.1: listar las 6 salas oficiales (incluye _count.bloques_horarios)
+GET {{api}}/horario/salas
+
+### Solo salas activas
+GET {{api}}/horario/salas?soloActivas=true
+
+### CA1: crear sala
+POST {{api}}/horario/salas
+Content-Type: application/json
+
+{ "codigo": "S-PRUEBA", "nombre": "Sala de Prueba", "tipo": "REUNION", "capacidad": 5 }
+
+### CA2 / ADM-F01-T4.2: nombre duplicado -> 409
+POST {{api}}/horario/salas
+Content-Type: application/json
+
+{ "nombre": "Sala 121", "codigo": "S-DUP", "tipo": "CLASES" }
+
+### Editar sala
+PATCH {{api}}/horario/salas/1
+Content-Type: application/json
+
+{ "capacidad": 24 }
+
+### CA3 / ADM-F01-T4.3: eliminar
+### Si la sala tiene bloques en el horario -> { accion: "DESACTIVADA" } y queda activo=false
+### Si no tiene uso -> { accion: "ELIMINADA" }
+DELETE {{api}}/horario/salas/1

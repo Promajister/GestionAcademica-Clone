@@ -26,6 +26,7 @@ import { ReportesModule } from './reportes/reportes.module';
 import { EncuestasJefaturaModule } from './encuestas-jefatura/encuestas-jefatura.module';
 import { ActividadVinculacionModule } from './actividad-vinculacion/actividad-vinculacion.module';
 import { EncuestasEgresadosModule } from './encuestas-egresados/encuestas-egresados.module';
+import { HorarioModule } from './horario/horario.module';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { EncuestasEgresadosModule } from './encuestas-egresados/encuestas-egresa
     EncuestasJefaturaModule,
     ActividadVinculacionModule,
     EncuestasEgresadosModule,
+    HorarioModule,
   ],
   controllers: [AppController],
   providers: [AppService],
