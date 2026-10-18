@@ -1,0 +1,48 @@
+### Pruebas manuales: ocupaciones de sala — extensión REST Client de VS Code
+### PUNTUAL   = una fecha (ej. un ayudante pide la sala)
+### SEMESTRAL = todo el semestre (ej. ramo de otra carrera informado por otro departamento)
+@api = http://localhost:3000/api
+
+### Login (cualquier usuario activo; queda registrado como quien creó la ocupación)
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "email": "pedhg@gestion.uta.cl", "password": "123456" }
+
+### SEMESTRAL: Pedagogía en Inglés usa la Sala 319 los martes, bloques 3-4 (09:40-11:10)
+POST {{api}}/horario/ocupaciones
+Content-Type: application/json
+
+{
+  "tipo": "SEMESTRAL",
+  "dia": "MARTES",
+  "bloque_inicio": 3,
+  "bloque_fin": 4,
+  "id_sala": 3,
+  "motivo": "ED556 Uso de TIC en la enseñanza",
+  "solicitante": "Pedagogía en Inglés (312)"
+}
+
+### PUNTUAL: un ayudante pide la sala una fecha (el día se deriva de la fecha)
+POST {{api}}/horario/ocupaciones
+Content-Type: application/json
+
+{
+  "tipo": "PUNTUAL",
+  "fecha": "2027-03-09",
+  "bloque_inicio": 5,
+  "bloque_fin": 6,
+  "id_sala": 3,
+  "motivo": "Ayudantía Historia Medieval",
+  "solicitante": "Ayudante Juan Pérez"
+}
+
+### Listar (filtros opcionales: id_sala, tipo, dia, desde, hasta)
+### desde/hasta filtran las PUNTUALES; las SEMESTRALES siempre se incluyen
+GET {{api}}/horario/ocupaciones?id_sala=3&desde=2027-03-01&hasta=2027-03-31
+
+### Detalle
+GET {{api}}/horario/ocupaciones/1
+
+### Eliminar
+DELETE {{api}}/horario/ocupaciones/1

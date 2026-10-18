@@ -10,6 +10,7 @@ import { PrismaService } from 'prisma/prisma.service';
 import { BloqueExternoDto } from './dto/bloque-externo.dto';
 import { QueryBloqueDto } from './dto/query-bloque.dto';
 import { bloquePorNumero, mismaJornada, rangoBloques } from '../common/grilla';
+import { choqueConOcupaciones } from '../common/choques';
 
 type Tx = Prisma.TransactionClient;
 
@@ -201,7 +202,8 @@ export class BloquesService {
     }
   }
 
-  // Choque de sala con cualquier otro bloque, o del mismo curso consigo mismo
+  // Choque de sala con otro bloque o con una ocupación (otra carrera, reserva),
+  // o del mismo curso consigo mismo
   private async validarChoques(
     tx: Tx,
     bloques: BloqueGrilla[],
@@ -215,14 +217,24 @@ export class BloquesService {
         where: { dia: b.dia, bloque_numero: b.bloque_numero, OR: or },
         include: { sala: true, curso: true },
       });
-      if (!choque) continue;
+      if (choque) {
+        const cuando = describirBloque(b.dia, b.bloque_numero);
+        throw new ConflictException(
+          choque.id_curso === id_curso
+            ? `La asignatura ya tiene clase el ${cuando}`
+            : `La ${choque.sala?.nombre} ya está ocupada por "${choque.curso.nombre}" el ${cuando}`,
+        );
+      }
 
-      const cuando = describirBloque(b.dia, b.bloque_numero);
-      throw new ConflictException(
-        choque.id_curso === id_curso
-          ? `La asignatura ya tiene clase el ${cuando}`
-          : `La ${choque.sala?.nombre} ya está ocupada por "${choque.curso.nombre}" el ${cuando}`,
-      );
+      if (b.id_sala != null) {
+        const ocupada = await choqueConOcupaciones(tx, {
+          id_sala: b.id_sala,
+          dia: b.dia,
+          inicio: b.bloque_numero,
+          fin: b.bloque_numero,
+        });
+        if (ocupada) throw new ConflictException(ocupada);
+      }
     }
   }
 }

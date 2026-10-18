@@ -10,6 +10,11 @@ import { CreateSalaDto } from './dto/create-sala.dto';
 import { UpdateSalaDto } from './dto/update-sala.dto';
 import { QuerySalaDto } from './dto/query-sala.dto';
 
+// Permite saber si la sala está en uso (front de ADM-F01-T3 y regla CA3)
+const CONTEO_USO = {
+  _count: { select: { bloques_horarios: true, ocupaciones: true } },
+} satisfies Prisma.SalaInclude;
+
 const SALA_DUPLICADA =
   'Ya existe una sala registrada con ese nombre o código oficial.';
 
@@ -71,7 +76,7 @@ export class SalasService {
   findAll(q: QuerySalaDto) {
     return this.prisma.sala.findMany({
       where: q.soloActivas ? { activo: true } : undefined,
-      include: { _count: { select: { bloques_horarios: true } } },
+      include: CONTEO_USO,
       orderBy: { nombre: 'asc' },
     });
   }
@@ -80,7 +85,7 @@ export class SalasService {
   async findOne(id: number) {
     const sala = await this.prisma.sala.findUnique({
       where: { id_sala: id },
-      include: { _count: { select: { bloques_horarios: true } } },
+      include: CONTEO_USO,
     });
     if (!sala) throw new NotFoundException('Sala no encontrada');
     return sala;
@@ -108,11 +113,11 @@ export class SalasService {
   }
 
   // ---------- DELETE (ADM-F01 CA3) ----------
-  // Una sala en uso en el horario no se elimina: se desactiva.
+  // Una sala en uso en el horario (clases u ocupaciones) no se elimina: se desactiva.
   async remove(id: number) {
     const sala = await this.findOne(id);
 
-    if (sala._count.bloques_horarios > 0) {
+    if (sala._count.bloques_horarios > 0 || sala._count.ocupaciones > 0) {
       const actualizada = await this.prisma.sala.update({
         where: { id_sala: id },
         data: { activo: false },
