@@ -10,9 +10,7 @@ import {
   Min,
 } from 'class-validator';
 import { TipoSala } from '@prisma/client';
-
-const trim = ({ value }: { value: unknown }) =>
-  typeof value === 'string' ? value.trim() : value;
+import { trim } from '../../common/trim.transform';
 
 export class CreateSalaDto {
   @Transform(trim)
