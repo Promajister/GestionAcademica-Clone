@@ -1,16 +1,20 @@
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
+  IsArray,
   IsEnum,
   IsInt,
   IsNotEmpty,
+  IsOptional,
   IsPositive,
   IsString,
   Max,
   MaxLength,
   Min,
+  ValidateNested,
 } from 'class-validator';
 import { OrigenAsignatura } from '@prisma/client';
 import { trim } from '../../common/trim.transform';
+import { BloqueExternoDto } from '../../bloques/dto/bloque-externo.dto';
 
 export class CreateAsignaturaDto {
   @Transform(trim)
@@ -48,4 +52,11 @@ export class CreateAsignaturaDto {
     message: 'El origen debe ser PROPIA o EXTERNA',
   })
   origen!: OrigenAsignatura;
+
+  // Solo para EXTERNAS (ADM-F02-T3). En PATCH reemplaza los bloques actuales.
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => BloqueExternoDto)
+  bloques_externos?: BloqueExternoDto[];
 }

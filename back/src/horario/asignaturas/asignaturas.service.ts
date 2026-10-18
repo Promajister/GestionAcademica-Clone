@@ -10,6 +10,7 @@ import { PrismaService } from 'prisma/prisma.service';
 import { CreateAsignaturaDto } from './dto/create-asignatura.dto';
 import { UpdateAsignaturaDto } from './dto/update-asignatura.dto';
 import { QueryAsignaturaDto } from './dto/query-asignatura.dto';
+import { BloquesService } from '../bloques/bloques.service';
 
 const CODIGO_DUPLICADO = 'Ya existe una asignatura registrada con ese código.';
 
@@ -25,13 +26,43 @@ const INCLUDE_ASIGNATURA = {
   },
 } satisfies Prisma.AsignaturaInclude;
 
+type AsignaturaCompleta = Prisma.AsignaturaGetPayload<{
+  include: typeof INCLUDE_ASIGNATURA;
+}>;
+
 // Tipo del Curso por defecto según el origen de la asignatura
 const tipoCurso = (origen: OrigenAsignatura) =>
   origen === OrigenAsignatura.EXTERNA ? 'EXTERNO' : 'REGULAR';
 
+// Cada bloque expone el origen de su asignatura (ADM-F02 CA3)
+const conOrigenEnBloques = (a: AsignaturaCompleta) => ({
+  ...a,
+  cursos: a.cursos.map((c) => ({
+    ...c,
+    bloques_horarios: c.bloques_horarios.map((b) => ({
+      ...b,
+      origen: a.origen,
+    })),
+  })),
+});
+
 @Injectable()
 export class AsignaturasService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private bloques: BloquesService,
+  ) {}
+
+  private assertBloquesSoloExternas(
+    origen: OrigenAsignatura,
+    bloques?: unknown[],
+  ) {
+    if (bloques?.length && origen !== OrigenAsignatura.EXTERNA) {
+      throw new BadRequestException(
+        'Solo las asignaturas externas permiten fijar bloques bloqueados manualmente en este mantenedor.',
+      );
+    }
+  }
 
   private async assertPlanVigente(id_plan: number) {
     const plan = await this.prisma.plan.findUnique({ where: { id_plan } });
@@ -66,33 +97,49 @@ export class AsignaturasService {
   // Crea la asignatura junto a su Curso por defecto, al que se vinculan
   // Carga_Docente y Bloque_horario según el ERD.
   async create(dto: CreateAsignaturaDto) {
+    this.assertBloquesSoloExternas(dto.origen, dto.bloques_externos);
     await this.assertPlanVigente(dto.id_plan);
     await this.assertCodigoLibre(dto.codigo);
 
     try {
-      return await this.prisma.asignatura.create({
-        data: {
-          codigo: dto.codigo,
-          nombre: dto.nombre,
-          semestre: dto.semestre,
-          cupo: dto.cupo,
-          bloques_semanales: dto.bloques_semanales,
-          origen: dto.origen,
-          id_plan: dto.id_plan,
-          cursos: {
-            create: { nombre: dto.nombre, tipo: tipoCurso(dto.origen) },
+      const asignatura = await this.prisma.$transaction(async (tx) => {
+        const { id_asignatura } = await tx.asignatura.create({
+          data: {
+            codigo: dto.codigo,
+            nombre: dto.nombre,
+            semestre: dto.semestre,
+            cupo: dto.cupo,
+            bloques_semanales: dto.bloques_semanales,
+            origen: dto.origen,
+            id_plan: dto.id_plan,
+            cursos: {
+              create: { nombre: dto.nombre, tipo: tipoCurso(dto.origen) },
+            },
           },
-        },
-        include: INCLUDE_ASIGNATURA,
+        });
+
+        if (dto.bloques_externos?.length) {
+          await this.bloques.crearExternos(
+            tx,
+            id_asignatura,
+            dto.bloques_externos,
+          );
+        }
+
+        return tx.asignatura.findUniqueOrThrow({
+          where: { id_asignatura },
+          include: INCLUDE_ASIGNATURA,
+        });
       });
+      return conOrigenEnBloques(asignatura);
     } catch (e) {
       this.rethrowDuplicado(e);
     }
   }
 
   // ---------- FIND ALL ----------
-  findAll(q: QueryAsignaturaDto) {
-    return this.prisma.asignatura.findMany({
+  async findAll(q: QueryAsignaturaDto) {
+    const asignaturas = await this.prisma.asignatura.findMany({
       where: {
         origen: q.origen,
         id_plan: q.id_plan,
@@ -102,10 +149,11 @@ export class AsignaturasService {
       include: INCLUDE_ASIGNATURA,
       orderBy: [{ semestre: 'asc' }, { nombre: 'asc' }],
     });
+    return asignaturas.map(conOrigenEnBloques);
   }
 
   // ---------- FIND ONE ----------
-  async findOne(id: number) {
+  private async buscar(id: number) {
     const asignatura = await this.prisma.asignatura.findUnique({
       where: { id_asignatura: id },
       include: INCLUDE_ASIGNATURA,
@@ -114,9 +162,17 @@ export class AsignaturasService {
     return asignatura;
   }
 
+  async findOne(id: number) {
+    return conOrigenEnBloques(await this.buscar(id));
+  }
+
   // ---------- UPDATE ----------
   async update(id: number, dto: UpdateAsignaturaDto) {
-    const actual = await this.findOne(id);
+    const actual = await this.buscar(id);
+    this.assertBloquesSoloExternas(
+      dto.origen ?? actual.origen,
+      dto.bloques_externos,
+    );
 
     if (dto.id_plan !== undefined && dto.id_plan !== actual.id_plan) {
       await this.assertPlanVigente(dto.id_plan);
@@ -138,7 +194,7 @@ export class AsignaturasService {
     }
 
     try {
-      return await this.prisma.$transaction(async (tx) => {
+      const asignatura = await this.prisma.$transaction(async (tx) => {
         await tx.asignatura.update({
           where: { id_asignatura: id },
           data: {
@@ -163,11 +219,19 @@ export class AsignaturasService {
           });
         }
 
+        // Una lista vacía elimina todos los bloques externos
+        if (dto.bloques_externos !== undefined) {
+          await this.bloques.crearExternos(tx, id, dto.bloques_externos, {
+            reemplazar: true,
+          });
+        }
+
         return tx.asignatura.findUniqueOrThrow({
           where: { id_asignatura: id },
           include: INCLUDE_ASIGNATURA,
         });
       });
+      return conOrigenEnBloques(asignatura);
     } catch (e) {
       this.rethrowDuplicado(e);
     }
@@ -176,7 +240,7 @@ export class AsignaturasService {
   // ---------- DELETE ----------
   // Cursos y bloques se eliminan en cascada
   async remove(id: number) {
-    await this.findOne(id);
+    await this.buscar(id);
     await this.prisma.asignatura.delete({ where: { id_asignatura: id } });
     return { mensaje: 'Asignatura eliminada correctamente.' };
   }
