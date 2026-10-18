@@ -263,6 +263,7 @@ model Usuario {
   updatedAt     DateTime @updatedAt
   resetTokens   PasswordResetToken[]
   refreshTokens RefreshToken[]
+  ocupacionesSala Ocupacion_sala[]
 }
 
 model Rol {
@@ -885,6 +886,11 @@ enum EstadoHorario {
   DEFINITIVO
 }
 
+enum TipoOcupacion {
+  PUNTUAL // Una fecha concreta (ej. un ayudante pide la sala)
+  SEMESTRAL // Todo el semestre (ej. ramo de otra carrera informado por otro departamento)
+}
+
 model Sala {
   id_sala   Int      @id @default(autoincrement())
   codigo    String   @unique @db.VarChar(30) // Ej. "S-121", "S-NUCLEO"
@@ -894,8 +900,33 @@ model Sala {
   activo    Boolean  @default(true) // ADM-F01 CA3: desactivación lógica
 
   bloques_horarios Bloque_horario[]
+  ocupaciones      Ocupacion_sala[]
 
   @@map("sala")
+}
+
+// Uso de una sala del departamento fuera del horario de las carreras 311/336
+model Ocupacion_sala {
+  id_ocupacion  Int           @id @default(autoincrement())
+  tipo          TipoOcupacion
+  fecha         DateTime?     @db.Date // Solo PUNTUAL
+  dia           DiaSemana // PUNTUAL: se deriva de la fecha
+  bloque_inicio Int // Rango de la grilla pedagógica (1..12)
+  bloque_fin    Int
+  hora_inicio   String        @db.VarChar(10) // Derivadas de la grilla
+  hora_fin      String        @db.VarChar(10)
+  motivo        String        @db.VarChar(255)
+  solicitante   String        @db.VarChar(150) // Ej. "Ped. en Inglés (312)" o "Ayudante Juan Pérez"
+  createdAt     DateTime      @default(now())
+
+  id_sala Int
+  sala    Sala @relation(fields: [id_sala], references: [id_sala], onDelete: Restrict)
+
+  id_usuario Int // Quién la registró
+  usuario    Usuario @relation(fields: [id_usuario], references: [id], onDelete: Restrict)
+
+  @@index([id_sala, dia])
+  @@map("ocupacion_sala")
 }
 
 model Carrera {
