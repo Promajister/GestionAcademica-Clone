@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
 import { SalasModule } from './salas/salas.module';
+import { CarrerasModule } from './carreras/carreras.module';
+import { AsignaturasModule } from './asignaturas/asignaturas.module';
 
 // Agrupa los submódulos de Horario para registrarlos una sola vez en AppModule
 @Module({
-  imports: [SalasModule],
+  imports: [SalasModule, CarrerasModule, AsignaturasModule],
 })
 export class HorarioModule {}
