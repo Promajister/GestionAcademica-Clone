@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, TipoSala } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import e from 'express';
 
@@ -433,8 +433,49 @@ async function main() {
 
   await seedColaboradores();
   await seedCentrosEducativos();
+  await seedHorario();
 
-  console.log('Seed OK: usuarios/roles/permisos/colaboradores/centros.');
+  console.log('Seed OK: usuarios/roles/permisos/colaboradores/centros/horario.');
+}
+
+// ---------- MÓDULO HORARIO ----------
+// ADM-F01-T4: 6 salas oficiales del departamento
+// ADM-F02-T1: carreras 311 y 336 con su plan vigente
+async function seedHorario() {
+  const salas: { codigo: string; nombre: string; tipo: TipoSala; capacidad: number }[] = [
+    { codigo: 'S-121', nombre: 'Sala 121', tipo: TipoSala.CLASES, capacidad: 22 },
+    { codigo: 'S-104', nombre: 'Sala 104', tipo: TipoSala.CLASES, capacidad: 22 },
+    { codigo: 'S-19', nombre: 'Sala 19', tipo: TipoSala.CLASES, capacidad: 22 },
+    { codigo: 'S-MULTI', nombre: 'Sala multifunción', tipo: TipoSala.CLASES, capacidad: 22 },
+    { codigo: 'S-NUCLEO', nombre: 'Sala Núcleo', tipo: TipoSala.REUNION, capacidad: 10 },
+    { codigo: 'S-CONSEJO', nombre: 'Sala de Consejo', tipo: TipoSala.REUNION, capacidad: 12 },
+  ];
+
+  for (const sala of salas) {
+    await prisma.sala.upsert({
+      where: { codigo: sala.codigo },
+      update: {},
+      create: { ...sala, activo: true },
+    });
+  }
+
+  const carreras = [
+    { codigo: '311', nombre: 'Pedagogía en Historia y Geografía' },
+    { codigo: '336', nombre: 'Licenciatura en Historia y Geografía' },
+  ];
+
+  for (const carrera of carreras) {
+    await prisma.carrera.upsert({
+      where: { codigo: carrera.codigo },
+      update: {},
+      create: {
+        ...carrera,
+        planes: {
+          create: [{ nombre: `Plan Vigente Carrera ${carrera.codigo}`, anio: 2026, vigente: true }],
+        },
+      },
+    });
+  }
 }
 
 main()
