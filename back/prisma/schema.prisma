@@ -857,3 +857,127 @@ model EgresadoPostgrado {
 
   @@map("egresado_postgrado")
 }
+
+// ============================================================================
+// MÓDULO HORARIO
+
+enum TipoSala {
+  CLASES
+  REUNION
+}
+
+enum OrigenAsignatura {
+  PROPIA
+  EXTERNA
+}
+
+enum DiaSemana {
+  LUNES
+  MARTES
+  MIERCOLES
+  JUEVES
+  VIERNES
+}
+
+enum EstadoHorario {
+  BORRADOR
+  PROPUESTA
+  DEFINITIVO
+}
+
+model Sala {
+  id_sala   Int      @id @default(autoincrement())
+  codigo    String   @unique @db.VarChar(30) // Ej. "S-121", "S-NUCLEO"
+  nombre    String   @unique @db.VarChar(100) // ADM-F01 CA2: nombre oficial único
+  capacidad Int      @default(22)
+  tipo      TipoSala @default(CLASES)
+  activo    Boolean  @default(true) // ADM-F01 CA3: desactivación lógica
+
+  bloques_horarios Bloque_horario[]
+
+  @@map("sala")
+}
+
+model Carrera {
+  id_carrera Int    @id @default(autoincrement())
+  codigo     String @unique @db.VarChar(20) // Ej. "311", "336"
+  nombre     String @db.VarChar(150)
+
+  planes Plan[]
+
+  @@map("carrera")
+}
+
+model Plan {
+  id_plan Int     @id @default(autoincrement())
+  nombre  String  @db.VarChar(150)
+  anio    Int
+  vigente Boolean @default(true)
+
+  id_carrera  Int
+  carrera     Carrera      @relation(fields: [id_carrera], references: [id_carrera], onDelete: Restrict)
+  asignaturas Asignatura[]
+
+  @@map("plan")
+}
+
+model Asignatura {
+  id_asignatura     Int              @id @default(autoincrement())
+  codigo            String           @unique @db.VarChar(30)
+  nombre            String           @db.VarChar(150)
+  semestre          Int // Nivel en la malla
+  cupo              Int              @default(22)
+  bloques_semanales Int // Bloques de 45 min por semana
+  origen            OrigenAsignatura @default(PROPIA)
+
+  id_plan Int
+  plan    Plan    @relation(fields: [id_plan], references: [id_plan], onDelete: Restrict)
+  cursos  Curso[]
+
+  @@map("asignatura")
+}
+
+model Curso {
+  id_curso Int    @id @default(autoincrement())
+  nombre   String @db.VarChar(150)
+  tipo     String @default("REGULAR") @db.VarChar(50) // "REGULAR", "PRACTICA", "EXTERNO"
+
+  id_asignatura Int
+  asignatura    Asignatura @relation(fields: [id_asignatura], references: [id_asignatura], onDelete: Cascade)
+
+  bloques_horarios Bloque_horario[]
+
+  @@map("curso")
+}
+
+model Horario {
+  id_horario Int           @id @default(autoincrement())
+  anio       Int
+  semestre   Int // 1 o 2
+  estado     EstadoHorario @default(BORRADOR)
+
+  bloques_horarios Bloque_horario[]
+
+  @@map("horario")
+}
+
+model Bloque_horario {
+  id_bloque_horario Int       @id @default(autoincrement())
+  dia               DiaSemana
+  hora_inicio       String    @db.VarChar(10) // "HH:mm"
+  hora_fin          String    @db.VarChar(10) // "HH:mm"
+  bloque_numero     Int?
+  bloqueado         Boolean   @default(false) // true para asignaturas EXTERNAS (ADM-F02 CA2)
+  sala_externa      String?   @db.VarChar(100) // Sala fuera del departamento
+
+  id_curso Int
+  curso    Curso @relation(fields: [id_curso], references: [id_curso], onDelete: Cascade)
+
+  id_sala Int?
+  sala    Sala? @relation(fields: [id_sala], references: [id_sala], onDelete: Restrict)
+
+  id_horario Int? // Nullable: los bloques externos se cargan antes de generar el horario
+  horario    Horario? @relation(fields: [id_horario], references: [id_horario], onDelete: SetNull)
+
+  @@map("bloque_horario")
+}
