@@ -1,0 +1,54 @@
+### Pruebas manuales ADM-F02-T2 (Carreras y Asignaturas) — extensión REST Client de VS Code
+@api = http://localhost:3000/api
+
+### Login (cualquier usuario activo)
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "email": "pedhg@gestion.uta.cl", "password": "123456" }
+
+### Carreras 311 y 336 con sus planes vigentes
+GET {{api}}/horario/carreras
+
+### CA1: asignatura propia (crea su Curso por defecto REGULAR)
+POST {{api}}/horario/asignaturas
+Content-Type: application/json
+
+{
+  "codigo": "HG-101",
+  "nombre": "Historia de América",
+  "id_plan": 1,
+  "semestre": 1,
+  "bloques_semanales": 4,
+  "cupo": 22,
+  "origen": "PROPIA"
+}
+
+### CA1: asignatura externa (crea su Curso por defecto EXTERNO)
+POST {{api}}/horario/asignaturas
+Content-Type: application/json
+
+{
+  "codigo": "EDU-TIC",
+  "nombre": "Uso de TIC",
+  "id_plan": 1,
+  "semestre": 3,
+  "bloques_semanales": 2,
+  "cupo": 22,
+  "origen": "EXTERNA"
+}
+
+### Listar con filtros opcionales: origen, id_carrera, id_plan, semestre
+GET {{api}}/horario/asignaturas?origen=EXTERNA
+
+###
+GET {{api}}/horario/asignaturas?id_carrera=1&semestre=1
+
+### Editar (el nombre se sincroniza con el Curso por defecto)
+PATCH {{api}}/horario/asignaturas/1
+Content-Type: application/json
+
+{ "cupo": 20 }
+
+### Eliminar (cursos y bloques en cascada)
+DELETE {{api}}/horario/asignaturas/1
