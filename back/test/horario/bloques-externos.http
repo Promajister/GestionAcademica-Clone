@@ -1,0 +1,56 @@
+### Pruebas manuales ADM-F02-T3 (bloques de asignaturas externas) — extensión REST Client de VS Code
+@api = http://localhost:3000/api
+
+### Login (cualquier usuario activo)
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "email": "pedhg@gestion.uta.cl", "password": "123456" }
+
+### Crear asignatura EXTERNA con sus bloques fijos en la misma petición
+### Cada bloque usa id_sala (sala del depto) o sala_externa (otra facultad), no ambos
+POST {{api}}/horario/asignaturas
+Content-Type: application/json
+
+{
+  "codigo": "EDU-TIC",
+  "nombre": "Uso de TIC",
+  "id_plan": 1,
+  "semestre": 3,
+  "bloques_semanales": 2,
+  "cupo": 22,
+  "origen": "EXTERNA",
+  "bloques_externos": [
+    { "dia": "LUNES", "hora_inicio": "08:00", "hora_fin": "09:30", "id_sala": 1 },
+    { "dia": "MIERCOLES", "hora_inicio": "10:00", "hora_fin": "11:30", "sala_externa": "Sala 3 Educación" }
+  ]
+}
+
+### Agregar bloques a una asignatura externa existente (se crean con bloqueado: true)
+POST {{api}}/horario/asignaturas/1/bloques-externos
+Content-Type: application/json
+
+{
+  "bloques": [
+    { "dia": "VIERNES", "hora_inicio": "14:30", "hora_fin": "16:00", "id_sala": 2, "bloque_numero": 7 }
+  ]
+}
+
+### Reemplazar todos los bloques (lista vacía = sin bloques)
+PATCH {{api}}/horario/asignaturas/1
+Content-Type: application/json
+
+{
+  "bloques_externos": [
+    { "dia": "LUNES", "hora_inicio": "08:00", "hora_fin": "08:45", "id_sala": 1 }
+  ]
+}
+
+### Eliminar un bloque puntual
+DELETE {{api}}/horario/asignaturas/1/bloques-externos/1
+
+### Grilla: cada bloque trae origen (PROPIA/EXTERNA) y bloqueado
+GET {{api}}/horario/bloques
+
+### Filtros opcionales: dia, id_sala, origen
+GET {{api}}/horario/bloques?dia=LUNES&id_sala=1
