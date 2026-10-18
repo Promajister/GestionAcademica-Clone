@@ -8,33 +8,31 @@ import {
   IsOptional,
   IsPositive,
   IsString,
-  Matches,
+  Max,
   MaxLength,
+  Min,
   ValidateNested,
 } from 'class-validator';
 import { DiaSemana } from '@prisma/client';
 import { trim } from '../../common/trim.transform';
+import { TOTAL_BLOQUES } from '../../common/grilla';
 
-const HORA = /^([01]\d|2[0-3]):([0-5]\d)$/;
-
+// Rango de bloques de la grilla (ver GET /horario/grilla). Ej. 3-4 = 09:40 a 11:10.
 export class BloqueExternoDto {
   @IsEnum(DiaSemana, { message: 'dia debe ser LUNES a VIERNES' })
   dia!: DiaSemana;
 
-  @IsString()
-  @Matches(HORA, { message: 'hora_inicio debe tener formato HH:mm' })
-  hora_inicio!: string;
-
-  @IsString()
-  @Matches(HORA, { message: 'hora_fin debe tener formato HH:mm' })
-  hora_fin!: string;
-
-  @IsOptional()
   @IsInt()
-  @IsPositive()
-  bloque_numero?: number;
+  @Min(1)
+  @Max(TOTAL_BLOQUES)
+  bloque_inicio!: number;
 
-  // Una de las 6 salas del departamento...
+  @IsInt()
+  @Min(1)
+  @Max(TOTAL_BLOQUES)
+  bloque_fin!: number;
+
+  // Una de las salas del departamento...
   @IsOptional()
   @IsInt()
   @IsPositive()

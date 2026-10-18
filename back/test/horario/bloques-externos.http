@@ -7,22 +7,26 @@ Content-Type: application/json
 
 { "email": "pedhg@gestion.uta.cl", "password": "123456" }
 
+### Grilla: 12 bloques de 45 min (1-2 = 08:00-09:30, 3-4 = 09:40-11:10, ... 11-12 = 17:55-19:25)
+GET {{api}}/horario/grilla
+
 ### Crear asignatura EXTERNA con sus bloques fijos en la misma petición
-### Cada bloque usa id_sala (sala del depto) o sala_externa (otra facultad), no ambos
+### Cada rango usa id_sala (sala del depto) o sala_externa (otra facultad), no ambos.
+### Se guarda una fila por bloque de 45 min.
 POST {{api}}/horario/asignaturas
 Content-Type: application/json
 
 {
-  "codigo": "EDU-TIC",
-  "nombre": "Uso de TIC",
+  "codigo": "ED556",
+  "nombre": "Uso de TIC en la enseñanza",
   "id_plan": 1,
-  "semestre": 3,
-  "bloques_semanales": 2,
+  "semestre": 5,
+  "bloques_semanales": 4,
   "cupo": 22,
   "origen": "EXTERNA",
   "bloques_externos": [
-    { "dia": "LUNES", "hora_inicio": "08:00", "hora_fin": "09:30", "id_sala": 1 },
-    { "dia": "MIERCOLES", "hora_inicio": "10:00", "hora_fin": "11:30", "sala_externa": "Sala 3 Educación" }
+    { "dia": "LUNES", "bloque_inicio": 1, "bloque_fin": 2, "id_sala": 1 },
+    { "dia": "MIERCOLES", "bloque_inicio": 3, "bloque_fin": 4, "sala_externa": "Sala Educación" }
   ]
 }
 
@@ -32,7 +36,7 @@ Content-Type: application/json
 
 {
   "bloques": [
-    { "dia": "VIERNES", "hora_inicio": "14:30", "hora_fin": "16:00", "id_sala": 2, "bloque_numero": 7 }
+    { "dia": "VIERNES", "bloque_inicio": 7, "bloque_fin": 8, "id_sala": 2 }
   ]
 }
 
@@ -42,14 +46,14 @@ Content-Type: application/json
 
 {
   "bloques_externos": [
-    { "dia": "LUNES", "hora_inicio": "08:00", "hora_fin": "08:45", "id_sala": 1 }
+    { "dia": "LUNES", "bloque_inicio": 1, "bloque_fin": 2, "id_sala": 1 }
   ]
 }
 
-### Eliminar un bloque puntual
+### Eliminar un bloque de 45 min
 DELETE {{api}}/horario/asignaturas/1/bloques-externos/1
 
-### Grilla: cada bloque trae origen (PROPIA/EXTERNA) y bloqueado
+### Grilla: cada bloque trae bloque_numero, origen (PROPIA/EXTERNA) y bloqueado
 GET {{api}}/horario/bloques
 
 ### Filtros opcionales: dia, id_sala, origen

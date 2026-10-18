@@ -923,7 +923,7 @@ model Plan {
 
 model Asignatura {
   id_asignatura     Int              @id @default(autoincrement())
-  codigo            String           @unique @db.VarChar(30)
+  codigo            String           @db.VarChar(30) // Se repite entre planes (ej. HG417 en 311 y 336)
   nombre            String           @db.VarChar(150)
   semestre          Int // Nivel en la malla
   cupo              Int              @default(22)
@@ -934,6 +934,7 @@ model Asignatura {
   plan    Plan    @relation(fields: [id_plan], references: [id_plan], onDelete: Restrict)
   cursos  Curso[]
 
+  @@unique([id_plan, codigo, semestre])
   @@map("asignatura")
 }
 
@@ -966,7 +967,7 @@ model Bloque_horario {
   dia               DiaSemana
   hora_inicio       String    @db.VarChar(10) // "HH:mm"
   hora_fin          String    @db.VarChar(10) // "HH:mm"
-  bloque_numero     Int?
+  bloque_numero     Int // 1..12 de la grilla pedagógica; una fila por bloque de 45 min
   bloqueado         Boolean   @default(false) // true para asignaturas EXTERNAS (ADM-F02 CA2)
   sala_externa      String?   @db.VarChar(100) // Sala fuera del departamento
 
