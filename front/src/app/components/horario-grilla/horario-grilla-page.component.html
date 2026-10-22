@@ -1,0 +1,145 @@
+<div class="container section grilla-page">
+  <!-- HERO HEAD -->
+  <div class="hero">
+    <div class="hero__bg"></div>
+
+    <div class="hero__content">
+      <div class="hero__left">
+        <div class="hero__icon">
+          <mat-icon>grid_on</mat-icon>
+        </div>
+
+        <div class="hero__titles">
+          <h1>Grilla Semanal de Horario</h1>
+          <p>Visualización del horario pedagógico por carrera, plan curricular y nivel semestral.</p>
+
+          <div class="hero__chips">
+            <span class="chip" *ngIf="carreraSeleccionada">
+              <mat-icon>school</mat-icon>
+              <span>{{ carreraSeleccionada.codigo }} · {{ carreraSeleccionada.nombre }}</span>
+            </span>
+
+            <span class="chip chip--soft" *ngIf="planSeleccionado">
+              <mat-icon>description</mat-icon>
+              <span>{{ planSeleccionado.nombre }} · Semestre {{ semestreSeleccionado }}</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SELECTORES DE NIVEL -->
+  <mat-card class="elev selectors-card">
+    <mat-card-content class="selectors-bar">
+      <div class="selectors-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Carrera</mat-label>
+          <mat-select
+            [(ngModel)]="idCarreraSeleccionada"
+            (selectionChange)="onCarreraChange()">
+            @for (c of carreras; track c.id_carrera) {
+              <mat-option [value]="c.id_carrera">
+                {{ c.codigo }} — {{ c.nombre }}
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Plan de estudios</mat-label>
+          <mat-select
+            [(ngModel)]="idPlanSeleccionado"
+            (selectionChange)="onPlanOSemestreChange()">
+            @for (p of planesDisponibles; track p.id_plan) {
+              <mat-option [value]="p.id_plan">
+                {{ p.nombre }}
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Semestre (Nivel)</mat-label>
+          <mat-select
+            [(ngModel)]="semestreSeleccionado"
+            (selectionChange)="onPlanOSemestreChange()">
+            @for (s of SEMESTRES; track s) {
+              <mat-option [value]="s">
+                Semestre {{ s }}
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div class="selectors-summary muted">
+        <span>{{ asignaturas.length }} asignaturas registradas</span>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  @if (cargando) {
+    <div class="loading-wrap">
+      <mat-spinner diameter="46"></mat-spinner>
+      <p>Cargando horario semanal...</p>
+    </div>
+  } @else {
+    <!-- GRILLA SEMANAL BASE -->
+    <mat-card class="elev grilla-main-card">
+      <app-horario-grilla
+        [celdas]="celdasGrilla"
+        [titulo]="(carreraSeleccionada?.nombre || '') + ' · Semestre ' + semestreSeleccionado"
+        [subtitulo]="planSeleccionado?.nombre || ''">
+      </app-horario-grilla>
+    </mat-card>
+
+    <!-- LISTA DE ASIGNATURAS PROPIAS PENDIENTES DE PROGRAMACIÓN -->
+    <mat-card class="elev propias-card">
+      <div class="propias-header">
+        <div class="propias-title-wrap">
+          <div class="propias-icon">
+            <mat-icon>pending_actions</mat-icon>
+          </div>
+          <div>
+            <h3>Asignaturas Propias del Semestre</h3>
+            <p class="muted">
+              Asignaturas dictadas por el departamento que requieren agendamiento de bloques.
+            </p>
+          </div>
+        </div>
+
+        <div class="sprint2-badge">
+          <mat-icon>auto_awesome</mat-icon>
+          <span>Se programan en el Sprint 2 (generador automático)</span>
+        </div>
+      </div>
+
+      @if (asignaturasPropias.length === 0) {
+        <div class="propias-empty">
+          <p>No hay asignaturas propias registradas para este semestre.</p>
+        </div>
+      } @else {
+        <div class="propias-grid">
+          @for (a of asignaturasPropias; track a.id_asignatura) {
+            <div class="propia-item">
+              <div class="propia-item__top">
+                <span class="propia-codigo">{{ a.codigo }}</span>
+                <span class="propia-cupo">Cupo: {{ a.cupo }}</span>
+              </div>
+              <div class="propia-item__nombre">{{ a.nombre }}</div>
+              <div class="propia-item__footer">
+                <span class="propia-bloques">
+                  <mat-icon>schedule</mat-icon>
+                  {{ a.bloques_semanales }} bloques/sem
+                </span>
+                <span class="propia-tag">Pendiente de horario</span>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </mat-card>
+  }
+</div>

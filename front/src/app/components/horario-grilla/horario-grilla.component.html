@@ -1,0 +1,138 @@
+<div class="grilla-container">
+  @if (titulo) {
+    <div class="grilla-header">
+      <div class="grilla-title">{{ titulo }}</div>
+      @if (subtitulo) {
+        <div class="grilla-sub">{{ subtitulo }}</div>
+      }
+    </div>
+  }
+
+  <!-- LEYENDA -->
+  <div class="grilla-leyenda">
+    <div class="leyenda-item">
+      <span class="leyenda-color color--externa"></span>
+      <mat-icon class="leyenda-icon">lock</mat-icon>
+      <span>Asignatura Externa (Bloque fijo)</span>
+    </div>
+    <div class="leyenda-item">
+      <span class="leyenda-color color--propia"></span>
+      <span>Asignatura Propia</span>
+    </div>
+    <div class="leyenda-item">
+      <span class="leyenda-color color--protegido"></span>
+      <span>Horario Protegido</span>
+    </div>
+  </div>
+
+  <!-- TABLA DE LA GRILLA -->
+  <div class="grilla-table-wrap">
+    <table class="grilla-table">
+      <thead>
+        <tr>
+          <th class="th-horario">Bloque / Horario</th>
+          @for (d of DIAS; track d.dia) {
+            <th class="th-dia">{{ d.label }}</th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        <!-- JORNADA MAÑANA (Bloques 1 a 6) -->
+        @for (b of bloquesManana; track b.numero) {
+          <tr>
+            <td class="td-bloque-info">
+              <span class="bloque-num">B{{ b.numero }}</span>
+              <span class="bloque-hora">{{ b.hora_inicio }} – {{ b.hora_fin }}</span>
+            </td>
+
+            @for (d of DIAS; track d.dia) {
+              @if (!estaCubierto(d.dia, b.numero)) {
+                @if (celdaQueInicia(d.dia, b.numero); as celda) {
+                  <td
+                    class="td-celda"
+                    [attr.rowspan]="calcularRowspan(celda)"
+                    [class.celda-externa]="celda.tipo === 'CLASE_EXTERNA'"
+                    [class.celda-propia]="celda.tipo === 'CLASE_PROPIA'"
+                    [class.celda-protegido]="celda.tipo === 'PROTEGIDO'">
+                    <div class="celda-content">
+                      <div class="celda-top">
+                        <span class="celda-codigo" *ngIf="celda.codigo">{{ celda.codigo }}</span>
+                        <mat-icon class="celda-lock" *ngIf="celda.bloqueado" matTooltip="Bloque fijo externo bloqueado">
+                          lock
+                        </mat-icon>
+                      </div>
+
+                      <div class="celda-nombre">{{ celda.etiqueta }}</div>
+
+                      <div class="celda-footer" *ngIf="celda.sala">
+                        <mat-icon class="celda-sala-icon">meeting_room</mat-icon>
+                        <span class="celda-sala">{{ celda.sala }}</span>
+                      </div>
+                    </div>
+                  </td>
+                } @else {
+                  <td class="td-celda-vacia"></td>
+                }
+              }
+            }
+          </tr>
+        }
+
+        <!-- FRANJA DE COLACIÓN -->
+        <tr class="tr-colacion">
+          <td class="td-colacion-info">
+            <span class="colacion-label">Almuerzo</span>
+            <span class="bloque-hora">12:50 – 14:45</span>
+          </td>
+          <td colspan="5" class="td-colacion-bar">
+            <div class="colacion-content">
+              <mat-icon class="colacion-icon">restaurant</mat-icon>
+              <span>Receso / Colación de mediodía</span>
+            </div>
+          </td>
+        </tr>
+
+        <!-- JORNADA TARDE (Bloques 7 a 12) -->
+        @for (b of bloquesTarde; track b.numero) {
+          <tr>
+            <td class="td-bloque-info">
+              <span class="bloque-num">B{{ b.numero }}</span>
+              <span class="bloque-hora">{{ b.hora_inicio }} – {{ b.hora_fin }}</span>
+            </td>
+
+            @for (d of DIAS; track d.dia) {
+              @if (!estaCubierto(d.dia, b.numero)) {
+                @if (celdaQueInicia(d.dia, b.numero); as celda) {
+                  <td
+                    class="td-celda"
+                    [attr.rowspan]="calcularRowspan(celda)"
+                    [class.celda-externa]="celda.tipo === 'CLASE_EXTERNA'"
+                    [class.celda-propia]="celda.tipo === 'CLASE_PROPIA'"
+                    [class.celda-protegido]="celda.tipo === 'PROTEGIDO'">
+                    <div class="celda-content">
+                      <div class="celda-top">
+                        <span class="celda-codigo" *ngIf="celda.codigo">{{ celda.codigo }}</span>
+                        <mat-icon class="celda-lock" *ngIf="celda.bloqueado" matTooltip="Bloque fijo externo bloqueado">
+                          lock
+                        </mat-icon>
+                      </div>
+
+                      <div class="celda-nombre">{{ celda.etiqueta }}</div>
+
+                      <div class="celda-footer" *ngIf="celda.sala">
+                        <mat-icon class="celda-sala-icon">meeting_room</mat-icon>
+                        <span class="celda-sala">{{ celda.sala }}</span>
+                      </div>
+                    </div>
+                  </td>
+                } @else {
+                  <td class="td-celda-vacia"></td>
+                }
+              }
+            }
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
