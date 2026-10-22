@@ -259,6 +259,16 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   private buildJefaturaSections(): NavSection[] {
     return [
       {
+        id: 'horario',
+        title: 'Horario',
+        icon: 'calendar_month',
+        items: [
+          { label: 'Salas', icon: 'meeting_room', route: '/horario/salas' },
+          { label: 'Asignaturas', icon: 'menu_book', route: '/horario/asignaturas' },
+          { label: 'Grilla semanal', icon: 'grid_on', route: '/horario/grilla' },
+        ],
+      },
+      {
         id: 'practicas',
         title: 'Gestión de prácticas',
         icon: 'assignment_ind',
