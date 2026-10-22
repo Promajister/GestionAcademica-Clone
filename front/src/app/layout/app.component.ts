@@ -38,7 +38,7 @@ interface NavItem {
 }
 
 interface NavSection {
-  id: 'practicas' | 'vinculacion' | 'egresados';
+  id: 'practicas' | 'vinculacion' | 'egresados' | 'horario';
   title: string;
   icon: string;
   items: NavItem[];
@@ -86,7 +86,8 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   isJefatura = false;
   isVinculacion = false;
   navSections: NavSection[] = [];
-  openSections: Record<'practicas' | 'vinculacion' | 'egresados', boolean> = {
+  openSections: Record<'practicas' | 'vinculacion' | 'egresados' | 'horario', boolean> = {
+    horario: true,
     practicas: true,
     vinculacion: true,
     egresados: true,
@@ -211,7 +212,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     this.router.navigate(['/dashboard']);
   }
 
-  toggleSection(id: 'practicas' | 'vinculacion' | 'egresados') {
+  toggleSection(id: 'practicas' | 'vinculacion' | 'egresados' | 'horario') {
     this.openSections[id] = !this.openSections[id];
   }
 

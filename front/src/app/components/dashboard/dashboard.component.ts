@@ -142,6 +142,24 @@ export class DashboardComponent implements OnInit {
     if (id === 'jefatura') {
       return [
         {
+          title: 'Salas',
+          icon: 'meeting_room',
+          route: '/horario/salas',
+          desc: 'Mantenedor de salas del departamento',
+        },
+        {
+          title: 'Asignaturas',
+          icon: 'menu_book',
+          route: '/horario/asignaturas',
+          desc: 'Asignaturas propias y externas con bloques fijos',
+        },
+        {
+          title: 'Grilla semanal',
+          icon: 'grid_on',
+          route: '/horario/grilla',
+          desc: 'Horario semanal por carrera y semestre',
+        },
+        {
           title: 'Usuarios',
           icon: 'manage_accounts',
           route: '/usuarios',
@@ -329,6 +347,30 @@ export class DashboardComponent implements OnInit {
   private buildGroupsFor(id: RoleId): ModuleGroup[] {
     if (id === 'jefatura') {
       return [
+        {
+          title: 'Horario',
+          desc: 'Gestión y planificación del horario académico',
+          items: [
+            {
+              title: 'Salas',
+              icon: 'meeting_room',
+              route: '/horario/salas',
+              desc: 'Mantenedor de salas del departamento',
+            },
+            {
+              title: 'Asignaturas',
+              icon: 'menu_book',
+              route: '/horario/asignaturas',
+              desc: 'Asignaturas propias y externas con bloques fijos',
+            },
+            {
+              title: 'Grilla semanal',
+              icon: 'grid_on',
+              route: '/horario/grilla',
+              desc: 'Horario semanal por carrera y semestre',
+            },
+          ],
+        },
         {
           title: 'General',
           desc: 'Accesos personales',
