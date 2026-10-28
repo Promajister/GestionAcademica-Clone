@@ -1,0 +1,282 @@
+<div class="container section salas-page">
+  <!-- HERO HEAD -->
+  <div class="hero">
+    <div class="hero__bg"></div>
+
+    <div class="hero__content">
+      <div class="hero__left">
+        <div class="hero__icon">
+          <mat-icon>meeting_room</mat-icon>
+        </div>
+
+        <div class="hero__titles">
+          <h1>Salas del Departamento</h1>
+          <p>Administra los espacios físicos oficiales para clases y reuniones del departamento.</p>
+
+          <div class="hero__chips">
+            <span class="chip">
+              <mat-icon>domain</mat-icon>
+              <span>Total: {{ salas.length }} salas</span>
+            </span>
+
+            <span class="chip chip--soft" *ngIf="soloActivas">
+              <mat-icon>filter_alt</mat-icon>
+              <span>Solo activas</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero__actions">
+        <button mat-flat-button color="primary" class="btn-cta" (click)="abrirCrear()">
+          <mat-icon>add</mat-icon>
+          Nueva Sala
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOOLBAR / FILTROS -->
+  <mat-card class="elev toolbar-card">
+    <mat-card-content class="toolbar">
+      <div class="toolbar__left">
+        <mat-icon class="toolbar__icon">search</mat-icon>
+
+        <mat-form-field appearance="outline" class="toolbar__search">
+          <mat-label>Buscar sala</mat-label>
+          <input
+            matInput
+            [(ngModel)]="filtroTexto"
+            placeholder="Nombre, código o tipo..."
+          />
+        </mat-form-field>
+
+        <div class="toolbar__toggle">
+          <mat-slide-toggle
+            [(ngModel)]="soloActivas"
+            (change)="onFiltroActivasChange()"
+            color="primary">
+            Mostrar solo activas
+          </mat-slide-toggle>
+        </div>
+      </div>
+
+      <div class="toolbar__right muted">
+        <span>{{ salasFiltradas.length }} en pantalla</span>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- TABLA / LISTADO -->
+  @if (cargando) {
+    <div class="loading-wrap">
+      <mat-spinner diameter="46"></mat-spinner>
+      <p>Cargando salas...</p>
+    </div>
+  } @else if (salasFiltradas.length === 0) {
+    <mat-card class="elev empty-card">
+      <mat-card-content class="empty-content">
+        <mat-icon>meeting_room</mat-icon>
+        <h3>No se encontraron salas</h3>
+        <p>No hay registros que coincidan con los filtros aplicados.</p>
+      </mat-card-content>
+    </mat-card>
+  } @else {
+    <mat-card class="elev table-card">
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Nombre oficial</th>
+              <th>Tipo</th>
+              <th>Capacidad</th>
+              <th>Estado</th>
+              <th>Horario</th>
+              <th class="th-actions">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (s of salasFiltradas; track s.id_sala) {
+              <tr [class.row-inactive]="!s.activo">
+                <td>
+                  <span class="code-badge">{{ s.codigo }}</span>
+                </td>
+                <td class="td-nombre">
+                  <strong>{{ s.nombre }}</strong>
+                </td>
+                <td>
+                  <span class="type-pill" [class.type-reunion]="s.tipo === 'REUNION'">
+                    <mat-icon class="type-icon">{{ s.tipo === 'CLASES' ? 'school' : 'groups' }}</mat-icon>
+                    {{ s.tipo === 'CLASES' ? 'Clases' : 'Reunión' }}
+                  </span>
+                </td>
+                <td>
+                  <span class="cap-text">
+                    <mat-icon class="cap-icon">people</mat-icon>
+                    {{ s.capacidad }} personas
+                  </span>
+                </td>
+                <td>
+                  <span class="status-pill" [class.status-pill--active]="s.activo" [class.status-pill--inactive]="!s.activo">
+                    {{ s.activo ? 'Activa' : 'Inactiva' }}
+                  </span>
+                </td>
+                <td>
+                  @if (estaEnUso(s)) {
+                    <span class="usage-badge usage-badge--yes" matTooltip="La sala cuenta con bloques de clase asignados">
+                      <mat-icon>event_busy</mat-icon>
+                      En uso ({{ s._count?.bloques_horarios }} blq.)
+                    </span>
+                  } @else {
+                    <span class="usage-badge usage-badge--no">
+                      <mat-icon>event_available</mat-icon>
+                      Sin uso
+                    </span>
+                  }
+                </td>
+                <td class="td-actions">
+                  <button
+                    mat-icon-button
+                    color="primary"
+                    matTooltip="Editar sala"
+                    (click)="abrirEditar(s)">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+
+                  @if (s.activo) {
+                    <button
+                      mat-icon-button
+                      color="warn"
+                      matTooltip="Eliminar o desactivar sala"
+                      (click)="pedirEliminar(s)">
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  } @else {
+                    <button
+                      mat-stroked-button
+                      class="btn-reactivar"
+                      matTooltip="Reactivar sala"
+                      (click)="reactivar(s)">
+                      <mat-icon>check_circle</mat-icon>
+                      Reactivar
+                    </button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </mat-card>
+  }
+
+  <!-- MODAL CREAR / EDITAR SALA -->
+  @if (mostrarModal) {
+    <div class="modal-overlay" (click)="cerrarModal()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div class="modal-icon">
+            <mat-icon>{{ salaEditando ? 'edit' : 'add_business' }}</mat-icon>
+          </div>
+          <div class="modal-titles">
+            <h2>{{ salaEditando ? 'Editar Sala' : 'Nueva Sala' }}</h2>
+            <p>{{ salaEditando ? 'Modifica los datos oficiales de la sala' : 'Ingresa una nueva sala del departamento' }}</p>
+          </div>
+          <button mat-icon-button (click)="cerrarModal()" class="close-btn">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+
+        <form [formGroup]="form" (ngSubmit)="guardar()" class="modal-body">
+          @if (errorBackend) {
+            <div class="error-banner">
+              <mat-icon>error_outline</mat-icon>
+              <span>{{ errorBackend }}</span>
+            </div>
+          }
+
+          <div class="form-grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Código *</mat-label>
+              <input matInput formControlName="codigo" placeholder="Ej: S-121, S-NUCLEO" />
+              @if (form.get('codigo')?.hasError('required') && form.get('codigo')?.touched) {
+                <mat-error>El código es obligatorio</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Nombre oficial *</mat-label>
+              <input matInput formControlName="nombre" placeholder="Ej: Sala 121, Sala Núcleo" />
+              @if (form.get('nombre')?.hasError('required') && form.get('nombre')?.touched) {
+                <mat-error>El nombre es obligatorio</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <div class="form-grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Tipo de sala *</mat-label>
+              <mat-select formControlName="tipo">
+                @for (t of TIPOS; track t.valor) {
+                  <mat-option [value]="t.valor">{{ t.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Capacidad (personas) *</mat-label>
+              <input matInput type="number" formControlName="capacidad" min="1" />
+              @if (form.get('capacidad')?.hasError('min')) {
+                <mat-error>Debe ser al menos 1</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <div class="modal-actions">
+            <button mat-stroked-button type="button" (click)="cerrarModal()" [disabled]="guardando">
+              Cancelar
+            </button>
+            <button mat-flat-button color="primary" type="submit" [disabled]="guardando || form.invalid">
+              @if (guardando) {
+                <mat-spinner diameter="18" style="display:inline-block; margin-right:6px;"></mat-spinner>
+              }
+              {{ salaEditando ? 'Guardar cambios' : 'Registrar sala' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL CONFIRMAR ELIMINACIÓN -->
+  @if (salaPorEliminar) {
+    <div class="modal-overlay" (click)="cerrarConfirmarEliminar()">
+      <div class="modal-card modal-confirm" (click)="$event.stopPropagation()">
+        <div class="confirm-icon">
+          <mat-icon>warning</mat-icon>
+        </div>
+        <div class="confirm-body">
+          <h2>¿Eliminar o desactivar sala?</h2>
+          <p>
+            ¿Estás seguro de que deseas eliminar la sala <strong>{{ salaPorEliminar.nombre }}</strong> ({{ salaPorEliminar.codigo }})?
+          </p>
+          <p class="muted">
+            Si la sala ya tiene clases asociadas en el horario, el sistema la desactivará para mantener la integridad de los datos.
+          </p>
+        </div>
+        <div class="modal-actions">
+          <button mat-stroked-button (click)="cerrarConfirmarEliminar()" [disabled]="guardando">
+            Cancelar
+          </button>
+          <button mat-flat-button color="warn" (click)="confirmarEliminar()" [disabled]="guardando">
+            @if (guardando) {
+              <mat-spinner diameter="18" style="display:inline-block; margin-right:6px;"></mat-spinner>
+            }
+            Confirmar
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

@@ -38,7 +38,7 @@ interface NavItem {
 }
 
 interface NavSection {
-  id: 'practicas' | 'vinculacion' | 'egresados';
+  id: 'practicas' | 'vinculacion' | 'egresados' | 'horario';
   title: string;
   icon: string;
   items: NavItem[];
@@ -86,7 +86,8 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   isJefatura = false;
   isVinculacion = false;
   navSections: NavSection[] = [];
-  openSections: Record<'practicas' | 'vinculacion' | 'egresados', boolean> = {
+  openSections: Record<'practicas' | 'vinculacion' | 'egresados' | 'horario', boolean> = {
+    horario: true,
     practicas: true,
     vinculacion: true,
     egresados: true,
@@ -211,7 +212,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
     this.router.navigate(['/dashboard']);
   }
 
-  toggleSection(id: 'practicas' | 'vinculacion' | 'egresados') {
+  toggleSection(id: 'practicas' | 'vinculacion' | 'egresados' | 'horario') {
     this.openSections[id] = !this.openSections[id];
   }
 
@@ -257,6 +258,16 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private buildJefaturaSections(): NavSection[] {
     return [
+      {
+        id: 'horario',
+        title: 'Horario',
+        icon: 'calendar_month',
+        items: [
+          { label: 'Salas', icon: 'meeting_room', route: '/horario/salas' },
+          { label: 'Asignaturas', icon: 'menu_book', route: '/horario/asignaturas' },
+          { label: 'Grilla semanal', icon: 'grid_on', route: '/horario/grilla' },
+        ],
+      },
       {
         id: 'practicas',
         title: 'Gestión de prácticas',

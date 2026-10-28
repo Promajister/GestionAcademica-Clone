@@ -1,0 +1,495 @@
+<div class="container section asignaturas-page">
+  <!-- HERO HEAD -->
+  <div class="hero">
+    <div class="hero__bg"></div>
+
+    <div class="hero__content">
+      <div class="hero__left">
+        <div class="hero__icon">
+          <mat-icon>menu_book</mat-icon>
+        </div>
+
+        <div class="hero__titles">
+          <h1>Asignaturas y Cursos</h1>
+          <p>Administra las asignaturas propias del departamento y asignaturas externas con bloques fijos.</p>
+
+          <div class="hero__chips">
+            <span class="chip">
+              <mat-icon>layers</mat-icon>
+              <span>Total: {{ asignaturasFiltradas.length }} asignaturas</span>
+            </span>
+
+            <span class="chip chip--propia">
+              <span class="dot dot--propia"></span>
+              <span>Propias (del depto)</span>
+            </span>
+
+            <span class="chip chip--externa">
+              <mat-icon class="chip-mini-icon">lock</mat-icon>
+              <span>Externas (bloque fijo)</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero__actions">
+        <button mat-flat-button color="primary" class="btn-cta" (click)="abrirCrear()">
+          <mat-icon>add</mat-icon>
+          Nueva Asignatura
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOOLBAR Y FILTROS EN CASCADA -->
+  <mat-card class="elev toolbar-card">
+    <mat-card-content class="toolbar-content">
+      <div class="filters-row">
+        <!-- BUSCADOR -->
+        <mat-form-field appearance="outline" class="filter-search">
+          <mat-label>Buscar asignatura</mat-label>
+          <input
+            matInput
+            [(ngModel)]="filtroTexto"
+            placeholder="Código o nombre..."
+          />
+          <mat-icon matPrefix class="muted-icon">search</mat-icon>
+        </mat-form-field>
+
+        <!-- SELECTOR CARRERA -->
+        <mat-form-field appearance="outline" class="filter-item">
+          <mat-label>Carrera</mat-label>
+          <mat-select
+            [(ngModel)]="filtroCarrera"
+            (selectionChange)="onFiltroCarreraChange()">
+            <mat-option value="all">Todas las carreras</mat-option>
+            @for (c of carreras; track c.id_carrera) {
+              <mat-option [value]="c.id_carrera">{{ c.codigo }} — {{ c.nombre }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <!-- SELECTOR PLAN -->
+        <mat-form-field appearance="outline" class="filter-item">
+          <mat-label>Plan de estudios</mat-label>
+          <mat-select
+            [(ngModel)]="filtroPlan"
+            (selectionChange)="onFiltroChange()">
+            <mat-option value="all">Todos los planes</mat-option>
+            @for (p of planes; track p.id_plan) {
+              <mat-option [value]="p.id_plan">{{ p.nombre }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <!-- SELECTOR SEMESTRE -->
+        <mat-form-field appearance="outline" class="filter-item">
+          <mat-label>Semestre (Nivel)</mat-label>
+          <mat-select
+            [(ngModel)]="filtroSemestre"
+            (selectionChange)="onFiltroChange()">
+            <mat-option value="all">Todos los niveles</mat-option>
+            @for (s of SEMESTRES; track s) {
+              <mat-option [value]="s">Semestre {{ s }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <!-- SELECTOR ORIGEN -->
+        <mat-form-field appearance="outline" class="filter-item">
+          <mat-label>Origen</mat-label>
+          <mat-select
+            [(ngModel)]="filtroOrigen"
+            (selectionChange)="onFiltroChange()">
+            <mat-option value="all">Todos los orígenes</mat-option>
+            <mat-option value="PROPIA">Propia (Departamento)</mat-option>
+            <mat-option value="EXTERNA">Externa (Otro depto)</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- TABLA DE ASIGNATURAS -->
+  @if (cargando) {
+    <div class="loading-wrap">
+      <mat-spinner diameter="46"></mat-spinner>
+      <p>Cargando asignaturas...</p>
+    </div>
+  } @else if (asignaturasFiltradas.length === 0) {
+    <mat-card class="elev empty-card">
+      <mat-card-content class="empty-content">
+        <mat-icon>menu_book</mat-icon>
+        <h3>No se encontraron asignaturas</h3>
+        <p>No hay registros que coincidan con los filtros seleccionados.</p>
+      </mat-card-content>
+    </mat-card>
+  } @else {
+    <mat-card class="elev table-card">
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Nombre de la asignatura</th>
+              <th>Plan / Semestre</th>
+              <th>Origen</th>
+              <th>Bloques sem.</th>
+              <th>Cupo</th>
+              <th>Horario Asignado</th>
+              <th class="th-actions">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (a of asignaturasFiltradas; track a.id_asignatura) {
+              <tr [class.row-externa]="a.origen === 'EXTERNA'">
+                <td>
+                  <span class="code-badge" [class.code-badge--externa]="a.origen === 'EXTERNA'">
+                    {{ a.codigo }}
+                  </span>
+                </td>
+                <td class="td-nombre">
+                  <strong>{{ a.nombre }}</strong>
+                </td>
+                <td>
+                  <div class="plan-info">
+                    <span class="plan-nombre">{{ a.plan?.nombre || 'Plan ' + a.id_plan }}</span>
+                    <span class="semestre-badge">Semestre {{ a.semestre }}</span>
+                  </div>
+                </td>
+                <td>
+                  @if (a.origen === 'PROPIA') {
+                    <span class="chip-origen chip-origen--propia">
+                      <mat-icon>school</mat-icon>
+                      Propia
+                    </span>
+                  } @else {
+                    <span class="chip-origen chip-origen--externa" matTooltip="Asignatura externa con bloques fijos bloqueados">
+                      <mat-icon>lock</mat-icon>
+                      Externa
+                    </span>
+                  }
+                </td>
+                <td>
+                  <span class="bloques-text">{{ a.bloques_semanales }} blq.</span>
+                </td>
+                <td>
+                  <span class="cupo-text">{{ a.cupo }} est.</span>
+                </td>
+                <td>
+                  @if (a.origen === 'EXTERNA') {
+                    <div class="bloques-resumen">
+                      @let cursos = a.cursos || [];
+                      @if (cursos.length > 0 && cursos[0].bloques_horarios && cursos[0].bloques_horarios.length) {
+                        @for (b of cursos[0].bloques_horarios; track b.id_bloque_horario) {
+                          <span class="bloque-pill" matTooltip="Bloque fijo externo">
+                            <mat-icon>lock</mat-icon>
+                            {{ b.dia }} B{{ b.bloque_numero }} ({{ b.sala?.nombre || b.sala_externa || 'Sin sala' }})
+                          </span>
+                        }
+                      } @else {
+                        <span class="muted-text">Sin bloques registrados</span>
+                      }
+                    </div>
+                  } @else {
+                    <span class="propia-pending-note" matTooltip="Se programará con el generador automático en el Sprint 2">
+                      <mat-icon>schedule</mat-icon>
+                      Pendiente (Sprint 2)
+                    </span>
+                  }
+                </td>
+                <td class="td-actions">
+                  <button
+                    mat-icon-button
+                    color="primary"
+                    matTooltip="Editar asignatura"
+                    (click)="abrirEditar(a)">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button
+                    mat-icon-button
+                    color="warn"
+                    matTooltip="Eliminar asignatura"
+                    (click)="pedirEliminar(a)">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </mat-card>
+  }
+
+  <!-- MODAL CREAR / EDITAR ASIGNATURA -->
+  @if (mostrarModal) {
+    <div class="modal-overlay" (click)="cerrarModal()">
+      <div class="modal-card modal-asignatura" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div class="modal-icon">
+            <mat-icon>{{ asignaturaEditando ? 'edit' : 'add_circle' }}</mat-icon>
+          </div>
+          <div class="modal-titles">
+            <h2>{{ asignaturaEditando ? 'Editar Asignatura' : 'Nueva Asignatura' }}</h2>
+            <p>
+              {{ asignaturaEditando ? 'Actualiza los datos y bloques de la asignatura' : 'Registra una asignatura propia o externa con bloques fijos' }}
+            </p>
+          </div>
+          <button mat-icon-button (click)="cerrarModal()" class="close-btn">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+
+        <form [formGroup]="form" (ngSubmit)="guardar()" class="modal-body">
+          @if (errorBackend) {
+            <div class="error-banner">
+              <mat-icon>warning</mat-icon>
+              <span>{{ errorBackend }}</span>
+            </div>
+          }
+
+          <!-- FILA 1: CARRERA Y PLAN -->
+          <div class="form-grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Carrera *</mat-label>
+              <mat-select
+                formControlName="id_carrera"
+                (selectionChange)="onCarreraFormChange()">
+                @for (c of carreras; track c.id_carrera) {
+                  <mat-option [value]="c.id_carrera">{{ c.codigo }} — {{ c.nombre }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Plan de estudios *</mat-label>
+              <mat-select formControlName="id_plan">
+                @for (p of planesParaForm(); track p.id_plan) {
+                  <mat-option [value]="p.id_plan">{{ p.nombre }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <!-- FILA 2: CÓDIGO Y NOMBRE -->
+          <div class="form-grid">
+            <mat-form-field appearance="outline" class="col-codigo">
+              <mat-label>Código *</mat-label>
+              <input matInput formControlName="codigo" placeholder="Ej: HG076, DU113" [readonly]="!!asignaturaEditando" />
+              @if (form.get('codigo')?.hasError('required') && form.get('codigo')?.touched) {
+                <mat-error>El código es obligatorio</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="col-nombre">
+              <mat-label>Nombre de la asignatura *</mat-label>
+              <input matInput formControlName="nombre" placeholder="Ej: Etnohistoria" />
+              @if (form.get('nombre')?.hasError('required') && form.get('nombre')?.touched) {
+                <mat-error>El nombre es obligatorio</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <!-- FILA 3: SEMESTRE, BLOQUES SEMANALES, CUPO -->
+          <div class="form-grid form-grid--3">
+            <mat-form-field appearance="outline">
+              <mat-label>Semestre (Nivel) *</mat-label>
+              <input matInput type="number" formControlName="semestre" min="1" max="12" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Bloques semanales *</mat-label>
+              <input matInput type="number" formControlName="bloques_semanales" min="1" max="20" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Cupo máximo *</mat-label>
+              <input matInput type="number" formControlName="cupo" min="1" max="100" />
+            </mat-form-field>
+          </div>
+
+          <!-- FILA 4: ORIGEN (PROPIA VS EXTERNA) -->
+          <div class="origen-selector-box">
+            <label class="origen-label">Origen de la asignatura *</label>
+            <mat-radio-group
+              formControlName="origen"
+              (change)="onOrigenChange()"
+              class="origen-radio-group">
+              <mat-radio-button value="PROPIA" color="primary">
+                <div class="radio-opt">
+                  <strong>PROPIA (Departamento)</strong>
+                  <span class="muted">Dictada por profesores del departamento. Sin horario fijo por ahora.</span>
+                </div>
+              </mat-radio-button>
+
+              <mat-radio-button value="EXTERNA" color="primary">
+                <div class="radio-opt">
+                  <strong>EXTERNA (Otro departamento)</strong>
+                  <span class="muted">Dictada por Educación u otra facultad. Requiere ingresar sus bloques fijos.</span>
+                </div>
+              </mat-radio-button>
+            </mat-radio-group>
+          </div>
+
+          <!-- SECCIÓN: BLOQUES FIJOS DE ASIGNATURA EXTERNA -->
+          @if (form.get('origen')?.value === 'EXTERNA') {
+            <div class="bloques-externos-section">
+              <div class="bloques-section-head">
+                <div>
+                  <h4>
+                    <mat-icon class="lock-head-icon">lock</mat-icon>
+                    Bloques Fijos de Horario (Obligatorio)
+                  </h4>
+                  <p class="muted">
+                    Configura cada clase de la asignatura con su día, horario y sala asignada.
+                  </p>
+                </div>
+
+                <button
+                  mat-stroked-button
+                  color="primary"
+                  type="button"
+                  (click)="agregarFilaBloque()">
+                  <mat-icon>add</mat-icon>
+                  Agregar clase / bloque
+                </button>
+              </div>
+
+              @if (bloquesArray.length === 0) {
+                <div class="bloques-empty-alert">
+                  <mat-icon>info</mat-icon>
+                  <span>Debes ingresar al menos una clase con sus bloques para guardar una asignatura externa.</span>
+                </div>
+              }
+
+              <div formArrayName="bloques_externos" class="bloques-list">
+                @for (fila of bloquesArray.controls; track $index) {
+                  <div [formGroupName]="$index" class="bloque-fila-card">
+                    <div class="bloque-fila-top">
+                      <span class="bloque-fila-badge">Clase #{{ $index + 1 }}</span>
+                      <button
+                        mat-icon-button
+                        color="warn"
+                        type="button"
+                        matTooltip="Eliminar esta clase"
+                        (click)="eliminarFilaBloque($index)">
+                        <mat-icon>delete_outline</mat-icon>
+                      </button>
+                    </div>
+
+                    <div class="bloque-fila-inputs">
+                      <!-- DÍA -->
+                      <mat-form-field appearance="outline" class="col-dia">
+                        <mat-label>Día</mat-label>
+                        <mat-select formControlName="dia">
+                          @for (d of DIAS; track d.dia) {
+                            <mat-option [value]="d.dia">{{ d.label }}</mat-option>
+                          }
+                        </mat-select>
+                      </mat-form-field>
+
+                      <!-- BLOQUE INICIO -->
+                      <mat-form-field appearance="outline" class="col-bloque">
+                        <mat-label>Bloque inicio</mat-label>
+                        <mat-select formControlName="bloque_inicio">
+                          @for (g of grilla; track g.numero) {
+                            <mat-option [value]="g.numero">
+                              B{{ g.numero }} · {{ g.hora_inicio }}
+                            </mat-option>
+                          }
+                        </mat-select>
+                      </mat-form-field>
+
+                      <!-- BLOQUE FIN -->
+                      <mat-form-field appearance="outline" class="col-bloque">
+                        <mat-label>Bloque fin</mat-label>
+                        <mat-select formControlName="bloque_fin">
+                          @for (g of grilla; track g.numero) {
+                            <mat-option [value]="g.numero">
+                              B{{ g.numero }} · {{ g.hora_fin }}
+                            </mat-option>
+                          }
+                        </mat-select>
+                      </mat-form-field>
+                    </div>
+
+                    <!-- UBICACIÓN / SALA -->
+                    <div class="bloque-fila-ubicacion">
+                      <mat-radio-group formControlName="tipo_ubicacion" class="ubi-radios">
+                        <mat-radio-button value="DEPTO">Sala del Departamento</mat-radio-button>
+                        <mat-radio-button value="EXTERNA">Sala fuera del Depto.</mat-radio-button>
+                      </mat-radio-group>
+
+                      @if (fila.get('tipo_ubicacion')?.value === 'DEPTO') {
+                        <mat-form-field appearance="outline" class="sala-field">
+                          <mat-label>Sala asignada *</mat-label>
+                          <mat-select formControlName="id_sala">
+                            @for (s of salasActivas; track s.id_sala) {
+                              <mat-option [value]="s.id_sala">
+                                {{ s.nombre }} ({{ s.codigo }}) — {{ s.tipo === 'CLASES' ? 'Clases' : 'Reunión' }}
+                              </mat-option>
+                            }
+                          </mat-select>
+                        </mat-form-field>
+                      } @else {
+                        <mat-form-field appearance="outline" class="sala-field">
+                          <mat-label>Nombre de sala externa *</mat-label>
+                          <input matInput formControlName="sala_externa" placeholder="Ej: Sala Educación, Pabellón R" />
+                        </mat-form-field>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <div class="modal-actions">
+            <button mat-stroked-button type="button" (click)="cerrarModal()" [disabled]="guardando">
+              Cancelar
+            </button>
+            <button mat-flat-button color="primary" type="submit" [disabled]="guardando || form.invalid">
+              @if (guardando) {
+                <mat-spinner diameter="18" style="display:inline-block; margin-right:6px;"></mat-spinner>
+              }
+              {{ asignaturaEditando ? 'Guardar cambios' : 'Registrar asignatura' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL CONFIRMAR ELIMINACIÓN -->
+  @if (asignaturaPorEliminar) {
+    <div class="modal-overlay" (click)="cerrarConfirmarEliminar()">
+      <div class="modal-card modal-confirm" (click)="$event.stopPropagation()">
+        <div class="confirm-icon">
+          <mat-icon>warning</mat-icon>
+        </div>
+        <div class="confirm-body">
+          <h2>¿Eliminar asignatura?</h2>
+          <p>
+            ¿Estás seguro de que deseas eliminar la asignatura
+            <strong>{{ asignaturaPorEliminar.codigo }} — {{ asignaturaPorEliminar.nombre }}</strong>?
+          </p>
+          <p class="muted">
+            Se eliminarán también todos los cursos y bloques asociados a esta asignatura.
+          </p>
+        </div>
+        <div class="modal-actions">
+          <button mat-stroked-button (click)="cerrarConfirmarEliminar()" [disabled]="guardando">
+            Cancelar
+          </button>
+          <button mat-flat-button color="warn" (click)="confirmarEliminar()" [disabled]="guardando">
+            @if (guardando) {
+              <mat-spinner diameter="18" style="display:inline-block; margin-right:6px;"></mat-spinner>
+            }
+            Eliminar
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>
