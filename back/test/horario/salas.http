@@ -8,7 +8,7 @@ Content-Type: application/json
 
 { "email": "pedhg@gestion.uta.cl", "password": "123456" }
 
-### ADM-F01-T4.1: listar las 6 salas oficiales (incluye _count.bloques_horarios)
+### ADM-F01-T4.1: listar las 6 salas oficiales (incluye _count: horarios, horariosExternos, ocupacionesPuntuales)
 GET {{api}}/horario/salas
 
 ### Solo salas activas
@@ -18,13 +18,13 @@ GET {{api}}/horario/salas?soloActivas=true
 POST {{api}}/horario/salas
 Content-Type: application/json
 
-{ "codigo": "S-PRUEBA", "nombre": "Sala de Prueba", "tipo": "REUNION", "capacidad": 5 }
+{ "nombre": "Sala de Prueba", "tipo": "REUNIONES", "capacidad": 5 }
 
 ### CA2 / ADM-F01-T4.2: nombre duplicado -> 409
 POST {{api}}/horario/salas
 Content-Type: application/json
 
-{ "nombre": "Sala 121", "codigo": "S-DUP", "tipo": "CLASES" }
+{ "nombre": "Sala 121", "tipo": "CLASES", "capacidad": 22 }
 
 ### Editar sala
 PATCH {{api}}/horario/salas/1

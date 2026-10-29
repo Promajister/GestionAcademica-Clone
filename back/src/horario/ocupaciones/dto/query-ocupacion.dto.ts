@@ -1,11 +1,4 @@
-import {
-  IsDateString,
-  IsEnum,
-  IsInt,
-  IsOptional,
-  IsPositive,
-} from 'class-validator';
-import { DiaSemana, TipoOcupacion } from '@prisma/client';
+import { IsDateString, IsInt, IsOptional, IsPositive } from 'class-validator';
 
 export class QueryOcupacionDto {
   @IsOptional()
@@ -13,15 +6,6 @@ export class QueryOcupacionDto {
   @IsPositive()
   id_sala?: number;
 
-  @IsOptional()
-  @IsEnum(TipoOcupacion)
-  tipo?: TipoOcupacion;
-
-  @IsOptional()
-  @IsEnum(DiaSemana)
-  dia?: DiaSemana;
-
-  // Rango de fechas para las PUNTUALES (las SEMESTRALES siempre se incluyen)
   @IsOptional()
   @IsDateString({ strict: true })
   desde?: string;

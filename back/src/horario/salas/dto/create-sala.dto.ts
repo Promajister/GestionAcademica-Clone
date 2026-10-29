@@ -15,17 +15,11 @@ import { trim } from '../../common/trim.transform';
 export class CreateSalaDto {
   @Transform(trim)
   @IsString()
-  @IsNotEmpty({ message: 'El código de la sala es obligatorio' })
-  @MaxLength(30)
-  codigo!: string;
-
-  @Transform(trim)
-  @IsString()
   @IsNotEmpty({ message: 'El nombre oficial de la sala es obligatorio' })
   @MaxLength(100)
   nombre!: string;
 
-  @IsEnum(TipoSala, { message: 'El tipo de sala debe ser CLASES o REUNION' })
+  @IsEnum(TipoSala, { message: 'El tipo de sala debe ser CLASES o REUNIONES' })
   tipo!: TipoSala;
 
   @IsOptional()

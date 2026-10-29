@@ -12,9 +12,14 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
-import { OrigenAsignatura } from '@prisma/client';
 import { trim } from '../../common/trim.transform';
 import { BloqueExternoDto } from '../../bloques/dto/bloque-externo.dto';
+
+export enum OrigenEntrada {
+  INTERNA = 'INTERNA',
+  EXTERNA = 'EXTERNA',
+  PROPIA = 'PROPIA',
+}
 
 export class CreateAsignaturaDto {
   @Transform(trim)
@@ -38,22 +43,41 @@ export class CreateAsignaturaDto {
   @Max(12)
   semestre!: number;
 
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(20)
+  catedraSemanal?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(20)
+  tallerSemanal?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(20)
+  labSemanal?: number;
+
+  @IsOptional()
   @IsInt()
   @Min(1)
   @Max(20)
-  bloques_semanales!: number;
+  bloques_semanales?: number;
 
+  @IsOptional()
   @IsInt()
   @Min(1)
   @Max(100)
-  cupo!: number;
+  cupo?: number;
 
-  @IsEnum(OrigenAsignatura, {
-    message: 'El origen debe ser PROPIA o EXTERNA',
+  @IsEnum(OrigenEntrada, {
+    message: 'El origen debe ser INTERNA, PROPIA o EXTERNA',
   })
-  origen!: OrigenAsignatura;
+  origen!: OrigenEntrada;
 
-  // Solo para EXTERNAS (ADM-F02-T3). En PATCH reemplaza los bloques actuales.
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })

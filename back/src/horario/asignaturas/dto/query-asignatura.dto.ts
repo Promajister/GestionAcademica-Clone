@@ -1,23 +1,20 @@
-import { IsEnum, IsInt, IsOptional, IsPositive } from 'class-validator';
-import { OrigenAsignatura } from '@prisma/client';
+import { IsOptional, IsPositive } from 'class-validator';
 
 export class QueryAsignaturaDto {
   @IsOptional()
-  @IsEnum(OrigenAsignatura)
-  origen?: OrigenAsignatura;
+  origen?: string;
 
   @IsOptional()
-  @IsInt()
-  @IsPositive()
-  id_carrera?: number;
+  id_carrera?: string | number;
 
   @IsOptional()
-  @IsInt()
+  codigo_carrera?: string;
+
+  @IsOptional()
   @IsPositive()
   id_plan?: number;
 
   @IsOptional()
-  @IsInt()
   @IsPositive()
   semestre?: number;
 }

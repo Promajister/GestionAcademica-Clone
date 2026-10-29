@@ -37,38 +37,35 @@ export class AsignaturasController {
     return this.service.findAll(q);
   }
 
-  @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.service.findOne(id);
+  @Get(':codigo')
+  findOne(@Param('codigo') codigo: string) {
+    return this.service.findOne(codigo);
   }
 
-  @Patch(':id')
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateAsignaturaDto,
-  ) {
-    return this.service.update(id, dto);
+  @Patch(':codigo')
+  update(@Param('codigo') codigo: string, @Body() dto: UpdateAsignaturaDto) {
+    return this.service.update(codigo, dto);
   }
 
-  @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.service.remove(id);
+  @Delete(':codigo')
+  remove(@Param('codigo') codigo: string) {
+    return this.service.remove(codigo);
   }
 
   // ---------- Bloques de asignaturas EXTERNAS (ADM-F02-T3) ----------
-  @Post(':id/bloques-externos')
+  @Post(':codigo/bloques-externos')
   agregarBloquesExternos(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('codigo') codigo: string,
     @Body() dto: CreateBloquesExternosDto,
   ) {
-    return this.bloques.agregarExternos(id, dto.bloques);
+    return this.bloques.agregarExternos(codigo, dto.bloques);
   }
 
-  @Delete(':id/bloques-externos/:idBloque')
+  @Delete(':codigo/bloques-externos/:idBloque')
   eliminarBloqueExterno(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('codigo') codigo: string,
     @Param('idBloque', ParseIntPipe) idBloque: number,
   ) {
-    return this.bloques.eliminarExterno(id, idBloque);
+    return this.bloques.eliminarExterno(codigo, idBloque);
   }
 }

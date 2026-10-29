@@ -12,30 +12,26 @@ import { QuerySalaDto } from './dto/query-sala.dto';
 
 // Permite saber si la sala está en uso (front de ADM-F01-T3 y regla CA3)
 const CONTEO_USO = {
-  _count: { select: { bloques_horarios: true, ocupaciones: true } },
+  _count: {
+    select: {
+      horarios: true,
+      horariosExternos: true,
+      ocupacionesPuntuales: true,
+    },
+  },
 } satisfies Prisma.SalaInclude;
 
-const SALA_DUPLICADA =
-  'Ya existe una sala registrada con ese nombre o código oficial.';
+const SALA_DUPLICADA = 'Ya existe una sala registrada con ese nombre.';
 
 @Injectable()
 export class SalasService {
   constructor(private prisma: PrismaService) {}
 
-  // La comparación es case/accent-insensitive por el collation utf8mb4_unicode_ci de la tabla
-  private async assertNoDuplicada(
-    nombre?: string,
-    codigo?: string,
-    excluirId?: number,
-  ) {
-    const or: Prisma.SalaWhereInput[] = [];
-    if (nombre) or.push({ nombre });
-    if (codigo) or.push({ codigo });
-    if (or.length === 0) return;
-
+  private async assertNoDuplicada(nombre?: string, excluirId?: number) {
+    if (!nombre) return;
     const existente = await this.prisma.sala.findFirst({
       where: {
-        OR: or,
+        nombre,
         ...(excluirId !== undefined && { NOT: { id_sala: excluirId } }),
       },
     });
@@ -55,16 +51,15 @@ export class SalasService {
 
   // ---------- CREATE ----------
   async create(dto: CreateSalaDto) {
-    await this.assertNoDuplicada(dto.nombre, dto.codigo);
+    await this.assertNoDuplicada(dto.nombre);
 
     try {
       return await this.prisma.sala.create({
         data: {
           nombre: dto.nombre,
-          codigo: dto.codigo,
           tipo: dto.tipo,
-          capacidad: dto.capacidad,
-          activo: dto.activo,
+          capacidad: dto.capacidad ?? 22,
+          activo: dto.activo ?? true,
         },
       });
     } catch (e) {
@@ -94,17 +89,18 @@ export class SalasService {
   // ---------- UPDATE ----------
   async update(id: number, dto: UpdateSalaDto) {
     await this.findOne(id);
-    await this.assertNoDuplicada(dto.nombre, dto.codigo, id);
+    if (dto.nombre) {
+      await this.assertNoDuplicada(dto.nombre, id);
+    }
 
     try {
       return await this.prisma.sala.update({
         where: { id_sala: id },
         data: {
-          nombre: dto.nombre,
-          codigo: dto.codigo,
-          tipo: dto.tipo,
-          capacidad: dto.capacidad,
-          activo: dto.activo,
+          ...(dto.nombre !== undefined && { nombre: dto.nombre }),
+          ...(dto.tipo !== undefined && { tipo: dto.tipo }),
+          ...(dto.capacidad !== undefined && { capacidad: dto.capacidad }),
+          ...(dto.activo !== undefined && { activo: dto.activo }),
         },
       });
     } catch (e) {
@@ -116,8 +112,12 @@ export class SalasService {
   // Una sala en uso en el horario (clases u ocupaciones) no se elimina: se desactiva.
   async remove(id: number) {
     const sala = await this.findOne(id);
+    const enUso =
+      (sala._count?.horarios ?? 0) > 0 ||
+      (sala._count?.horariosExternos ?? 0) > 0 ||
+      (sala._count?.ocupacionesPuntuales ?? 0) > 0;
 
-    if (sala._count.bloques_horarios > 0 || sala._count.ocupaciones > 0) {
+    if (enUso) {
       const actualizada = await this.prisma.sala.update({
         where: { id_sala: id },
         data: { activo: false },

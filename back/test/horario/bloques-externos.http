@@ -19,7 +19,7 @@ Content-Type: application/json
 {
   "codigo": "ED556",
   "nombre": "Uso de TIC en la enseñanza",
-  "id_plan": 1,
+  "id_plan": 2,
   "semestre": 5,
   "bloques_semanales": 4,
   "cupo": 22,
@@ -31,7 +31,7 @@ Content-Type: application/json
 }
 
 ### Agregar bloques a una asignatura externa existente (se crean con bloqueado: true)
-POST {{api}}/horario/asignaturas/1/bloques-externos
+POST {{api}}/horario/asignaturas/ED556/bloques-externos
 Content-Type: application/json
 
 {
@@ -41,7 +41,7 @@ Content-Type: application/json
 }
 
 ### Reemplazar todos los bloques (lista vacía = sin bloques)
-PATCH {{api}}/horario/asignaturas/1
+PATCH {{api}}/horario/asignaturas/ED556
 Content-Type: application/json
 
 {
@@ -50,10 +50,10 @@ Content-Type: application/json
   ]
 }
 
-### Eliminar un bloque de 45 min
-DELETE {{api}}/horario/asignaturas/1/bloques-externos/1
+### Eliminar un bloque por su ID de HorarioExterno
+DELETE {{api}}/horario/asignaturas/ED556/bloques-externos/1
 
-### Grilla: cada bloque trae bloque_numero, origen (PROPIA/EXTERNA) y bloqueado
+### Grilla: cada bloque trae bloque_numero, origen (INTERNA/EXTERNA) y bloqueado
 GET {{api}}/horario/bloques
 
 ### Filtros opcionales: dia, id_sala, origen

@@ -1,10 +1,16 @@
-import { IsEnum, IsInt, IsOptional, IsPositive } from 'class-validator';
-import { DiaSemana, OrigenAsignatura } from '@prisma/client';
+import {
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsPositive,
+  IsString,
+} from 'class-validator';
+import { TipoDia } from '@prisma/client';
 
 export class QueryBloqueDto {
   @IsOptional()
-  @IsEnum(DiaSemana)
-  dia?: DiaSemana;
+  @IsEnum(TipoDia)
+  dia?: TipoDia;
 
   @IsOptional()
   @IsInt()
@@ -12,6 +18,6 @@ export class QueryBloqueDto {
   id_sala?: number;
 
   @IsOptional()
-  @IsEnum(OrigenAsignatura)
-  origen?: OrigenAsignatura;
+  @IsString()
+  origen?: string;
 }

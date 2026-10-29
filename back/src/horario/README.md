@@ -1,39 +1,30 @@
 # Módulo Horario — Backend
 
-Estado del módulo y contrato de la API para quienes construyen sobre él (front, carga docente, perfiles, generador).
-Historias implementadas: **ADM-F01** (salas) y **ADM-F02** (asignaturas y bloques externos), más grilla y ocupaciones de sala.
+Estado del módulo y contrato de la API adaptado al nuevo esquema de base de datos del equipo (modelos de Isaac Contreras + extensiones mínimas del Sprint 1).
 
 ## Puesta en marcha
 
 ```bash
-git switch Master-vinculacion && git pull
+git switch feat/horario-db-equipo
 cd back
 npm install
 npx prisma migrate deploy   # aplica las migraciones del módulo
 npx prisma generate
-npx prisma db seed          # usar este comando: `npm run seed` no carga el .env
+npx prisma db seed          # carga datos base e idempotentes de demo
 npm run start:dev
 ```
 
-El seed carga las 6 salas del departamento y las carreras 311 (planes 2016 y 2025) y 336 (plan 2005).
+El seed carga las 6 salas oficiales, los 7 días, los 12 bloques pedagógicos, los bloques protegidos base, las carreras 311 y 336 con sus planes (2016, 2025, 2005) y mallas completas, además de los cursos y horarios externos de demo para el Plan 2025 v1 (DU113 y DU042).
 
 Pruebas manuales: `back/test/horario/*.http` (extensión REST Client de VS Code). Ejecutar primero el login de cada archivo.
 
 ## Autenticación
 
 Todos los endpoints exigen sesión (`JwtCookieAuthGuard`, cookie `access_token`). **Todavía no tienen `@Roles`**: los perfiles del módulo se definen en ADM-F04.
-Para restringirlos basta agregar en cada controlador de `src/horario/*/`:
-
-```ts
-@UseGuards(JwtCookieAuthGuard, RolesGuard)
-@Roles('jefatura', 'secretaria')
-```
-
-> `RolesGuard` compara roles con `includes()` (coincidencia parcial del nombre). Elegir claves de rol que no se contengan entre sí.
 
 ## Grilla pedagógica
 
-12 bloques de 45 min, lunes a viernes. Las clases suelen ocupar 2 bloques. Pausas de 10 min en la mañana y 5 min en la tarde; colación entre los bloques 6 y 7.
+12 bloques de 45 min, lunes a viernes. Pausas de 10 min en la mañana y 5 min en la tarde; colación entre los bloques 6 y 7.
 Definida en `common/grilla.ts` y expuesta en `GET /api/horario/grilla`.
 
 | Bloque | Horario | | Bloque | Horario |
@@ -45,31 +36,31 @@ Definida en `common/grilla.ts` y expuesta en `GET /api/horario/grilla`.
 | 5 | 11:20–12:05 | | 11 | 17:55–18:40 |
 | 6 | 12:05–12:50 | | 12 | 18:40–19:25 |
 
-`Bloque_horario` guarda **una fila por bloque de 45 min** (`dia` + `bloque_numero`); `hora_inicio`/`hora_fin` se derivan de la grilla. Los rangos que se envían a la API (`bloque_inicio`–`bloque_fin`) no pueden cruzar la colación.
-
-## Modelo de datos
+## Modelo de datos (Nueva BD del equipo)
 
 ```
-Carrera 1─N Plan 1─N Asignatura 1─N Curso 1─N Bloque_horario N─1 Sala
-                                                  └─ N─1 Horario (opcional)
-Sala 1─N Ocupacion_sala N─1 Usuario (quien la registró)
+Carrera 1─N Plan 1─N Malla N─1 Asignatura 1─N Curso
+                                                ├─ 1─N HorarioExterno (externas bloqueadas)
+                                                └─ 1─N CargaDocente 1─N Horario (clases)
+Sala 1─N Horario / HorarioExterno / OcupacionPuntual
+Dia, BloqueHorario 1─N Horario / HorarioExterno / BloqueProtegido / Disponibilidad
 ```
 
 | Modelo | Notas |
 |---|---|
-| `Sala` | `codigo` y `nombre` únicos (sin distinguir mayúsculas ni tildes). `activo` para desactivación lógica. |
-| `Carrera` / `Plan` | `Carrera.codigo` único ("311", "336"). `Plan.vigente`; la 311 tiene dos planes vigentes. |
-| `Asignatura` | Única por `(id_plan, codigo, semestre)`: un código se repite entre planes (HG417) y semestres (YY023). `origen`: `PROPIA` / `EXTERNA`. |
-| `Curso` | Al crear una asignatura se crea **un Curso por defecto** (`REGULAR` o `EXTERNO`). `Carga_Docente` y `Bloque_horario` se vinculan a `Curso`. |
-| `Bloque_horario` | `bloqueado = true` en asignaturas externas. `id_sala` **o** `sala_externa` (sala de otro departamento). `id_horario` opcional hasta el Sprint 2. |
-| `Ocupacion_sala` | Uso de una sala fuera del horario de 311/336. `PUNTUAL` (una `fecha`) o `SEMESTRAL` (un `dia` fijo). |
-| `Horario` | Mínimo (`anio`, `semestre`, `estado`) para el generador del Sprint 2. |
-
-Convenciones: modelos del módulo en `snake_case` con `@@map`, según el ERD del equipo. `Usuario` es el modelo existente del sistema: su PK es **`id`** (no `id_usuario`) y sus roles son claves de la tabla `rol`.
+| `Sala` (`salas`) | `id_sala` (PK), `nombre` único (`@unique`), `tipo` (`CLASES`/`REUNIONES`), `capacidad`, `activo` (default `true`). Sin campo `codigo`. |
+| `Carrera` (`carreras`) | `codigo` string (PK, "311", "336"), `nombre`. |
+| `Plan` (`planes`) | `id_plan` (PK), `year`, `version`, `codigo_carrera`. |
+| `Asignatura` (`asignaturas`) | `codigo` string (PK), `nombre`, `catedraSemanal`, `tallerSemanal`, `labSemanal`, `origen` (`INTERNA`/`EXTERNA`). |
+| `Malla` (`mallas`) | `id_malla` (PK), `id_plan`, `codigo_asignatura`, `semestre`. Permite que una misma asignatura pertenezca a múltiples planes. |
+| `Curso` (`cursos`) | `id_curso` (PK), `tipo` (`CATEDRA`/`TALLER`/`LABORATORIO`), `grupo`, `inscritos` (cupo), `year`, `semestre`, `codigo_asignatura`, `id_malla`. |
+| `HorarioExterno` (`horarios_externos`) | `id` (PK), `id_curso`, `id_dia`, `id_bloque`, `id_sala` (opcional), `sala_externa` (opcional). Bloques fijos y bloqueados de asignaturas externas. |
+| `Horario` (`horarios`) | Clave compuesta (`id_carga`, `id_sala`, `id_dia`, `id_bloque`). Clases regulares con profesor asignado. |
+| `OcupacionPuntual` (`ocupaciones_puntuales`) | Clave compuesta (`id_bloque`, `id_sala`, `fecha`). Reservas de salas puntuales por fecha. |
 
 ## API
 
-Prefijo global: `/api`. Errores en español en `message`.
+Prefijo global: `/api`. Respuestas de error con `message` en español.
 
 ### Grilla
 | Método | Ruta | Respuesta |
@@ -79,86 +70,32 @@ Prefijo global: `/api`. Errores en español en `message`.
 ### Salas (ADM-F01)
 | Método | Ruta | Notas |
 |---|---|---|
-| GET | `/horario/salas?soloActivas=true` | Incluye `_count: { bloques_horarios, ocupaciones }` → sala "en uso" si alguno es > 0 |
-| GET | `/horario/salas/:id` | |
-| POST | `/horario/salas` | `{ codigo, nombre, tipo: CLASES\|REUNION, capacidad?, activo? }`. **409** si nombre o código existe |
-| PATCH | `/horario/salas/:id` | Mismos campos, opcionales |
+| GET | `/horario/salas?soloActivas=true` | Incluye `_count: { horarios, horariosExternos, ocupacionesPuntuales }` → sala "en uso" si la suma es > 0 |
+| GET | `/horario/salas/:id` | Detalle de sala por `id_sala` |
+| POST | `/horario/salas` | `{ nombre, tipo: CLASES\|REUNIONES, capacidad?, activo? }`. 409 si el nombre existe |
+| PATCH | `/horario/salas/:id` | Campos opcionales |
 | DELETE | `/horario/salas/:id` | En uso → `{ accion: 'DESACTIVADA', mensaje, sala }`. Sin uso → `{ accion: 'ELIMINADA', mensaje }` |
 
 ### Carreras y asignaturas (ADM-F02)
 | Método | Ruta | Notas |
 |---|---|---|
-| GET | `/horario/carreras` | Carreras con `planes` vigentes (para los selectores) |
-| GET | `/horario/asignaturas?origen=&id_carrera=&id_plan=&semestre=` | Incluye `plan.carrera` y `cursos[].bloques_horarios[].sala`; cada bloque trae `origen` |
-| GET | `/horario/asignaturas/:id` | |
-| POST | `/horario/asignaturas` | `{ codigo, nombre, id_plan, semestre, bloques_semanales, cupo, origen, bloques_externos? }` |
-| PATCH | `/horario/asignaturas/:id` | Campos opcionales. `bloques_externos` **reemplaza** todos los bloques (`[]` los borra). No se puede cambiar `origen` si ya tiene bloques |
-| DELETE | `/horario/asignaturas/:id` | Borra cursos y bloques en cascada |
+| GET | `/horario/carreras` | Carreras con `planes` y nombre formateado (`Plan {year} v{version}`) |
+| GET | `/horario/asignaturas?origen=&id_carrera=&id_plan=&semestre=` | Asignaturas con mallas, cursos y bloques externos con sala |
+| GET | `/horario/asignaturas/:codigo` | Detalle por código de asignatura |
+| POST | `/horario/asignaturas` | `{ codigo, nombre, id_plan, semestre, bloques_semanales?, catedraSemanal?, tallerSemanal?, labSemanal?, cupo?, origen, bloques_externos? }` |
+| PATCH | `/horario/asignaturas/:codigo` | Campos opcionales. `bloques_externos` reemplaza los bloques externos actuales |
+| DELETE | `/horario/asignaturas/:codigo` | 409 si tiene cursos con carga docente |
 
 ### Bloques de asignaturas externas (ADM-F02-T3)
 | Método | Ruta | Notas |
 |---|---|---|
-| POST | `/horario/asignaturas/:id/bloques-externos` | `{ bloques: [BloqueExterno] }`, agrega |
-| DELETE | `/horario/asignaturas/:id/bloques-externos/:idBloque` | Quita un bloque de 45 min |
-| GET | `/horario/bloques?dia=&id_sala=&origen=` | Todos los bloques con `curso.asignatura`, `sala`, `origen`, `bloqueado` |
-
-`BloqueExterno`:
-```json
-{ "dia": "LUNES", "bloque_inicio": 1, "bloque_fin": 2, "id_sala": 3 }
-{ "dia": "MIERCOLES", "bloque_inicio": 3, "bloque_fin": 4, "sala_externa": "Sala Educación" }
-```
-Reglas: solo asignaturas `EXTERNA` (400 si es `PROPIA`); exactamente uno de `id_sala` / `sala_externa`; sala activa; **409** si la sala ya tiene clase u ocupación en ese bloque o si la asignatura ya tiene clase ahí. Todo o nada: si un bloque falla no se guarda ninguno.
+| POST | `/horario/asignaturas/:codigo/bloques-externos` | `{ bloques: [BloqueExterno] }` |
+| DELETE | `/horario/asignaturas/:codigo/bloques-externos/:idBloque` | Elimina un bloque de HorarioExterno por su id |
+| GET | `/horario/bloques?dia=&id_sala=&origen=` | Todos los bloques programados con `curso.asignatura`, `sala`, `origen` y `bloqueado` |
 
 ### Ocupaciones de sala
 | Método | Ruta | Notas |
 |---|---|---|
-| GET | `/horario/ocupaciones?id_sala=&tipo=&dia=&desde=&hasta=` | `desde`/`hasta` (YYYY-MM-DD) filtran las PUNTUALES; las SEMESTRALES siempre vienen |
-| GET | `/horario/ocupaciones/:id` | |
-| POST | `/horario/ocupaciones` | Ver abajo. Guarda el usuario de la sesión |
-| DELETE | `/horario/ocupaciones/:id` | |
-
-```json
-{ "tipo": "SEMESTRAL", "dia": "MARTES", "bloque_inicio": 3, "bloque_fin": 4, "id_sala": 3,
-  "motivo": "ED556 Uso de TIC", "solicitante": "Pedagogía en Inglés (312)" }
-{ "tipo": "PUNTUAL", "fecha": "2027-03-09", "bloque_inicio": 5, "bloque_fin": 6, "id_sala": 3,
-  "motivo": "Ayudantía", "solicitante": "Ayudante Juan Pérez" }
-```
-PUNTUAL: fecha de lunes a viernes, no pasada; el `dia` se deriva. **409** si choca con una clase u otra ocupación.
-`fecha` se devuelve como `"YYYY-MM-DD"` (ver *Fechas*).
-
-## Para cada integrante
-
-### Front de Salas — ADM-F01-T3 (Jeremy)
-- Listado: `GET /horario/salas`. Mostrar "en uso" si `_count.bloques_horarios + _count.ocupaciones > 0`.
-- Eliminar: mostrar `mensaje` de la respuesta; si `accion === 'DESACTIVADA'` la sala sigue en la lista con `activo: false`.
-- 409 en crear/editar → mostrar `message` junto al campo nombre/código.
-
-### Front de Asignaturas y grilla — ADM-F02-T4 (Edson)
-- Selectores de carrera/plan: `GET /horario/carreras`.
-- Grilla: filas de `GET /horario/grilla`, celdas de `GET /horario/bloques` (agrupar por `dia` + `bloque_numero`; bloques seguidos del mismo curso forman una clase).
-- CA3: estilo distinto si `origen === 'EXTERNA'`; `cdkDragDisabled="bloque.bloqueado"`.
-- Formulario de asignatura externa: enviar `bloques_externos` como rangos de la grilla, no como horas.
-- Ocupaciones (`GET /horario/ocupaciones?id_sala=`) se pueden pintar como celdas ocupadas no editables.
-
-### Carga docente y docentes — ADM-F03 / ADM-F05 (Isaac, Gustavo)
-- `Carga_Docente.id_curso` → usar el Curso por defecto: `asignatura.cursos[0].id_curso`.
-- Agregar la relación `cargas_docentes Carga_Docente[]` en `Curso` (`prisma/schema.prisma`, sección MÓDULO HORARIO) y sumarla a `INCLUDE_ASIGNATURA` en `asignaturas/asignaturas.service.ts` para que el front la reciba.
-- `Profesor.id_usuario` debe apuntar a `Usuario.id`.
-- Dato real (planillas de carga docente): una asignatura se dicta como cátedra y taller por sección (`HG068-C-A`, `HG068-T-A`), cada uno con horas y docente propios. Si se necesita ese nivel, crear más `Curso` por asignatura en vez de usar solo el por defecto.
-- Tipos de contrato en la planilla: `JC`, `CONV`, `ETR`, `TRAN`, `EQUI`.
-
-### Perfiles — ADM-F04 (Jeremy, Gustavo)
-- Agregar `RolesGuard` + `@Roles(...)` a los 6 controladores de `src/horario/` (ver *Autenticación*).
-- Los roles existentes son `jefatura`, `vinculacion`, `practicas`; `secretaria` y `profesor` aún no existen.
-
-### Generador — Sprint 2
-- Nunca mover bloques con `bloqueado = true`.
-- No asignar una sala en un bloque con `Bloque_horario` u `Ocupacion_sala` SEMESTRAL en ese `dia`/bloque. Las funciones de `common/choques.ts` sirven de base.
-
-## Al modificar el schema
-- Agregar modelos/relaciones; no renombrar ni borrar campos existentes sin acordarlo.
-- **Una migración por PR**, con nombre propio, rebaseada sobre `Master-vinculacion` antes de mergear.
-- Prisma ordena las migraciones por nombre (timestamp **UTC**). Si se crea a mano, usar hora UTC.
-
-## Fechas
-El `DateFormatInterceptor` global formatea todo `Date` de la respuesta como `dd/mm/aaaa` con hora local. Para columnas `@db.Date` (medianoche UTC) eso muestra **un día antes** en Chile. Por eso este módulo devuelve las fechas como string `YYYY-MM-DD`.
+| GET | `/horario/ocupaciones?id_sala=&desde=&hasta=` | Ocupaciones puntuales por rango de fechas |
+| POST | `/horario/ocupaciones` | `{ fecha, bloque_inicio, bloque_fin, id_sala }`. 409 si choca con clase u ocupación |
+| DELETE | `/horario/ocupaciones/:idSala/:idBloque/:fecha` | Elimina la ocupación puntual |
