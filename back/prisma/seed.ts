@@ -1,4 +1,4 @@
-import { PrismaClient, TipoSala } from '@prisma/client';
+import { PrismaClient, TipoSala, TipoDia, TipoOrigen } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import e from 'express';
 
@@ -439,67 +439,473 @@ async function main() {
 }
 
 // ---------- MÓDULO HORARIO ----------
-// ADM-F01-T4: 6 salas oficiales del departamento
-// ADM-F02-T1: carreras 311 y 336 con sus planes vigentes (según las mallas oficiales)
 async function seedHorario() {
-  const salas: { codigo: string; nombre: string; tipo: TipoSala; capacidad: number }[] = [
-    { codigo: 'S-121', nombre: 'Sala 121', tipo: TipoSala.CLASES, capacidad: 22 },
-    { codigo: 'S-104', nombre: 'Sala 104', tipo: TipoSala.CLASES, capacidad: 22 },
-    { codigo: 'S-319', nombre: 'Sala 319', tipo: TipoSala.CLASES, capacidad: 22 },
-    { codigo: 'S-MULTI', nombre: 'Sala multifunción', tipo: TipoSala.CLASES, capacidad: 22 },
-    { codigo: 'S-NUCLEO', nombre: 'Sala Núcleo', tipo: TipoSala.REUNION, capacidad: 10 },
-    { codigo: 'S-CONSEJO', nombre: 'Sala de Consejo', tipo: TipoSala.REUNION, capacidad: 12 },
-  ];
 
-  // La primera versión del seed cargaba "Sala 19"; corresponde a la Sala 319
-  await prisma.sala.updateMany({
-    where: { codigo: 'S-19' },
-    data: { codigo: 'S-319', nombre: 'Sala 319' },
-  });
+  // Tabla SALA
+  // ADM-F01-T4: 6 salas oficiales del departamento
+  const salas: { id_sala: number; nombre: string; tipo: TipoSala; capacidad: number }[] = [
+    { id_sala: 1, nombre: 'Sala 121', tipo: TipoSala.CLASES, capacidad: 22 },
+    { id_sala: 2, nombre: 'Sala 104', tipo: TipoSala.CLASES, capacidad: 22 },
+    { id_sala: 3, nombre: 'Sala 319', tipo: TipoSala.CLASES, capacidad: 22 },
+    { id_sala: 4, nombre: 'Sala multifunción', tipo: TipoSala.CLASES, capacidad: 22 },
+    { id_sala: 5, nombre: 'Sala Núcleo', tipo: TipoSala.REUNIONES, capacidad: 10 },
+    { id_sala: 6, nombre: 'Sala de Consejo', tipo: TipoSala.REUNIONES, capacidad: 12 },
+  ];
 
   for (const sala of salas) {
     await prisma.sala.upsert({
-      where: { codigo: sala.codigo },
-      update: {},
-      create: { ...sala, activo: true },
+      where: { id_sala: sala.id_sala },
+      update: {nombre: sala.nombre, tipo: sala.tipo, capacidad: sala.capacidad },
+      create: { id_sala: sala.id_sala, nombre: sala.nombre, tipo: sala.tipo, capacidad: sala.capacidad },
     });
   }
 
-  const carreras = [
-    {
-      codigo: '311',
-      nombre: 'Pedagogía en Historia, Geografía y Ciencias Sociales',
-      planes: [
-        { nombre: 'Plan 2016 v3 (D.E. 0.375/2015)', anio: 2016 },
-        { nombre: 'Plan 2025 v1 (D.E. 188/2025)', anio: 2025 },
-      ],
-    },
-    {
-      codigo: '336',
-      nombre: 'Licenciatura en Historia y Geografía',
-      planes: [{ nombre: 'Plan 2005 v3 (D.E. 00.79/2005)', anio: 2005 }],
-    },
+  // Tabla DIA
+
+  const dias: { id_dia: number; nombre: TipoDia }[] = [
+    { id_dia: 1, nombre: TipoDia.LUNES },
+    { id_dia: 2, nombre: TipoDia.MARTES },
+    { id_dia: 3, nombre: TipoDia.MIERCOLES },
+    { id_dia: 4, nombre: TipoDia.JUEVES },
+    { id_dia: 5, nombre: TipoDia.VIERNES },
+    { id_dia: 6, nombre: TipoDia.SABADO },
+    { id_dia: 7, nombre: TipoDia.DOMINGO },
   ];
 
-  for (const { planes, ...carrera } of carreras) {
-    const { id_carrera } = await prisma.carrera.upsert({
-      where: { codigo: carrera.codigo },
-      update: { nombre: carrera.nombre },
-      create: carrera,
+  for (const dia of dias) {
+    await prisma.dia.upsert({
+      where: { id_dia: dia.id_dia },
+      update: { nombre: dia.nombre },
+      create: { id_dia: dia.id_dia, nombre: dia.nombre },
     });
+  }
 
-    for (const plan of planes) {
-      const existe = await prisma.plan.findFirst({ where: { id_carrera, anio: plan.anio } });
-      if (!existe) {
-        await prisma.plan.create({ data: { ...plan, id_carrera, vigente: true } });
-      }
+  // Tabla BLOQUEHORARIO
+
+  const bloques: { id_bloque: number; hora_inicio: string; hora_fin: string }[] = [
+    { id_bloque: 1, hora_inicio: '08:00', hora_fin: '08:45' },
+    { id_bloque: 2, hora_inicio: '08:45', hora_fin: '09:30' },
+    { id_bloque: 3, hora_inicio: '09:40', hora_fin: '10:25' },
+    { id_bloque: 4, hora_inicio: '10:25', hora_fin: '11:10' },
+    { id_bloque: 5, hora_inicio: '11:20', hora_fin: '12:05' },
+    { id_bloque: 6, hora_inicio: '12:05', hora_fin: '12:50' },
+    { id_bloque: 7, hora_inicio: '14:45', hora_fin: '15:30' },
+    { id_bloque: 8, hora_inicio: '15:30', hora_fin: '16:15' },
+    { id_bloque: 9, hora_inicio: '16:20', hora_fin: '17:05' },
+    { id_bloque: 10, hora_inicio: '17:05', hora_fin: '17:50' },
+    { id_bloque: 11, hora_inicio: '17:55', hora_fin: '18:40' },
+    { id_bloque: 12, hora_inicio: '18:40', hora_fin: '19:25' },
+  ]
+
+  for (const bloque of bloques) {
+    await prisma.bloqueHorario.upsert({
+      where: { id_bloque: bloque.id_bloque },
+      update: { horaInicio: bloque.hora_inicio, horaFin: bloque.hora_fin },
+      create: { id_bloque: bloque.id_bloque, horaInicio: bloque.hora_inicio, horaFin: bloque.hora_fin },
+    });
+  }
+  // Tabla BLOQUEPROTEGIDO
+
+  const bloque_protegidos: { nombreDia: TipoDia; horaInicio: string }[] = [
+    { nombreDia: TipoDia.MARTES, horaInicio: '11:20' },
+    { nombreDia: TipoDia.MARTES, horaInicio: '12:05' },
+    { nombreDia: TipoDia.MIERCOLES, horaInicio: '11:20' },
+    { nombreDia: TipoDia.MIERCOLES, horaInicio: '12:05' },
+    { nombreDia: TipoDia.JUEVES, horaInicio: '16:20' },
+    { nombreDia: TipoDia.JUEVES, horaInicio: '17:05' }
+  ];
+
+  for (const bloque of bloque_protegidos) {
+    const dia = await prisma.dia.findFirst({ where: { nombre: bloque.nombreDia } });
+    const bloqueHorario = await prisma.bloqueHorario.findFirst({ where: { horaInicio: bloque.horaInicio}})
+
+    if (dia && bloqueHorario) {
+      await prisma.bloqueProtegido.upsert({
+        where: { id_bloque_id_dia: { id_dia: dia.id_dia, id_bloque: bloqueHorario.id_bloque } },
+        update: {},
+        create: { id_dia: dia.id_dia, id_bloque: bloqueHorario.id_bloque },
+      });
     }
   }
 
-  // La primera versión del seed creaba planes genéricos; se quitan si no tienen asignaturas
-  await prisma.plan.deleteMany({
-    where: { nombre: { startsWith: 'Plan Vigente Carrera' }, asignaturas: { none: {} } },
-  });
+  // Tabla CARRERA
+  // ADM-F02-T1: carreras 311 y 336 con sus planes vigentes (según las mallas oficiales)
+  
+  const carreras: { codigo: string; nombre: string }[] = [
+    { codigo: '311', nombre: 'PEDAGOGÍA EN HISTORIA, GEOGRAFÍA Y CIENCIAS SOCIALES' },
+    { codigo: '336', nombre: 'LICENCIATURA EN HISTORIA Y GEOGRAFÍA'}
+  ];
+
+  for (const carrera of carreras) {
+    await prisma.carrera.upsert({
+      where: { codigo: carrera.codigo },
+      update: { nombre: carrera.nombre },
+      create: { codigo: carrera.codigo, nombre: carrera.nombre },
+    });
+  } 
+
+  // Tabla PLAN
+  
+  const planes: {id_plan: number; year: number, version: string, codigo_carrera: string}[] = [
+    { id_plan: 1, year: 2016, version: '3', codigo_carrera: '311' },
+    { id_plan: 2, year: 2025, version: '1', codigo_carrera: '311' },
+    { id_plan: 3, year: 2005, version: '3', codigo_carrera: '336' },
+  ];
+
+  for (const plan of planes) {
+    await prisma.plan.upsert({
+      where: { id_plan: plan.id_plan },
+      update: { year: plan.year, version: plan.version, codigo_carrera: plan.codigo_carrera },
+      create: { id_plan: plan.id_plan, year: plan.year, version: plan.version, codigo_carrera: plan.codigo_carrera },
+    })
+  }
+
+  // Tabla ASIGNATURA y MALLA
+
+  // Plan 2025 PHGCS
+  const asignaturasPGHCS2025 = [
+    // Semestre 1
+    { codigo: 'DU038', nombre: 'ALFABETIZACION ACADEMICA Y TAC', catedraSemanal: 0, tallerSemanal: 2, labSemanal: 2, origen: TipoOrigen.EXTERNA, semestre: 1 },
+    { codigo: 'HG068', nombre: 'INTRODUCCION A LA HISTORIA', catedraSemanal: 4, tallerSemanal: 2, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 1 },
+    { codigo: 'HG069', nombre: 'INTRODUCCION A LAS CIENCIAS SOCIALES', catedraSemanal: 4, tallerSemanal: 2, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 1 },
+    { codigo: 'HG070', nombre: 'INTRODUCCION AL PENSAMIENTO GEOGRAFICO', catedraSemanal: 4, tallerSemanal: 2, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 1 },
+    { codigo: 'HG075', nombre: 'LECTURA Y ESCRITURA ACADEMICA', catedraSemanal: 2, tallerSemanal: 2, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 1 },
+
+    // Semestre 2
+    { codigo: 'DU042', nombre: 'LABOR DOCENTE Y EDUCACION EN CHILE', catedraSemanal: 2, tallerSemanal: 2, labSemanal: 0, origen: TipoOrigen.EXTERNA, semestre: 2 },
+    { codigo: 'HG076', nombre: 'ETNOHISTORIA', catedraSemanal: 4, tallerSemanal: 2, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 2 },
+    { codigo: 'HG077', nombre: 'MUNDO ANTIGUO Y SU LEGADO', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 2 },
+    { codigo: 'HG078', nombre: 'GEOGRAFIA FISICA', catedraSemanal: 2, tallerSemanal: 2, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 2 },
+    { codigo: 'HG079', nombre: 'ECONOMIA Y SOCIEDAD', catedraSemanal: 4, tallerSemanal: 2, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 2 },
+    { codigo: 'DU113', nombre: 'PRACTICA PROFESIONAL DE APOYO A LA DOCENCIA I', catedraSemanal: 0, tallerSemanal: 2, labSemanal: 2, origen: TipoOrigen.EXTERNA, semestre: 2 },
+
+    // Semestre 3
+    { codigo: 'DU084', nombre: 'SOCIEDAD, CULTURA Y EDUCACION', catedraSemanal: 2, tallerSemanal: 2, labSemanal: 0, origen: TipoOrigen.EXTERNA, semestre: 3 },
+    { codigo: 'HG080', nombre: 'HISTORIA MEDIEVAL', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 3 },
+    { codigo: 'HG083', nombre: 'HISTORIA DE AMERICA Y CHILE COLONIAL', catedraSemanal: 4, tallerSemanal: 2, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 3 },
+    { codigo: 'HG084', nombre: 'FORMACION CIUDADANA Y DEMOCRACIA', catedraSemanal: 2, tallerSemanal: 2, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 3 },
+    { codigo: 'HG085', nombre: 'GEOGRAFIA HUMANA', catedraSemanal: 2, tallerSemanal: 2, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 3 },
+    { codigo: 'FP162', nombre: 'PSICOLOGIA DEL DESARROLLO', catedraSemanal: 2, tallerSemanal: 2, labSemanal: 0, origen: TipoOrigen.EXTERNA, semestre: 3 },
+
+    // Semestre 4
+    { codigo: 'DU087', nombre: 'TEORIAS DEL APRENDIZAJE Y NEUROEDUCACION', catedraSemanal: 2, tallerSemanal: 2, labSemanal: 0, origen: TipoOrigen.EXTERNA, semestre: 4 },
+    { codigo: 'HG086', nombre: 'HISTORIA MODERNA', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 4 },
+    { codigo: 'HG087', nombre: 'HISTORIA DE AMERICA SIGLO XIX', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 4 },
+    { codigo: 'HG088', nombre: 'CARTOGRAFIA Y ANALISIS ESPACIAL', catedraSemanal: 2, tallerSemanal: 0, labSemanal: 4, origen: TipoOrigen.INTERNA, semestre: 4 },
+    { codigo: 'XX027', nombre: 'ELECTIVO DE FORMACION GENERAL I', catedraSemanal: 2, tallerSemanal: 2, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 4 },
+    { codigo: 'DU114', nombre: 'PRACTICA PROFESIONAL DE APOYO A LA DOCENCIA II', catedraSemanal: 0, tallerSemanal: 2, labSemanal: 4, origen: TipoOrigen.EXTERNA, semestre: 4 },
+
+    // Semestre 5
+    { codigo: 'DU092', nombre: 'GESTION E INNOVACION EN EL SISTEMA ESCOLAR', catedraSemanal: 2, tallerSemanal: 2, labSemanal: 0, origen: TipoOrigen.EXTERNA, semestre: 5 },
+    { codigo: 'DU093', nombre: 'DIDACTICA', catedraSemanal: 2, tallerSemanal: 4, labSemanal: 0, origen: TipoOrigen.EXTERNA, semestre: 5 },
+    { codigo: 'HG089', nombre: 'HISTORIA UNIVERSAL SIGLO XIX', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 5 },
+    { codigo: 'HG090', nombre: 'NATURALEZA Y SOCIEDAD', catedraSemanal: 4, tallerSemanal: 2, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 5 },
+    { codigo: 'DU115', nombre: 'PRACTICA PROFESIONAL DE APOYO A LA DOCENCIA III', catedraSemanal: 0, tallerSemanal: 2, labSemanal: 6, origen: TipoOrigen.EXTERNA, semestre: 5 },
+
+    // Semestre 6
+    { codigo: 'DU096', nombre: 'INCLUSION Y DIVERSIDAD EN EDUCACION', catedraSemanal: 2, tallerSemanal: 2, labSemanal: 0, origen: TipoOrigen.EXTERNA, semestre: 6 },
+    { codigo: 'DU097', nombre: 'EVALUACION EDUCATIVA', catedraSemanal: 2, tallerSemanal: 4, labSemanal: 0, origen: TipoOrigen.EXTERNA, semestre: 6 },
+    { codigo: 'HG099', nombre: 'HISTORIA DE CHILE SIGLO XIX', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 6 },
+    { codigo: 'HG109', nombre: 'INVESTIGACION E INDAGACION APLICADA', catedraSemanal: 2, tallerSemanal: 2, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 6 },
+    { codigo: 'HG116', nombre: 'GEOGRAFIA DE AMERICA Y CHILE', catedraSemanal: 2, tallerSemanal: 2, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 6 },
+    { codigo: 'FP163', nombre: 'PSICOLOGIA EDUCATIVA', catedraSemanal: 2, tallerSemanal: 2, labSemanal: 0, origen: TipoOrigen.EXTERNA, semestre: 6 },
+
+    // Semestre 7
+    { codigo: 'DU100', nombre: 'INVESTIGACION EN EDUCACION', catedraSemanal: 0, tallerSemanal: 4, labSemanal: 0, origen: TipoOrigen.EXTERNA, semestre: 7 },
+    { codigo: 'HG117', nombre: 'HISTORIA UNIVERSAL CONTEMPORANEA', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 7 },
+    { codigo: 'HG118', nombre: 'HISTORIA DE AMERICA CONTEMPORANEA', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 7 },
+    { codigo: 'HG119', nombre: 'DIDACTICA DE LA HISTORIA Y LAS CIENCIAS SOCIALES', catedraSemanal: 2, tallerSemanal: 2, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 7 },
+    { codigo: 'HG124', nombre: 'GEOGRAFIA URBANA Y RURAL', catedraSemanal: 2, tallerSemanal: 2, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 7 },
+    { codigo: 'DU116', nombre: 'PRACTICA PROFESIONAL DE APOYO A LA DOCENCIA IV', catedraSemanal: 0, tallerSemanal: 2, labSemanal: 8, origen: TipoOrigen.EXTERNA, semestre: 7 },
+
+    // Semestre 8
+    { codigo: 'DU104', nombre: 'ACTIVIDAD DE GRADO', catedraSemanal: 0, tallerSemanal: 4, labSemanal: 0, origen: TipoOrigen.EXTERNA, semestre: 8 },
+    { codigo: 'HG125', nombre: 'HISTORIA DE CHILE CONTEMPORANEA', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 8 },
+    { codigo: 'HG126', nombre: 'DERECHOS HUMANOS Y VIDA EN SOCIEDAD', catedraSemanal: 2, tallerSemanal: 2, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 8 },
+    { codigo: 'HG127', nombre: 'DIDACTICA DE LA GEOGRAFIA', catedraSemanal: 2, tallerSemanal: 2, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 8 },
+    { codigo: 'HG128', nombre: 'ORGANIZACION TERRITORIAL Y AMBIENTAL', catedraSemanal: 2, tallerSemanal: 2, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 8 },
+
+    // Semestre 9
+    { codigo: 'XX028', nombre: 'ELECTIVO DE FORMACION GENERAL II', catedraSemanal: 2, tallerSemanal: 2, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 9 },
+    { codigo: 'HG129', nombre: 'CAMBIO GLOBAL', catedraSemanal: 2, tallerSemanal: 2, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 9 },
+    { codigo: 'HG134', nombre: 'DIVERSIDAD Y PROCESOS SOCIALES CONTEMPORANEOS', catedraSemanal: 4, tallerSemanal: 2, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 9 },
+    { codigo: 'HG135', nombre: 'TALLER DE FORMULACION DE PROYECTOS', catedraSemanal: 2, tallerSemanal: 4, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 9 },
+    { codigo: 'HG136', nombre: 'HISTORIA Y GEOGRAFIA DEL NORTE GRANDE', catedraSemanal: 4, tallerSemanal: 2, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 9 },
+
+    // Semestre 10
+    { codigo: 'HG137', nombre: 'PRACTICA PROFESIONAL', catedraSemanal: 0, tallerSemanal: 2, labSemanal: 18, origen: TipoOrigen.INTERNA, semestre: 10 },
+    { codigo: 'HG138', nombre: 'ACTIVIDAD DE TITULACION', catedraSemanal: 0, tallerSemanal: 4, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 10 },
+  ];
+
+  let i = 1
+
+  for (const asig of asignaturasPGHCS2025) {
+    await prisma.asignatura.upsert({
+      where: { codigo: asig.codigo },
+      update: {
+        nombre: asig.nombre,
+        catedraSemanal: asig.catedraSemanal,
+        tallerSemanal: asig.tallerSemanal,
+        labSemanal: asig.labSemanal,
+        origen: asig.origen,
+      },
+      create: {
+        codigo: asig.codigo,
+        nombre: asig.nombre,
+        catedraSemanal: asig.catedraSemanal,
+        tallerSemanal: asig.tallerSemanal,
+        labSemanal: asig.labSemanal,
+        origen: asig.origen
+      }
+    });
+
+    await prisma.malla.upsert({
+      where: { id_malla: i },
+      update: { 
+        semestre: asig.semestre,
+        id_plan: planes[1].id_plan,
+        codigo_asignatura: asig.codigo
+       },
+      create: { id_malla: i,id_plan: planes[1].id_plan, codigo_asignatura: asig.codigo, semestre: asig.semestre }
+    });
+
+    i++;
+  }
+
+  // Plan 2016 PHG
+  const asignaturasPHG2016 = [
+    // Semestre 1
+    { codigo: 'HG413', nombre: 'INTRODUCCION A LA HISTORIA', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 1 },
+    { codigo: 'HG414', nombre: 'CULTURA Y CIVILIZACIONES ANTIGUAS', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 1 },
+    { codigo: 'HG415', nombre: 'INTRODUCCION A LAS HUMANIDADES Y LAS CIENCIAS SOCIALES', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 1 },
+    { codigo: 'HG416', nombre: 'INTRODUCCION AL A GEOGRAFIA', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 1 },
+    { codigo: 'HG417', nombre: 'ESCRITURA Y LECTURA ACADEMICA Y DISCIPLINAR', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 1 },
+    { codigo: 'ED555', nombre: 'IDENTIDAD PROFESIONAL Y COMUNICACION', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.EXTERNA, semestre: 1 },
+
+    // Semestre 2
+    { codigo: 'HG418', nombre: 'ECONOMIA Y POLITICA', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 2 },
+    { codigo: 'HG419', nombre: 'FORMACION DE LAS SOCIEDADES OCCIDENTALES', catedraSemanal: 6, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 2 },
+    { codigo: 'HG420', nombre: 'TEORIA EL ESTADO Y LA SOCIEDAD', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 2 },
+    { codigo: 'HG421', nombre: 'GEOGRAFIA DE LA POBLACION', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 2 },
+    { codigo: 'ED559', nombre: 'EL ALUMNO Y SU ENTORNO SOCIAL', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.EXTERNA, semestre: 2 },
+    { codigo: 'FP131', nombre: 'PSICOLOGIA EDUCACIONAL', catedraSemanal: 4, tallerSemanal: 2, labSemanal: 0, origen: TipoOrigen.EXTERNA, semestre: 2 },
+
+    // Semestre 3
+    { codigo: 'HG422', nombre: 'ETNOHISTORIA', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 3 },
+    { codigo: 'HG423', nombre: 'GEOGRAFIA FISICA', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 3 },
+    { codigo: 'HG424', nombre: 'CARTOGRAFIA', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 3 },
+    { codigo: 'ED564', nombre: 'APRENDIZAJE PROFUNDO Y DOCENCIA DE CALIDAD', catedraSemanal: 2, tallerSemanal: 2, labSemanal: 0, origen: TipoOrigen.EXTERNA, semestre: 3 },
+    { codigo: 'ED693', nombre: 'ORIENTACION, MEDIACION Y JEFATURA DE CURSO', catedraSemanal: 2, tallerSemanal: 2, labSemanal: 0, origen: TipoOrigen.EXTERNA, semestre: 3 },
+    { codigo: 'ED749', nombre: 'PRACTICA PROFESIONAL DE APOYO A LA DOCENCIA I', catedraSemanal: 2, tallerSemanal: 0, labSemanal: 2, origen: TipoOrigen.EXTERNA, semestre: 3 },
+
+    // Semestre 4
+    { codigo: 'HG426', nombre: 'HISTORIA MEDIEVAL', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 4 },
+    { codigo: 'HG427', nombre: 'GLOBALIZACION Y MULTICULTURALIDAD', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 4 },
+    { codigo: 'HG428', nombre: 'CLIMATOLOGIA', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 4 },
+    { codigo: 'HG429', nombre: 'METODOLOGIA DE LA INVESTIGACION CUALITATIVA Y CUANTITATIVA', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 4 },
+    { codigo: 'ED568', nombre: 'PLANIFICACION Y SUS FUNDAMENTOS', catedraSemanal: 2, tallerSemanal: 2, labSemanal: 0, origen: TipoOrigen.EXTERNA, semestre: 4 },
+    { codigo: 'ED710', nombre: 'LIDERAZGO Y COLABORACION PEDAGOGICA', catedraSemanal: 2, tallerSemanal: 2, labSemanal: 0, origen: TipoOrigen.EXTERNA, semestre: 4 },
+
+    // Semestre 5
+    { codigo: 'HG430', nombre: 'HISTORIA DE AMERICA COLONIAL', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 5 },
+    { codigo: 'HG431', nombre: 'HISTORIA MODERNA', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 5 },
+    { codigo: 'HG432', nombre: 'HISTORIA DE CHILE COLONIAL', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 5 },
+    { codigo: 'HG433', nombre: 'GEOGRAFIA RURAL Y URBANA', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 5 },
+    { codigo: 'HG434', nombre: 'GEOMORFOLOGIA', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 5 },
+    { codigo: 'ED556', nombre: 'USO DE TICS EN LA ENSEÑANZA', catedraSemanal: 0, tallerSemanal: 0, labSemanal: 4, origen: TipoOrigen.EXTERNA, semestre: 5 },
+
+    // Semestre 6
+    { codigo: 'HG435', nombre: 'HISTORIA DE AMERICA SIGLO XIX', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 6 },
+    { codigo: 'HG436', nombre: 'HISTORIA UNIVERSAL CONTEMPORANEA SIGO XIX', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 6 },
+    { codigo: 'HG437', nombre: 'HISTORIA POLITICA Y SOCIAL DE CHILE SIGLO XIX', catedraSemanal: 6, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 6 },
+    { codigo: 'HG438', nombre: 'GEOGRAFIA REGIONAL', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 6 },
+    { codigo: 'HG439', nombre: 'MEDIO AMBIENTE Y SUSTENTABILIDAD', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 6 },
+    { codigo: 'ED750', nombre: 'PRACTICA PROFESIONAL DE APOYO A LA DOCENCIA II', catedraSemanal: 2, tallerSemanal: 0, labSemanal: 4, origen: TipoOrigen.EXTERNA, semestre: 6 },
+
+    // Semestre 7
+    { codigo: 'HG441', nombre: 'HISTORIA DE AMERICA SIGLO XX', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 7 },
+    { codigo: 'HG442', nombre: 'HISTORIA UNIVERSAL CONTEMPORANEA SIGO XX', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 7 },
+    { codigo: 'HG443', nombre: 'GEOGRAFIA DE CHILE', catedraSemanal: 4, tallerSemanal: 2, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 7 },
+    { codigo: 'ED695', nombre: 'INVESTIGACION EN LA ACCION EDUCATIVA', catedraSemanal: 2, tallerSemanal: 4, labSemanal: 0, origen: TipoOrigen.EXTERNA, semestre: 7 },
+    { codigo: 'HG445', nombre: 'GEOGRAFIA DE AMERICA', catedraSemanal: 2, tallerSemanal: 2, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 7 },
+    { codigo: 'ED694', nombre: 'EVALUACION EDUCATIVA', catedraSemanal: 4, tallerSemanal: 2, labSemanal: 0, origen: TipoOrigen.EXTERNA, semestre: 7 },
+
+    // Semestre 8
+    { codigo: 'HG139', nombre: 'TALLER DE ACTIVIDAD DE GRADO', catedraSemanal: 0, tallerSemanal: 6, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 8 },
+    { codigo: 'YY154', nombre: 'ELECTIVO DE ESPECIALIDAD EN HISTORIA Y GEOGRAFIA', catedraSemanal: 4, tallerSemanal: 2, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 8 },
+    { codigo: 'HG094', nombre: 'FORMACION CIUDADANA Y DDHH', catedraSemanal: 2, tallerSemanal: 2, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 8 },
+    { codigo: 'ED722', nombre: 'DESARROLLO, DIAGNOSTICO E INCLUSION EDUCATIVA', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.EXTERNA, semestre: 8 },
+    { codigo: 'ED709', nombre: 'DESARROLLO ORGANIZACIONAL Y GESTION DE REDES', catedraSemanal: 2, tallerSemanal: 2, labSemanal: 0, origen: TipoOrigen.EXTERNA, semestre: 8 },
+    { codigo: 'ED751', nombre: 'PRACTICA PROFESIONAL DE APOYO A LA DOCENCIA III', catedraSemanal: 0, tallerSemanal: 0, labSemanal: 6, origen: TipoOrigen.EXTERNA, semestre: 8 },
+
+    // Semestre 9
+    { codigo: 'HG444', nombre: 'GEOGRAFIA CULTURAL', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 9 },
+    { codigo: 'HG450', nombre: 'GEOGRAFIA DE ZONAS ARIDAS Y DE MONTAÑA', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 9 },
+    { codigo: 'HG095', nombre: 'DIDACTICA DE HISTORIA', catedraSemanal: 2, tallerSemanal: 2, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 9 },
+    { codigo: 'HG096', nombre: 'DIDACTICA DE LA GEOGRAFIA', catedraSemanal: 2, tallerSemanal: 2, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 9 },
+    { codigo: 'HG446', nombre: 'HISTORIA POLITICA Y SOCIAL DE CHILE SIGLO XX', catedraSemanal: 6, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 9 },
+    { codigo: 'HG141', nombre: 'TALLER DE HABILIDADES PEDAGOGICAS', catedraSemanal: 0, tallerSemanal: 2, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 9 },
+
+    // Semestre 10
+    { codigo: 'ED752', nombre: 'PRACTICA PROFESIONAL', catedraSemanal: 0, tallerSemanal: 0, labSemanal: 22, origen: TipoOrigen.EXTERNA, semestre: 10 },
+    { codigo: 'HG454', nombre: 'ACTIVIDAD DE TITULACION', catedraSemanal: 0, tallerSemanal: 4, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 10 },
+  ];
+
+  for (const asig of asignaturasPHG2016) {
+    await prisma.asignatura.upsert({
+      where: { codigo: asig.codigo },
+      update: {
+        nombre: asig.nombre,
+        catedraSemanal: asig.catedraSemanal,
+        tallerSemanal: asig.tallerSemanal,
+        labSemanal: asig.labSemanal,
+        origen: asig.origen
+      },
+      create: {
+        codigo: asig.codigo,
+        nombre: asig.nombre,
+        catedraSemanal: asig.catedraSemanal,
+        tallerSemanal: asig.tallerSemanal,
+        labSemanal: asig.labSemanal,
+        origen: asig.origen
+      }
+    });
+
+    await prisma.malla.upsert({
+      where: { id_malla: i },
+      update: { 
+        semestre: asig.semestre,
+        codigo_asignatura: asig.codigo,
+        id_plan: planes[0].id_plan
+       },
+      create: { 
+        id_malla: i, 
+        id_plan: planes[0].id_plan, 
+        codigo_asignatura: asig.codigo, 
+        semestre: asig.semestre }
+    })
+
+    i++;
+  }
+
+  // Plan LHG 2005
+
+  const asignaturasLicenciatura = [
+    // Semestre 1
+    { codigo: 'HG251', nombre: 'INTRODUCCION A LAS CIENCIAS SOCIALES', catedraSemanal: 6, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 1 },
+    { codigo: 'HG252', nombre: 'INTRODUCCION A LA HISTORIA', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 1 },
+    { codigo: 'HG253', nombre: 'INTRODUCCION A LA GEOGRAFIA', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 1 },
+    { codigo: 'HG254', nombre: 'TECNICAS DE GENERACION DE INFORMACION BASE', catedraSemanal: 6, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 1 },
+    { codigo: 'HG417', nombre: 'ESCRITURA Y LECTURA ACADEMICA Y DISCIPLINAR', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 1 },
+
+    // Semestre 2
+    { codigo: 'HG050', nombre: 'ECONOMIA Y POLITICA', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 2 },
+    { codigo: 'HG034', nombre: 'ORIGEN Y DIVERSIDAD DE LAS SOCIEDADES HUMANAS', catedraSemanal: 6, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 2 },
+    { codigo: 'HG003', nombre: 'GEOGRAFIA FISICA', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 2 },
+    { codigo: 'HG205', nombre: 'CARTOGRAFIA', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 2 },
+    { codigo: 'HG004', nombre: 'METODOLOGIA DE LA INVESTIGACION EN CIENCIAS SOCIALES', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 2 },
+
+    // Semestre 3
+    { codigo: 'HG255', nombre: 'HISTORIA UNIVERSAL', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 3 },
+    { codigo: 'HG256', nombre: 'HISTORIA DE AMERICA', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 3 },
+    { codigo: 'HG257', nombre: 'MEDIO AMBIENTE', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 3 },
+    { codigo: 'HG258', nombre: 'GEOGRAFIA HUMANA', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 3 },
+    { codigo: 'DI009', nombre: 'INGLES', catedraSemanal: 6, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.EXTERNA, semestre: 3 },
+
+    // Semestre 4
+    { codigo: 'HG033', nombre: 'FUNDAMENTOS DE LA SOCIEDAD OCCIDENTAL', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 4 },
+    { codigo: 'HG259', nombre: 'HISTORIA DE CHILE', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 4 },
+    { codigo: 'HG260', nombre: 'GEOGRAFIA DE AMERICA', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 4 },
+    { codigo: 'HG261', nombre: 'GEOGRAFIA DE CHILE', catedraSemanal: 6, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 4 },
+    { codigo: 'HG262', nombre: 'GLOBALIZACION Y DESARROLLO', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 4 },
+
+    // Semestre 5
+    { codigo: 'HG263', nombre: 'HISTORIA MEDIEVAL', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 5 },
+    { codigo: 'HG264', nombre: 'ENCUENTRO DE CULTURAS', catedraSemanal: 6, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 5 },
+    { codigo: 'HG265', nombre: 'GEODEMOGRAFIA', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 5 },
+    { codigo: 'HG266', nombre: 'CLIMATOLOGIA', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 5 },
+    { codigo: 'YY023', nombre: 'SEMINARIO DE HISTORIA', catedraSemanal: 6, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 5 },
+    { codigo: 'YY024', nombre: 'SEMINARIO DE GEOGRAFÍA', catedraSemanal: 6, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 5 },
+
+    // Semestre 6
+    { codigo: 'HG267', nombre: 'HISTORIA MODERNA', catedraSemanal: 6, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 6 },
+    { codigo: 'HG268', nombre: 'MUNDO COLONIAL DE AMERICA Y CHILE', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 6 },
+    { codigo: 'HG269', nombre: 'GEOMORFOLOGIA', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 6 },
+    { codigo: 'HG270', nombre: 'GEOGRAFIA RURAL Y URBANA', catedraSemanal: 6, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 6 },
+    { codigo: 'YY023', nombre: 'SEMINARIO DE HISTORIA', catedraSemanal: 6, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 6 },
+    { codigo: 'YY024', nombre: 'SEMINARIO DE GEOGRAFÍA', catedraSemanal: 6, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 6 },
+
+    // Semestre 7
+    { codigo: 'HG271', nombre: 'HISTORIA UNIVERSAL CONTEMPORANEA I', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 7 },
+    { codigo: 'HG272', nombre: 'HISTORIA DE AMERICA Y CHILE CONTEMPORANEO I', catedraSemanal: 6, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 7 },
+    { codigo: 'HG273', nombre: 'GEOGRAFIA DE ZONAS ARIDAS Y DE MONTAÑA', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 7 },
+    { codigo: 'HG274', nombre: 'ESPACIOS REGIONALES DE CHILE', catedraSemanal: 6, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 7 },
+    { codigo: 'YY023', nombre: 'SEMINARIO DE HISTORIA', catedraSemanal: 6, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 7 },
+    { codigo: 'YY024', nombre: 'SEMINARIO DE GEOGRAFÍA', catedraSemanal: 6, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 7 },
+
+    // Semestre 8
+    { codigo: 'HG275', nombre: 'HISTORIA UNIVERSAL CONTEMPORANEA II', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 8 },
+    { codigo: 'HG276', nombre: 'HISTORIA DE AMERICA Y CHILE CONTEMPORANEO II', catedraSemanal: 6, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 8 },
+    { codigo: 'HG057', nombre: 'FORMULACION Y EVALUACION DE PROYECTOS', catedraSemanal: 6, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 8 },
+    { codigo: 'HG278', nombre: 'GEOGRAFIA CULTURAL', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 8 },
+    { codigo: 'YY023', nombre: 'SEMINARIO DE HISTORIA', catedraSemanal: 6, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 8 },
+    { codigo: 'YY024', nombre: 'SEMINARIO DE GEOGRAFÍA', catedraSemanal: 6, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 8 },
+
+    // Semestre 9
+    { codigo: 'HG407', nombre: 'PLANIFICACION TERRITORIAL', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 9 },
+    { codigo: 'HG408', nombre: 'TELEDETECCION Y SISTEMAS DE INFORMACION GEOGRAFICA', catedraSemanal: 8, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 9 },
+    { codigo: 'YY167', nombre: 'SEMINARIO ELECTIVO I', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 9 },
+    { codigo: 'YY168', nombre: 'SEMINARIO ELECTIVO II', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 9 },
+    { codigo: 'YY169', nombre: 'SEMINARIO ELECTIVO III', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 9 },
+    { codigo: 'HG402', nombre: 'EPISTEMOLOGIA DE LA HISTORIA', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 9 },
+    { codigo: 'YY026', nombre: 'SEMINARIO ELECTIVO II', catedraSemanal: 6, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 9 },
+    { codigo: 'YY171', nombre: 'SEMINARIO ELECTIVO III', catedraSemanal: 6, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 9 },
+    { codigo: 'YY170', nombre: 'SEMINARIO ELECTIVO IV', catedraSemanal: 4, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 9 },
+
+    // Semestre 10
+    { codigo: 'HG411', nombre: 'MEMORIA DE TITULO', catedraSemanal: 12, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 10 },
+    { codigo: 'HG412', nombre: 'PRACTICA PROFESIONAL', catedraSemanal: 12, tallerSemanal: 0, labSemanal: 0, origen: TipoOrigen.INTERNA, semestre: 10 },
+  ];
+
+  for (const asignatura of asignaturasLicenciatura) {
+    await prisma.asignatura.upsert({ 
+      where: { codigo: asignatura.codigo },
+      update: {
+        nombre: asignatura.nombre,
+        catedraSemanal: asignatura.catedraSemanal,
+        tallerSemanal: asignatura.tallerSemanal,
+        labSemanal: asignatura.labSemanal,
+        origen: asignatura.origen
+      },
+      create: { 
+        codigo: asignatura.codigo,
+        nombre: asignatura.nombre,
+        catedraSemanal: asignatura.catedraSemanal,
+        tallerSemanal: asignatura.tallerSemanal,
+        labSemanal: asignatura.labSemanal,
+        origen: asignatura.origen
+      },
+    });
+
+    await prisma.malla.upsert({
+      where: { id_malla: i },
+      update: {
+        semestre: asignatura.semestre,
+        id_plan: planes[2].id_plan,
+        codigo_asignatura: asignatura.codigo
+      }, 
+      create: {
+        id_malla: i,
+        semestre: asignatura.semestre,
+        id_plan: planes[2].id_plan,
+        codigo_asignatura: asignatura.codigo
+      }
+    })
+
+    i++;
+
+  }
+
 }
 
 main()
