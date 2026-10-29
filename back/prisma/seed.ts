@@ -1,4 +1,4 @@
-import { PrismaClient, TipoSala, TipoDia, TipoOrigen } from '@prisma/client';
+import { PrismaClient, TipoSala, TipoDia, TipoOrigen, TipoCurso } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import e from 'express';
 
@@ -904,6 +904,98 @@ async function seedHorario() {
 
     i++;
 
+  }
+
+  // Cursos y Horarios Externos de demo (Plan 2025 v1, Carrera 311, Semestre 2)
+  const mallaDU113 = await prisma.malla.findFirst({
+    where: { codigo_asignatura: 'DU113', plan: { id_plan: 2 } },
+  });
+  const mallaDU042 = await prisma.malla.findFirst({
+    where: { codigo_asignatura: 'DU042', plan: { id_plan: 2 } },
+  });
+
+  const diaLunes = await prisma.dia.findFirst({ where: { nombre: TipoDia.LUNES } });
+  const diaMiercoles = await prisma.dia.findFirst({ where: { nombre: TipoDia.MIERCOLES } });
+
+  const sala104 = await prisma.sala.findUnique({ where: { nombre: 'Sala 104' } });
+  const sala121 = await prisma.sala.findUnique({ where: { nombre: 'Sala 121' } });
+
+  if (mallaDU113 && diaLunes && diaMiercoles && sala104 && sala121) {
+    let cursoDU113 = await prisma.curso.findFirst({
+      where: { codigo_asignatura: 'DU113', id_malla: mallaDU113.id_malla, year: 2026, semestre: 2, grupo: 'A' },
+    });
+    if (!cursoDU113) {
+      cursoDU113 = await prisma.curso.create({
+        data: {
+          tipo: TipoCurso.CATEDRA,
+          grupo: 'A',
+          inscritos: 22,
+          year: 2026,
+          semestre: 2,
+          codigo_asignatura: 'DU113',
+          id_malla: mallaDU113.id_malla,
+        },
+      });
+    }
+
+    const bloquesDU113 = [
+      { id_curso: cursoDU113.id_curso, id_dia: diaMiercoles.id_dia, id_bloque: 3, id_sala: sala104.id_sala, sala_externa: null },
+      { id_curso: cursoDU113.id_curso, id_dia: diaMiercoles.id_dia, id_bloque: 4, id_sala: sala104.id_sala, sala_externa: null },
+      { id_curso: cursoDU113.id_curso, id_dia: diaLunes.id_dia, id_bloque: 9, id_sala: sala121.id_sala, sala_externa: null },
+      { id_curso: cursoDU113.id_curso, id_dia: diaLunes.id_dia, id_bloque: 10, id_sala: sala121.id_sala, sala_externa: null },
+    ];
+    for (const b of bloquesDU113) {
+      await prisma.horarioExterno.upsert({
+        where: {
+          id_curso_id_dia_id_bloque: {
+            id_curso: b.id_curso,
+            id_dia: b.id_dia,
+            id_bloque: b.id_bloque,
+          },
+        },
+        update: { id_sala: b.id_sala, sala_externa: b.sala_externa },
+        create: b,
+      });
+    }
+  }
+
+  if (mallaDU042 && diaLunes && diaMiercoles) {
+    let cursoDU042 = await prisma.curso.findFirst({
+      where: { codigo_asignatura: 'DU042', id_malla: mallaDU042.id_malla, year: 2026, semestre: 2, grupo: 'A' },
+    });
+    if (!cursoDU042) {
+      cursoDU042 = await prisma.curso.create({
+        data: {
+          tipo: TipoCurso.CATEDRA,
+          grupo: 'A',
+          inscritos: 22,
+          year: 2026,
+          semestre: 2,
+          codigo_asignatura: 'DU042',
+          id_malla: mallaDU042.id_malla,
+        },
+      });
+    }
+
+    const bloquesDU042 = [
+      { id_curso: cursoDU042.id_curso, id_dia: diaLunes.id_dia, id_bloque: 11, id_sala: null, sala_externa: 'Sala Educación' },
+      { id_curso: cursoDU042.id_curso, id_dia: diaLunes.id_dia, id_bloque: 12, id_sala: null, sala_externa: 'Sala Educación' },
+      { id_curso: cursoDU042.id_curso, id_dia: diaMiercoles.id_dia, id_bloque: 11, id_sala: null, sala_externa: 'Sala Educación' },
+      { id_curso: cursoDU042.id_curso, id_dia: diaMiercoles.id_dia, id_bloque: 12, id_sala: null, sala_externa: 'Sala Educación' },
+    ];
+    for (const b of bloquesDU042) {
+      await prisma.horarioExterno.upsert({
+        where: {
+          id_curso_id_dia_id_bloque: {
+            id_curso: b.id_curso,
+            id_dia: b.id_dia,
+            id_bloque: b.id_bloque,
+          },
+        },
+        update: { id_sala: b.id_sala, sala_externa: b.sala_externa },
+        create: b,
+      });
+    }
   }
 
 }
