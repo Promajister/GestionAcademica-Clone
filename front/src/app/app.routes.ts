@@ -84,6 +84,15 @@ export const routes: Routes = [
       import('./components/horario-grilla/horario-grilla-page.component').then(m => m.HorarioGrillaPageComponent),
   },
   {
+    path: 'horario/bloques-protegidos',
+    canActivate: [authGuard, roleGuard],
+    data: { allowedRoles: ['jefatura'] },
+    loadComponent: () =>
+      import(
+        './components/horario-bloques-protegidos/horario-bloques-protegidos.component'
+      ).then((m) => m.HorarioBloquesProtegidosComponent),
+  },
+  {
     path: 'horario',
     pathMatch: 'full',
     redirectTo: 'horario/asignaturas',

@@ -154,6 +154,12 @@ export class DashboardComponent implements OnInit {
           desc: 'Asignaturas propias y externas con bloques fijos',
         },
         {
+          title: 'Bloques protegidos',
+          icon: 'lock_clock',
+          route: '/horario/bloques-protegidos',
+          desc: 'Horarios reservados institucionales, por grupo y docentes',
+        },
+        {
           title: 'Grilla semanal',
           icon: 'grid_on',
           route: '/horario/grilla',
@@ -362,6 +368,12 @@ export class DashboardComponent implements OnInit {
               icon: 'menu_book',
               route: '/horario/asignaturas',
               desc: 'Asignaturas propias y externas con bloques fijos',
+            },
+            {
+              title: 'Bloques protegidos',
+              icon: 'lock_clock',
+              route: '/horario/bloques-protegidos',
+              desc: 'Horarios reservados institucionales, por grupo y docentes',
             },
             {
               title: 'Grilla semanal',
