@@ -47,7 +47,7 @@
           <input
             matInput
             [(ngModel)]="filtroTexto"
-            placeholder="Nombre, código o tipo..."
+            placeholder="Nombre o tipo..."
           />
         </mat-form-field>
 
@@ -87,7 +87,6 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th>Código</th>
               <th>Nombre oficial</th>
               <th>Tipo</th>
               <th>Capacidad</th>
@@ -99,14 +98,11 @@
           <tbody>
             @for (s of salasFiltradas; track s.id_sala) {
               <tr [class.row-inactive]="!s.activo">
-                <td>
-                  <span class="code-badge">{{ s.codigo }}</span>
-                </td>
                 <td class="td-nombre">
                   <strong>{{ s.nombre }}</strong>
                 </td>
                 <td>
-                  <span class="type-pill" [class.type-reunion]="s.tipo === 'REUNION'">
+                  <span class="type-pill" [class.type-reunion]="s.tipo === 'REUNIONES'">
                     <mat-icon class="type-icon">{{ s.tipo === 'CLASES' ? 'school' : 'groups' }}</mat-icon>
                     {{ s.tipo === 'CLASES' ? 'Clases' : 'Reunión' }}
                   </span>
@@ -124,9 +120,9 @@
                 </td>
                 <td>
                   @if (estaEnUso(s)) {
-                    <span class="usage-badge usage-badge--yes" matTooltip="La sala cuenta con bloques de clase asignados">
+                    <span class="usage-badge usage-badge--yes" matTooltip="La sala cuenta con bloques de clase u ocupaciones asignadas">
                       <mat-icon>event_busy</mat-icon>
-                      En uso ({{ s._count?.bloques_horarios }} blq.)
+                      En uso ({{ conteoUso(s) }} blq.)
                     </span>
                   } @else {
                     <span class="usage-badge usage-badge--no">
@@ -196,15 +192,7 @@
             </div>
           }
 
-          <div class="form-grid">
-            <mat-form-field appearance="outline">
-              <mat-label>Código *</mat-label>
-              <input matInput formControlName="codigo" placeholder="Ej: S-121, S-NUCLEO" />
-              @if (form.get('codigo')?.hasError('required') && form.get('codigo')?.touched) {
-                <mat-error>El código es obligatorio</mat-error>
-              }
-            </mat-form-field>
-
+          <div class="form-grid full-width-grid">
             <mat-form-field appearance="outline">
               <mat-label>Nombre oficial *</mat-label>
               <input matInput formControlName="nombre" placeholder="Ej: Sala 121, Sala Núcleo" />
@@ -259,7 +247,7 @@
         <div class="confirm-body">
           <h2>¿Eliminar o desactivar sala?</h2>
           <p>
-            ¿Estás seguro de que deseas eliminar la sala <strong>{{ salaPorEliminar.nombre }}</strong> ({{ salaPorEliminar.codigo }})?
+            ¿Estás seguro de que deseas eliminar la sala <strong>{{ salaPorEliminar.nombre }}</strong>?
           </p>
           <p class="muted">
             Si la sala ya tiene clases asociadas en el horario, el sistema la desactivará para mantener la integridad de los datos.

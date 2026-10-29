@@ -38,8 +38,8 @@
           <mat-select
             [(ngModel)]="idCarreraSeleccionada"
             (selectionChange)="onCarreraChange()">
-            @for (c of carreras; track c.id_carrera) {
-              <mat-option [value]="c.id_carrera">
+            @for (c of carreras; track c.codigo) {
+              <mat-option [value]="c.codigo">
                 {{ c.codigo }} — {{ c.nombre }}
               </mat-option>
             }
@@ -122,7 +122,7 @@
         </div>
       } @else {
         <div class="propias-grid">
-          @for (a of asignaturasPropias; track a.id_asignatura) {
+          @for (a of asignaturasPropias; track a.codigo) {
             <div class="propia-item">
               <div class="propia-item__top">
                 <span class="propia-codigo">{{ a.codigo }}</span>

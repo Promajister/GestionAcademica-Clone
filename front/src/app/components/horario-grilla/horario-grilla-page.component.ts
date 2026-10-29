@@ -39,7 +39,7 @@ export class HorarioGrillaPageComponent implements OnInit {
   carreras: CarreraDTO[] = [];
   planesDisponibles: PlanDTO[] = [];
 
-  idCarreraSeleccionada: number | null = null;
+  idCarreraSeleccionada: string | number | null = null;
   idPlanSeleccionado: number | null = null;
   semestreSeleccionado = 2; // Default a 2 para la demo
 
@@ -59,9 +59,9 @@ export class HorarioGrillaPageComponent implements OnInit {
       next: (carreras) => {
         this.carreras = carreras;
         if (carreras.length > 0) {
-          // Seleccionar 311 por defecto si existe
+          // Seleccionar carrera 311 por defecto si existe
           const pref = carreras.find((c) => c.codigo === '311') || carreras[0];
-          this.idCarreraSeleccionada = pref.id_carrera;
+          this.idCarreraSeleccionada = pref.codigo || pref.id_carrera;
           this.onCarreraChange();
         }
         this.cargando = false;
@@ -73,13 +73,15 @@ export class HorarioGrillaPageComponent implements OnInit {
   }
 
   onCarreraChange(): void {
-    const carrera = this.carreras.find((c) => c.id_carrera === this.idCarreraSeleccionada);
+    const carrera = this.carreras.find(
+      (c) => c.codigo === this.idCarreraSeleccionada || String(c.id_carrera) === String(this.idCarreraSeleccionada),
+    );
     this.planesDisponibles = carrera ? carrera.planes : [];
 
     if (this.planesDisponibles.length > 0) {
       // Seleccionar Plan 2025 v1 por defecto si existe
       const plan2025 =
-        this.planesDisponibles.find((p) => p.anio === 2025 || p.nombre.includes('2025')) ||
+        this.planesDisponibles.find((p) => p.year === 2025 || p.anio === 2025 || p.nombre.includes('2025')) ||
         this.planesDisponibles[0];
       this.idPlanSeleccionado = plan2025.id_plan;
       this.cargarHorarioNivel();
@@ -116,7 +118,9 @@ export class HorarioGrillaPageComponent implements OnInit {
   }
 
   get carreraSeleccionada(): CarreraDTO | undefined {
-    return this.carreras.find((c) => c.id_carrera === this.idCarreraSeleccionada);
+    return this.carreras.find(
+      (c) => c.codigo === this.idCarreraSeleccionada || String(c.id_carrera) === String(this.idCarreraSeleccionada),
+    );
   }
 
   get planSeleccionado(): PlanDTO | undefined {
@@ -124,7 +128,7 @@ export class HorarioGrillaPageComponent implements OnInit {
   }
 
   get asignaturasPropias(): AsignaturaDTO[] {
-    return this.asignaturas.filter((a) => a.origen === 'PROPIA');
+    return this.asignaturas.filter((a) => a.origen === 'PROPIA' || a.origen === 'INTERNA');
   }
 
   get asignaturasExternas(): AsignaturaDTO[] {
