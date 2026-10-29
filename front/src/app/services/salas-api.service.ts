@@ -3,23 +3,25 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
-export type TipoSala = 'CLASES' | 'REUNION';
+export type TipoSala = 'CLASES' | 'REUNIONES';
 
 export interface SalaDTO {
   id_sala: number;
-  codigo: string;
+  codigo?: string;
   nombre: string;
   capacidad: number;
   tipo: TipoSala;
   activo: boolean;
   _count?: {
-    bloques_horarios: number;
+    horarios?: number;
+    horariosExternos?: number;
+    ocupacionesPuntuales?: number;
+    bloques_horarios?: number;
     ocupaciones?: number;
   };
 }
 
 export interface CreateSalaPayload {
-  codigo: string;
   nombre: string;
   tipo: TipoSala;
   capacidad?: number;

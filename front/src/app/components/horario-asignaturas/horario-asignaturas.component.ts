@@ -1,6 +1,13 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
+import {
+  FormsModule,
+  ReactiveFormsModule,
+  FormBuilder,
+  FormGroup,
+  FormArray,
+  Validators,
+} from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -20,6 +27,8 @@ import {
   DiaSemana,
   BloqueGrillaDTO,
   BloqueExternoPayload,
+  CreateAsignaturaPayload,
+  UpdateAsignaturaPayload,
 } from '../../services/horario-api.service';
 import { SalasApiService, SalaDTO } from '../../services/salas-api.service';
 
@@ -70,10 +79,10 @@ export class HorarioAsignaturasComponent implements OnInit {
 
   // Filtros
   filtroTexto = '';
-  filtroCarrera: number | 'all' = 'all';
+  filtroCarrera: string | 'all' = 'all';
   filtroPlan: number | 'all' = 'all';
-  filtroSemestre: number | 'all' = 2; // Por defecto semestre 2 para coincidir con la demo
-  filtroOrigen: OrigenAsignatura | 'all' = 'all';
+  filtroSemestre: number | 'all' = 2; // Semestre 2 para demo por defecto
+  filtroOrigen: string | 'all' = 'all';
 
   // Modal Crear / Editar
   mostrarModal = false;
@@ -101,9 +110,12 @@ export class HorarioAsignaturasComponent implements OnInit {
       codigo: ['', [Validators.required, Validators.maxLength(30)]],
       nombre: ['', [Validators.required, Validators.maxLength(150)]],
       semestre: [2, [Validators.required, Validators.min(1), Validators.max(12)]],
-      bloques_semanales: [4, [Validators.required, Validators.min(1), Validators.max(20)]],
+      catedraSemanal: [4, [Validators.required, Validators.min(0), Validators.max(20)]],
+      tallerSemanal: [0, [Validators.required, Validators.min(0), Validators.max(20)]],
+      labSemanal: [0, [Validators.required, Validators.min(0), Validators.max(20)]],
+      bloques_semanales: [{ value: 4, disabled: true }, [Validators.required, Validators.min(1), Validators.max(20)]],
       cupo: [22, [Validators.required, Validators.min(1), Validators.max(100)]],
-      origen: ['PROPIA' as OrigenAsignatura, [Validators.required]],
+      origen: ['INTERNA' as OrigenAsignatura, [Validators.required]],
       bloques_externos: this.fb.array([]),
     });
   }
@@ -116,6 +128,17 @@ export class HorarioAsignaturasComponent implements OnInit {
     return this.form.get('bloques_externos') as FormArray;
   }
 
+  esPropia(origen: string): boolean {
+    return origen === 'PROPIA' || origen === 'INTERNA';
+  }
+
+  recalcularBloques(): void {
+    const c = Number(this.form.get('catedraSemanal')?.value) || 0;
+    const t = Number(this.form.get('tallerSemanal')?.value) || 0;
+    const l = Number(this.form.get('labSemanal')?.value) || 0;
+    this.form.patchValue({ bloques_semanales: c + t + l }, { emitEvent: false });
+  }
+
   cargarDatosIniciales(): void {
     this.cargando = true;
     this.horarioApi.getCarreras().subscribe({
@@ -126,8 +149,10 @@ export class HorarioAsignaturasComponent implements OnInit {
         // Si existe carrera 311, seleccionarla en los filtros por defecto
         const c311 = carreras.find((c) => c.codigo === '311');
         if (c311) {
-          this.filtroCarrera = c311.id_carrera;
-          const p2025 = c311.planes.find((p) => p.anio === 2025 || p.nombre.includes('2025'));
+          this.filtroCarrera = c311.codigo;
+          const p2025 = c311.planes.find(
+            (p) => p.year === 2025 || p.anio === 2025 || p.nombre.includes('2025'),
+          );
           if (p2025) {
             this.filtroPlan = p2025.id_plan;
           }
@@ -157,7 +182,9 @@ export class HorarioAsignaturasComponent implements OnInit {
     if (this.filtroCarrera === 'all') {
       this.planes = this.carreras.flatMap((c) => c.planes);
     } else {
-      const c = this.carreras.find((car) => car.id_carrera === this.filtroCarrera);
+      const c = this.carreras.find(
+        (car) => car.codigo === this.filtroCarrera || String(car.id_carrera) === this.filtroCarrera,
+      );
       this.planes = c ? c.planes : [];
     }
   }
@@ -175,16 +202,20 @@ export class HorarioAsignaturasComponent implements OnInit {
   cargarAsignaturas(): void {
     this.cargando = true;
     const params: {
-      origen?: OrigenAsignatura;
-      id_carrera?: number;
+      origen?: string;
+      codigo_carrera?: string;
+      id_carrera?: string;
       id_plan?: number;
       semestre?: number;
     } = {};
 
     if (this.filtroOrigen !== 'all') params.origen = this.filtroOrigen;
-    if (this.filtroCarrera !== 'all') params.id_carrera = this.filtroCarrera;
-    if (this.filtroPlan !== 'all') params.id_plan = this.filtroPlan;
-    if (this.filtroSemestre !== 'all') params.semestre = this.filtroSemestre;
+    if (this.filtroCarrera !== 'all') {
+      params.codigo_carrera = String(this.filtroCarrera);
+      params.id_carrera = String(this.filtroCarrera);
+    }
+    if (this.filtroPlan !== 'all') params.id_plan = Number(this.filtroPlan);
+    if (this.filtroSemestre !== 'all') params.semestre = Number(this.filtroSemestre);
 
     this.horarioApi.getAsignaturas(params).subscribe({
       next: (data) => {
@@ -193,7 +224,8 @@ export class HorarioAsignaturasComponent implements OnInit {
       },
       error: (err) => {
         this.cargando = false;
-        this.snack.open('Error al cargar asignaturas: ' + (err.error?.message || err.message), 'Cerrar', {
+        const msg = err.error?.message || err.message;
+        this.snack.open('Error al cargar asignaturas: ' + (Array.isArray(msg) ? msg.join(', ') : msg), 'Cerrar', {
           duration: 4000,
         });
       },
@@ -207,7 +239,7 @@ export class HorarioAsignaturasComponent implements OnInit {
       (a) =>
         a.nombre.toLowerCase().includes(q) ||
         a.codigo.toLowerCase().includes(q) ||
-        a.plan?.nombre.toLowerCase().includes(q)
+        a.plan?.nombre?.toLowerCase().includes(q),
     );
   }
 
@@ -215,7 +247,9 @@ export class HorarioAsignaturasComponent implements OnInit {
   planesParaForm(): PlanDTO[] {
     const idCar = this.form.get('id_carrera')?.value;
     if (!idCar) return [];
-    const c = this.carreras.find((car) => car.id_carrera === idCar);
+    const c = this.carreras.find(
+      (car) => car.codigo === String(idCar) || String(car.id_carrera) === String(idCar),
+    );
     return c ? c.planes : [];
   }
 
@@ -234,11 +268,13 @@ export class HorarioAsignaturasComponent implements OnInit {
     this.bloquesArray.clear();
 
     const idCarDefecto =
-      this.filtroCarrera !== 'all' ? this.filtroCarrera : this.carreras[0]?.id_carrera || null;
+      this.filtroCarrera !== 'all' ? this.filtroCarrera : this.carreras[0]?.codigo || null;
     let idPlanDefecto = this.filtroPlan !== 'all' ? this.filtroPlan : null;
 
     if (!idPlanDefecto && idCarDefecto) {
-      const c = this.carreras.find((car) => car.id_carrera === idCarDefecto);
+      const c = this.carreras.find(
+        (car) => car.codigo === idCarDefecto || String(car.id_carrera) === idCarDefecto,
+      );
       idPlanDefecto = c?.planes[0]?.id_plan || null;
     }
 
@@ -248,9 +284,12 @@ export class HorarioAsignaturasComponent implements OnInit {
       codigo: '',
       nombre: '',
       semestre: this.filtroSemestre !== 'all' ? this.filtroSemestre : 2,
+      catedraSemanal: 4,
+      tallerSemanal: 0,
+      labSemanal: 0,
       bloques_semanales: 4,
       cupo: 22,
-      origen: 'PROPIA',
+      origen: 'INTERNA',
     });
 
     this.mostrarModal = true;
@@ -261,7 +300,10 @@ export class HorarioAsignaturasComponent implements OnInit {
     this.errorBackend = null;
     this.bloquesArray.clear();
 
-    const idCarrera = a.plan?.id_carrera || null;
+    const catedra = a.catedraSemanal ?? a.bloques_semanales ?? 4;
+    const taller = a.tallerSemanal ?? 0;
+    const lab = a.labSemanal ?? 0;
+    const idCarrera = a.plan?.codigo_carrera || a.plan?.id_carrera || null;
 
     this.form.patchValue({
       id_carrera: idCarrera,
@@ -269,13 +311,16 @@ export class HorarioAsignaturasComponent implements OnInit {
       codigo: a.codigo,
       nombre: a.nombre,
       semestre: a.semestre,
-      bloques_semanales: a.bloques_semanales,
+      catedraSemanal: catedra,
+      tallerSemanal: taller,
+      labSemanal: lab,
+      bloques_semanales: catedra + taller + lab,
       cupo: a.cupo,
-      origen: a.origen,
+      origen: this.esPropia(a.origen) ? 'INTERNA' : 'EXTERNA',
     });
 
     // Cargar bloques si es externa
-    if (a.origen === 'EXTERNA' && a.cursos && a.cursos.length > 0) {
+    if (!this.esPropia(a.origen) && a.cursos && a.cursos.length > 0) {
       const bloques = a.cursos[0].bloques_horarios || [];
       this.reconstruirBloquesEnFormulario(bloques);
     }
@@ -314,8 +359,7 @@ export class HorarioAsignaturasComponent implements OnInit {
     this.bloquesArray.removeAt(index);
   }
 
-  private reconstruirBloquesEnFormulario(bloques: AsignaturaDTO['cursos'] extends (infer U)[] ? any[] : any[]): void {
-    // Agrupa bloques contiguos por día y sala
+  private reconstruirBloquesEnFormulario(bloques: any[]): void {
     const ordenados = [...bloques].sort((x, y) => {
       if (x.dia !== y.dia) return x.dia.localeCompare(y.dia);
       return x.bloque_numero - y.bloque_numero;
@@ -357,8 +401,18 @@ export class HorarioAsignaturasComponent implements OnInit {
       return;
     }
 
-    const valor = this.form.value;
-    const origen: OrigenAsignatura = valor.origen;
+    const valor = this.form.getRawValue();
+    const origen: string = valor.origen;
+
+    const catedra = Number(valor.catedraSemanal) || 0;
+    const taller = Number(valor.tallerSemanal) || 0;
+    const lab = Number(valor.labSemanal) || 0;
+    const bloquesTotales = catedra + taller + lab;
+
+    if (bloquesTotales <= 0) {
+      this.errorBackend = 'La suma de horas de cátedra, taller y laboratorio debe ser al menos 1 bloque semanal.';
+      return;
+    }
 
     let bloquesExternosPayload: BloqueExternoPayload[] | undefined = undefined;
 
@@ -388,19 +442,23 @@ export class HorarioAsignaturasComponent implements OnInit {
     this.errorBackend = null;
 
     if (this.asignaturaEditando) {
-      const payload: any = {
+      const payload: UpdateAsignaturaPayload = {
         nombre: valor.nombre,
-        id_plan: valor.id_plan,
-        semestre: valor.semestre,
-        bloques_semanales: valor.bloques_semanales,
-        cupo: valor.cupo,
+        id_plan: Number(valor.id_plan),
+        semestre: Number(valor.semestre),
+        catedraSemanal: catedra,
+        tallerSemanal: taller,
+        labSemanal: lab,
+        bloques_semanales: bloquesTotales,
+        cupo: Number(valor.cupo),
+        origen,
       };
 
       if (origen === 'EXTERNA' && bloquesExternosPayload) {
         payload.bloques_externos = bloquesExternosPayload;
       }
 
-      this.horarioApi.updateAsignatura(this.asignaturaEditando.id_asignatura, payload).subscribe({
+      this.horarioApi.updateAsignatura(this.asignaturaEditando.codigo, payload).subscribe({
         next: (res) => {
           this.guardando = false;
           this.snack.open(`Asignatura "${res.nombre}" actualizada exitosamente`, 'Cerrar', {
@@ -412,18 +470,22 @@ export class HorarioAsignaturasComponent implements OnInit {
         error: (err) => {
           this.guardando = false;
           const msg = err.error?.message || 'Error al actualizar asignatura';
-          this.errorBackend = msg;
-          this.snack.open(msg, 'Cerrar', { duration: 6000 });
+          const errorMsg = Array.isArray(msg) ? msg.join(', ') : String(msg);
+          this.errorBackend = errorMsg;
+          this.snack.open(errorMsg, 'Cerrar', { duration: 6000 });
         },
       });
     } else {
-      const payload: any = {
-        codigo: valor.codigo,
-        nombre: valor.nombre,
-        id_plan: valor.id_plan,
-        semestre: valor.semestre,
-        bloques_semanales: valor.bloques_semanales,
-        cupo: valor.cupo,
+      const payload: CreateAsignaturaPayload = {
+        codigo: valor.codigo.trim().toUpperCase(),
+        nombre: valor.nombre.trim(),
+        id_plan: Number(valor.id_plan),
+        semestre: Number(valor.semestre),
+        catedraSemanal: catedra,
+        tallerSemanal: taller,
+        labSemanal: lab,
+        bloques_semanales: bloquesTotales,
+        cupo: Number(valor.cupo),
         origen,
       };
 
@@ -443,8 +505,9 @@ export class HorarioAsignaturasComponent implements OnInit {
         error: (err) => {
           this.guardando = false;
           const msg = err.error?.message || 'Error al registrar asignatura';
-          this.errorBackend = msg;
-          this.snack.open(msg, 'Cerrar', { duration: 6000 });
+          const errorMsg = Array.isArray(msg) ? msg.join(', ') : String(msg);
+          this.errorBackend = errorMsg;
+          this.snack.open(errorMsg, 'Cerrar', { duration: 6000 });
         },
       });
     }
@@ -463,7 +526,7 @@ export class HorarioAsignaturasComponent implements OnInit {
     const a = this.asignaturaPorEliminar;
     this.guardando = true;
 
-    this.horarioApi.deleteAsignatura(a.id_asignatura).subscribe({
+    this.horarioApi.deleteAsignatura(a.codigo).subscribe({
       next: () => {
         this.guardando = false;
         this.asignaturaPorEliminar = null;
@@ -475,8 +538,9 @@ export class HorarioAsignaturasComponent implements OnInit {
       error: (err) => {
         this.guardando = false;
         this.asignaturaPorEliminar = null;
-        this.snack.open(err.error?.message || 'Error al eliminar asignatura', 'Cerrar', {
-          duration: 4000,
+        const msg = err.error?.message || 'Error al eliminar asignatura';
+        this.snack.open(Array.isArray(msg) ? msg.join(', ') : msg, 'Cerrar', {
+          duration: 6000,
         });
       },
     });
@@ -485,21 +549,5 @@ export class HorarioAsignaturasComponent implements OnInit {
   getHoraBloque(num: number): string {
     const b = this.grilla.find((g) => g.numero === num);
     return b ? `${b.hora_inicio}–${b.hora_fin}` : '';
-  }
-
-  formatearBloquesResumen(a: AsignaturaDTO): string {
-    if (a.origen === 'PROPIA') {
-      return 'Sin horario fijo (Sprint 2)';
-    }
-
-    const cursos = a.cursos || [];
-    if (cursos.length === 0 || !cursos[0].bloques_horarios?.length) {
-      return 'Sin bloques definidos';
-    }
-
-    const bloques = cursos[0].bloques_horarios;
-    // Resumir días y salas
-    const dias = Array.from(new Set(bloques.map((b) => b.dia)));
-    return `${bloques.length} bloques en ${dias.join(', ')}`;
   }
 }

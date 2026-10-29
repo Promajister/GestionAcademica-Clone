@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { SalaDTO } from './salas-api.service';
 
-export type OrigenAsignatura = 'PROPIA' | 'EXTERNA';
+export type OrigenAsignatura = 'PROPIA' | 'EXTERNA' | 'INTERNA';
 export type DiaSemana = 'LUNES' | 'MARTES' | 'MIERCOLES' | 'JUEVES' | 'VIERNES';
 
 export interface BloqueGrillaDTO {
@@ -17,14 +17,16 @@ export interface BloqueGrillaDTO {
 export interface PlanDTO {
   id_plan: number;
   nombre: string;
-  anio: number;
-  vigente: boolean;
-  id_carrera: number;
+  year?: number;
+  anio?: number;
+  version?: string;
+  codigo_carrera?: string;
+  id_carrera?: string | number;
   carrera?: CarreraDTO;
 }
 
 export interface CarreraDTO {
-  id_carrera: number;
+  id_carrera: string | number;
   codigo: string;
   nombre: string;
   planes: PlanDTO[];
@@ -49,7 +51,7 @@ export interface BloqueHorarioDTO {
   id_curso: number;
   id_sala?: number | null;
   sala?: SalaDTO | null;
-  origen?: OrigenAsignatura;
+  origen?: string;
   curso?: {
     id_curso: number;
     nombre: string;
@@ -62,18 +64,21 @@ export interface CursoDTO {
   id_curso: number;
   nombre: string;
   tipo: string;
-  id_asignatura: number;
+  id_asignatura?: string | number;
   bloques_horarios: BloqueHorarioDTO[];
 }
 
 export interface AsignaturaDTO {
-  id_asignatura: number;
+  id_asignatura?: string | number;
   codigo: string;
   nombre: string;
+  catedraSemanal?: number;
+  tallerSemanal?: number;
+  labSemanal?: number;
   semestre: number;
   cupo: number;
   bloques_semanales: number;
-  origen: OrigenAsignatura;
+  origen: string;
   id_plan: number;
   plan?: PlanDTO;
   cursos?: CursoDTO[];
@@ -84,9 +89,12 @@ export interface CreateAsignaturaPayload {
   nombre: string;
   id_plan: number;
   semestre: number;
-  bloques_semanales: number;
+  bloques_semanales?: number;
+  catedraSemanal?: number;
+  tallerSemanal?: number;
+  labSemanal?: number;
   cupo: number;
-  origen: OrigenAsignatura;
+  origen: string;
   bloques_externos?: BloqueExternoPayload[];
 }
 
@@ -106,47 +114,69 @@ export class HorarioApiService {
   }
 
   getAsignaturas(params?: {
-    origen?: OrigenAsignatura;
-    id_carrera?: number;
+    origen?: string;
+    id_carrera?: string | number;
+    codigo_carrera?: string;
     id_plan?: number;
     semestre?: number;
   }): Observable<AsignaturaDTO[]> {
     let p = new HttpParams();
     if (params?.origen) p = p.set('origen', params.origen);
-    if (params?.id_carrera != null) p = p.set('id_carrera', String(params.id_carrera));
+    if (params?.id_carrera != null)
+      p = p.set('id_carrera', String(params.id_carrera));
+    if (params?.codigo_carrera != null)
+      p = p.set('codigo_carrera', params.codigo_carrera);
     if (params?.id_plan != null) p = p.set('id_plan', String(params.id_plan));
-    if (params?.semestre != null) p = p.set('semestre', String(params.semestre));
+    if (params?.semestre != null)
+      p = p.set('semestre', String(params.semestre));
 
-    return this.http.get<AsignaturaDTO[]>(`${this.baseUrl}/asignaturas`, { params: p });
+    return this.http.get<AsignaturaDTO[]>(`${this.baseUrl}/asignaturas`, {
+      params: p,
+    });
   }
 
-  getAsignatura(id: number): Observable<AsignaturaDTO> {
-    return this.http.get<AsignaturaDTO>(`${this.baseUrl}/asignaturas/${id}`);
+  getAsignatura(codigo: string | number): Observable<AsignaturaDTO> {
+    return this.http.get<AsignaturaDTO>(
+      `${this.baseUrl}/asignaturas/${codigo}`,
+    );
   }
 
-  createAsignatura(payload: CreateAsignaturaPayload): Observable<AsignaturaDTO> {
-    return this.http.post<AsignaturaDTO>(`${this.baseUrl}/asignaturas`, payload);
+  createAsignatura(
+    payload: CreateAsignaturaPayload,
+  ): Observable<AsignaturaDTO> {
+    return this.http.post<AsignaturaDTO>(
+      `${this.baseUrl}/asignaturas`,
+      payload,
+    );
   }
 
-  updateAsignatura(id: number, payload: UpdateAsignaturaPayload): Observable<AsignaturaDTO> {
-    return this.http.patch<AsignaturaDTO>(`${this.baseUrl}/asignaturas/${id}`, payload);
+  updateAsignatura(
+    codigo: string | number,
+    payload: UpdateAsignaturaPayload,
+  ): Observable<AsignaturaDTO> {
+    return this.http.patch<AsignaturaDTO>(
+      `${this.baseUrl}/asignaturas/${codigo}`,
+      payload,
+    );
   }
 
-  deleteAsignatura(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/asignaturas/${id}`);
+  deleteAsignatura(codigo: string | number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/asignaturas/${codigo}`);
   }
 
   getBloques(params?: {
     dia?: DiaSemana;
     id_sala?: number;
-    origen?: OrigenAsignatura;
+    origen?: string;
   }): Observable<BloqueHorarioDTO[]> {
     let p = new HttpParams();
     if (params?.dia) p = p.set('dia', params.dia);
     if (params?.id_sala != null) p = p.set('id_sala', String(params.id_sala));
     if (params?.origen) p = p.set('origen', params.origen);
 
-    return this.http.get<BloqueHorarioDTO[]>(`${this.baseUrl}/bloques`, { params: p });
+    return this.http.get<BloqueHorarioDTO[]>(`${this.baseUrl}/bloques`, {
+      params: p,
+    });
   }
 
   getSalas(soloActivas = true): Observable<SalaDTO[]> {

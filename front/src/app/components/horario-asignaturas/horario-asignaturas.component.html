@@ -63,8 +63,8 @@
             [(ngModel)]="filtroCarrera"
             (selectionChange)="onFiltroCarreraChange()">
             <mat-option value="all">Todas las carreras</mat-option>
-            @for (c of carreras; track c.id_carrera) {
-              <mat-option [value]="c.id_carrera">{{ c.codigo }} — {{ c.nombre }}</mat-option>
+            @for (c of carreras; track c.codigo) {
+              <mat-option [value]="c.codigo">{{ c.codigo }} — {{ c.nombre }}</mat-option>
             }
           </mat-select>
         </mat-form-field>
@@ -102,7 +102,7 @@
             [(ngModel)]="filtroOrigen"
             (selectionChange)="onFiltroChange()">
             <mat-option value="all">Todos los orígenes</mat-option>
-            <mat-option value="PROPIA">Propia (Departamento)</mat-option>
+            <mat-option value="INTERNA">Propia (Departamento)</mat-option>
             <mat-option value="EXTERNA">Externa (Otro depto)</mat-option>
           </mat-select>
         </mat-form-field>
@@ -141,10 +141,10 @@
             </tr>
           </thead>
           <tbody>
-            @for (a of asignaturasFiltradas; track a.id_asignatura) {
-              <tr [class.row-externa]="a.origen === 'EXTERNA'">
+            @for (a of asignaturasFiltradas; track a.codigo) {
+              <tr [class.row-externa]="!esPropia(a.origen)">
                 <td>
-                  <span class="code-badge" [class.code-badge--externa]="a.origen === 'EXTERNA'">
+                  <span class="code-badge" [class.code-badge--externa]="!esPropia(a.origen)">
                     {{ a.codigo }}
                   </span>
                 </td>
@@ -153,12 +153,12 @@
                 </td>
                 <td>
                   <div class="plan-info">
-                    <span class="plan-nombre">{{ a.plan?.nombre || 'Plan ' + a.id_plan }}</span>
+                    <span class="plan-nombre">{{ a.plan?.nombre || ('Plan ' + a.id_plan) }}</span>
                     <span class="semestre-badge">Semestre {{ a.semestre }}</span>
                   </div>
                 </td>
                 <td>
-                  @if (a.origen === 'PROPIA') {
+                  @if (esPropia(a.origen)) {
                     <span class="chip-origen chip-origen--propia">
                       <mat-icon>school</mat-icon>
                       Propia
@@ -171,13 +171,17 @@
                   }
                 </td>
                 <td>
-                  <span class="bloques-text">{{ a.bloques_semanales }} blq.</span>
+                  <span
+                    class="bloques-text"
+                    [matTooltip]="'Cátedra: ' + (a.catedraSemanal || 0) + ' | Taller: ' + (a.tallerSemanal || 0) + ' | Lab: ' + (a.labSemanal || 0)">
+                    {{ a.bloques_semanales }} blq.
+                  </span>
                 </td>
                 <td>
                   <span class="cupo-text">{{ a.cupo }} est.</span>
                 </td>
                 <td>
-                  @if (a.origen === 'EXTERNA') {
+                  @if (!esPropia(a.origen)) {
                     <div class="bloques-resumen">
                       @let cursos = a.cursos || [];
                       @if (cursos.length > 0 && cursos[0].bloques_horarios && cursos[0].bloques_horarios.length) {
@@ -256,8 +260,8 @@
               <mat-select
                 formControlName="id_carrera"
                 (selectionChange)="onCarreraFormChange()">
-                @for (c of carreras; track c.id_carrera) {
-                  <mat-option [value]="c.id_carrera">{{ c.codigo }} — {{ c.nombre }}</mat-option>
+                @for (c of carreras; track c.codigo) {
+                  <mat-option [value]="c.codigo">{{ c.codigo }} — {{ c.nombre }}</mat-option>
                 }
               </mat-select>
             </mat-form-field>
@@ -291,32 +295,50 @@
             </mat-form-field>
           </div>
 
-          <!-- FILA 3: SEMESTRE, BLOQUES SEMANALES, CUPO -->
-          <div class="form-grid form-grid--3">
+          <!-- FILA 3: DISTRIBUCIÓN SEMANAL DE BLOQUES -->
+          <div class="form-grid form-grid--4">
+            <mat-form-field appearance="outline">
+              <mat-label>Cátedra sem.</mat-label>
+              <input matInput type="number" formControlName="catedraSemanal" min="0" max="20" (input)="recalcularBloques()" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Taller sem.</mat-label>
+              <input matInput type="number" formControlName="tallerSemanal" min="0" max="20" (input)="recalcularBloques()" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Lab sem.</mat-label>
+              <input matInput type="number" formControlName="labSemanal" min="0" max="20" (input)="recalcularBloques()" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Total bloques *</mat-label>
+              <input matInput type="number" formControlName="bloques_semanales" [readonly]="true" />
+            </mat-form-field>
+          </div>
+
+          <!-- FILA 4: SEMESTRE Y CUPO -->
+          <div class="form-grid">
             <mat-form-field appearance="outline">
               <mat-label>Semestre (Nivel) *</mat-label>
               <input matInput type="number" formControlName="semestre" min="1" max="12" />
             </mat-form-field>
 
             <mat-form-field appearance="outline">
-              <mat-label>Bloques semanales *</mat-label>
-              <input matInput type="number" formControlName="bloques_semanales" min="1" max="20" />
-            </mat-form-field>
-
-            <mat-form-field appearance="outline">
-              <mat-label>Cupo máximo *</mat-label>
+              <mat-label>Cupo máximo (estudiantes) *</mat-label>
               <input matInput type="number" formControlName="cupo" min="1" max="100" />
             </mat-form-field>
           </div>
 
-          <!-- FILA 4: ORIGEN (PROPIA VS EXTERNA) -->
+          <!-- FILA 5: ORIGEN (PROPIA VS EXTERNA) -->
           <div class="origen-selector-box">
             <label class="origen-label">Origen de la asignatura *</label>
             <mat-radio-group
               formControlName="origen"
               (change)="onOrigenChange()"
               class="origen-radio-group">
-              <mat-radio-button value="PROPIA" color="primary">
+              <mat-radio-button value="INTERNA" color="primary">
                 <div class="radio-opt">
                   <strong>PROPIA (Departamento)</strong>
                   <span class="muted">Dictada por profesores del departamento. Sin horario fijo por ahora.</span>
@@ -427,7 +449,7 @@
                           <mat-select formControlName="id_sala">
                             @for (s of salasActivas; track s.id_sala) {
                               <mat-option [value]="s.id_sala">
-                                {{ s.nombre }} ({{ s.codigo }}) — {{ s.tipo === 'CLASES' ? 'Clases' : 'Reunión' }}
+                                {{ s.nombre }} — {{ s.tipo === 'CLASES' ? 'Sala de clases' : 'Sala de reuniones' }}
                               </mat-option>
                             }
                           </mat-select>

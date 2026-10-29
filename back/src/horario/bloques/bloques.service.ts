@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { DiaSemana, OrigenAsignatura, Prisma } from '@prisma/client';
+import { Prisma, TipoDia, TipoOrigen } from '@prisma/client';
 import { PrismaService } from 'prisma/prisma.service';
 
 import { BloqueExternoDto } from './dto/bloque-externo.dto';
@@ -14,9 +14,9 @@ import { choqueConOcupaciones } from '../common/choques';
 
 type Tx = Prisma.TransactionClient;
 
-// Un bloque de 45 min de la grilla, ya expandido desde el rango del DTO
 type BloqueGrilla = {
-  dia: DiaSemana;
+  dia: string;
+  id_dia: number;
   bloque_numero: number;
   id_sala?: number;
   sala_externa?: string;
@@ -25,126 +25,227 @@ type BloqueGrilla = {
 const describir = (b: BloqueExternoDto) =>
   `${b.dia} bloques ${b.bloque_inicio}-${b.bloque_fin}`;
 
-const describirBloque = (dia: DiaSemana, numero: number) => {
+const describirBloque = (dia: string, numero: number) => {
   const { hora_inicio, hora_fin } = bloquePorNumero(numero);
   return `${dia} bloque ${numero} (${hora_inicio}-${hora_fin})`;
 };
-
-const ORDEN_GRILLA: Prisma.Bloque_horarioOrderByWithRelationInput[] = [
-  { dia: 'asc' },
-  { bloque_numero: 'asc' },
-];
 
 @Injectable()
 export class BloquesService {
   constructor(private prisma: PrismaService) {}
 
   // ---------- GET /horario/bloques ----------
-  // Cada bloque expone `origen` y `bloqueado` para que la grilla distinga los
-  // externos y desactive su arrastre (ADM-F02 CA2 y CA3).
+  // Devuelve los bloques ocupados en la grilla horaria
   async findAll(q: QueryBloqueDto) {
-    const bloques = await this.prisma.bloque_horario.findMany({
+    const diaWhere = q.dia ? { dia: { nombre: q.dia } } : {};
+    const salaWhere = q.id_sala ? { id_sala: q.id_sala } : {};
+
+    // 1. Bloques de asignaturas externas
+    const externos = await this.prisma.horarioExterno.findMany({
       where: {
-        dia: q.dia,
-        id_sala: q.id_sala,
-        ...(q.origen && { curso: { asignatura: { origen: q.origen } } }),
+        ...diaWhere,
+        ...salaWhere,
       },
       include: {
         sala: true,
+        dia: true,
+        bloque: true,
         curso: {
           include: {
-            asignatura: {
-              select: {
-                id_asignatura: true,
-                codigo: true,
-                nombre: true,
-                semestre: true,
-                origen: true,
+            asignatura: true,
+          },
+        },
+      },
+      orderBy: [{ id_dia: 'asc' }, { id_bloque: 'asc' }],
+    });
+
+    // 2. Bloques de asignaturas internas
+    const internos = await this.prisma.horario.findMany({
+      where: {
+        ...diaWhere,
+        ...salaWhere,
+      },
+      include: {
+        sala: true,
+        dia: true,
+        bloque: true,
+        carga: {
+          include: {
+            curso: {
+              include: {
+                asignatura: true,
               },
             },
           },
         },
       },
-      orderBy: ORDEN_GRILLA,
+      orderBy: [{ id_dia: 'asc' }, { id_bloque: 'asc' }],
     });
 
-    return bloques.map((b) => ({ ...b, origen: b.curso.asignatura.origen }));
+    const resultadoExternos = externos.map((b) => ({
+      id_bloque_horario: b.id,
+      id: b.id,
+      dia: b.dia.nombre,
+      bloque_numero: b.id_bloque,
+      hora_inicio: b.bloque.horaInicio,
+      hora_fin: b.bloque.horaFin,
+      id_sala: b.id_sala,
+      sala_externa: b.sala_externa,
+      sala: b.sala,
+      bloqueado: true,
+      origen: 'EXTERNA',
+      curso: {
+        id_curso: b.curso.id_curso,
+        nombre: b.curso.asignatura.nombre,
+        grupo: b.curso.grupo,
+        semestre: b.curso.semestre,
+        asignatura: {
+          codigo: b.curso.asignatura.codigo,
+          nombre: b.curso.asignatura.nombre,
+          semestre: b.curso.semestre,
+          origen: b.curso.asignatura.origen,
+        },
+      },
+    }));
+
+    const resultadoInternos = internos.map((b) => ({
+      id_bloque_horario: b.id_bloque,
+      id: b.id_bloque,
+      dia: b.dia.nombre,
+      bloque_numero: b.id_bloque,
+      hora_inicio: b.bloque.horaInicio,
+      hora_fin: b.bloque.horaFin,
+      id_sala: b.id_sala,
+      sala_externa: null,
+      sala: b.sala,
+      bloqueado: false,
+      origen: 'INTERNA',
+      curso: {
+        id_curso: b.carga.curso.id_curso,
+        nombre: b.carga.curso.asignatura.nombre,
+        grupo: b.carga.curso.grupo,
+        semestre: b.carga.curso.semestre,
+        asignatura: {
+          codigo: b.carga.curso.asignatura.codigo,
+          nombre: b.carga.curso.asignatura.nombre,
+          semestre: b.carga.curso.semestre,
+          origen: b.carga.curso.asignatura.origen,
+        },
+      },
+    }));
+
+    let todos = [...resultadoExternos, ...resultadoInternos];
+
+    if (q.origen) {
+      const origNorm = q.origen.toUpperCase();
+      todos = todos.filter((b) =>
+        origNorm === 'PROPIA' ? b.origen === 'INTERNA' : b.origen === origNorm,
+      );
+    }
+
+    return todos;
   }
 
   // ---------- Registro de bloques de asignaturas EXTERNAS (ADM-F02-T3) ----------
-  // Cada rango se guarda como una fila por bloque de 45 min.
-  // Con `reemplazar` se borran antes los bloques actuales del curso (edición del mantenedor).
   async crearExternos(
     tx: Tx,
-    id_asignatura: number,
+    id_curso: number,
     bloques: BloqueExternoDto[],
     { reemplazar = false } = {},
   ) {
-    const asignatura = await tx.asignatura.findUnique({
-      where: { id_asignatura },
-      include: { cursos: { orderBy: { id_curso: 'asc' }, take: 1 } },
+    const curso = await tx.curso.findUnique({
+      where: { id_curso },
+      include: { asignatura: true },
     });
-    if (!asignatura) throw new NotFoundException('Asignatura no encontrada');
-    if (asignatura.origen !== OrigenAsignatura.EXTERNA) {
+    if (!curso) {
+      throw new NotFoundException('Curso no encontrado');
+    }
+    if (curso.asignatura.origen !== TipoOrigen.EXTERNA) {
       throw new BadRequestException(
         'Solo las asignaturas externas permiten fijar bloques bloqueados manualmente en este mantenedor.',
       );
     }
-    const curso = asignatura.cursos[0];
-    if (!curso) {
-      throw new NotFoundException('La asignatura no tiene un curso asociado');
-    }
 
-    const expandidos = this.expandir(bloques);
+    const expandidos = await this.expandir(tx, bloques);
 
     if (reemplazar) {
-      await tx.bloque_horario.deleteMany({
-        where: { id_curso: curso.id_curso },
+      await tx.horarioExterno.deleteMany({
+        where: { id_curso },
       });
+    } else {
+      const existentes = await tx.horarioExterno.findMany({
+        where: { id_curso },
+        include: { dia: true },
+      });
+      for (const b of expandidos) {
+        const solape = existentes.find(
+          (e) => e.id_dia === b.id_dia && e.id_bloque === b.bloque_numero,
+        );
+        if (solape) {
+          throw new ConflictException(
+            `La asignatura ya tiene un bloque asignado el ${solape.dia.nombre} bloque ${b.bloque_numero}`,
+          );
+        }
+      }
     }
 
     await this.validarSalas(tx, expandidos);
-    await this.validarChoques(tx, expandidos, curso.id_curso);
+    await this.validarChoques(tx, expandidos, id_curso);
 
-    await tx.bloque_horario.createMany({
+    await tx.horarioExterno.createMany({
       data: expandidos.map((b) => ({
-        dia: b.dia,
-        bloque_numero: b.bloque_numero,
-        hora_inicio: bloquePorNumero(b.bloque_numero).hora_inicio,
-        hora_fin: bloquePorNumero(b.bloque_numero).hora_fin,
+        id_curso,
+        id_dia: b.id_dia,
+        id_bloque: b.bloque_numero,
         id_sala: b.id_sala ?? null,
         sala_externa: b.sala_externa ?? null,
-        id_curso: curso.id_curso,
-        bloqueado: true, // ADM-F02 CA2: los externos nunca se mueven
       })),
     });
 
-    return tx.bloque_horario.findMany({
-      where: { id_curso: curso.id_curso },
-      include: { sala: true },
-      orderBy: ORDEN_GRILLA,
+    return tx.horarioExterno.findMany({
+      where: { id_curso },
+      include: { sala: true, dia: true, bloque: true },
+      orderBy: [{ id_dia: 'asc' }, { id_bloque: 'asc' }],
     });
   }
 
-  agregarExternos(id_asignatura: number, bloques: BloqueExternoDto[]) {
+  async agregarExternos(
+    codigo_asignatura: string,
+    bloques: BloqueExternoDto[],
+  ) {
+    const curso = await this.prisma.curso.findFirst({
+      where: { codigo_asignatura },
+      orderBy: { id_curso: 'asc' },
+    });
+    if (!curso) {
+      throw new NotFoundException('La asignatura no tiene un curso asociado');
+    }
     return this.prisma.$transaction((tx) =>
-      this.crearExternos(tx, id_asignatura, bloques),
+      this.crearExternos(tx, curso.id_curso, bloques),
     );
   }
 
-  async eliminarExterno(id_asignatura: number, id_bloque_horario: number) {
-    const bloque = await this.prisma.bloque_horario.findFirst({
-      where: { id_bloque_horario, curso: { id_asignatura } },
+  async eliminarExterno(codigo_asignatura: string, idBloqueExterno: number) {
+    const bloque = await this.prisma.horarioExterno.findFirst({
+      where: {
+        id: idBloqueExterno,
+        curso: { codigo_asignatura },
+      },
     });
     if (!bloque) {
       throw new NotFoundException('Bloque no encontrado para esta asignatura');
     }
-    await this.prisma.bloque_horario.delete({ where: { id_bloque_horario } });
+    await this.prisma.horarioExterno.delete({
+      where: { id: idBloqueExterno },
+    });
     return { mensaje: 'Bloque eliminado correctamente.' };
   }
 
   // Valida cada rango y lo convierte en bloques de 45 min
-  private expandir(bloques: BloqueExternoDto[]): BloqueGrilla[] {
+  private async expandir(
+    tx: Tx,
+    bloques: BloqueExternoDto[],
+  ): Promise<BloqueGrilla[]> {
     const expandidos: BloqueGrilla[] = [];
     const vistos = new Set<string>();
 
@@ -165,8 +266,15 @@ export class BloquesService {
         );
       }
 
+      const diaRegistro = await tx.dia.findFirst({
+        where: { nombre: b.dia as TipoDia },
+      });
+      if (!diaRegistro) {
+        throw new BadRequestException(`Día no válido: ${b.dia}`);
+      }
+
       for (const numero of rangoBloques(b.bloque_inicio, b.bloque_fin)) {
-        const clave = `${b.dia}-${numero}`;
+        const clave = `${diaRegistro.id_dia}-${numero}`;
         if (vistos.has(clave)) {
           throw new BadRequestException(
             `Los bloques enviados se superponen entre sí (${describirBloque(b.dia, numero)})`,
@@ -175,65 +283,57 @@ export class BloquesService {
         vistos.add(clave);
         expandidos.push({
           dia: b.dia,
+          id_dia: diaRegistro.id_dia,
           bloque_numero: numero,
           id_sala: b.id_sala ?? undefined,
           sala_externa: b.sala_externa ?? undefined,
         });
       }
     }
+
     return expandidos;
   }
 
   private async validarSalas(tx: Tx, bloques: BloqueGrilla[]) {
-    const ids = [
+    const salasId = [
       ...new Set(
         bloques.map((b) => b.id_sala).filter((id): id is number => id != null),
       ),
     ];
-    if (ids.length === 0) return;
+    if (salasId.length === 0) return;
 
-    const salas = await tx.sala.findMany({ where: { id_sala: { in: ids } } });
-    for (const id of ids) {
-      const sala = salas.find((s) => s.id_sala === id);
-      if (!sala) throw new NotFoundException(`Sala ${id} no encontrada`);
-      if (!sala.activo) {
-        throw new BadRequestException(`La ${sala.nombre} está desactivada`);
+    const salas = await tx.sala.findMany({
+      where: { id_sala: { in: salasId } },
+    });
+    const encontradas = new Set(salas.map((s) => s.id_sala));
+    for (const id of salasId) {
+      if (!encontradas.has(id)) {
+        throw new NotFoundException(`La sala con id ${id} no existe`);
+      }
+      const s = salas.find((sala) => sala.id_sala === id);
+      if (s && !s.activo) {
+        throw new BadRequestException(`La sala ${s.nombre} está inactiva`);
       }
     }
   }
 
-  // Choque de sala con otro bloque o con una ocupación (otra carrera, reserva),
-  // o del mismo curso consigo mismo
   private async validarChoques(
     tx: Tx,
     bloques: BloqueGrilla[],
     id_curso: number,
   ) {
     for (const b of bloques) {
-      const or: Prisma.Bloque_horarioWhereInput[] = [{ id_curso }];
-      if (b.id_sala != null) or.push({ id_sala: b.id_sala });
+      if (b.id_sala == null) continue;
 
-      const choque = await tx.bloque_horario.findFirst({
-        where: { dia: b.dia, bloque_numero: b.bloque_numero, OR: or },
-        include: { sala: true, curso: true },
+      const choque = await choqueConOcupaciones(tx, {
+        id_sala: b.id_sala,
+        id_dia: b.id_dia,
+        bloque_numero: b.bloque_numero,
+        excluirCursoId: id_curso,
       });
-      if (choque) {
-        const cuando = describirBloque(b.dia, b.bloque_numero);
-        throw new ConflictException(
-          choque.id_curso === id_curso
-            ? `La asignatura ya tiene clase el ${cuando}`
-            : `La ${choque.sala?.nombre} ya está ocupada por "${choque.curso.nombre}" el ${cuando}`,
-        );
-      }
 
-      if (b.id_sala != null) {
-        const ocupada = await choqueConOcupaciones(tx, {
-          id_sala: b.id_sala,
-          dia: b.dia,
-          inicio: b.bloque_numero,
-          fin: b.bloque_numero,
-        });
-        if (ocupada) throw new ConflictException(ocupada);
+      if (choque) {
+        throw new ConflictException(choque);
       }
     }
   }

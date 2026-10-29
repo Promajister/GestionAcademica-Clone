@@ -1,6 +1,12 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import {
+  FormsModule,
+  ReactiveFormsModule,
+  FormBuilder,
+  FormGroup,
+  Validators,
+} from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -11,7 +17,11 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { SalasApiService, SalaDTO, TipoSala } from '../../services/salas-api.service';
+import {
+  SalasApiService,
+  SalaDTO,
+  TipoSala,
+} from '../../services/salas-api.service';
 
 @Component({
   standalone: true,
@@ -58,12 +68,11 @@ export class HorarioSalasComponent implements OnInit {
 
   readonly TIPOS: { valor: TipoSala; label: string }[] = [
     { valor: 'CLASES', label: 'Sala de clases' },
-    { valor: 'REUNION', label: 'Sala de reunión' },
+    { valor: 'REUNIONES', label: 'Sala de reunión' },
   ];
 
   constructor() {
     this.form = this.fb.group({
-      codigo: ['', [Validators.required, Validators.maxLength(30)]],
       nombre: ['', [Validators.required, Validators.maxLength(100)]],
       tipo: ['CLASES' as TipoSala, [Validators.required]],
       capacidad: [22, [Validators.required, Validators.min(1)]],
@@ -83,9 +92,13 @@ export class HorarioSalasComponent implements OnInit {
       },
       error: (err) => {
         this.cargando = false;
-        this.snack.open('Error al cargar salas: ' + (err.error?.message || err.message), 'Cerrar', {
-          duration: 4000,
-        });
+        this.snack.open(
+          'Error al cargar salas: ' + (err.error?.message || err.message),
+          'Cerrar',
+          {
+            duration: 4000,
+          },
+        );
       },
     });
   }
@@ -99,9 +112,7 @@ export class HorarioSalasComponent implements OnInit {
     if (!q) return this.salas;
     return this.salas.filter(
       (s) =>
-        s.nombre.toLowerCase().includes(q) ||
-        s.codigo.toLowerCase().includes(q) ||
-        s.tipo.toLowerCase().includes(q)
+        s.nombre.toLowerCase().includes(q) || s.tipo.toLowerCase().includes(q),
     );
   }
 
@@ -109,7 +120,6 @@ export class HorarioSalasComponent implements OnInit {
     this.salaEditando = null;
     this.errorBackend = null;
     this.form.reset({
-      codigo: '',
       nombre: '',
       tipo: 'CLASES',
       capacidad: 22,
@@ -121,7 +131,6 @@ export class HorarioSalasComponent implements OnInit {
     this.salaEditando = s;
     this.errorBackend = null;
     this.form.patchValue({
-      codigo: s.codigo,
       nombre: s.nombre,
       tipo: s.tipo,
       capacidad: s.capacidad,
@@ -146,39 +155,58 @@ export class HorarioSalasComponent implements OnInit {
     this.errorBackend = null;
 
     if (this.salaEditando) {
-      this.api.actualizar(this.salaEditando.id_sala, valor).subscribe({
-        next: (actualizada) => {
-          this.guardando = false;
-          this.snack.open(`Sala "${actualizada.nombre}" actualizada exitosamente`, 'Cerrar', {
-            duration: 3500,
-          });
-          this.cerrarModal();
-          this.cargarSalas();
-        },
-        error: (err) => {
-          this.guardando = false;
-          const msg = err.error?.message || 'Error al actualizar sala';
-          this.errorBackend = msg;
-          this.snack.open(msg, 'Cerrar', { duration: 5000 });
-        },
-      });
+      this.api
+        .actualizar(this.salaEditando.id_sala, {
+          nombre: valor.nombre,
+          tipo: valor.tipo,
+          capacidad: Number(valor.capacidad),
+        })
+        .subscribe({
+          next: (res) => {
+            this.guardando = false;
+            this.snack.open(
+              `Sala "${res.nombre}" actualizada con éxito`,
+              'Cerrar',
+              {
+                duration: 3000,
+              },
+            );
+            this.cerrarModal();
+            this.cargarSalas();
+          },
+          error: (err) => {
+            this.guardando = false;
+            this.errorBackend =
+              err.error?.message || 'Error al actualizar la sala';
+            this.snack.open(this.errorBackend!, 'Cerrar', { duration: 5000 });
+          },
+        });
     } else {
-      this.api.crear(valor).subscribe({
-        next: (creada) => {
-          this.guardando = false;
-          this.snack.open(`Sala "${creada.nombre}" registrada exitosamente`, 'Cerrar', {
-            duration: 3500,
-          });
-          this.cerrarModal();
-          this.cargarSalas();
-        },
-        error: (err) => {
-          this.guardando = false;
-          const msg = err.error?.message || 'Error al crear sala';
-          this.errorBackend = msg;
-          this.snack.open(msg, 'Cerrar', { duration: 5000 });
-        },
-      });
+      this.api
+        .crear({
+          nombre: valor.nombre,
+          tipo: valor.tipo,
+          capacidad: Number(valor.capacidad),
+        })
+        .subscribe({
+          next: (res) => {
+            this.guardando = false;
+            this.snack.open(
+              `Sala "${res.nombre}" creada con éxito`,
+              'Cerrar',
+              {
+                duration: 3000,
+              },
+            );
+            this.cerrarModal();
+            this.cargarSalas();
+          },
+          error: (err) => {
+            this.guardando = false;
+            this.errorBackend = err.error?.message || 'Error al crear la sala';
+            this.snack.open(this.errorBackend!, 'Cerrar', { duration: 5000 });
+          },
+        });
     }
   }
 
@@ -192,40 +220,61 @@ export class HorarioSalasComponent implements OnInit {
 
   confirmarEliminar(): void {
     if (!this.salaPorEliminar) return;
-    const s = this.salaPorEliminar;
+
+    const id = this.salaPorEliminar.id_sala;
     this.guardando = true;
 
-    this.api.eliminar(s.id_sala).subscribe({
-      next: (resp) => {
+    this.api.eliminar(id).subscribe({
+      next: (res) => {
         this.guardando = false;
-        this.salaPorEliminar = null;
-        this.snack.open(resp.mensaje, 'Cerrar', { duration: 5000 });
+        this.snack.open(res.mensaje, 'Cerrar', { duration: 5000 });
+        this.cerrarConfirmarEliminar();
         this.cargarSalas();
       },
       error: (err) => {
         this.guardando = false;
-        this.salaPorEliminar = null;
-        this.snack.open(err.error?.message || 'Error al eliminar sala', 'Cerrar', { duration: 5000 });
+        const msg = err.error?.message || 'Error al procesar la eliminación';
+        this.snack.open(msg, 'Cerrar', { duration: 5000 });
       },
     });
   }
 
   reactivar(s: SalaDTO): void {
-    this.guardando = true;
     this.api.actualizar(s.id_sala, { activo: true }).subscribe({
       next: () => {
-        this.guardando = false;
-        this.snack.open(`Sala "${s.nombre}" reactivada correctamente`, 'Cerrar', { duration: 3500 });
+        this.snack.open(`Sala "${s.nombre}" reactivada con éxito`, 'Cerrar', {
+          duration: 3000,
+        });
         this.cargarSalas();
       },
       error: (err) => {
-        this.guardando = false;
-        this.snack.open(err.error?.message || 'Error al reactivar sala', 'Cerrar', { duration: 4000 });
+        const msg = err.error?.message || 'Error al reactivar sala';
+        this.snack.open(msg, 'Cerrar', { duration: 4000 });
       },
     });
   }
 
   estaEnUso(s: SalaDTO): boolean {
-    return (s._count?.bloques_horarios ?? 0) > 0;
+    const c = s._count;
+    if (!c) return false;
+    return (
+      (c.horarios ?? 0) > 0 ||
+      (c.horariosExternos ?? 0) > 0 ||
+      (c.ocupacionesPuntuales ?? 0) > 0 ||
+      (c.bloques_horarios ?? 0) > 0 ||
+      (c.ocupaciones ?? 0) > 0
+    );
+  }
+
+  conteoUso(s: SalaDTO): number {
+    const c = s._count;
+    if (!c) return 0;
+    return (
+      (c.horariosExternos ?? 0) +
+      (c.horarios ?? 0) +
+      (c.ocupacionesPuntuales ?? 0) +
+      (c.bloques_horarios ?? 0) +
+      (c.ocupaciones ?? 0)
+    );
   }
 }

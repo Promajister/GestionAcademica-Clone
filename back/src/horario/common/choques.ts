@@ -1,8 +1,7 @@
-import { DiaSemana, Prisma, TipoOcupacion } from '@prisma/client';
+import { Prisma, TipoDia } from '@prisma/client';
 
 type Db = Prisma.TransactionClient;
 
-// Fecha de hoy como medianoche UTC, igual que se guardan los campos @db.Date
 export const hoyUtc = () => {
   const ahora = new Date();
   return new Date(
@@ -12,47 +11,85 @@ export const hoyUtc = () => {
 
 export const formatoFecha = (fecha: Date) => fecha.toISOString().slice(0, 10);
 
-// Busca una ocupación de sala que se cruce con [inicio, fin] ese día.
-// - Sin `fecha` (uso semanal): choca con ocupaciones SEMESTRALES y con
-//   reservas PUNTUALES futuras de ese mismo día de la semana.
-// - Con `fecha` (reserva puntual): choca con SEMESTRALES y con PUNTUALES de esa fecha.
-// Devuelve un mensaje para el usuario, o null si la sala está libre.
 export async function choqueConOcupaciones(
   db: Db,
   p: {
     id_sala: number;
-    dia: DiaSemana;
-    inicio: number;
-    fin: number;
+    id_dia?: number;
+    diaNombre?: TipoDia;
+    bloque_numero: number;
     fecha?: Date;
-    excluirId?: number;
+    excluirCursoId?: number;
   },
 ): Promise<string | null> {
-  const ocupacion = await db.ocupacion_sala.findFirst({
+  const sala = await db.sala.findUnique({ where: { id_sala: p.id_sala } });
+  const nombreSala = sala?.nombre ?? `Sala ${p.id_sala}`;
+
+  // 1. Choque con Horario (clases internas con carga docente)
+  if (p.id_dia) {
+    const horario = await db.horario.findFirst({
+      where: {
+        id_sala: p.id_sala,
+        id_dia: p.id_dia,
+        id_bloque: p.bloque_numero,
+        ...(p.excluirCursoId && {
+          carga: { id_curso: { not: p.excluirCursoId } },
+        }),
+      },
+      include: {
+        carga: {
+          include: {
+            curso: { include: { asignatura: true } },
+          },
+        },
+        dia: true,
+      },
+    });
+
+    if (horario) {
+      const codigo = horario.carga.curso.asignatura.codigo;
+      const diaTexto = horario.dia.nombre;
+      return `La ${nombreSala} ya está ocupada por ${codigo} el ${diaTexto} bloque ${p.bloque_numero}`;
+    }
+  }
+
+  // 2. Choque con HorarioExterno (asignaturas externas)
+  if (p.id_dia) {
+    const externo = await db.horarioExterno.findFirst({
+      where: {
+        id_sala: p.id_sala,
+        id_dia: p.id_dia,
+        id_bloque: p.bloque_numero,
+        ...(p.excluirCursoId && {
+          id_curso: { not: p.excluirCursoId },
+        }),
+      },
+      include: {
+        curso: { include: { asignatura: true } },
+        dia: true,
+      },
+    });
+
+    if (externo) {
+      const codigo = externo.curso.asignatura.codigo;
+      const diaTexto = externo.dia.nombre;
+      return `La ${nombreSala} ya está ocupada por ${codigo} el ${diaTexto} bloque ${p.bloque_numero}`;
+    }
+  }
+
+  // 3. Choque con OcupacionPuntual
+  const puntual = await db.ocupacionPuntual.findFirst({
     where: {
       id_sala: p.id_sala,
-      dia: p.dia,
-      bloque_inicio: { lte: p.fin },
-      bloque_fin: { gte: p.inicio },
-      ...(p.excluirId !== undefined && {
-        NOT: { id_ocupacion: p.excluirId },
-      }),
-      OR: [
-        { tipo: TipoOcupacion.SEMESTRAL },
-        {
-          tipo: TipoOcupacion.PUNTUAL,
-          fecha: p.fecha ?? { gte: hoyUtc() },
-        },
-      ],
+      id_bloque: p.bloque_numero,
+      ...(p.fecha && { fecha: p.fecha }),
     },
-    include: { sala: true },
-    orderBy: { fecha: 'asc' },
   });
-  if (!ocupacion) return null;
 
-  const cuando =
-    ocupacion.tipo === TipoOcupacion.SEMESTRAL
-      ? `todos los ${ocupacion.dia} durante el semestre`
-      : `el ${formatoFecha(ocupacion.fecha!)}`;
-  return `La ${ocupacion.sala.nombre} está ocupada por ${ocupacion.solicitante} (${ocupacion.motivo}) ${cuando}, de ${ocupacion.hora_inicio} a ${ocupacion.hora_fin}`;
+  if (puntual) {
+    const fechaTexto = formatoFecha(puntual.fecha);
+    return `La ${nombreSala} tiene una ocupación puntual el día ${fechaTexto} bloque ${p.bloque_numero}`;
+  }
+
+  return null;
 }

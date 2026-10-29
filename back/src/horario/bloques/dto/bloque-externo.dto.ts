@@ -13,14 +13,21 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
-import { DiaSemana } from '@prisma/client';
 import { trim } from '../../common/trim.transform';
 import { TOTAL_BLOQUES } from '../../common/grilla';
 
+export enum DiaSemanaLaboral {
+  LUNES = 'LUNES',
+  MARTES = 'MARTES',
+  MIERCOLES = 'MIERCOLES',
+  JUEVES = 'JUEVES',
+  VIERNES = 'VIERNES',
+}
+
 // Rango de bloques de la grilla (ver GET /horario/grilla). Ej. 3-4 = 09:40 a 11:10.
 export class BloqueExternoDto {
-  @IsEnum(DiaSemana, { message: 'dia debe ser LUNES a VIERNES' })
-  dia!: DiaSemana;
+  @IsEnum(DiaSemanaLaboral, { message: 'dia debe ser LUNES a VIERNES' })
+  dia!: DiaSemanaLaboral;
 
   @IsInt()
   @Min(1)
