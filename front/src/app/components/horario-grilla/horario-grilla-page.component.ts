@@ -7,14 +7,40 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatButtonModule } from '@angular/material/button';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import {
   HorarioApiService,
   CarreraDTO,
   PlanDTO,
   AsignaturaDTO,
   DiaSemana,
+  BloqueProtegidoDTO,
 } from '../../services/horario-api.service';
 import { HorarioGrillaComponent, CeldaGrilla } from './horario-grilla.component';
+
+function formatoAlcanceLegible(bp: BloqueProtegidoDTO): string {
+  switch (bp.alcance) {
+    case 'UNIVERSIDAD':
+      return 'Universidad';
+    case 'FACULTAD':
+      return 'Facultad';
+    case 'CARRERA':
+      return `Carrera ${bp.codigo_carrera ?? ''}`.trim();
+    case 'ESTUDIANTES':
+      return `Estudiantes ${bp.codigo_carrera ?? ''} (${bp.semestre ?? ''}° sem)`.trim();
+    case 'PRACTICA_PREPRACTICA':
+      return `Práctica ${bp.semestre ?? ''}° semestre`.trim();
+    case 'ACADEMICOS':
+      return bp.contrato ? `Académicos (${bp.contrato})` : 'Académicos';
+    case 'ACADEMICO_INDIVIDUAL':
+      return bp.profesor?.usuario?.nombre
+        ? `Docente: ${bp.profesor.usuario.nombre}`
+        : 'Académico individual';
+    default:
+      return bp.alcance;
+  }
+}
 
 @Component({
   standalone: true,
@@ -47,6 +73,7 @@ export class HorarioGrillaPageComponent implements OnInit {
 
   cargando = false;
   asignaturas: AsignaturaDTO[] = [];
+  bloquesProtegidos: BloqueProtegidoDTO[] = [];
   celdasGrilla: CeldaGrilla[] = [];
 
   ngOnInit(): void {
@@ -59,7 +86,6 @@ export class HorarioGrillaPageComponent implements OnInit {
       next: (carreras) => {
         this.carreras = carreras;
         if (carreras.length > 0) {
-          // Seleccionar carrera 311 por defecto si existe
           const pref = carreras.find((c) => c.codigo === '311') || carreras[0];
           this.idCarreraSeleccionada = pref.codigo || pref.id_carrera;
           this.onCarreraChange();
@@ -74,20 +100,24 @@ export class HorarioGrillaPageComponent implements OnInit {
 
   onCarreraChange(): void {
     const carrera = this.carreras.find(
-      (c) => c.codigo === this.idCarreraSeleccionada || String(c.id_carrera) === String(this.idCarreraSeleccionada),
+      (c) =>
+        c.codigo === this.idCarreraSeleccionada ||
+        String(c.id_carrera) === String(this.idCarreraSeleccionada),
     );
     this.planesDisponibles = carrera ? carrera.planes : [];
 
     if (this.planesDisponibles.length > 0) {
-      // Seleccionar Plan 2025 v1 por defecto si existe
       const plan2025 =
-        this.planesDisponibles.find((p) => p.year === 2025 || p.anio === 2025 || p.nombre.includes('2025')) ||
-        this.planesDisponibles[0];
+        this.planesDisponibles.find(
+          (p) =>
+            p.year === 2025 || p.anio === 2025 || p.nombre.includes('2025'),
+        ) || this.planesDisponibles[0];
       this.idPlanSeleccionado = plan2025.id_plan;
       this.cargarHorarioNivel();
     } else {
       this.idPlanSeleccionado = null;
       this.asignaturas = [];
+      this.bloquesProtegidos = [];
       this.celdasGrilla = [];
     }
   }
@@ -100,89 +130,228 @@ export class HorarioGrillaPageComponent implements OnInit {
     if (!this.idPlanSeleccionado || !this.semestreSeleccionado) return;
 
     this.cargando = true;
-    this.horarioApi
-      .getAsignaturas({
+    const codCarrera = this.carreraSeleccionada?.codigo;
+
+    forkJoin({
+      asignaturas: this.horarioApi.getAsignaturas({
         id_plan: this.idPlanSeleccionado,
         semestre: this.semestreSeleccionado,
-      })
-      .subscribe({
-        next: (asignaturas) => {
-          this.asignaturas = asignaturas;
-          this.construirCeldasGrilla(asignaturas);
-          this.cargando = false;
-        },
-        error: () => {
-          this.cargando = false;
-        },
-      });
+      }),
+      protegidos: this.horarioApi
+        .getBloquesProtegidosAplicables({
+          codigo_carrera: codCarrera,
+          semestre: this.semestreSeleccionado,
+        })
+        .pipe(catchError(() => of([] as BloqueProtegidoDTO[]))),
+    }).subscribe({
+      next: ({ asignaturas, protegidos }) => {
+        this.asignaturas = asignaturas;
+        this.bloquesProtegidos = protegidos;
+        this.construirCeldasGrilla(asignaturas, protegidos);
+        this.cargando = false;
+      },
+      error: () => {
+        this.cargando = false;
+      },
+    });
   }
 
   get carreraSeleccionada(): CarreraDTO | undefined {
     return this.carreras.find(
-      (c) => c.codigo === this.idCarreraSeleccionada || String(c.id_carrera) === String(this.idCarreraSeleccionada),
+      (c) =>
+        c.codigo === this.idCarreraSeleccionada ||
+        String(c.id_carrera) === String(this.idCarreraSeleccionada),
     );
   }
 
   get planSeleccionado(): PlanDTO | undefined {
-    return this.planesDisponibles.find((p) => p.id_plan === this.idPlanSeleccionado);
+    return this.planesDisponibles.find(
+      (p) => p.id_plan === this.idPlanSeleccionado,
+    );
   }
 
   get asignaturasPropias(): AsignaturaDTO[] {
-    return this.asignaturas.filter((a) => a.origen === 'PROPIA' || a.origen === 'INTERNA');
+    return this.asignaturas.filter(
+      (a) => a.origen === 'PROPIA' || a.origen === 'INTERNA',
+    );
   }
 
   get asignaturasExternas(): AsignaturaDTO[] {
     return this.asignaturas.filter((a) => a.origen === 'EXTERNA');
   }
 
-  private construirCeldasGrilla(asignaturas: AsignaturaDTO[]): void {
-    const celdas: CeldaGrilla[] = [];
+  private construirCeldasGrilla(
+    asignaturas: AsignaturaDTO[],
+    protegidos: BloqueProtegidoDTO[],
+  ): void {
+    const dias: DiaSemana[] = [
+      'LUNES',
+      'MARTES',
+      'MIERCOLES',
+      'JUEVES',
+      'VIERNES',
+    ];
+
+    // 1. Extraer bloques de cursos desglosados celda a celda (dia, bloque)
+    type SlotCurso = {
+      dia: DiaSemana;
+      bloque: number;
+      asignaturaNombre: string;
+      codigo: string;
+      sala: string;
+      bloqueado: boolean;
+      origen: string;
+    };
+    const cursosSlots: SlotCurso[] = [];
 
     for (const asig of asignaturas) {
-      const cursos = asig.cursos || [];
-      for (const curso of cursos) {
-        const bloques = (curso.bloques_horarios || []).slice().sort((a, b) => {
-          if (a.dia !== b.dia) return a.dia.localeCompare(b.dia);
-          return a.bloque_numero - b.bloque_numero;
-        });
-
-        // Agrupar bloques consecutivos del mismo día
-        let i = 0;
-        while (i < bloques.length) {
-          const actual = bloques[i];
-          let inicio = actual.bloque_numero;
-          let fin = actual.bloque_numero;
-          const dia: DiaSemana = actual.dia;
-          const salaNombre = actual.sala?.nombre || actual.sala_externa || 'Sin sala';
-
-          let j = i + 1;
-          while (
-            j < bloques.length &&
-            bloques[j].dia === dia &&
-            bloques[j].bloque_numero === fin + 1 &&
-            (bloques[j].sala?.nombre || bloques[j].sala_externa) ===
-              (actual.sala?.nombre || actual.sala_externa)
-          ) {
-            fin = bloques[j].bloque_numero;
-            j++;
-          }
-
-          celdas.push({
-            dia,
-            bloque_inicio: inicio,
-            bloque_fin: fin,
-            tipo: asig.origen === 'EXTERNA' ? 'CLASE_EXTERNA' : 'CLASE_PROPIA',
-            etiqueta: asig.nombre,
+      for (const curso of asig.cursos || []) {
+        for (const bh of curso.bloques_horarios || []) {
+          const salaNombre =
+            bh.sala?.nombre || bh.sala_externa || 'Sin sala';
+          cursosSlots.push({
+            dia: bh.dia,
+            bloque: bh.bloque_numero,
+            asignaturaNombre: asig.nombre,
             codigo: asig.codigo,
             sala: salaNombre,
-            bloqueado: actual.bloqueado,
+            bloqueado: bh.bloqueado,
+            origen: asig.origen,
           });
-
-          i = j;
         }
       }
     }
 
-    this.celdasGrilla = celdas;
+    // 2. Extraer bloques protegidos desglosados celda a celda
+    type SlotProtegido = {
+      dia: DiaSemana;
+      bloque: number;
+      nombre: string;
+      detalle: string;
+    };
+    const protegidosSlots: SlotProtegido[] = [];
+
+    for (const bp of protegidos) {
+      const bloquesList =
+        bp.bloques && bp.bloques.length > 0
+          ? bp.bloques
+          : Array.from(
+              { length: bp.bloque_fin - bp.bloque_inicio + 1 },
+              (_, idx) => bp.bloque_inicio + idx,
+            );
+      for (const bNum of bloquesList) {
+        protegidosSlots.push({
+          dia: bp.dia,
+          bloque: bNum,
+          nombre: bp.nombre,
+          detalle: formatoAlcanceLegible(bp),
+        });
+      }
+    }
+
+    // 3. Evaluar cada slot y fusionar consecutivos
+    const celdasResultado: CeldaGrilla[] = [];
+
+    for (const dia of dias) {
+      type SlotDef = {
+        dia: DiaSemana;
+        bloque: number;
+        tipo: 'CLASE_EXTERNA' | 'CLASE_PROPIA' | 'PROTEGIDO';
+        etiqueta: string;
+        codigo?: string;
+        sala?: string;
+        detalle?: string;
+        bloqueado?: boolean;
+        advertencia_choque?: boolean;
+        bloque_protegido_nombre?: string;
+        bloque_protegido_alcance?: string;
+      };
+
+      const slotsDia: SlotDef[] = [];
+
+      for (let b = 1; b <= 12; b++) {
+        const c = cursosSlots.find((cs) => cs.dia === dia && cs.bloque === b);
+        const p = protegidosSlots.find((ps) => ps.dia === dia && ps.bloque === b);
+
+        if (c && p) {
+          // Ambos coinciden: se muestran ambos
+          slotsDia.push({
+            dia,
+            bloque: b,
+            tipo: c.origen === 'EXTERNA' ? 'CLASE_EXTERNA' : 'CLASE_PROPIA',
+            etiqueta: c.asignaturaNombre,
+            codigo: c.codigo,
+            sala: c.sala,
+            bloqueado: c.bloqueado,
+            advertencia_choque: true,
+            bloque_protegido_nombre: p.nombre,
+            bloque_protegido_alcance: p.detalle,
+          });
+        } else if (c) {
+          slotsDia.push({
+            dia,
+            bloque: b,
+            tipo: c.origen === 'EXTERNA' ? 'CLASE_EXTERNA' : 'CLASE_PROPIA',
+            etiqueta: c.asignaturaNombre,
+            codigo: c.codigo,
+            sala: c.sala,
+            bloqueado: c.bloqueado,
+          });
+        } else if (p) {
+          slotsDia.push({
+            dia,
+            bloque: b,
+            tipo: 'PROTEGIDO',
+            etiqueta: p.nombre,
+            detalle: p.detalle,
+          });
+        }
+      }
+
+      // Agrupar consecutivos compatibles del día (sin cruzar colación entre 6 y 7)
+      let i = 0;
+      while (i < slotsDia.length) {
+        const actual = slotsDia[i];
+        let fin = actual.bloque;
+        let j = i + 1;
+
+        const mismaJornadaSlots = (b1: number, b2: number) =>
+          (b1 <= 6 && b2 <= 6) || (b1 >= 7 && b2 >= 7);
+
+        while (
+          j < slotsDia.length &&
+          slotsDia[j].bloque === fin + 1 &&
+          mismaJornadaSlots(actual.bloque, slotsDia[j].bloque) &&
+          slotsDia[j].tipo === actual.tipo &&
+          slotsDia[j].etiqueta === actual.etiqueta &&
+          slotsDia[j].codigo === actual.codigo &&
+          slotsDia[j].sala === actual.sala &&
+          slotsDia[j].advertencia_choque === actual.advertencia_choque &&
+          slotsDia[j].bloque_protegido_nombre === actual.bloque_protegido_nombre
+        ) {
+          fin = slotsDia[j].bloque;
+          j++;
+        }
+
+        celdasResultado.push({
+          dia,
+          bloque_inicio: actual.bloque,
+          bloque_fin: fin,
+          tipo: actual.tipo,
+          etiqueta: actual.etiqueta,
+          codigo: actual.codigo,
+          sala: actual.sala,
+          detalle: actual.detalle,
+          bloqueado: actual.bloqueado,
+          advertencia_choque: actual.advertencia_choque,
+          bloque_protegido_nombre: actual.bloque_protegido_nombre,
+          bloque_protegido_alcance: actual.bloque_protegido_alcance,
+        });
+
+        i = j;
+      }
+    }
+
+    this.celdasGrilla = celdasResultado;
   }
 }
