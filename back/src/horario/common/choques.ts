@@ -1,4 +1,4 @@
-import { Prisma, TipoDia } from '@prisma/client';
+import { Prisma, TipoContrato, TipoDia } from '@prisma/client';
 
 type Db = Prisma.TransactionClient;
 
@@ -92,4 +92,90 @@ export async function choqueConOcupaciones(
   }
 
   return null;
+}
+
+export async function choqueConBloqueProtegido(
+  db: Db,
+  p: {
+    id_dia: number;
+    bloques: number[];
+    codigo_carrera?: string;
+    semestre?: number;
+    id_usuario?: number;
+  },
+) {
+  if (!p.bloques || p.bloques.length === 0) {
+    return [];
+  }
+
+  let contratoProfesor: TipoContrato | null = null;
+  if (p.id_usuario) {
+    const prof = await db.profesor.findUnique({
+      where: { id_usuario: p.id_usuario },
+      select: { contrato: true },
+    });
+    if (prof) {
+      contratoProfesor = prof.contrato;
+    }
+  }
+
+  const condicionesAlcance: Prisma.BloqueProtegidoWhereInput[] = [];
+
+  // Si se busca por grupo (carrera / semestre) o no se especifica usuario
+  if (p.codigo_carrera || (!p.codigo_carrera && !p.id_usuario)) {
+    condicionesAlcance.push({ alcance: 'UNIVERSIDAD' });
+    condicionesAlcance.push({ alcance: 'FACULTAD' });
+  }
+
+  if (p.codigo_carrera) {
+    condicionesAlcance.push({
+      alcance: 'CARRERA',
+      codigo_carrera: p.codigo_carrera,
+    });
+    if (p.semestre !== undefined && p.semestre !== null) {
+      condicionesAlcance.push({
+        alcance: { in: ['ESTUDIANTES', 'PRACTICA_PREPRACTICA'] },
+        codigo_carrera: p.codigo_carrera,
+        semestre: p.semestre,
+      });
+    }
+  }
+
+  if (p.id_usuario) {
+    condicionesAlcance.push({
+      alcance: 'ACADEMICO_INDIVIDUAL',
+      id_usuario: p.id_usuario,
+    });
+    if (contratoProfesor) {
+      condicionesAlcance.push({
+        alcance: 'ACADEMICOS',
+        OR: [{ contrato: null }, { contrato: contratoProfesor }],
+      });
+    } else {
+      condicionesAlcance.push({
+        alcance: 'ACADEMICOS',
+      });
+    }
+  }
+
+  if (condicionesAlcance.length === 0) {
+    return [];
+  }
+
+  return db.bloqueProtegido.findMany({
+    where: {
+      id_dia: p.id_dia,
+      id_bloque: { in: p.bloques },
+      OR: condicionesAlcance,
+    },
+    include: {
+      dia: true,
+      bloque: true,
+      carrera: true,
+      profesor: {
+        include: { usuario: true },
+      },
+    },
+    orderBy: [{ id_dia: 'asc' }, { id_bloque: 'asc' }],
+  });
 }
