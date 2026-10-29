@@ -172,6 +172,21 @@ export class BloquesService {
       await tx.horarioExterno.deleteMany({
         where: { id_curso },
       });
+    } else {
+      const existentes = await tx.horarioExterno.findMany({
+        where: { id_curso },
+        include: { dia: true },
+      });
+      for (const b of expandidos) {
+        const solape = existentes.find(
+          (e) => e.id_dia === b.id_dia && e.id_bloque === b.bloque_numero,
+        );
+        if (solape) {
+          throw new ConflictException(
+            `La asignatura ya tiene un bloque asignado el ${solape.dia.nombre} bloque ${b.bloque_numero}`,
+          );
+        }
+      }
     }
 
     await this.validarSalas(tx, expandidos);
