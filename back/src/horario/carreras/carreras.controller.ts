@@ -7,7 +7,7 @@ import { Roles } from '../../auth/decorators/roles.decorator';
 // Sin @Roles por ahora: los perfiles del módulo Horario se definen en ADM-F04
 @Controller('horario/carreras')
 @UseGuards(JwtCookieAuthGuard, RolesGuard)
-@Roles('jefatura')
+@Roles('jefatura', 'secretaria')
 export class CarrerasController {
   constructor(private readonly service: CarrerasService) {}
 

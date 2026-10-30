@@ -20,7 +20,7 @@ import { CsrfGuard } from '../../auth/guards/csrf.guard';
 // ADM-F03: asignación de profesores y carga a las asignaturas propias
 @Controller('horario/carga-docente')
 @UseGuards(JwtCookieAuthGuard, RolesGuard)
-@Roles('jefatura')
+@Roles('jefatura', 'secretaria')
 export class CargaDocenteController {
   constructor(private readonly cargaDocenteService: CargaDocenteService) {}
 

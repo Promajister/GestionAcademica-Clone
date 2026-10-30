@@ -65,28 +65,28 @@ export const routes: Routes = [
   {
     path: 'horario/salas',
     canActivate: [authGuard, roleGuard],
-    data: { allowedRoles: ['jefatura'] },
+    data: { allowedRoles: ['jefatura', 'secretaria'] },
     loadComponent: () =>
       import('./components/horario-salas/horario-salas.component').then(m => m.HorarioSalasComponent),
   },
   {
     path: 'horario/asignaturas',
     canActivate: [authGuard, roleGuard],
-    data: { allowedRoles: ['jefatura'] },
+    data: { allowedRoles: ['jefatura', 'secretaria'] },
     loadComponent: () =>
       import('./components/horario-asignaturas/horario-asignaturas.component').then(m => m.HorarioAsignaturasComponent),
   },
   {
     path: 'horario/grilla',
     canActivate: [authGuard, roleGuard],
-    data: { allowedRoles: ['jefatura'] },
+    data: { allowedRoles: ['jefatura', 'secretaria'] },
     loadComponent: () =>
       import('./components/horario-grilla/horario-grilla-page.component').then(m => m.HorarioGrillaPageComponent),
   },
   {
     path: 'horario/bloques-protegidos',
     canActivate: [authGuard, roleGuard],
-    data: { allowedRoles: ['jefatura'] },
+    data: { allowedRoles: ['jefatura', 'secretaria'] },
     loadComponent: () =>
       import(
         './components/horario-bloques-protegidos/horario-bloques-protegidos.component'
@@ -282,7 +282,7 @@ export const routes: Routes = [
   {
     path: 'horario/carga-docente',
     canActivate: [authGuard, roleGuard],
-    data: { allowedRoles: ['jefatura'] },
+    data: { allowedRoles: ['jefatura', 'secretaria'] },
     loadComponent: () =>
       import('./components/asignacion-carga/asignacion-carga.component').then(
         (m) => m.AsignacionCargaComponent,
@@ -291,7 +291,7 @@ export const routes: Routes = [
   {
     path: 'horario/profesores',
     canActivate: [authGuard, roleGuard],
-    data: { allowedRoles: ['jefatura'] },
+    data: { allowedRoles: ['jefatura', 'secretaria'] },
     loadComponent: () =>
       import('./components/horario-profesores/horario-profesores.component')
         .then(m => m.HorarioProfesoresComponent),

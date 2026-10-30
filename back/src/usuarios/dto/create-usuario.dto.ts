@@ -8,8 +8,9 @@ export class CreateUsuarioDto {
   @MinLength(3)
   nombre: string;
 
-  @IsIn(['jefatura', 'vinculacion', 'practicas'])
-  role: 'jefatura' | 'vinculacion' | 'practicas';
+  // profesor y secretaria: perfiles del módulo Horario (ADM-F04)
+  @IsIn(['jefatura', 'vinculacion', 'practicas', 'profesor', 'secretaria'])
+  role: 'jefatura' | 'vinculacion' | 'practicas' | 'profesor' | 'secretaria';
 
   @IsOptional()
   @IsBoolean()

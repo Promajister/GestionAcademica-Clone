@@ -26,28 +26,28 @@ export class ProfesoresController {
 
   // GET /api/horario/profesores
   @Get()
-  @Roles('jefatura')
+  @Roles('jefatura', 'secretaria')
   findAll() {
     return this.profesoresService.findAll();
   }
 
   // GET /api/horario/profesores/usuarios-disponibles
   @Get('usuarios-disponibles')
-  @Roles('jefatura')
+  @Roles('jefatura', 'secretaria')
   findUsuariosDisponibles() {
     return this.profesoresService.findUsuariosDisponibles();
   }
 
   // GET /api/horario/profesores/:id
   @Get(':id')
-  @Roles('jefatura')
+  @Roles('jefatura', 'secretaria')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.profesoresService.findOne(id);
   }
 
   // POST /api/horario/profesores
   @Post()
-  @Roles('jefatura')
+  @Roles('jefatura', 'secretaria')
   @UseGuards(CsrfGuard)
   create(@Body() dto: CreateProfesorDto) {
     return this.profesoresService.create(dto);
@@ -55,7 +55,7 @@ export class ProfesoresController {
 
   // PATCH /api/horario/profesores/:id
   @Patch(':id')
-  @Roles('jefatura')
+  @Roles('jefatura', 'secretaria')
   @UseGuards(CsrfGuard)
   update(
     @Param('id', ParseIntPipe) id: number,
@@ -66,7 +66,7 @@ export class ProfesoresController {
 
   // DELETE /api/horario/profesores/:id
   @Delete(':id')
-  @Roles('jefatura')
+  @Roles('jefatura', 'secretaria')
   @UseGuards(CsrfGuard)
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.profesoresService.remove(id);
