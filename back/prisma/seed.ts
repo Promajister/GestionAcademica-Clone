@@ -437,8 +437,7 @@ async function main() {
       'jefatura',
       rolJefatura.id,
     ),
-    // Secretarias del departamento (contraparte del módulo Horario)
-    ensureUsuario('johana.hg@gestion.uta.cl', hashed, 'Johana Rojas', 'secretaria', rolSecretaria.id),
+    // Secretaria del departamento (usuaria del módulo Horario)
     ensureUsuario('karen.hg@gestion.uta.cl', hashed, 'Karen Catalán', 'secretaria', rolSecretaria.id),
   ]);
 
