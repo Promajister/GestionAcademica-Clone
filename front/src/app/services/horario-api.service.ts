@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { SalaDTO } from './salas-api.service';
@@ -100,6 +100,81 @@ export interface CreateAsignaturaPayload {
 
 export type UpdateAsignaturaPayload = Partial<CreateAsignaturaPayload>;
 
+// ---------- BLOQUES PROTEGIDOS (DIS-F01) ----------
+export type AlcanceBloqueProtegidoUI =
+  | 'UNIVERSIDAD'
+  | 'FACULTAD'
+  | 'CARRERA'
+  | 'ESTUDIANTES'
+  | 'PRACTICA_PREPRACTICA'
+  | 'ACADEMICOS'
+  | 'ACADEMICO_INDIVIDUAL';
+
+export interface BloqueProtegidoDTO {
+  id_bloque_protegido: number;
+  ids?: number[];
+  nombre: string;
+  alcance: AlcanceBloqueProtegidoUI;
+  dia: DiaSemana;
+  id_dia?: number;
+  bloque_inicio: number;
+  bloque_fin: number;
+  bloques?: number[];
+  hora_inicio: string;
+  hora_fin: string;
+  codigo_carrera?: string | null;
+  semestre?: number | null;
+  contrato?: string | null;
+  id_usuario?: number | null;
+  carrera?: { codigo: string; nombre: string } | null;
+  profesor?: {
+    id_usuario: number;
+    contrato: string;
+    usuario?: { id: number; nombre: string; email: string } | null;
+  } | null;
+}
+
+export interface CreateBloqueProtegidoPayload {
+  nombre: string;
+  alcance: AlcanceBloqueProtegidoUI;
+  dias?: DiaSemana[];
+  dia?: DiaSemana;
+  bloque_inicio: number;
+  bloque_fin: number;
+  codigo_carrera?: string;
+  semestre?: number;
+  contrato?: string;
+  id_usuario?: number;
+}
+
+export interface ProfesorItemDTO {
+  id_usuario: number;
+  contrato: string;
+  usuario: {
+    id: number;
+    nombre: string;
+    email: string;
+  };
+}
+
+// ---------- DISPONIBILIDAD DOCENTE (DIS-F02) ----------
+export interface BloqueDisponibleDTO {
+  dia: DiaSemana;
+  bloque: number;
+}
+
+export interface MiDisponibilidadDTO {
+  profesor: {
+    id_usuario: number;
+    nombre: string;
+    email: string;
+    contrato: 'PLANTA' | 'HORAS';
+  };
+  habilitado: boolean;
+  contratos_habilitados: string[];
+  bloques: BloqueDisponibleDTO[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class HorarioApiService {
   private http = inject(HttpClient);
@@ -182,5 +257,107 @@ export class HorarioApiService {
   getSalas(soloActivas = true): Observable<SalaDTO[]> {
     const params = new HttpParams().set('soloActivas', String(soloActivas));
     return this.http.get<SalaDTO[]>(`${this.baseUrl}/salas`, { params });
+  }
+
+  // ---------- Bloques Protegidos API (DIS-F01) ----------
+  getBloquesProtegidos(params?: {
+    alcance?: string;
+    dia?: string;
+    codigo_carrera?: string;
+    semestre?: number;
+    id_usuario?: number;
+  }): Observable<BloqueProtegidoDTO[]> {
+    let p = new HttpParams();
+    if (params?.alcance) p = p.set('alcance', params.alcance);
+    if (params?.dia) p = p.set('dia', params.dia);
+    if (params?.codigo_carrera)
+      p = p.set('codigo_carrera', params.codigo_carrera);
+    if (params?.semestre != null)
+      p = p.set('semestre', String(params.semestre));
+    if (params?.id_usuario != null)
+      p = p.set('id_usuario', String(params.id_usuario));
+
+    return this.http.get<BloqueProtegidoDTO[]>(
+      `${this.baseUrl}/bloques-protegidos`,
+      { params: p },
+    );
+  }
+
+  getBloquesProtegidosAplicables(params: {
+    codigo_carrera?: string;
+    semestre?: number;
+    id_usuario?: number;
+  }): Observable<BloqueProtegidoDTO[]> {
+    let p = new HttpParams();
+    if (params.codigo_carrera)
+      p = p.set('codigo_carrera', params.codigo_carrera);
+    if (params.semestre != null)
+      p = p.set('semestre', String(params.semestre));
+    if (params.id_usuario != null)
+      p = p.set('id_usuario', String(params.id_usuario));
+
+    return this.http.get<BloqueProtegidoDTO[]>(
+      `${this.baseUrl}/bloques-protegidos/aplicables`,
+      { params: p },
+    );
+  }
+
+  getProfesoresBloquesProtegidos(): Observable<ProfesorItemDTO[]> {
+    return this.http.get<ProfesorItemDTO[]>(
+      `${this.baseUrl}/bloques-protegidos/profesores`,
+    );
+  }
+
+  createBloqueProtegido(
+    payload: CreateBloqueProtegidoPayload,
+  ): Observable<{ mensaje: string; total_creados?: number }> {
+    return this.http.post<{ mensaje: string; total_creados?: number }>(
+      `${this.baseUrl}/bloques-protegidos`,
+      payload,
+    );
+  }
+
+  updateBloqueProtegido(
+    id: number,
+    payload: Partial<CreateBloqueProtegidoPayload>,
+  ): Observable<BloqueProtegidoDTO> {
+    return this.http.patch<BloqueProtegidoDTO>(
+      `${this.baseUrl}/bloques-protegidos/${id}`,
+      payload,
+    );
+  }
+
+  deleteBloqueProtegido(
+    id: number,
+    grupo = false,
+  ): Observable<{ mensaje: string; eliminados?: number }> {
+    const params = new HttpParams().set('grupo', String(grupo));
+    return this.http.delete<{ mensaje: string; eliminados?: number }>(
+      `${this.baseUrl}/bloques-protegidos/${id}`,
+      { params },
+    );
+  }
+
+  // ---------- DISPONIBILIDAD DOCENTE (DIS-F02) ----------
+  // Siempre sobre el docente autenticado: el back toma el id desde la sesión
+  getMiDisponibilidad(): Observable<MiDisponibilidadDTO> {
+    return this.http.get<MiDisponibilidadDTO>(
+      `${this.baseUrl}/disponibilidad/mia`,
+    );
+  }
+
+  guardarMiDisponibilidad(
+    bloques: BloqueDisponibleDTO[],
+  ): Observable<MiDisponibilidadDTO> {
+    return this.http.put<MiDisponibilidadDTO>(
+      `${this.baseUrl}/disponibilidad/mia`,
+      { bloques },
+      {
+        // El PUT exige CsrfGuard: mismo token que guarda AuthService al iniciar sesión
+        headers: new HttpHeaders({
+          'X-CSRF-Token': localStorage.getItem('app.token') ?? '',
+        }),
+      },
+    );
   }
 }

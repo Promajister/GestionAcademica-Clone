@@ -84,6 +84,24 @@ export const routes: Routes = [
       import('./components/horario-grilla/horario-grilla-page.component').then(m => m.HorarioGrillaPageComponent),
   },
   {
+    path: 'horario/bloques-protegidos',
+    canActivate: [authGuard, roleGuard],
+    data: { allowedRoles: ['jefatura'] },
+    loadComponent: () =>
+      import(
+        './components/horario-bloques-protegidos/horario-bloques-protegidos.component'
+      ).then((m) => m.HorarioBloquesProtegidosComponent),
+  },
+  {
+    path: 'horario/mi-disponibilidad',
+    canActivate: [authGuard, roleGuard],
+    data: { allowedRoles: ['profesor'] },
+    loadComponent: () =>
+      import(
+        './components/horario-disponibilidad/horario-disponibilidad.component'
+      ).then((m) => m.HorarioDisponibilidadComponent),
+  },
+  {
     path: 'horario',
     pathMatch: 'full',
     redirectTo: 'horario/asignaturas',
@@ -268,6 +286,15 @@ export const routes: Routes = [
     loadComponent: () => 
       import('./components/asignacion-carga/asignacion-carga.component').then(m => m.AsignacionCargaComponent),
   },
+  {
+    path: 'horario/profesores',
+    canActivate: [authGuard, roleGuard],
+    data: { allowedRoles: ['jefatura'] },
+    loadComponent: () =>
+      import('./components/horario-profesores/horario-profesores.component')
+        .then(m => m.HorarioProfesoresComponent),
+  },
+
   {
     path: '**',
     redirectTo: 'dashboard',

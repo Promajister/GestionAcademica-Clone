@@ -1,0 +1,149 @@
+### Pruebas manuales DIS-F01 (Bloques Protegidos) — extensión REST Client de VS Code
+@api = http://localhost:3000/api
+
+### 0. Login con jefatura
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "email": "pedhg@gestion.uta.cl", "password": "123456" }
+
+### 1. Listar bloques protegidos agrupados
+GET {{api}}/horario/bloques-protegidos
+
+### 2. Listar docentes disponibles para asignación individual
+GET {{api}}/horario/bloques-protegidos/profesores
+
+### 3. Crear bloque UNIVERSIDAD (Institucional)
+POST {{api}}/horario/bloques-protegidos
+Content-Type: application/json
+
+{
+  "nombre": "Aniversario Universidad",
+  "alcance": "UNIVERSIDAD",
+  "dias": ["VIERNES"],
+  "bloque_inicio": 5,
+  "bloque_fin": 6
+}
+
+### 4. Crear bloque FACULTAD
+POST {{api}}/horario/bloques-protegidos
+Content-Type: application/json
+
+{
+  "nombre": "Consejo de Facultad de Ingeniería",
+  "alcance": "FACULTAD",
+  "dias": ["MIERCOLES"],
+  "bloque_inicio": 9,
+  "bloque_fin": 10
+}
+
+### 5. Crear bloque CARRERA (311)
+POST {{api}}/horario/bloques-protegidos
+Content-Type: application/json
+
+{
+  "nombre": "Asamblea Carrera 311",
+  "alcance": "CARRERA",
+  "codigo_carrera": "311",
+  "dias": ["JUEVES"],
+  "bloque_inicio": 5,
+  "bloque_fin": 6
+}
+
+### 6. Crear bloque PRACTICA_PREPRACTICA (311 - 6° semestre - Martes a Jueves mañana)
+POST {{api}}/horario/bloques-protegidos
+Content-Type: application/json
+
+{
+  "nombre": "Práctica 6° semestre",
+  "alcance": "PRACTICA_PREPRACTICA",
+  "codigo_carrera": "311",
+  "semestre": 6,
+  "dias": ["MARTES", "MIERCOLES", "JUEVES"],
+  "bloque_inicio": 1,
+  "bloque_fin": 6
+}
+
+### 7. Crear bloque ESTUDIANTES (336 - 2° semestre)
+POST {{api}}/horario/bloques-protegidos
+Content-Type: application/json
+
+{
+  "nombre": "Tutoría de Integración 2° sem",
+  "alcance": "ESTUDIANTES",
+  "codigo_carrera": "336",
+  "semestre": 2,
+  "dias": ["VIERNES"],
+  "bloque_inicio": 1,
+  "bloque_fin": 2
+}
+
+### 8. Crear bloque ACADEMICOS (Todos los académicos)
+POST {{api}}/horario/bloques-protegidos
+Content-Type: application/json
+
+{
+  "nombre": "Reunión de Departamento",
+  "alcance": "ACADEMICOS",
+  "dias": ["LUNES"],
+  "bloque_inicio": 7,
+  "bloque_fin": 8
+}
+
+### 9. Crear bloque ACADEMICO_INDIVIDUAL
+POST {{api}}/horario/bloques-protegidos
+Content-Type: application/json
+
+{
+  "nombre": "Atención de Jefatura",
+  "alcance": "ACADEMICO_INDIVIDUAL",
+  "id_usuario": 1,
+  "dias": ["LUNES"],
+  "bloque_inicio": 3,
+  "bloque_fin": 4
+}
+
+### 10. Consultar aplicables a Carrera 311, Semestre 6 (debe incluir UNIVERSIDAD, FACULTAD, CARRERA 311 y PRACTICA)
+GET {{api}}/horario/bloques-protegidos/aplicables?codigo_carrera=311&semestre=6
+
+### 11. Consultar aplicables a Docente (id_usuario=1) (debe incluir ACADEMICOS e INDIVIDUAL)
+GET {{api}}/horario/bloques-protegidos/aplicables?id_usuario=1
+
+### 12. Validación: Cruzar colación -> 400
+POST {{api}}/horario/bloques-protegidos
+Content-Type: application/json
+
+{
+  "nombre": "Bloque Inválido",
+  "alcance": "UNIVERSIDAD",
+  "dias": ["LUNES"],
+  "bloque_inicio": 6,
+  "bloque_fin": 7
+}
+
+### 13. Validación: Día sábado no permitido -> 400
+POST {{api}}/horario/bloques-protegidos
+Content-Type: application/json
+
+{
+  "nombre": "Sábado Protegido",
+  "alcance": "UNIVERSIDAD",
+  "dias": ["SABADO"],
+  "bloque_inicio": 1,
+  "bloque_fin": 2
+}
+
+### 14. Validación: CARRERA sin codigo_carrera -> 400
+POST {{api}}/horario/bloques-protegidos
+Content-Type: application/json
+
+{
+  "nombre": "Sin Carrera",
+  "alcance": "CARRERA",
+  "dias": ["LUNES"],
+  "bloque_inicio": 1,
+  "bloque_fin": 2
+}
+
+### 15. Eliminar grupo completo
+DELETE {{api}}/horario/bloques-protegidos/1?grupo=true

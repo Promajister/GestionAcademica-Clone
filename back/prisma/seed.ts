@@ -1,4 +1,4 @@
-import { PrismaClient, TipoSala, TipoDia, TipoOrigen, TipoCurso } from '@prisma/client';
+import { PrismaClient, TipoSala, TipoDia, TipoOrigen, TipoCurso, AlcanceBloqueProtegido, TipoContrato } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import e from 'express';
 
@@ -434,8 +434,46 @@ async function main() {
   await seedColaboradores();
   await seedCentrosEducativos();
   await seedHorario();
+  await seedProfesoresDemo(hashed);
 
   console.log('Seed OK: usuarios/roles/permisos/colaboradores/centros/horario.');
+}
+
+// ---------- PROFESORES DEMO (DIS-F02) ----------
+// Perfil "profesor" + un docente por horas y uno de planta para probar
+// la pantalla "Mi disponibilidad". Idempotente: no pisa contraseñas existentes.
+async function seedProfesoresDemo(hashedPassword: string) {
+  const rolProfesor = await prisma.rol.upsert({
+    where: { clave: 'profesor' },
+    update: { nombre: 'Profesor' },
+    create: { clave: 'profesor', nombre: 'Profesor' },
+  });
+
+  const docentes: { email: string; nombre: string; contrato: TipoContrato }[] = [
+    { email: 'profesor.horas@gestion.uta.cl', nombre: 'Docente Por Horas', contrato: TipoContrato.HORAS },
+    { email: 'profesor.horas2@gestion.uta.cl', nombre: 'Docente Por Horas 2', contrato: TipoContrato.HORAS },
+    { email: 'profesor.planta@gestion.uta.cl', nombre: 'Docente De Planta', contrato: TipoContrato.PLANTA },
+  ];
+
+  for (const d of docentes) {
+    const usuario = await prisma.usuario.upsert({
+      where: { email: d.email },
+      update: { nombre: d.nombre, role: 'profesor', activo: true, rolId: rolProfesor.id },
+      create: {
+        email: d.email,
+        password: hashedPassword,
+        nombre: d.nombre,
+        role: 'profesor',
+        activo: true,
+        rolId: rolProfesor.id,
+      },
+    });
+    await prisma.profesor.upsert({
+      where: { id_usuario: usuario.id },
+      update: { contrato: d.contrato },
+      create: { id_usuario: usuario.id, contrato: d.contrato },
+    });
+  }
 }
 
 // ---------- MÓDULO HORARIO ----------
@@ -506,25 +544,47 @@ async function seedHorario() {
   }
   // Tabla BLOQUEPROTEGIDO
 
-  const bloque_protegidos: { nombreDia: TipoDia; horaInicio: string }[] = [
-    { nombreDia: TipoDia.MARTES, horaInicio: '11:20' },
-    { nombreDia: TipoDia.MARTES, horaInicio: '12:05' },
-    { nombreDia: TipoDia.MIERCOLES, horaInicio: '11:20' },
-    { nombreDia: TipoDia.MIERCOLES, horaInicio: '12:05' },
-    { nombreDia: TipoDia.JUEVES, horaInicio: '16:20' },
-    { nombreDia: TipoDia.JUEVES, horaInicio: '17:05' }
+  const protegidosSeed: {
+    nombre: string;
+    alcance: AlcanceBloqueProtegido;
+    nombreDia: TipoDia;
+    horaInicio: string;
+  }[] = [
+    // Horario protegido institucional (Reunión 1 y seed original de Isaac)
+    { nombre: 'Horario protegido', alcance: AlcanceBloqueProtegido.UNIVERSIDAD, nombreDia: TipoDia.MARTES, horaInicio: '11:20' },
+    { nombre: 'Horario protegido', alcance: AlcanceBloqueProtegido.UNIVERSIDAD, nombreDia: TipoDia.MARTES, horaInicio: '12:05' },
+    { nombre: 'Horario protegido', alcance: AlcanceBloqueProtegido.UNIVERSIDAD, nombreDia: TipoDia.MIERCOLES, horaInicio: '11:20' },
+    { nombre: 'Horario protegido', alcance: AlcanceBloqueProtegido.UNIVERSIDAD, nombreDia: TipoDia.MIERCOLES, horaInicio: '12:05' },
+    { nombre: 'Horario protegido', alcance: AlcanceBloqueProtegido.UNIVERSIDAD, nombreDia: TipoDia.JUEVES, horaInicio: '16:20' },
+    { nombre: 'Horario protegido', alcance: AlcanceBloqueProtegido.UNIVERSIDAD, nombreDia: TipoDia.JUEVES, horaInicio: '17:05' },
+    // Consejo de profesores (Reunión 1: lunes bloques 9 y 10)
+    { nombre: 'Consejo de profesores', alcance: AlcanceBloqueProtegido.ACADEMICOS, nombreDia: TipoDia.LUNES, horaInicio: '16:20' },
+    { nombre: 'Consejo de profesores', alcance: AlcanceBloqueProtegido.ACADEMICOS, nombreDia: TipoDia.LUNES, horaInicio: '17:05' },
   ];
 
-  for (const bloque of bloque_protegidos) {
-    const dia = await prisma.dia.findFirst({ where: { nombre: bloque.nombreDia } });
-    const bloqueHorario = await prisma.bloqueHorario.findFirst({ where: { horaInicio: bloque.horaInicio}})
+  for (const b of protegidosSeed) {
+    const dia = await prisma.dia.findFirst({ where: { nombre: b.nombreDia } });
+    const bloqueHorario = await prisma.bloqueHorario.findFirst({ where: { horaInicio: b.horaInicio } });
 
     if (dia && bloqueHorario) {
-      await prisma.bloqueProtegido.upsert({
-        where: { id_bloque_id_dia: { id_dia: dia.id_dia, id_bloque: bloqueHorario.id_bloque } },
-        update: {},
-        create: { id_dia: dia.id_dia, id_bloque: bloqueHorario.id_bloque },
+      const existente = await prisma.bloqueProtegido.findFirst({
+        where: {
+          nombre: b.nombre,
+          alcance: b.alcance,
+          id_dia: dia.id_dia,
+          id_bloque: bloqueHorario.id_bloque,
+        },
       });
+      if (!existente) {
+        await prisma.bloqueProtegido.create({
+          data: {
+            nombre: b.nombre,
+            alcance: b.alcance,
+            id_dia: dia.id_dia,
+            id_bloque: bloqueHorario.id_bloque,
+          },
+        });
+      }
     }
   }
 

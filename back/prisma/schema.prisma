@@ -901,6 +901,7 @@ model Profesor {
 
   disponibilidad Disponibilidad[]
   cargaDocentes  CargaDocente[]
+  bloquesProtegidos BloqueProtegido[]
   
   usuario    Usuario  @relation(fields: [id_usuario], references: [id], onDelete: Cascade)
 
@@ -912,6 +913,7 @@ model Carrera {
   nombre String
 
   planes Plan[]
+  bloquesProtegidos BloqueProtegido[]
 
   @@map("carreras")
 }
@@ -1014,14 +1016,33 @@ model Dia {
   @@map("dias")
 }
 
+enum AlcanceBloqueProtegido {
+  UNIVERSIDAD
+  FACULTAD
+  CARRERA
+  ESTUDIANTES
+  PRACTICA_PREPRACTICA
+  ACADEMICOS
+  ACADEMICO_INDIVIDUAL
+}
+
 model BloqueProtegido {
-  id_bloque Int
-  id_dia    Int
+  id_bloque_protegido Int                    @id @default(autoincrement())
+  nombre              String
+  alcance             AlcanceBloqueProtegido
+  id_dia              Int
+  id_bloque           Int
+  codigo_carrera      String?
+  semestre            Int?
+  contrato            TipoContrato?
+  id_usuario          Int?
 
-  bloque    BloqueHorario @relation(fields: [id_bloque], references: [id_bloque], onDelete: Cascade)
-  dia       Dia           @relation(fields: [id_dia], references: [id_dia], onDelete: Cascade)
+  dia      Dia           @relation(fields: [id_dia], references: [id_dia], onDelete: Cascade)
+  bloque   BloqueHorario @relation(fields: [id_bloque], references: [id_bloque], onDelete: Cascade)
+  carrera  Carrera?      @relation(fields: [codigo_carrera], references: [codigo], onDelete: Cascade)
+  profesor Profesor?     @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
 
-  @@id([id_bloque, id_dia])
+  @@index([id_dia, id_bloque])
   @@map("bloques_protegidos")
 }
 

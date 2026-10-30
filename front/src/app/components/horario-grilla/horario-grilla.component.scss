@@ -113,6 +113,16 @@
   tbody tr {
     height: 52px;
   }
+
+  &.modo-seleccion {
+    .td-celda,
+    .td-celda-vacia {
+      cursor: pointer;
+      &:hover {
+        background: #f1f5f9 !important;
+      }
+    }
+  }
 }
 
 .td-bloque-info {
@@ -163,6 +173,8 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 4px;
+  gap: 4px;
+  flex-wrap: wrap;
 }
 
 .celda-codigo {
@@ -179,6 +191,17 @@
   width: 15px;
   height: 15px;
   color: #b45309;
+}
+
+.celda-protegido-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #cbd5e1;
+  color: #334155;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .celda-nombre {
@@ -203,6 +226,33 @@
     width: 13px;
     height: 13px;
     color: #64748b;
+  }
+}
+
+.choque-banner {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  padding: 3px 6px;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #92400e;
+
+  .choque-icon {
+    font-size: 12px;
+    width: 12px;
+    height: 12px;
+    color: #d97706;
+  }
+
+  .choque-texto {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 
@@ -244,6 +294,14 @@
     #e2e8f0 16px
   ) !important;
   border-left: 4px solid #64748b !important;
+
+  .celda-nombre {
+    color: #334155;
+  }
+}
+
+.celda-alerta-choque {
+  box-shadow: inset 0 0 0 2px #f59e0b !important;
 }
 
 /* COLACIÓN */
@@ -290,5 +348,46 @@
       height: 16px;
       color: #94a3b8;
     }
+  }
+}
+
+// ---------- DIS-F02: Mi disponibilidad ----------
+.grilla-leyenda {
+  .color--disponible {
+    background: #dcfce7;
+    border-color: #86efac;
+  }
+
+  .color--vacia {
+    background: #ffffff;
+    border-color: #cbd5e1;
+  }
+}
+
+.celda-disponible {
+  background: #dcfce7 !important;
+  border-left: 4px solid #16a34a !important;
+
+  .celda-nombre {
+    color: #166534;
+    font-weight: 600;
+  }
+
+  .celda-check {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    color: #16a34a;
+  }
+}
+
+.grilla-table.modo-seleccion {
+  .celda-disponible:hover {
+    background: #bbf7d0 !important;
+  }
+
+  .td-celda-vacia:hover {
+    background: #f0fdf4 !important;
+    box-shadow: inset 0 0 0 2px #86efac;
   }
 }
