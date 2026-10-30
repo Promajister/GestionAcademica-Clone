@@ -23,7 +23,7 @@ import { CreateBloquesExternosDto } from '../bloques/dto/bloque-externo.dto';
 // Sin @Roles por ahora: los perfiles del módulo Horario se definen en ADM-F04
 @Controller('horario/asignaturas')
 @UseGuards(JwtCookieAuthGuard, RolesGuard)
-@Roles('jefatura')
+@Roles('jefatura', 'secretaria')
 export class AsignaturasController {
   constructor(
     private readonly service: AsignaturasService,

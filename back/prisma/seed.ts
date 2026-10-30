@@ -4,7 +4,7 @@ import e from 'express';
 
 const prisma = new PrismaClient();
 
-type RolClave = 'jefatura' | 'vinculacion' | 'practicas';
+type RolClave = 'jefatura' | 'vinculacion' | 'practicas' | 'secretaria';
 type PermDef = { clave: string; descripcion: string };
 
 async function ensureUsuario(
@@ -50,6 +50,12 @@ async function seedRolesYPermisos() {
       where: { clave: 'practicas' },
       update: { nombre: 'Coordinacion de Practicas' },
       create: { clave: 'practicas', nombre: 'Coordinacion de Practicas' },
+    }),
+    // ADM-F04: secretaria del departamento, usuaria del módulo Horario
+    prisma.rol.upsert({
+      where: { clave: 'secretaria' },
+      update: { nombre: 'Secretaria de Departamento' },
+      create: { clave: 'secretaria', nombre: 'Secretaria de Departamento' },
     }),
   ]);
 
@@ -171,6 +177,7 @@ async function seedRolesYPermisos() {
       'actividades.eliminar',
       'reportes.ver',
     ],
+    secretaria: ['dashboard.ver'],
   };
 
   for (const r of roles) {
@@ -398,7 +405,8 @@ async function main() {
   const plainPassword = '123456';
   const hashed = await bcrypt.hash(plainPassword, 10);
 
-  const [rolJefatura, rolVinculacion, rolPracticas] = await seedRolesYPermisos();
+  const [rolJefatura, rolVinculacion, rolPracticas, rolSecretaria] =
+    await seedRolesYPermisos();
 
   await Promise.all([
     ensureUsuario(
@@ -429,6 +437,9 @@ async function main() {
       'jefatura',
       rolJefatura.id,
     ),
+    // Secretarias del departamento (contraparte del módulo Horario)
+    ensureUsuario('johana.hg@gestion.uta.cl', hashed, 'Johana', 'secretaria', rolSecretaria.id),
+    ensureUsuario('karen.hg@gestion.uta.cl', hashed, 'Karen Catalán', 'secretaria', rolSecretaria.id),
   ]);
 
   await seedColaboradores();

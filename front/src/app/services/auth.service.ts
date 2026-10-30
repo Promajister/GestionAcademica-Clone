@@ -12,7 +12,7 @@ export interface LoginResponse {
     id: number;
     email: string;
     nombre: string;
-    role: 'jefatura' | 'vinculacion' | 'practicas' | 'profesor';
+    role: 'jefatura' | 'vinculacion' | 'practicas' | 'profesor' | 'secretaria';
     fotoUrl?: string | null;
   };
   csrfToken?: string;

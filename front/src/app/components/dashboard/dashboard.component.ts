@@ -25,7 +25,12 @@ import {
 } from '../../services/practicas.service';
 import { formatDateEs, parseDateFlexible } from '../../utils/date-utils';
 
-type RoleId = 'jefatura' | 'vinculacion' | 'practicas' | 'profesor';
+type RoleId =
+  | 'jefatura'
+  | 'vinculacion'
+  | 'practicas'
+  | 'profesor'
+  | 'secretaria';
 
 interface SelectedRole {
   id: RoleId;
@@ -73,7 +78,8 @@ export class DashboardComponent implements OnInit {
   private practicasService = inject(PracticasService);
 
   themeClass = 'light-theme';
-  esProfesor = false;
+  // Profesor y secretaria no usan los módulos de prácticas: sin tarjetas de resumen
+  ocultarResumen = false;
 
   user = { name: 'Usuario', roleLabel: 'Rol', icon: 'account_circle' };
   cards: CardItem[] = [];
@@ -123,8 +129,8 @@ export class DashboardComponent implements OnInit {
       this.lastLogin = null;
     }
 
-    this.esProfesor = role?.id === 'profesor';
-    if (!this.esProfesor) this.loadSummary();
+    this.ocultarResumen = role?.id === 'profesor' || role?.id === 'secretaria';
+    if (!this.ocultarResumen) this.loadSummary();
   }
 
   private mapRoleLabel(id: RoleId): string {
@@ -137,6 +143,8 @@ export class DashboardComponent implements OnInit {
         return 'Coordinador de Prácticas';
       case 'profesor':
         return 'Profesor';
+      case 'secretaria':
+        return 'Secretaria de Departamento';
     }
   }
 
@@ -367,6 +375,11 @@ export class DashboardComponent implements OnInit {
   }
 
   private buildGroupsFor(id: RoleId): ModuleGroup[] {
+    // ADM-F04: la secretaria ve el mismo grupo Horario que la jefatura
+    if (id === 'secretaria') {
+      return this.buildGroupsFor('jefatura').filter((g) => g.title === 'Horario');
+    }
+
     if (id === 'profesor') {
       return [
         {

@@ -20,7 +20,12 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 
-type RoleId = 'jefatura' | 'vinculacion' | 'practicas' | 'profesor';
+type RoleId =
+  | 'jefatura'
+  | 'vinculacion'
+  | 'practicas'
+  | 'profesor'
+  | 'secretaria';
 
 interface SavedRole {
   id: RoleId;
@@ -237,6 +242,8 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
       ? 'Jefatura de Carrera'
       : id === 'profesor'
       ? 'Profesor'
+      : id === 'secretaria'
+      ? 'Secretaria de Departamento'
       : id === 'vinculacion'
       ? 'Coordinador de Vinculación'
       : 'Coordinador de Prácticas';
@@ -247,6 +254,8 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
       ? 'school'
       : id === 'profesor'
       ? 'co_present'
+      : id === 'secretaria'
+      ? 'support_agent'
       : id === 'vinculacion'
       ? 'groups'
       : 'assignment_ind';
@@ -384,6 +393,19 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private buildNav(id: RoleId): NavItem[] {
+    // ADM-F04: la secretaria arma el horario; ve solo el módulo Horario
+    if (id === 'secretaria') {
+      return [
+        { label: 'Mi cuenta', icon: 'person', route: '/mi-cuenta' },
+        { label: 'Salas', icon: 'meeting_room', route: '/horario/salas' },
+        { label: 'Asignaturas', icon: 'menu_book', route: '/horario/asignaturas' },
+        { label: 'Bloques protegidos', icon: 'lock_clock', route: '/horario/bloques-protegidos' },
+        { label: 'Grilla semanal', icon: 'grid_on', route: '/horario/grilla' },
+        { label: 'Docentes', icon: 'person_add', route: '/horario/profesores' },
+        { label: 'Carga docente', icon: 'assignment_ind', route: '/horario/carga-docente' },
+      ];
+    }
+
     if (id === 'profesor') {
       return [
         { label: 'Mi cuenta', icon: 'person', route: '/mi-cuenta' },

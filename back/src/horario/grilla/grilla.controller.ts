@@ -7,7 +7,7 @@ import { BLOQUES_PEDAGOGICOS } from '../common/grilla';
 // Solo los horarios de los bloques: la usan jefatura y "Mi disponibilidad" del profesor
 @Controller('horario/grilla')
 @UseGuards(JwtCookieAuthGuard, RolesGuard)
-@Roles('jefatura', 'profesor')
+@Roles('jefatura', 'secretaria', 'profesor')
 export class GrillaController {
   // Bloques de 45 min para que el front dibuje la grilla semanal
   @Get()
