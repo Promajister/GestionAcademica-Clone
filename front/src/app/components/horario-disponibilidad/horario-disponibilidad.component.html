@@ -1,0 +1,107 @@
+<div class="container section grilla-page disponibilidad-page">
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero__bg"></div>
+    <div class="hero__content">
+      <div class="hero__left">
+        <div class="hero__icon">
+          <mat-icon>event_available</mat-icon>
+        </div>
+        <div class="hero__titles">
+          <h1>Mi disponibilidad</h1>
+          <p>Marca en la grilla semanal los bloques en que puedes realizar clases.</p>
+
+          <div class="hero__chips" *ngIf="datos">
+            <span class="chip">
+              <mat-icon>person</mat-icon>
+              <span>{{ datos.profesor.nombre }}</span>
+            </span>
+            <span class="chip chip--soft">
+              <mat-icon>badge</mat-icon>
+              <span>Contrato {{ datos.profesor.contrato === 'HORAS' ? 'por horas' : 'de planta' }}</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  @if (cargando) {
+    <div class="loading-wrap">
+      <mat-spinner diameter="46"></mat-spinner>
+      <p>Cargando tu disponibilidad...</p>
+    </div>
+  } @else if (error) {
+    <mat-card class="elev aviso-card aviso-card--error">
+      <mat-icon>error_outline</mat-icon>
+      <div>
+        <h3>No es posible mostrar tu disponibilidad</h3>
+        <p>{{ error }}</p>
+      </div>
+    </mat-card>
+  } @else if (datos && !habilitado) {
+    <mat-card class="elev aviso-card">
+      <mat-icon>info</mat-icon>
+      <div>
+        <h3>Tu contrato no requiere registrar disponibilidad</h3>
+        <p>
+          La disponibilidad horaria solo la declaran los docentes con contrato por horas.
+          Tu carga académica es asignada directamente por la jefatura de carrera.
+        </p>
+      </div>
+    </mat-card>
+  } @else if (datos) {
+    <!-- BARRA DE ACCIONES -->
+    <mat-card class="elev selectors-card">
+      <mat-card-content class="selectors-bar acciones-bar">
+        <div class="resumen">
+          <span class="resumen__valor">{{ totalBloques }}</span>
+          <span class="resumen__label">bloques · {{ horasSemanales }} h semanales</span>
+          @if (hayCambios) {
+            <span class="resumen__pendiente">
+              <mat-icon>edit_note</mat-icon> Cambios sin guardar
+            </span>
+          }
+        </div>
+
+        <div class="dias-rapidos">
+          <span class="muted">Marcar día completo:</span>
+          @for (d of DIAS_LABEL; track d.dia) {
+            <button mat-stroked-button type="button" (click)="marcarDia(d.dia)" [disabled]="guardando">
+              {{ d.label }}
+            </button>
+          }
+        </div>
+
+        <div class="acciones">
+          <button mat-button type="button" (click)="limpiar()" [disabled]="guardando || totalBloques === 0">
+            <mat-icon>clear_all</mat-icon> Limpiar
+          </button>
+          <button mat-stroked-button type="button" (click)="descartar()" [disabled]="guardando || !hayCambios">
+            <mat-icon>undo</mat-icon> Descartar
+          </button>
+          <button mat-flat-button color="primary" type="button" (click)="confirmarGuardar()" [disabled]="guardando || !hayCambios">
+            @if (guardando) {
+              <mat-spinner diameter="18" class="btn-spinner"></mat-spinner>
+            } @else {
+              <mat-icon>save</mat-icon>
+            }
+            Guardar cambios
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- GRILLA REUTILIZADA EN MODO SELECCIÓN -->
+    <mat-card class="elev grilla-main-card">
+      <app-horario-grilla
+        [celdas]="celdas"
+        [modo]="'seleccion'"
+        [leyenda]="'disponibilidad'"
+        titulo="Grilla semanal"
+        subtitulo="Haz clic en un bloque para marcarlo o desmarcarlo."
+        (seleccionar)="onSeleccionar($event)">
+      </app-horario-grilla>
+    </mat-card>
+  }
+</div>

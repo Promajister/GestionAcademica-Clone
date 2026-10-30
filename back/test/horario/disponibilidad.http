@@ -1,0 +1,102 @@
+### DIS-F02-T4 · Pruebas con perfil profesor — extensión REST Client de VS Code
+### La API solo trabaja sobre el docente autenticado (id tomado del JWT).
+### Usuarios del seed (clave 123456):
+###   profesor.horas@gestion.uta.cl   → contrato HORAS  (habilitado)
+###   profesor.horas2@gestion.uta.cl  → contrato HORAS  (habilitado)
+###   profesor.planta@gestion.uta.cl  → contrato PLANTA (no habilitado)
+###   pedhg@gestion.uta.cl            → jefatura sin registro de Profesor
+@api = http://localhost:3000/api
+
+# =====================================================================
+# CASO 1 · Docente por horas: guarda y persiste
+# =====================================================================
+
+### 1.1 Login docente por horas
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "email": "profesor.horas@gestion.uta.cl", "password": "123456" }
+
+### 1.2 Ver mi disponibilidad (habilitado: true)
+GET {{api}}/horario/disponibilidad/mia
+
+### 1.3 Guardar disponibilidad (reemplaza la anterior)
+PUT {{api}}/horario/disponibilidad/mia
+Content-Type: application/json
+
+{
+  "bloques": [
+    { "dia": "LUNES", "bloque": 1 },
+    { "dia": "LUNES", "bloque": 2 },
+    { "dia": "MIERCOLES", "bloque": 7 },
+    { "dia": "MIERCOLES", "bloque": 8 },
+    { "dia": "VIERNES", "bloque": 3 }
+  ]
+}
+
+### 1.4 Volver a consultar → deben aparecer los 5 bloques guardados
+GET {{api}}/horario/disponibilidad/mia
+
+### 1.5 Los bloques protegidos NO afectan la disponibilidad: martes bloque 5 se guarda normal
+PUT {{api}}/horario/disponibilidad/mia
+Content-Type: application/json
+
+{ "bloques": [ { "dia": "MARTES", "bloque": 5 } ] }
+
+### 1.6 Debe fallar (400): día o bloque fuera de rango
+PUT {{api}}/horario/disponibilidad/mia
+Content-Type: application/json
+
+{ "bloques": [ { "dia": "SABADO", "bloque": 1 }, { "dia": "LUNES", "bloque": 13 } ] }
+
+### 1.7 Intento de escribir sobre otro docente: el id_usuario extra se ignora
+###     (whitelist del ValidationPipe) y solo cambia la disponibilidad propia
+PUT {{api}}/horario/disponibilidad/mia
+Content-Type: application/json
+
+{ "id_usuario": 999, "bloques": [ { "dia": "JUEVES", "bloque": 9 } ] }
+
+# =====================================================================
+# CASO 2 · Otro docente por horas no ve lo del primero
+# =====================================================================
+
+### 2.1 Login segundo docente por horas
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "email": "profesor.horas2@gestion.uta.cl", "password": "123456" }
+
+### 2.2 Su disponibilidad es independiente (no trae la del caso 1)
+GET {{api}}/horario/disponibilidad/mia
+
+# =====================================================================
+# CASO 3 · Docente de planta: no habilitado
+# =====================================================================
+
+### 3.1 Login docente de planta
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "email": "profesor.planta@gestion.uta.cl", "password": "123456" }
+
+### 3.2 GET responde habilitado: false y bloques vacíos
+GET {{api}}/horario/disponibilidad/mia
+
+### 3.3 Debe fallar (403)
+PUT {{api}}/horario/disponibilidad/mia
+Content-Type: application/json
+
+{ "bloques": [ { "dia": "LUNES", "bloque": 1 } ] }
+
+# =====================================================================
+# CASO 4 · Usuario sin registro de profesor
+# =====================================================================
+
+### 4.1 Login jefatura
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "email": "pedhg@gestion.uta.cl", "password": "123456" }
+
+### 4.2 Debe fallar (403): no está registrado como docente
+GET {{api}}/horario/disponibilidad/mia

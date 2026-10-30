@@ -43,6 +43,8 @@ export class HorarioGrillaComponent implements OnInit {
   @Input() titulo = '';
   @Input() subtitulo = '';
   @Input() modo: 'lectura' | 'seleccion' = 'lectura';
+  // 'disponibilidad' muestra la leyenda de DIS-F02 (Disponible / Protegido)
+  @Input() leyenda: 'horario' | 'disponibilidad' = 'horario';
 
   @Output() seleccionar = new EventEmitter<{ dia: DiaSemana; bloque: number }>();
 
