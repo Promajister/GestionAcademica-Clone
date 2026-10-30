@@ -37,13 +37,11 @@ describe('DisponibilidadService - HOR-13 CA2', () => {
       new ForbiddenException('Docente no habilitado'),
     );
 
-    await expect(
-      service.guardarPropia(5, { bloques: [] }),
-    ).rejects.toThrow(ForbiddenException);
+    await expect(service.guardarPropia(5, { bloques: [] })).rejects.toThrow(
+      ForbiddenException,
+    );
 
-    expect(
-      profesoresServiceMock.validarDisponibilidad,
-    ).toHaveBeenCalledWith(5);
+    expect(profesoresServiceMock.validarDisponibilidad).toHaveBeenCalledWith(5);
 
     expect(prismaMock.$transaction).not.toHaveBeenCalled();
   });

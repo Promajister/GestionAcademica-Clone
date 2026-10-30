@@ -46,7 +46,7 @@ export class DisponibilidadService {
   // ---------- GET /horario/disponibilidad/mia ----------
   async obtenerPropia(idUsuario: number): Promise<MiDisponibilidadResponse> {
     const profesor = await this.buscarProfesor(idUsuario);
-    const habilitado =  CONTRATOS_CON_DISPONIBILIDAD.includes(profesor.contrato);
+    const habilitado = CONTRATOS_CON_DISPONIBILIDAD.includes(profesor.contrato);
 
     const filas = habilitado
       ? await this.prisma.disponibilidad.findMany({

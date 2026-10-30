@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { SalaDTO } from './salas-api.service';
@@ -352,6 +352,12 @@ export class HorarioApiService {
     return this.http.put<MiDisponibilidadDTO>(
       `${this.baseUrl}/disponibilidad/mia`,
       { bloques },
+      {
+        // El PUT exige CsrfGuard: mismo token que guarda AuthService al iniciar sesión
+        headers: new HttpHeaders({
+          'X-CSRF-Token': localStorage.getItem('app.token') ?? '',
+        }),
+      },
     );
   }
 }
