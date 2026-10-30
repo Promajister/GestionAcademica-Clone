@@ -176,6 +176,12 @@ export class DashboardComponent implements OnInit {
           desc: 'Horario semanal por carrera y semestre',
         },
         {
+          title: 'Asignación de Carga',
+          icon: 'assignment_ind',
+          route: '/horario/carga-docente',
+          desc: 'Gestión y asignación de horas docentes por curso',
+        },
+        {
           title: 'Usuarios',
           icon: 'manage_accounts',
           route: '/usuarios',
@@ -413,6 +419,12 @@ export class DashboardComponent implements OnInit {
               icon: 'grid_on',
               route: '/horario/grilla',
               desc: 'Horario semanal por carrera y semestre',
+            },
+            {
+              title: 'Asignación de Carga',
+              icon: 'assignment_ind',
+              route: '/horario/carga-docente',
+              desc: 'Gestión y asignación de horas docentes por curso.',
             },
           ],
         },

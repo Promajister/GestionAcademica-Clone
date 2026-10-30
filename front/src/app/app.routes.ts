@@ -279,7 +279,15 @@ export const routes: Routes = [
       import('./components/egresados-analisis/egresados-analisis.component')
         .then(m => m.EgresadosAnalisisComponent),
   },
-
+  {
+    path: 'horario/carga-docente',
+    canActivate: [authGuard, roleGuard],
+    data: { allowedRoles: ['jefatura'] },
+    loadComponent: () =>
+      import('./components/asignacion-carga/asignacion-carga.component').then(
+        (m) => m.AsignacionCargaComponent,
+      ),
+  },
   {
     path: 'horario/profesores',
     canActivate: [authGuard, roleGuard],

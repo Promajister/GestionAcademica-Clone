@@ -5,6 +5,7 @@ import { AsignaturasModule } from './asignaturas/asignaturas.module';
 import { BloquesModule } from './bloques/bloques.module';
 import { GrillaModule } from './grilla/grilla.module';
 import { OcupacionesModule } from './ocupaciones/ocupaciones.module';
+import { CargaDocenteModule } from './carga-docente/carga-docente.module';
 import { BloquesProtegidosModule } from './bloques-protegidos/bloques-protegidos.module';
 import { ProfesoresModule } from './profesores/profesores.module';
 import { DisponibilidadModule } from './disponibilidad/disponibilidad.module';
@@ -18,6 +19,7 @@ import { DisponibilidadModule } from './disponibilidad/disponibilidad.module';
     BloquesModule,
     GrillaModule,
     OcupacionesModule,
+    CargaDocenteModule,
     BloquesProtegidosModule,
     ProfesoresModule,
     DisponibilidadModule,
