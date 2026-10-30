@@ -3,6 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
   ConflictException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { CreateProfesorDto } from './dto/create-profesor.dto';
@@ -162,6 +163,40 @@ export class ProfesoresService {
         },
       },
     });
+  }
+
+  // HOR-13 CA2:
+  // Solo docentes activos contratados por horas
+  // pueden declarar disponibilidad.
+  async validarDisponibilidad(idUsuario: number): Promise<void> {
+    const profesor = await this.prisma.profesor.findUnique({
+      where: {
+        id_usuario: idUsuario,
+      },
+      include: {
+        usuario: {
+          select: {
+            activo: true,
+          },
+        },
+      },
+    });
+
+    if (!profesor) {
+      throw new NotFoundException('El usuario no está registrado como docente');
+    }
+
+    if (!profesor.usuario.activo) {
+      throw new ForbiddenException(
+        'El docente está inactivo y no puede declarar disponibilidad',
+      );
+    }
+
+    if (profesor.contrato !== 'HORAS') {
+      throw new ForbiddenException(
+        'Solo los docentes contratados por horas pueden declarar disponibilidad',
+      );
+    }
   }
 
   // Eliminar docente

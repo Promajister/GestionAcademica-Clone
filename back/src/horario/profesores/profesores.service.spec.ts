@@ -1,5 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 
 import { ProfesoresService } from './profesores.service';
 import { PrismaService } from '../../../prisma/prisma.service';
@@ -129,5 +133,55 @@ describe('ProfesoresService - HOR-13 CA3', () => {
     await expect(service.remove(idProfesor)).rejects.toThrow(ConflictException);
 
     expect(prismaMock.profesor.delete).not.toHaveBeenCalled();
+  });
+
+  describe('HOR-13 CA2 - Disponibilidad según contrato', () => {
+    it('permite disponibilidad a docentes activos por horas', async () => {
+      prismaMock.profesor.findUnique.mockResolvedValue({
+        id_usuario: 5,
+        contrato: 'HORAS',
+        usuario: {
+          activo: true,
+        },
+      });
+
+      await expect(service.validarDisponibilidad(5)).resolves.toBeUndefined();
+    });
+
+    it('rechaza disponibilidad de docentes de planta', async () => {
+      prismaMock.profesor.findUnique.mockResolvedValue({
+        id_usuario: 5,
+        contrato: 'PLANTA',
+        usuario: {
+          activo: true,
+        },
+      });
+
+      await expect(service.validarDisponibilidad(5)).rejects.toThrow(
+        ForbiddenException,
+      );
+    });
+
+    it('rechaza disponibilidad de docentes inactivos', async () => {
+      prismaMock.profesor.findUnique.mockResolvedValue({
+        id_usuario: 5,
+        contrato: 'HORAS',
+        usuario: {
+          activo: false,
+        },
+      });
+
+      await expect(service.validarDisponibilidad(5)).rejects.toThrow(
+        ForbiddenException,
+      );
+    });
+
+    it('rechaza usuarios que no están registrados como docentes', async () => {
+      prismaMock.profesor.findUnique.mockResolvedValue(null);
+
+      await expect(service.validarDisponibilidad(999)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
   });
 });
