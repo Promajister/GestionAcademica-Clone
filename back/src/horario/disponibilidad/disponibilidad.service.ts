@@ -14,7 +14,9 @@ import {
 
 // Tipos de contrato que declaran disponibilidad horaria (DIS-F02).
 // Los docentes de planta no la registran: su carga se asigna directamente.
-export const CONTRATOS_CON_DISPONIBILIDAD: TipoContrato[] = [TipoContrato.HORAS];
+export const CONTRATOS_CON_DISPONIBILIDAD: TipoContrato[] = [
+  TipoContrato.HORAS,
+];
 
 export interface BloqueDisponible {
   dia: DiaDisponibilidad;
@@ -60,7 +62,9 @@ export class DisponibilidadService {
       habilitado,
       contratos_habilitados: CONTRATOS_CON_DISPONIBILIDAD,
       bloques: filas
-        .filter((f) => DIAS_DISPONIBILIDAD.includes(f.dia.nombre as DiaDisponibilidad))
+        .filter((f) =>
+          DIAS_DISPONIBILIDAD.includes(f.dia.nombre as DiaDisponibilidad),
+        )
         .map((f) => ({
           dia: f.dia.nombre as DiaDisponibilidad,
           bloque: f.id_bloque,
@@ -91,7 +95,9 @@ export class DisponibilidadService {
     const idsDia = await this.mapaDias();
 
     await this.prisma.$transaction([
-      this.prisma.disponibilidad.deleteMany({ where: { id_usuario: idUsuario } }),
+      this.prisma.disponibilidad.deleteMany({
+        where: { id_usuario: idUsuario },
+      }),
       this.prisma.disponibilidad.createMany({
         data: bloques.map((b) => ({
           id_usuario: idUsuario,
