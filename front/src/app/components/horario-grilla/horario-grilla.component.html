@@ -10,19 +10,30 @@
 
   <!-- LEYENDA -->
   <div class="grilla-leyenda">
-    <div class="leyenda-item">
-      <span class="leyenda-color color--externa"></span>
-      <mat-icon class="leyenda-icon">lock</mat-icon>
-      <span>Asignatura Externa (Bloque fijo)</span>
-    </div>
-    <div class="leyenda-item">
-      <span class="leyenda-color color--propia"></span>
-      <span>Asignatura Propia</span>
-    </div>
-    <div class="leyenda-item">
-      <span class="leyenda-color color--protegido"></span>
-      <span>Horario Protegido</span>
-    </div>
+    @if (leyenda === 'disponibilidad') {
+      <div class="leyenda-item">
+        <span class="leyenda-color color--disponible"></span>
+        <span>Disponible</span>
+      </div>
+      <div class="leyenda-item">
+        <span class="leyenda-color color--vacia"></span>
+        <span>No disponible</span>
+      </div>
+    } @else {
+      <div class="leyenda-item">
+        <span class="leyenda-color color--externa"></span>
+        <mat-icon class="leyenda-icon">lock</mat-icon>
+        <span>Asignatura Externa (Bloque fijo)</span>
+      </div>
+      <div class="leyenda-item">
+        <span class="leyenda-color color--propia"></span>
+        <span>Asignatura Propia</span>
+      </div>
+      <div class="leyenda-item">
+        <span class="leyenda-color color--protegido"></span>
+        <span>Horario Protegido</span>
+      </div>
+    }
   </div>
 
   <!-- TABLA DE LA GRILLA -->
@@ -54,12 +65,14 @@
                     [class.celda-externa]="celda.tipo === 'CLASE_EXTERNA'"
                     [class.celda-propia]="celda.tipo === 'CLASE_PROPIA'"
                     [class.celda-protegido]="celda.tipo === 'PROTEGIDO'"
+                    [class.celda-disponible]="celda.tipo === 'DISPONIBLE'"
                     [class.celda-alerta-choque]="celda.advertencia_choque"
                     [matTooltip]="celda.tipo === 'PROTEGIDO' ? 'Bloque protegido: ' + celda.etiqueta + (celda.detalle ? ' (' + celda.detalle + ')' : '') : (celda.advertencia_choque ? 'Superposición con bloque protegido: ' + celda.bloque_protegido_nombre : '')"
                     (click)="onCeldaClick(d.dia, b.numero)">
                     <div class="celda-content">
                       <div class="celda-top">
                         <span class="celda-codigo" *ngIf="celda.codigo">{{ celda.codigo }}</span>
+                        <mat-icon class="celda-check" *ngIf="celda.tipo === 'DISPONIBLE'">check_circle</mat-icon>
                         <mat-icon class="celda-lock" *ngIf="celda.bloqueado" matTooltip="Bloque fijo externo bloqueado">
                           lock
                         </mat-icon>
@@ -124,12 +137,14 @@
                     [class.celda-externa]="celda.tipo === 'CLASE_EXTERNA'"
                     [class.celda-propia]="celda.tipo === 'CLASE_PROPIA'"
                     [class.celda-protegido]="celda.tipo === 'PROTEGIDO'"
+                    [class.celda-disponible]="celda.tipo === 'DISPONIBLE'"
                     [class.celda-alerta-choque]="celda.advertencia_choque"
                     [matTooltip]="celda.tipo === 'PROTEGIDO' ? 'Bloque protegido: ' + celda.etiqueta + (celda.detalle ? ' (' + celda.detalle + ')' : '') : (celda.advertencia_choque ? 'Superposición con bloque protegido: ' + celda.bloque_protegido_nombre : '')"
                     (click)="onCeldaClick(d.dia, b.numero)">
                     <div class="celda-content">
                       <div class="celda-top">
                         <span class="celda-codigo" *ngIf="celda.codigo">{{ celda.codigo }}</span>
+                        <mat-icon class="celda-check" *ngIf="celda.tipo === 'DISPONIBLE'">check_circle</mat-icon>
                         <mat-icon class="celda-lock" *ngIf="celda.bloqueado" matTooltip="Bloque fijo externo bloqueado">
                           lock
                         </mat-icon>

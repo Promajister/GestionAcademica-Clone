@@ -25,7 +25,7 @@ import {
 } from '../../services/practicas.service';
 import { formatDateEs, parseDateFlexible } from '../../utils/date-utils';
 
-type RoleId = 'jefatura' | 'vinculacion' | 'practicas';
+type RoleId = 'jefatura' | 'vinculacion' | 'practicas' | 'profesor';
 
 interface SelectedRole {
   id: RoleId;
@@ -73,6 +73,7 @@ export class DashboardComponent implements OnInit {
   private practicasService = inject(PracticasService);
 
   themeClass = 'light-theme';
+  esProfesor = false;
 
   user = { name: 'Usuario', roleLabel: 'Rol', icon: 'account_circle' };
   cards: CardItem[] = [];
@@ -122,7 +123,8 @@ export class DashboardComponent implements OnInit {
       this.lastLogin = null;
     }
 
-    this.loadSummary();
+    this.esProfesor = role?.id === 'profesor';
+    if (!this.esProfesor) this.loadSummary();
   }
 
   private mapRoleLabel(id: RoleId): string {
@@ -133,6 +135,8 @@ export class DashboardComponent implements OnInit {
         return 'Coordinador de Vinculación';
       case 'practicas':
         return 'Coordinador de Prácticas';
+      case 'profesor':
+        return 'Profesor';
     }
   }
 
@@ -351,6 +355,23 @@ export class DashboardComponent implements OnInit {
   }
 
   private buildGroupsFor(id: RoleId): ModuleGroup[] {
+    if (id === 'profesor') {
+      return [
+        {
+          title: 'Horario',
+          desc: 'Tu información para la planificación del horario',
+          items: [
+            {
+              title: 'Mi disponibilidad',
+              icon: 'event_available',
+              route: '/horario/mi-disponibilidad',
+              desc: 'Marca los bloques en que puedes hacer clases',
+            },
+          ],
+        },
+      ];
+    }
+
     if (id === 'jefatura') {
       return [
         {
