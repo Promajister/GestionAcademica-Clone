@@ -272,6 +272,15 @@ export const routes: Routes = [
   },
 
   {
+    path: 'horario/profesores',
+    canActivate: [authGuard, roleGuard],
+    data: { allowedRoles: ['jefatura'] },
+    loadComponent: () =>
+      import('./components/horario-profesores/horario-profesores.component')
+        .then(m => m.HorarioProfesoresComponent),
+  },
+
+  {
     path: '**',
     redirectTo: 'dashboard',
   },

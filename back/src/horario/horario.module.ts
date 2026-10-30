@@ -6,6 +6,7 @@ import { BloquesModule } from './bloques/bloques.module';
 import { GrillaModule } from './grilla/grilla.module';
 import { OcupacionesModule } from './ocupaciones/ocupaciones.module';
 import { BloquesProtegidosModule } from './bloques-protegidos/bloques-protegidos.module';
+import { ProfesoresModule } from './profesores/profesores.module';
 
 // Agrupa los submódulos de Horario para registrarlos una sola vez en AppModule
 @Module({
@@ -17,6 +18,7 @@ import { BloquesProtegidosModule } from './bloques-protegidos/bloques-protegidos
     GrillaModule,
     OcupacionesModule,
     BloquesProtegidosModule,
+    ProfesoresModule,
   ],
 })
 export class HorarioModule {}
