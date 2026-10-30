@@ -16,10 +16,13 @@ import { UpdateBloqueProtegidoDto } from './dto/update-bloque-protegido.dto';
 import { QueryBloqueProtegidoDto } from './dto/query-bloque-protegido.dto';
 import { QueryAplicablesDto } from './dto/query-aplicables.dto';
 import { JwtCookieAuthGuard } from '../../auth/guards/jwt-cookie-auth.guard';
+import { RolesGuard } from '../../auth/guards/roles.guard';
+import { Roles } from '../../auth/decorators/roles.decorator';
 
 // Sin @Roles por ahora: los perfiles del módulo Horario se definen en ADM-F04
 @Controller('horario/bloques-protegidos')
-@UseGuards(JwtCookieAuthGuard)
+@UseGuards(JwtCookieAuthGuard, RolesGuard)
+@Roles('jefatura')
 export class BloquesProtegidosController {
   constructor(private readonly service: BloquesProtegidosService) {}
 

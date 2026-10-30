@@ -15,12 +15,15 @@ import { CreateAsignaturaDto } from './dto/create-asignatura.dto';
 import { UpdateAsignaturaDto } from './dto/update-asignatura.dto';
 import { QueryAsignaturaDto } from './dto/query-asignatura.dto';
 import { JwtCookieAuthGuard } from '../../auth/guards/jwt-cookie-auth.guard';
+import { RolesGuard } from '../../auth/guards/roles.guard';
+import { Roles } from '../../auth/decorators/roles.decorator';
 import { BloquesService } from '../bloques/bloques.service';
 import { CreateBloquesExternosDto } from '../bloques/dto/bloque-externo.dto';
 
 // Sin @Roles por ahora: los perfiles del módulo Horario se definen en ADM-F04
 @Controller('horario/asignaturas')
-@UseGuards(JwtCookieAuthGuard)
+@UseGuards(JwtCookieAuthGuard, RolesGuard)
+@Roles('jefatura')
 export class AsignaturasController {
   constructor(
     private readonly service: AsignaturasService,
