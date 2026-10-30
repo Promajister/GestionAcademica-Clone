@@ -1,4 +1,4 @@
-import { PrismaClient, TipoSala, TipoDia, TipoOrigen, TipoCurso } from '@prisma/client';
+import { PrismaClient, TipoSala, TipoDia, TipoOrigen, TipoCurso, AlcanceBloqueProtegido } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import e from 'express';
 
@@ -506,25 +506,47 @@ async function seedHorario() {
   }
   // Tabla BLOQUEPROTEGIDO
 
-  const bloque_protegidos: { nombreDia: TipoDia; horaInicio: string }[] = [
-    { nombreDia: TipoDia.MARTES, horaInicio: '11:20' },
-    { nombreDia: TipoDia.MARTES, horaInicio: '12:05' },
-    { nombreDia: TipoDia.MIERCOLES, horaInicio: '11:20' },
-    { nombreDia: TipoDia.MIERCOLES, horaInicio: '12:05' },
-    { nombreDia: TipoDia.JUEVES, horaInicio: '16:20' },
-    { nombreDia: TipoDia.JUEVES, horaInicio: '17:05' }
+  const protegidosSeed: {
+    nombre: string;
+    alcance: AlcanceBloqueProtegido;
+    nombreDia: TipoDia;
+    horaInicio: string;
+  }[] = [
+    // Horario protegido institucional (Reunión 1 y seed original de Isaac)
+    { nombre: 'Horario protegido', alcance: AlcanceBloqueProtegido.UNIVERSIDAD, nombreDia: TipoDia.MARTES, horaInicio: '11:20' },
+    { nombre: 'Horario protegido', alcance: AlcanceBloqueProtegido.UNIVERSIDAD, nombreDia: TipoDia.MARTES, horaInicio: '12:05' },
+    { nombre: 'Horario protegido', alcance: AlcanceBloqueProtegido.UNIVERSIDAD, nombreDia: TipoDia.MIERCOLES, horaInicio: '11:20' },
+    { nombre: 'Horario protegido', alcance: AlcanceBloqueProtegido.UNIVERSIDAD, nombreDia: TipoDia.MIERCOLES, horaInicio: '12:05' },
+    { nombre: 'Horario protegido', alcance: AlcanceBloqueProtegido.UNIVERSIDAD, nombreDia: TipoDia.JUEVES, horaInicio: '16:20' },
+    { nombre: 'Horario protegido', alcance: AlcanceBloqueProtegido.UNIVERSIDAD, nombreDia: TipoDia.JUEVES, horaInicio: '17:05' },
+    // Consejo de profesores (Reunión 1: lunes bloques 9 y 10)
+    { nombre: 'Consejo de profesores', alcance: AlcanceBloqueProtegido.ACADEMICOS, nombreDia: TipoDia.LUNES, horaInicio: '16:20' },
+    { nombre: 'Consejo de profesores', alcance: AlcanceBloqueProtegido.ACADEMICOS, nombreDia: TipoDia.LUNES, horaInicio: '17:05' },
   ];
 
-  for (const bloque of bloque_protegidos) {
-    const dia = await prisma.dia.findFirst({ where: { nombre: bloque.nombreDia } });
-    const bloqueHorario = await prisma.bloqueHorario.findFirst({ where: { horaInicio: bloque.horaInicio}})
+  for (const b of protegidosSeed) {
+    const dia = await prisma.dia.findFirst({ where: { nombre: b.nombreDia } });
+    const bloqueHorario = await prisma.bloqueHorario.findFirst({ where: { horaInicio: b.horaInicio } });
 
     if (dia && bloqueHorario) {
-      await prisma.bloqueProtegido.upsert({
-        where: { id_bloque_id_dia: { id_dia: dia.id_dia, id_bloque: bloqueHorario.id_bloque } },
-        update: {},
-        create: { id_dia: dia.id_dia, id_bloque: bloqueHorario.id_bloque },
+      const existente = await prisma.bloqueProtegido.findFirst({
+        where: {
+          nombre: b.nombre,
+          alcance: b.alcance,
+          id_dia: dia.id_dia,
+          id_bloque: bloqueHorario.id_bloque,
+        },
       });
+      if (!existente) {
+        await prisma.bloqueProtegido.create({
+          data: {
+            nombre: b.nombre,
+            alcance: b.alcance,
+            id_dia: dia.id_dia,
+            id_bloque: bloqueHorario.id_bloque,
+          },
+        });
+      }
     }
   }
 

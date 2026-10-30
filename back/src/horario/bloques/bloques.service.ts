@@ -10,9 +10,18 @@ import { PrismaService } from 'prisma/prisma.service';
 import { BloqueExternoDto } from './dto/bloque-externo.dto';
 import { QueryBloqueDto } from './dto/query-bloque.dto';
 import { bloquePorNumero, mismaJornada, rangoBloques } from '../common/grilla';
-import { choqueConOcupaciones } from '../common/choques';
+import {
+  choqueConBloqueProtegido,
+  choqueConOcupaciones,
+} from '../common/choques';
 
 type Tx = Prisma.TransactionClient;
+
+export type HorarioExternoConAdvertencia = Prisma.HorarioExternoGetPayload<{
+  include: { sala: true; dia: true; bloque: true };
+}> & {
+  advertencias: string[];
+};
 
 type BloqueGrilla = {
   dia: string;
@@ -192,6 +201,42 @@ export class BloquesService {
     await this.validarSalas(tx, expandidos);
     await this.validarChoques(tx, expandidos, id_curso);
 
+    // CA2: Verificar si algún bloque externo choca con un bloque protegido aplicable
+    let codigo_carrera: string | undefined = undefined;
+    let semestre: number | undefined = curso.semestre;
+
+    const malla = await tx.malla.findFirst({
+      where: curso.id_malla
+        ? { id_malla: curso.id_malla }
+        : { codigo_asignatura: curso.codigo_asignatura },
+      include: { plan: true },
+    });
+    if (malla) {
+      codigo_carrera = malla.plan.codigo_carrera;
+      if (semestre == null) semestre = malla.semestre;
+    }
+
+    const advertenciasPorBloque = new Map<string, string[]>();
+    const todasAdvertencias: string[] = [];
+
+    for (const b of expandidos) {
+      const choquesProtegidos = await choqueConBloqueProtegido(tx, {
+        id_dia: b.id_dia,
+        bloques: [b.bloque_numero],
+        codigo_carrera,
+        semestre,
+      });
+      if (choquesProtegidos.length > 0) {
+        const msgs = choquesProtegidos.map(
+          (ch) =>
+            `El ${b.dia} bloque ${b.bloque_numero} coincide con el bloque protegido '${ch.nombre}'`,
+        );
+        const clave = `${b.id_dia}-${b.bloque_numero}`;
+        advertenciasPorBloque.set(clave, msgs);
+        todasAdvertencias.push(...msgs);
+      }
+    }
+
     await tx.horarioExterno.createMany({
       data: expandidos.map((b) => ({
         id_curso,
@@ -202,11 +247,24 @@ export class BloquesService {
       })),
     });
 
-    return tx.horarioExterno.findMany({
+    const guardados = await tx.horarioExterno.findMany({
       where: { id_curso },
       include: { sala: true, dia: true, bloque: true },
       orderBy: [{ id_dia: 'asc' }, { id_bloque: 'asc' }],
     });
+
+    const resultado: HorarioExternoConAdvertencia[] & {
+      advertencias?: string[];
+    } = guardados.map((r) => {
+      const clave = `${r.id_dia}-${r.id_bloque}`;
+      return {
+        ...r,
+        advertencias: advertenciasPorBloque.get(clave) ?? [],
+      };
+    });
+
+    resultado.advertencias = todasAdvertencias;
+    return resultado;
   }
 
   async agregarExternos(

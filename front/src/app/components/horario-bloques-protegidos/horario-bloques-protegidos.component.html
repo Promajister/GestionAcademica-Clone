@@ -1,0 +1,345 @@
+<div class="bp-container">
+  <!-- ENCABEZADO -->
+  <div class="bp-header">
+    <div class="bp-title-wrap">
+      <div class="bp-icon">
+        <mat-icon>lock_clock</mat-icon>
+      </div>
+      <div>
+        <h1>Bloques Protegidos</h1>
+        <p class="bp-subtitle">
+          Configuración de horarios reservados que no admiten asignación de clases (institucionales, por grupo y docentes).
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECCIÓN FORMULARIO + VISTA PREVIA -->
+  <div class="bp-grid-layout">
+    <!-- TARJETA FORMULARIO -->
+    <mat-card class="bp-card bp-form-card">
+      <div class="card-header">
+        <div class="card-title">
+          <mat-icon class="card-title-icon">{{ editandoId ? 'edit' : 'add_circle' }}</mat-icon>
+          <span>{{ editandoId ? 'Editar Bloque Protegido' : 'Nuevo Bloque Protegido' }}</span>
+        </div>
+        <button
+          *ngIf="editandoId"
+          mat-button
+          color="warn"
+          (click)="cancelarEdicion()">
+          Cancelar edición
+        </button>
+      </div>
+
+      <div class="form-content">
+        <!-- 1. Nombre -->
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-label>Nombre del bloque</mat-label>
+          <input
+            matInput
+            [(ngModel)]="nombre"
+            placeholder="Ej. Horario protegido, Práctica 6° sem, Consejo de profesores"
+            required />
+        </mat-form-field>
+
+        <!-- 2. Alcance -->
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-label>Alcance del bloqueo</mat-label>
+          <mat-select [(ngModel)]="alcance">
+            @for (a of ALCANCES; track a.valor) {
+              <mat-option [value]="a.valor">{{ a.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <!-- CAMPOS CONDICIONALES SEGÚN ALCANCE -->
+        <!-- Carrera -->
+        @if (alcance === 'CARRERA' || alcance === 'ESTUDIANTES' || alcance === 'PRACTICA_PREPRACTICA') {
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Carrera</mat-label>
+            <mat-select [(ngModel)]="codigoCarrera">
+              @for (c of carreras; track c.codigo) {
+                <mat-option [value]="c.codigo">{{ c.codigo }} - {{ c.nombre }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        }
+
+        <!-- Semestre / Nivel -->
+        @if (alcance === 'ESTUDIANTES' || alcance === 'PRACTICA_PREPRACTICA') {
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Semestre (Nivel de la malla)</mat-label>
+            <mat-select [(ngModel)]="semestre">
+              @for (s of SEMESTRES; track s) {
+                <mat-option [value]="s">{{ s }}° Semestre</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        }
+
+        <!-- Contrato (Opcional para ACADEMICOS) -->
+        @if (alcance === 'ACADEMICOS') {
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Tipo de contrato</mat-label>
+            <mat-select [(ngModel)]="contrato">
+              <mat-option value="">Todos los académicos</mat-option>
+              <mat-option value="PLANTA">Planta</mat-option>
+              <mat-option value="HORAS">Por horas</mat-option>
+            </mat-select>
+          </mat-form-field>
+        }
+
+        <!-- Docente (Para ACADEMICO_INDIVIDUAL) -->
+        @if (alcance === 'ACADEMICO_INDIVIDUAL') {
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Académico</mat-label>
+            @if (profesores.length === 0 && !cargandoProfesores) {
+              <mat-select disabled placeholder="Aún no hay docentes registrados">
+              </mat-select>
+            } @else {
+              <mat-select [(ngModel)]="idUsuarioProfesor">
+                @for (p of profesores; track p.id_usuario) {
+                  <mat-option [value]="p.id_usuario">
+                    {{ p.usuario.nombre }} ({{ p.contrato === 'PLANTA' ? 'Planta' : 'Horas' }})
+                  </mat-option>
+                }
+              </mat-select>
+            }
+            @if (profesores.length === 0 && !cargandoProfesores) {
+              <mat-hint class="hint-warn">Aún no hay docentes registrados en el sistema</mat-hint>
+            }
+          </mat-form-field>
+        }
+
+        <!-- 3. Días de la semana (Checkboxes) -->
+        <div class="dias-section">
+          <label class="section-label">Días aplicables</label>
+          <div class="dias-checkboxes">
+            @for (d of DIAS_LISTA; track d.dia) {
+              <mat-checkbox
+                [(ngModel)]="diasCheck[d.dia]"
+                color="primary">
+                {{ d.label }}
+              </mat-checkbox>
+            }
+          </div>
+        </div>
+
+        <!-- 4. Rango de Bloques con Atajos -->
+        <div class="bloques-section">
+          <div class="bloques-header">
+            <label class="section-label">Horario / Bloques</label>
+            <div class="atajos-wrap">
+              <button
+                type="button"
+                mat-stroked-button
+                class="atajo-btn"
+                (click)="atajoManana()">
+                Toda la mañana (1–6)
+              </button>
+              <button
+                type="button"
+                mat-stroked-button
+                class="atajo-btn"
+                (click)="atajoTarde()">
+                Toda la tarde (7–12)
+              </button>
+            </div>
+          </div>
+
+          <div class="bloques-selects">
+            <mat-form-field appearance="outline">
+              <mat-label>Bloque inicio</mat-label>
+              <mat-select [(ngModel)]="bloqueInicio">
+                @for (g of grillaHorarios; track g.numero) {
+                  <mat-option [value]="g.numero">
+                    B{{ g.numero }} ({{ g.hora_inicio }} - {{ g.hora_fin }})
+                  </mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Bloque fin</mat-label>
+              <mat-select [(ngModel)]="bloqueFin">
+                @for (g of grillaHorarios; track g.numero) {
+                  <mat-option [value]="g.numero">
+                    B{{ g.numero }} ({{ g.hora_inicio }} - {{ g.hora_fin }})
+                  </mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="form-actions">
+          <button
+            mat-button
+            type="button"
+            (click)="limpiarFormulario()">
+            Limpiar
+          </button>
+
+          <button
+            mat-flat-button
+            color="primary"
+            [disabled]="guardando"
+            (click)="guardar()">
+            <mat-icon>{{ editandoId ? 'save' : 'add' }}</mat-icon>
+            <span>{{ editandoId ? 'Guardar Cambios' : 'Crear Bloque Protegido' }}</span>
+          </button>
+        </div>
+      </div>
+    </mat-card>
+
+    <!-- TARJETA VISTA PREVIA -->
+    <mat-card class="bp-card bp-preview-card">
+      <div class="card-header">
+        <div class="card-title">
+          <mat-icon class="card-title-icon">visibility</mat-icon>
+          <span>Vista previa en la grilla</span>
+        </div>
+      </div>
+
+      <div class="preview-wrap">
+        <app-horario-grilla
+          modo="lectura"
+          [celdas]="previewCeldas"
+          titulo=""
+          subtitulo="">
+        </app-horario-grilla>
+      </div>
+    </mat-card>
+  </div>
+
+  <!-- SECCIÓN LISTA DE BLOQUES PROTEGIDOS -->
+  <mat-card class="bp-card bp-list-card">
+    <div class="card-header list-header">
+      <div class="card-title">
+        <mat-icon class="card-title-icon">table_chart</mat-icon>
+        <span>Bloques Protegidos Registrados</span>
+        <span class="count-badge" *ngIf="!cargando">{{ bloques.length }}</span>
+      </div>
+
+      <!-- Filtros -->
+      <div class="filtros-wrap">
+        <mat-form-field appearance="outline" class="filtro-field">
+          <mat-label>Filtrar por alcance</mat-label>
+          <mat-select [(ngModel)]="filtroAlcance" (selectionChange)="onFiltrosChange()">
+            <mat-option value="">Todos los alcances</mat-option>
+            @for (a of ALCANCES; track a.valor) {
+              <mat-option [value]="a.valor">{{ a.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filtro-field">
+          <mat-label>Filtrar por día</mat-label>
+          <mat-select [(ngModel)]="filtroDia" (selectionChange)="onFiltrosChange()">
+            <mat-option value="">Todos los días</mat-option>
+            @for (d of DIAS_LISTA; track d.dia) {
+              <mat-option [value]="d.dia">{{ d.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </div>
+
+    <!-- Spinner de carga -->
+    <div class="loading-state" *ngIf="cargando">
+      <mat-spinner diameter="36"></mat-spinner>
+      <span>Cargando bloques protegidos...</span>
+    </div>
+
+    <!-- Estado vacío -->
+    <div class="empty-state" *ngIf="!cargando && bloques.length === 0">
+      <mat-icon class="empty-icon">event_busy</mat-icon>
+      <h3>No se encontraron bloques protegidos</h3>
+      <p>Ajusta los filtros o registra un nuevo bloque protegido desde el formulario superior.</p>
+    </div>
+
+    <!-- Tabla de resultados -->
+    <div class="table-wrap" *ngIf="!cargando && bloques.length > 0">
+      <table class="bp-table">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Alcance</th>
+            <th>Destinatario</th>
+            <th>Día y Horario</th>
+            <th class="th-actions">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (b of bloques; track b.id_bloque_protegido) {
+            <tr>
+              <td class="td-nombre">
+                <strong>{{ b.nombre }}</strong>
+              </td>
+              <td>
+                <span class="alcance-pill" [attr.data-alcance]="b.alcance">
+                  {{ formatoAlcance(b) }}
+                </span>
+              </td>
+              <td class="td-destinatario">
+                {{ formatoDestinatario(b) }}
+              </td>
+              <td class="td-horario">
+                <span class="horario-dia">{{ b.dia }}</span>
+                <span class="horario-horas">{{ b.hora_inicio }} – {{ b.hora_fin }} (B{{ b.bloque_inicio }}–B{{ b.bloque_fin }})</span>
+              </td>
+              <td class="td-actions">
+                <button
+                  mat-icon-button
+                  color="primary"
+                  matTooltip="Editar bloque"
+                  (click)="editar(b)">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button
+                  mat-icon-button
+                  color="warn"
+                  matTooltip="Eliminar bloque"
+                  (click)="confirmarEliminar(b)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </mat-card>
+
+  <!-- MODAL / DIALOG DE CONFIRMACIÓN DE ELIMINACIÓN -->
+  <div class="modal-backdrop" *ngIf="bloquePorEliminar" (click)="cancelarEliminar()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <mat-icon class="modal-icon warn">warning</mat-icon>
+        <h3>Confirmar Eliminación</h3>
+      </div>
+      <div class="modal-body">
+        <p>
+          ¿Estás seguro de que deseas eliminar el bloque protegido
+          <strong>"{{ bloquePorEliminar.nombre }}"</strong>?
+        </p>
+        <p class="modal-detail">
+          Horario: <strong>{{ bloquePorEliminar.dia }}</strong> bloques
+          <strong>{{ bloquePorEliminar.bloque_inicio }}–{{ bloquePorEliminar.bloque_fin }}</strong>
+          ({{ bloquePorEliminar.hora_inicio }}–{{ bloquePorEliminar.hora_fin }}).
+        </p>
+        <p class="modal-hint">
+          Se eliminará el rango completo de este horario protegido.
+        </p>
+      </div>
+      <div class="modal-actions">
+        <button mat-button (click)="cancelarEliminar()">Cancelar</button>
+        <button mat-flat-button color="warn" (click)="ejecutarEliminar()">
+          Eliminar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

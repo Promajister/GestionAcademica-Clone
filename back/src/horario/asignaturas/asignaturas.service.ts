@@ -108,7 +108,7 @@ export class AsignaturasService {
         throw new ConflictException(CODIGO_DUPLICADO);
       }
 
-      // Se agrega la asignatura existente a un nuevo plan mediante una nueva Malla
+      let advertenciasExternas: string[] = [];
       await this.prisma.$transaction(async (tx) => {
         const nuevaMalla = await tx.malla.create({
           data: {
@@ -118,7 +118,6 @@ export class AsignaturasService {
           },
         });
 
-        // Crear curso para esta malla si no existe
         const curso = await tx.curso.create({
           data: {
             tipo: TipoCurso.CATEDRA,
@@ -132,18 +131,27 @@ export class AsignaturasService {
         });
 
         if (origen === TipoOrigen.EXTERNA && dto.bloques_externos?.length) {
-          await this.bloques.crearExternos(
+          const resExt = await this.bloques.crearExternos(
             tx,
             curso.id_curso,
             dto.bloques_externos,
           );
+          if (resExt.advertencias && resExt.advertencias.length > 0) {
+            advertenciasExternas = resExt.advertencias;
+          }
         }
       });
 
-      return this.findOne(dto.codigo);
+      const asig = await this.findOne(dto.codigo);
+      if (advertenciasExternas.length > 0) {
+        (asig as { advertencias?: string[] }).advertencias =
+          advertenciasExternas;
+      }
+      return asig;
     }
 
     // Si la asignatura no existe, se crea completa
+    let advertencias: string[] = [];
     await this.prisma.$transaction(async (tx) => {
       await tx.asignatura.create({
         data: {
@@ -177,15 +185,22 @@ export class AsignaturasService {
       });
 
       if (origen === TipoOrigen.EXTERNA && dto.bloques_externos?.length) {
-        await this.bloques.crearExternos(
+        const resExt = await this.bloques.crearExternos(
           tx,
           curso.id_curso,
           dto.bloques_externos,
         );
+        if (resExt.advertencias?.length) {
+          advertencias = resExt.advertencias;
+        }
       }
     });
 
-    return this.findOne(dto.codigo);
+    const resultado = await this.findOne(dto.codigo);
+    if (advertencias.length > 0) {
+      (resultado as { advertencias?: string[] }).advertencias = advertencias;
+    }
+    return resultado;
   }
 
   // ---------- FIND ALL ----------

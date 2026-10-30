@@ -27,7 +27,7 @@
 
   <!-- TABLA DE LA GRILLA -->
   <div class="grilla-table-wrap">
-    <table class="grilla-table">
+    <table class="grilla-table" [class.modo-seleccion]="modo === 'seleccion'">
       <thead>
         <tr>
           <th class="th-horario">Bloque / Horario</th>
@@ -53,13 +53,19 @@
                     [attr.rowspan]="calcularRowspan(celda)"
                     [class.celda-externa]="celda.tipo === 'CLASE_EXTERNA'"
                     [class.celda-propia]="celda.tipo === 'CLASE_PROPIA'"
-                    [class.celda-protegido]="celda.tipo === 'PROTEGIDO'">
+                    [class.celda-protegido]="celda.tipo === 'PROTEGIDO'"
+                    [class.celda-alerta-choque]="celda.advertencia_choque"
+                    [matTooltip]="celda.tipo === 'PROTEGIDO' ? 'Bloque protegido: ' + celda.etiqueta + (celda.detalle ? ' (' + celda.detalle + ')' : '') : (celda.advertencia_choque ? 'Superposición con bloque protegido: ' + celda.bloque_protegido_nombre : '')"
+                    (click)="onCeldaClick(d.dia, b.numero)">
                     <div class="celda-content">
                       <div class="celda-top">
                         <span class="celda-codigo" *ngIf="celda.codigo">{{ celda.codigo }}</span>
                         <mat-icon class="celda-lock" *ngIf="celda.bloqueado" matTooltip="Bloque fijo externo bloqueado">
                           lock
                         </mat-icon>
+                        <span class="celda-protegido-badge" *ngIf="celda.tipo === 'PROTEGIDO' && celda.detalle">
+                          {{ celda.detalle }}
+                        </span>
                       </div>
 
                       <div class="celda-nombre">{{ celda.etiqueta }}</div>
@@ -68,10 +74,19 @@
                         <mat-icon class="celda-sala-icon">meeting_room</mat-icon>
                         <span class="celda-sala">{{ celda.sala }}</span>
                       </div>
+
+                      <!-- Sub-banner si colisiona con bloque protegido -->
+                      <div class="choque-banner" *ngIf="celda.advertencia_choque">
+                        <mat-icon class="choque-icon">warning</mat-icon>
+                        <span class="choque-texto">Protegido: {{ celda.bloque_protegido_nombre }}</span>
+                      </div>
                     </div>
                   </td>
                 } @else {
-                  <td class="td-celda-vacia"></td>
+                  <td
+                    class="td-celda-vacia"
+                    (click)="onCeldaClick(d.dia, b.numero)">
+                  </td>
                 }
               }
             }
@@ -108,13 +123,19 @@
                     [attr.rowspan]="calcularRowspan(celda)"
                     [class.celda-externa]="celda.tipo === 'CLASE_EXTERNA'"
                     [class.celda-propia]="celda.tipo === 'CLASE_PROPIA'"
-                    [class.celda-protegido]="celda.tipo === 'PROTEGIDO'">
+                    [class.celda-protegido]="celda.tipo === 'PROTEGIDO'"
+                    [class.celda-alerta-choque]="celda.advertencia_choque"
+                    [matTooltip]="celda.tipo === 'PROTEGIDO' ? 'Bloque protegido: ' + celda.etiqueta + (celda.detalle ? ' (' + celda.detalle + ')' : '') : (celda.advertencia_choque ? 'Superposición con bloque protegido: ' + celda.bloque_protegido_nombre : '')"
+                    (click)="onCeldaClick(d.dia, b.numero)">
                     <div class="celda-content">
                       <div class="celda-top">
                         <span class="celda-codigo" *ngIf="celda.codigo">{{ celda.codigo }}</span>
                         <mat-icon class="celda-lock" *ngIf="celda.bloqueado" matTooltip="Bloque fijo externo bloqueado">
                           lock
                         </mat-icon>
+                        <span class="celda-protegido-badge" *ngIf="celda.tipo === 'PROTEGIDO' && celda.detalle">
+                          {{ celda.detalle }}
+                        </span>
                       </div>
 
                       <div class="celda-nombre">{{ celda.etiqueta }}</div>
@@ -123,10 +144,19 @@
                         <mat-icon class="celda-sala-icon">meeting_room</mat-icon>
                         <span class="celda-sala">{{ celda.sala }}</span>
                       </div>
+
+                      <!-- Sub-banner si colisiona con bloque protegido -->
+                      <div class="choque-banner" *ngIf="celda.advertencia_choque">
+                        <mat-icon class="choque-icon">warning</mat-icon>
+                        <span class="choque-texto">Protegido: {{ celda.bloque_protegido_nombre }}</span>
+                      </div>
                     </div>
                   </td>
                 } @else {
-                  <td class="td-celda-vacia"></td>
+                  <td
+                    class="td-celda-vacia"
+                    (click)="onCeldaClick(d.dia, b.numero)">
+                  </td>
                 }
               }
             }

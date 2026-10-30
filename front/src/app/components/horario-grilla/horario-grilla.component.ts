@@ -1,10 +1,18 @@
-import { Component, Input, OnInit, inject } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { HorarioApiService, BloqueGrillaDTO, DiaSemana } from '../../services/horario-api.service';
+import {
+  HorarioApiService,
+  BloqueGrillaDTO,
+  DiaSemana,
+} from '../../services/horario-api.service';
 
-export type TipoCeldaGrilla = 'CLASE_PROPIA' | 'CLASE_EXTERNA' | 'PROTEGIDO' | 'DISPONIBLE';
+export type TipoCeldaGrilla =
+  | 'CLASE_PROPIA'
+  | 'CLASE_EXTERNA'
+  | 'PROTEGIDO'
+  | 'DISPONIBLE';
 
 export interface CeldaGrilla {
   dia: DiaSemana;
@@ -16,6 +24,9 @@ export interface CeldaGrilla {
   sala?: string;
   detalle?: string;
   bloqueado?: boolean;
+  advertencia_choque?: boolean;
+  bloque_protegido_nombre?: string;
+  bloque_protegido_alcance?: string;
 }
 
 @Component({
@@ -31,6 +42,9 @@ export class HorarioGrillaComponent implements OnInit {
   @Input() celdas: CeldaGrilla[] = [];
   @Input() titulo = '';
   @Input() subtitulo = '';
+  @Input() modo: 'lectura' | 'seleccion' = 'lectura';
+
+  @Output() seleccionar = new EventEmitter<{ dia: DiaSemana; bloque: number }>();
 
   grilla: BloqueGrillaDTO[] = [];
   cargandoGrilla = false;
@@ -68,18 +82,27 @@ export class HorarioGrillaComponent implements OnInit {
 
   // Encuentra la celda que INICIA en este día y bloque
   celdaQueInicia(dia: DiaSemana, bloqueNum: number): CeldaGrilla | undefined {
-    return this.celdas.find((c) => c.dia === dia && c.bloque_inicio === bloqueNum);
+    return this.celdas.find(
+      (c) => c.dia === dia && c.bloque_inicio === bloqueNum,
+    );
   }
 
   // Indica si este día y bloque está cubierto por un bloque que inició antes (para no pintar <td>)
   estaCubierto(dia: DiaSemana, bloqueNum: number): boolean {
     return this.celdas.some(
-      (c) => c.dia === dia && bloqueNum > c.bloque_inicio && bloqueNum <= c.bloque_fin
+      (c) =>
+        c.dia === dia && bloqueNum > c.bloque_inicio && bloqueNum <= c.bloque_fin,
     );
   }
 
   calcularRowspan(c: CeldaGrilla): number {
     return Math.max(1, c.bloque_fin - c.bloque_inicio + 1);
+  }
+
+  onCeldaClick(dia: DiaSemana, bloqueNum: number): void {
+    if (this.modo === 'seleccion') {
+      this.seleccionar.emit({ dia, bloque: bloqueNum });
+    }
   }
 
   private fallbackGrilla(): BloqueGrillaDTO[] {
