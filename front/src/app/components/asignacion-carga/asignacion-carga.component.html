@@ -1,0 +1,113 @@
+<div class="container" style="padding: 20px; font-family: sans-serif;">
+  <!-- BANNER PRINCIPAL ESTILO GRILLA -->
+  <div class="hero" style="margin-bottom: 24px;">
+    <div class="hero__content">
+      <div class="hero__left">
+        <!-- Ícono del módulo -->
+        <div class="hero__icon">
+          <mat-icon>assignment_ind</mat-icon>
+        </div>
+        
+        <!-- Títulos y etiquetas -->
+        <div class="hero__titles">
+          <h1 style="font-size: 22px;">Asignación de Carga Docente</h1>
+          <p>Gestión y asignación de horas docentes por curso y profesor.</p>
+          
+          <div class="hero__chips" style="margin-top: 10px;">
+            <span class="chip">
+              <mat-icon>calendar_today</mat-icon>
+              <span>Semestre 2 · Año 2026</span>
+            </span>
+            <span class="chip chip--propia">
+              <mat-icon>article</mat-icon>
+              <span>Plan 2025 v1</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; gap: 20px;">
+    
+    <!-- PANEL IZQUIERDO: Lista de Cursos -->
+    <div style="flex: 1; border: 1px solid #ccc; padding: 15px; border-radius: 8px;">
+      <h3>Cursos del Semestre</h3>
+      
+      <input type="text" [(ngModel)]="textoBusquedaCurso" placeholder="Buscar por código (ej. DU113) o nombre..."
+             style="width: 100%; padding: 8px; margin-bottom: 15px; border-radius: 4px; border: 1px solid #ccc;">
+
+      <ul style="list-style: none; padding: 0;">
+        <li *ngFor="let curso of cursosFiltrados" 
+            (click)="seleccionarCurso(curso)"
+            style="padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; justify-content: space-between; align-items: center;"
+            [style.background-color]="cursoSeleccionado?.id_curso === curso.id_curso ? '#e3f2fd' : 'transparent'">
+          
+          <span><strong>{{ curso.codigo_asignatura }}</strong> - {{ curso.asignatura?.nombre }} (Grupo {{ curso.grupo }})</span>
+          
+          <span *ngIf="curso.es_pendiente" 
+                style="background-color: #ff4d4f; color: white; padding: 2px 6px; border-radius: 12px; font-size: 12px;">
+            Pendiente
+          </span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- PANEL DERECHO: Asignación de Profesores -->
+    <div style="flex: 2; border: 1px solid #ccc; padding: 15px; border-radius: 8px;" *ngIf="cursoSeleccionado">
+      <h3>Asignando profesores a: <strong>{{ cursoSeleccionado.asignatura?.nombre }}</strong></h3>
+
+      <!-- NUEVO BUSCADOR CON AUTOCOMPLETADO MATERIAL -->
+      <div style="margin-top: 15px; margin-bottom: 20px;">
+        <mat-form-field style="width: 100%;" appearance="outline">
+          <mat-label>Buscar y agregar profesor</mat-label>
+          <input type="text"
+                 matInput
+                 [formControl]="profesorControl"
+                 [matAutocomplete]="auto">
+          <mat-autocomplete #auto="matAutocomplete" 
+                           [displayWith]="mostrarNombreProfesor"
+                           (optionSelected)="agregarProfesorSeleccionado($event)">
+            <mat-option *ngFor="let profe of profesoresFiltradosMaterial | async" [value]="profe">
+              {{ profe.nombre }} (Carga actual: {{ profe.total_horas_asignadas }} hrs)
+            </mat-option>
+          </mat-autocomplete>
+        </mat-form-field>
+      </div>
+
+      <table style="width: 100%; border-collapse: collapse; text-align: left;" *ngIf="profesoresAsignados.length > 0">
+        <thead>
+          <tr style="background-color: #e6f7ff;">
+            <th style="border: 1px solid #91d5ff; padding: 8px;">Profesor</th>
+            <th style="border: 1px solid #91d5ff; padding: 8px;">Carga Actual Total</th>
+            <th style="border: 1px solid #91d5ff; padding: 8px;">Horas en este curso </th>
+            <th style="border: 1px solid #91d5ff; padding: 8px;">Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of profesoresAsignados; let i = index">
+            <td style="border: 1px solid #eee; padding: 8px;">{{ item.profesor.nombre }}</td>
+            <td style="border: 1px solid #eee; padding: 8px;">{{ item.profesor.total_horas_asignadas }} hrs</td>
+            <td style="border: 1px solid #eee; padding: 8px;">
+              <input type="number" [(ngModel)]="item.cantidad_horas" min="1" style="width: 70px; padding: 5px;">
+            </td>
+            <td style="border: 1px solid #eee; padding: 8px;">
+              <!-- Botón actualizado para borrar de la BD -->
+              <button (click)="removerProfesor(i, item.profesor.id_usuario)" style="color: #ff4d4f; border: none; background: none; cursor: pointer; font-weight: bold;">
+                Quitar
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div style="margin-top: 20px; text-align: right;">
+        <button (click)="guardarAsignacion()" 
+                style="background-color: #1890ff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold;">
+          Guardar Asignación
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>

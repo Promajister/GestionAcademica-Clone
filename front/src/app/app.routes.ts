@@ -261,7 +261,13 @@ export const routes: Routes = [
       import('./components/egresados-analisis/egresados-analisis.component')
         .then(m => m.EgresadosAnalisisComponent),
   },
-
+  {
+    path: 'asignacion-carga',
+    canActivate: [authGuard, roleGuard],
+    data: { allowedRoles: ['jefatura', 'vinculacion'] },
+    loadComponent: () => 
+      import('./components/asignacion-carga/asignacion-carga.component').then(m => m.AsignacionCargaComponent),
+  },
   {
     path: '**',
     redirectTo: 'dashboard',
