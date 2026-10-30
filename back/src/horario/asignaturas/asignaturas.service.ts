@@ -66,7 +66,16 @@ export class AsignaturasService {
   // ---------- CREATE ----------
   async create(dto: CreateAsignaturaDto) {
     const origen = normalizarOrigen(dto.origen);
-    const catedra = dto.catedraSemanal ?? 0;
+    this.assertBloquesSoloExternas(origen, dto.bloques_externos);
+
+    const plan = await this.prisma.plan.findUnique({
+      where: { id_plan: dto.id_plan },
+    });
+    if (!plan) {
+      throw new NotFoundException(`El plan ${dto.id_plan} no existe`);
+    }
+
+    const catedra = dto.catedraSemanal ?? dto.bloques_semanales ?? 4;
     const taller = dto.tallerSemanal ?? 0;
     const lab = dto.labSemanal ?? 0;
     const inscritos = dto.cupo ?? 22;
