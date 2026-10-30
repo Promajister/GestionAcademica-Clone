@@ -1,4 +1,3 @@
-
 import { Test, TestingModule } from '@nestjs/testing';
 import {
   ConflictException,
@@ -31,20 +30,17 @@ describe('ProfesoresService - HOR-13 CA3', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
 
-    const module: TestingModule =
-      await Test.createTestingModule({
-        providers: [
-          ProfesoresService,
-          {
-            provide: PrismaService,
-            useValue: prismaMock,
-          },
-        ],
-      }).compile();
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        ProfesoresService,
+        {
+          provide: PrismaService,
+          useValue: prismaMock,
+        },
+      ],
+    }).compile();
 
-    service = module.get<ProfesoresService>(
-      ProfesoresService,
-    );
+    service = module.get<ProfesoresService>(ProfesoresService);
   });
 
   it('debe existir el servicio', () => {
@@ -69,9 +65,7 @@ describe('ProfesoresService - HOR-13 CA3', () => {
 
     prismaMock.cargaDocente.count.mockResolvedValue(1);
 
-    await expect(
-      service.remove(idProfesor),
-    ).rejects.toThrow(ConflictException);
+    await expect(service.remove(idProfesor)).rejects.toThrow(ConflictException);
 
     expect(prismaMock.cargaDocente.count).toHaveBeenCalledWith({
       where: { id_usuario: idProfesor },
@@ -118,9 +112,7 @@ describe('ProfesoresService - HOR-13 CA3', () => {
   it('devuelve 404 cuando el docente no existe', async () => {
     prismaMock.profesor.findUnique.mockResolvedValue(null);
 
-    await expect(
-      service.remove(999),
-    ).rejects.toThrow(NotFoundException);
+    await expect(service.remove(999)).rejects.toThrow(NotFoundException);
 
     expect(prismaMock.profesor.delete).not.toHaveBeenCalled();
   });
@@ -138,16 +130,12 @@ describe('ProfesoresService - HOR-13 CA3', () => {
     prismaMock.disponibilidad.count.mockResolvedValue(2);
     prismaMock.bloqueProtegido.count.mockResolvedValue(0);
 
-    await expect(
-      service.remove(idProfesor),
-    ).rejects.toThrow(ConflictException);
+    await expect(service.remove(idProfesor)).rejects.toThrow(ConflictException);
 
     expect(prismaMock.profesor.delete).not.toHaveBeenCalled();
   });
 
-  
   describe('HOR-13 CA2 - Disponibilidad según contrato', () => {
-
     it('permite disponibilidad a docentes activos por horas', async () => {
       prismaMock.profesor.findUnique.mockResolvedValue({
         id_usuario: 5,
@@ -157,9 +145,7 @@ describe('ProfesoresService - HOR-13 CA3', () => {
         },
       });
 
-      await expect(
-        service.validarDisponibilidad(5)
-      ).resolves.toBeUndefined();
+      await expect(service.validarDisponibilidad(5)).resolves.toBeUndefined();
     });
 
     it('rechaza disponibilidad de docentes de planta', async () => {
@@ -171,9 +157,9 @@ describe('ProfesoresService - HOR-13 CA3', () => {
         },
       });
 
-      await expect(
-        service.validarDisponibilidad(5)
-      ).rejects.toThrow(ForbiddenException);
+      await expect(service.validarDisponibilidad(5)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it('rechaza disponibilidad de docentes inactivos', async () => {
@@ -185,19 +171,17 @@ describe('ProfesoresService - HOR-13 CA3', () => {
         },
       });
 
-      await expect(
-        service.validarDisponibilidad(5)
-      ).rejects.toThrow(ForbiddenException);
+      await expect(service.validarDisponibilidad(5)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it('rechaza usuarios que no están registrados como docentes', async () => {
       prismaMock.profesor.findUnique.mockResolvedValue(null);
 
-      await expect(
-        service.validarDisponibilidad(999)
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.validarDisponibilidad(999)).rejects.toThrow(
+        NotFoundException,
+      );
     });
-
   });
-
 });

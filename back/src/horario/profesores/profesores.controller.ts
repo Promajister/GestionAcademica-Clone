@@ -1,4 +1,3 @@
-
 import {
   Body,
   Controller,
@@ -23,9 +22,7 @@ import { CsrfGuard } from '../../auth/guards/csrf.guard';
 @Controller('horario/profesores')
 @UseGuards(JwtCookieAuthGuard, RolesGuard)
 export class ProfesoresController {
-  constructor(
-    private readonly profesoresService: ProfesoresService,
-  ) {}
+  constructor(private readonly profesoresService: ProfesoresService) {}
 
   // GET /api/horario/profesores
   @Get()
@@ -34,7 +31,7 @@ export class ProfesoresController {
     return this.profesoresService.findAll();
   }
 
-   // GET /api/horario/profesores/usuarios-disponibles
+  // GET /api/horario/profesores/usuarios-disponibles
   @Get('usuarios-disponibles')
   @Roles('jefatura')
   findUsuariosDisponibles() {
