@@ -97,7 +97,6 @@
             @if (profesores.length === 0 && !cargandoProfesores) {
               <mat-select disabled placeholder="Aún no hay docentes registrados">
               </mat-select>
-              <mat-hint class="hint-warn">Aún no hay docentes registrados en el sistema</mat-hint>
             } @else {
               <mat-select [(ngModel)]="idUsuarioProfesor">
                 @for (p of profesores; track p.id_usuario) {
@@ -106,6 +105,9 @@
                   </mat-option>
                 }
               </mat-select>
+            }
+            @if (profesores.length === 0 && !cargandoProfesores) {
+              <mat-hint class="hint-warn">Aún no hay docentes registrados en el sistema</mat-hint>
             }
           </mat-form-field>
         }
