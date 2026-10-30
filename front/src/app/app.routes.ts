@@ -93,6 +93,15 @@ export const routes: Routes = [
       ).then((m) => m.HorarioBloquesProtegidosComponent),
   },
   {
+    path: 'horario/mi-disponibilidad',
+    canActivate: [authGuard, roleGuard],
+    data: { allowedRoles: ['profesor'] },
+    loadComponent: () =>
+      import(
+        './components/horario-disponibilidad/horario-disponibilidad.component'
+      ).then((m) => m.HorarioDisponibilidadComponent),
+  },
+  {
     path: 'horario',
     pathMatch: 'full',
     redirectTo: 'horario/asignaturas',

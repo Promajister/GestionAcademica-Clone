@@ -350,3 +350,44 @@
     }
   }
 }
+
+// ---------- DIS-F02: Mi disponibilidad ----------
+.grilla-leyenda {
+  .color--disponible {
+    background: #dcfce7;
+    border-color: #86efac;
+  }
+
+  .color--vacia {
+    background: #ffffff;
+    border-color: #cbd5e1;
+  }
+}
+
+.celda-disponible {
+  background: #dcfce7 !important;
+  border-left: 4px solid #16a34a !important;
+
+  .celda-nombre {
+    color: #166534;
+    font-weight: 600;
+  }
+
+  .celda-check {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    color: #16a34a;
+  }
+}
+
+.grilla-table.modo-seleccion {
+  .celda-disponible:hover {
+    background: #bbf7d0 !important;
+  }
+
+  .td-celda-vacia:hover {
+    background: #f0fdf4 !important;
+    box-shadow: inset 0 0 0 2px #86efac;
+  }
+}

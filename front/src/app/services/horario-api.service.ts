@@ -157,6 +157,24 @@ export interface ProfesorItemDTO {
   };
 }
 
+// ---------- DISPONIBILIDAD DOCENTE (DIS-F02) ----------
+export interface BloqueDisponibleDTO {
+  dia: DiaSemana;
+  bloque: number;
+}
+
+export interface MiDisponibilidadDTO {
+  profesor: {
+    id_usuario: number;
+    nombre: string;
+    email: string;
+    contrato: 'PLANTA' | 'HORAS';
+  };
+  habilitado: boolean;
+  contratos_habilitados: string[];
+  bloques: BloqueDisponibleDTO[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class HorarioApiService {
   private http = inject(HttpClient);
@@ -317,6 +335,23 @@ export class HorarioApiService {
     return this.http.delete<{ mensaje: string; eliminados?: number }>(
       `${this.baseUrl}/bloques-protegidos/${id}`,
       { params },
+    );
+  }
+
+  // ---------- DISPONIBILIDAD DOCENTE (DIS-F02) ----------
+  // Siempre sobre el docente autenticado: el back toma el id desde la sesión
+  getMiDisponibilidad(): Observable<MiDisponibilidadDTO> {
+    return this.http.get<MiDisponibilidadDTO>(
+      `${this.baseUrl}/disponibilidad/mia`,
+    );
+  }
+
+  guardarMiDisponibilidad(
+    bloques: BloqueDisponibleDTO[],
+  ): Observable<MiDisponibilidadDTO> {
+    return this.http.put<MiDisponibilidadDTO>(
+      `${this.baseUrl}/disponibilidad/mia`,
+      { bloques },
     );
   }
 }
