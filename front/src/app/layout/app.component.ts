@@ -269,6 +269,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
         items: [
           { label: 'Salas', icon: 'meeting_room', route: '/horario/salas' },
           { label: 'Asignaturas', icon: 'menu_book', route: '/horario/asignaturas' },
+          { label: 'Docentes', icon: 'badge', route: '/horario/profesores' },
           { label: 'Bloques protegidos', icon: 'lock_clock', route: '/horario/bloques-protegidos' },
           { label: 'Grilla semanal', icon: 'grid_on', route: '/horario/grilla' },
         ],
