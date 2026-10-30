@@ -1058,6 +1058,25 @@ async function seedHorario() {
     }
   }
 
+  // ADM-F03: un curso (cátedra, grupo A) por cada asignatura propia de la malla,
+  // con los mismos valores que crea AsignaturasService. Sin cursos no hay a quién asignar carga docente.
+  // Idempotente: no toca las mallas que ya tienen curso.
+  const mallasPropias = await prisma.malla.findMany({
+    where: { asignatura: { origen: TipoOrigen.INTERNA }, cursos: { none: {} } },
+  });
+  if (mallasPropias.length) {
+    await prisma.curso.createMany({
+      data: mallasPropias.map((m) => ({
+        tipo: TipoCurso.CATEDRA,
+        grupo: 'A',
+        inscritos: 22,
+        year: 2026,
+        semestre: m.semestre,
+        codigo_asignatura: m.codigo_asignatura,
+        id_malla: m.id_malla,
+      })),
+    });
+  }
 }
 
 main()
