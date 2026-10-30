@@ -13,10 +13,13 @@ import { OcupacionesService } from './ocupaciones.service';
 import { CreateOcupacionDto } from './dto/create-ocupacion.dto';
 import { QueryOcupacionDto } from './dto/query-ocupacion.dto';
 import { JwtCookieAuthGuard } from '../../auth/guards/jwt-cookie-auth.guard';
+import { RolesGuard } from '../../auth/guards/roles.guard';
+import { Roles } from '../../auth/decorators/roles.decorator';
 
 // Sin @Roles por ahora: los perfiles del módulo Horario se definen en ADM-F04
 @Controller('horario/ocupaciones')
-@UseGuards(JwtCookieAuthGuard)
+@UseGuards(JwtCookieAuthGuard, RolesGuard)
+@Roles('jefatura')
 export class OcupacionesController {
   constructor(private readonly service: OcupacionesService) {}
 
