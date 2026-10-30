@@ -6,6 +6,7 @@ import { BloquesModule } from './bloques/bloques.module';
 import { GrillaModule } from './grilla/grilla.module';
 import { OcupacionesModule } from './ocupaciones/ocupaciones.module';
 import { BloquesProtegidosModule } from './bloques-protegidos/bloques-protegidos.module';
+import { ProfesoresModule } from './profesores/profesores.module';
 import { DisponibilidadModule } from './disponibilidad/disponibilidad.module';
 
 // Agrupa los submódulos de Horario para registrarlos una sola vez en AppModule
@@ -18,6 +19,7 @@ import { DisponibilidadModule } from './disponibilidad/disponibilidad.module';
     GrillaModule,
     OcupacionesModule,
     BloquesProtegidosModule,
+    ProfesoresModule,
     DisponibilidadModule,
   ],
 })
