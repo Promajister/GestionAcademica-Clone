@@ -26,7 +26,7 @@
   </section>
 
   <!-- ===== TARJETAS PEQUEÑAS  ===== -->
-  <section class="summary-row">
+  <section class="summary-row" *ngIf="!esProfesor">
     <mat-card class="summary-card elev">
       <div class="summary-label">ESTUDIANTES</div>
       <div class="summary-value">

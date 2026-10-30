@@ -20,7 +20,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 
-type RoleId = 'jefatura' | 'vinculacion' | 'practicas';
+type RoleId = 'jefatura' | 'vinculacion' | 'practicas' | 'profesor';
 
 interface SavedRole {
   id: RoleId;
@@ -235,6 +235,8 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   private mapRoleLabel(id: RoleId): string {
     return id === 'jefatura'
       ? 'Jefatura de Carrera'
+      : id === 'profesor'
+      ? 'Profesor'
       : id === 'vinculacion'
       ? 'Coordinador de Vinculación'
       : 'Coordinador de Prácticas';
@@ -243,6 +245,8 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   private mapRoleIcon(id: RoleId): string {
     return id === 'jefatura'
       ? 'school'
+      : id === 'profesor'
+      ? 'co_present'
       : id === 'vinculacion'
       ? 'groups'
       : 'assignment_ind';
@@ -379,6 +383,13 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private buildNav(id: RoleId): NavItem[] {
+    if (id === 'profesor') {
+      return [
+        { label: 'Mi cuenta', icon: 'person', route: '/mi-cuenta' },
+        { label: 'Mi disponibilidad', icon: 'event_available', route: '/horario/mi-disponibilidad' },
+      ];
+    }
+
     if (id === 'vinculacion') {
       return [
         { label: 'Mi cuenta', icon: 'person', route: '/mi-cuenta' },
