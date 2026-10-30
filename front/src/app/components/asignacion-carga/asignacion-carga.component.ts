@@ -12,7 +12,6 @@ import { MatIconModule } from '@angular/material/icon';
 @Component({
   selector: 'app-asignacion-carga',
   standalone: true,
-  // IMPORTANTE: Agregamos los módulos de Angular Material aquí
   imports: [
     CommonModule, 
     FormsModule, 
@@ -121,7 +120,7 @@ export class AsignacionCargaComponent implements OnInit {
         },
         error: (err) => {
           console.error(err);
-          alert('Hubo un error al eliminar la asignación en la base de datos.');
+          alert(this.mensajeError(err, 'Hubo un error al eliminar la asignación en la base de datos.'));
         }
       });
     }
@@ -146,8 +145,15 @@ export class AsignacionCargaComponent implements OnInit {
       },
       error: (err) => {
         console.error(err);
-        alert('Hubo un error al guardar la asignación.');
+        alert(this.mensajeError(err, 'Hubo un error al guardar la asignación.'));
       }
     });
+  }
+
+  // Muestra el mensaje de validación del backend (400/404) si viene
+  private mensajeError(err: any, porDefecto: string): string {
+    const msg = err?.error?.message;
+    if (Array.isArray(msg)) return msg.join('\n');
+    return typeof msg === 'string' ? msg : porDefecto;
   }
 }

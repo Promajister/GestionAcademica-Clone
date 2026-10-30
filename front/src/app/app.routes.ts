@@ -280,11 +280,13 @@ export const routes: Routes = [
         .then(m => m.EgresadosAnalisisComponent),
   },
   {
-    path: 'asignacion-carga',
+    path: 'horario/carga-docente',
     canActivate: [authGuard, roleGuard],
-    data: { allowedRoles: ['jefatura', 'vinculacion'] },
-    loadComponent: () => 
-      import('./components/asignacion-carga/asignacion-carga.component').then(m => m.AsignacionCargaComponent),
+    data: { allowedRoles: ['jefatura'] },
+    loadComponent: () =>
+      import('./components/asignacion-carga/asignacion-carga.component').then(
+        (m) => m.AsignacionCargaComponent,
+      ),
   },
   {
     path: 'horario/profesores',

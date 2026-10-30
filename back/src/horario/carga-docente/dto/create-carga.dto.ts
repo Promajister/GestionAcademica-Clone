@@ -1,4 +1,4 @@
-import { IsInt, IsArray, ValidateNested } from 'class-validator';
+import { IsInt, IsArray, Min, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
 class ProfesorCargaDto {
@@ -6,6 +6,7 @@ class ProfesorCargaDto {
   id_usuario!: number;
 
   @IsInt()
+  @Min(1, { message: 'La cantidad de horas debe ser mayor que 0' })
   cantidad_horas!: number;
 }
 

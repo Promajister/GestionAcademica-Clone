@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
-// Interfaces basadas en lo que devuelve tu backend
+// Interfaces basadas en lo que devuelve el backend
 export interface ProfesorAsignable {
   id_usuario: number;
   nombre: string;
@@ -19,10 +20,16 @@ export interface AsignarCargaPayload {
   providedIn: 'root'
 })
 export class CargaDocenteService {
-  // Ajusta este puerto si tu backend corre en uno distinto al 3000
-  private apiUrl = 'http://localhost:3000/api/carga-docente'; 
+  private apiUrl = `${environment.apiUrl}/horario/carga-docente`;
 
   constructor(private http: HttpClient) {}
+
+  // POST y DELETE exigen CsrfGuard: mismo token que guarda AuthService al iniciar sesión
+  private csrfHeaders(): HttpHeaders {
+    return new HttpHeaders({
+      'X-CSRF-Token': localStorage.getItem('app.token') ?? '',
+    });
+  }
 
   obtenerProfesores(): Observable<ProfesorAsignable[]> {
     return this.http.get<ProfesorAsignable[]>(`${this.apiUrl}/profesores`);
@@ -33,9 +40,14 @@ export class CargaDocenteService {
   }
 
   asignarCarga(payload: AsignarCargaPayload): Observable<any> {
-    return this.http.post(`${this.apiUrl}/asignar`, payload);
+    return this.http.post(`${this.apiUrl}/asignar`, payload, {
+      headers: this.csrfHeaders(),
+    });
   }
+
   eliminarCarga(id_curso: number, id_usuario: number): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/eliminar/${id_curso}/${id_usuario}`);
+    return this.http.delete(`${this.apiUrl}/eliminar/${id_curso}/${id_usuario}`, {
+      headers: this.csrfHeaders(),
+    });
   }
 }

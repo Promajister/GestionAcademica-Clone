@@ -4,6 +4,6 @@ import { CargaDocenteService } from './carga-docente.service';
 
 @Module({
   controllers: [CargaDocenteController],
-  providers: [CargaDocenteService]
+  providers: [CargaDocenteService],
 })
 export class CargaDocenteModule {}
