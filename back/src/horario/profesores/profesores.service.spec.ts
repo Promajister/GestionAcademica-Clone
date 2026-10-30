@@ -1,9 +1,5 @@
-
 import { Test, TestingModule } from '@nestjs/testing';
-import {
-  ConflictException,
-  NotFoundException,
-} from '@nestjs/common';
+import { ConflictException, NotFoundException } from '@nestjs/common';
 
 import { ProfesoresService } from './profesores.service';
 import { PrismaService } from '../../../prisma/prisma.service';
@@ -30,20 +26,17 @@ describe('ProfesoresService - HOR-13 CA3', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
 
-    const module: TestingModule =
-      await Test.createTestingModule({
-        providers: [
-          ProfesoresService,
-          {
-            provide: PrismaService,
-            useValue: prismaMock,
-          },
-        ],
-      }).compile();
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        ProfesoresService,
+        {
+          provide: PrismaService,
+          useValue: prismaMock,
+        },
+      ],
+    }).compile();
 
-    service = module.get<ProfesoresService>(
-      ProfesoresService,
-    );
+    service = module.get<ProfesoresService>(ProfesoresService);
   });
 
   it('debe existir el servicio', () => {
@@ -68,9 +61,7 @@ describe('ProfesoresService - HOR-13 CA3', () => {
 
     prismaMock.cargaDocente.count.mockResolvedValue(1);
 
-    await expect(
-      service.remove(idProfesor),
-    ).rejects.toThrow(ConflictException);
+    await expect(service.remove(idProfesor)).rejects.toThrow(ConflictException);
 
     expect(prismaMock.cargaDocente.count).toHaveBeenCalledWith({
       where: { id_usuario: idProfesor },
@@ -117,9 +108,7 @@ describe('ProfesoresService - HOR-13 CA3', () => {
   it('devuelve 404 cuando el docente no existe', async () => {
     prismaMock.profesor.findUnique.mockResolvedValue(null);
 
-    await expect(
-      service.remove(999),
-    ).rejects.toThrow(NotFoundException);
+    await expect(service.remove(999)).rejects.toThrow(NotFoundException);
 
     expect(prismaMock.profesor.delete).not.toHaveBeenCalled();
   });
@@ -137,9 +126,7 @@ describe('ProfesoresService - HOR-13 CA3', () => {
     prismaMock.disponibilidad.count.mockResolvedValue(2);
     prismaMock.bloqueProtegido.count.mockResolvedValue(0);
 
-    await expect(
-      service.remove(idProfesor),
-    ).rejects.toThrow(ConflictException);
+    await expect(service.remove(idProfesor)).rejects.toThrow(ConflictException);
 
     expect(prismaMock.profesor.delete).not.toHaveBeenCalled();
   });

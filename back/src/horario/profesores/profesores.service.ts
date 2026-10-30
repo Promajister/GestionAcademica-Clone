@@ -1,9 +1,8 @@
-
 import {
   Injectable,
   NotFoundException,
   BadRequestException,
-  ConflictException, 
+  ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { CreateProfesorDto } from './dto/create-profesor.dto';
@@ -13,7 +12,7 @@ import { UpdateProfesorDto } from './dto/update-profesor.dto';
 export class ProfesoresService {
   constructor(private readonly prisma: PrismaService) {}
 
-// Usuarios activos que aún no están registrados como profesores
+  // Usuarios activos que aún no están registrados como profesores
   async findUsuariosDisponibles() {
     return this.prisma.usuario.findMany({
       where: {
@@ -39,13 +38,13 @@ export class ProfesoresService {
     });
 
     if (!usuario) {
-    throw new NotFoundException('El usuario no existe');
+      throw new NotFoundException('El usuario no existe');
     }
 
     if (!usuario.activo) {
-    throw new BadRequestException(
+      throw new BadRequestException(
         'No se puede registrar como docente a un usuario inactivo',
-    );
+      );
     }
 
     const existente = await this.prisma.profesor.findUnique({
