@@ -3,6 +3,7 @@ import { JwtCookieAuthGuard } from '../../auth/guards/jwt-cookie-auth.guard';
 import { JwtAccessPayload } from '../../auth/types/jwt-payload';
 import { DisponibilidadService } from './disponibilidad.service';
 import { GuardarDisponibilidadDto } from './dto/guardar-disponibilidad.dto';
+import { CsrfGuard } from '../../auth/guards/csrf.guard';
 
 // DIS-F02: el docente solo ve y edita SU disponibilidad.
 // El id del usuario se toma siempre del JWT,
@@ -18,6 +19,7 @@ export class DisponibilidadController {
   }
 
   @Put('mia')
+  @UseGuards(CsrfGuard)
   guardarMia(
     @Req() req: { user: JwtAccessPayload },
     @Body() dto: GuardarDisponibilidadDto,

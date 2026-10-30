@@ -4,7 +4,8 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { TipoContrato, TipoDia } from '@prisma/client';
-import { PrismaService } from 'prisma/prisma.service';
+import { PrismaService } from '../../../prisma/prisma.service';
+import { ProfesoresService } from '../profesores/profesores.service';
 
 import {
   DIAS_DISPONIBILIDAD,
@@ -37,7 +38,10 @@ export interface MiDisponibilidadResponse {
 
 @Injectable()
 export class DisponibilidadService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly profesoresService: ProfesoresService,
+  ) {}
 
   // ---------- GET /horario/disponibilidad/mia ----------
   async obtenerPropia(idUsuario: number): Promise<MiDisponibilidadResponse> {
@@ -78,6 +82,8 @@ export class DisponibilidadService {
     idUsuario: number,
     dto: GuardarDisponibilidadDto,
   ): Promise<MiDisponibilidadResponse> {
+    await this.profesoresService.validarDisponibilidad(idUsuario);
+
     const profesor = await this.buscarProfesor(idUsuario);
     if (!CONTRATOS_CON_DISPONIBILIDAD.includes(profesor.contrato)) {
       throw new ForbiddenException(
