@@ -1136,3 +1136,24 @@ model PeriodoHorario {
   @@id([year, periodo])
   @@map("periodos_horario")
 }
+
+// GEN-F02: bloques movidos a mano en la propuesta, para poder deshacerlos antes de cerrar.
+// Guarda de dónde a dónde se movió una clase (bloques seguidos de un curso).
+model MovimientoHorario {
+  id           Int        @id @default(autoincrement())
+  year         Int
+  periodo      Int
+  origen       TipoOrigen
+  id_curso     Int
+  largo        Int
+  desde_dia    Int
+  desde_bloque Int
+  desde_sala   Int?
+  hacia_dia    Int
+  hacia_bloque Int
+  hacia_sala   Int?
+  creado_en    DateTime   @default(now())
+
+  @@index([year, periodo])
+  @@map("movimientos_horario")
+}
