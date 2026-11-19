@@ -16,6 +16,7 @@ import { CreateBloqueProtegidoDto } from './dto/create-bloque-protegido.dto';
 import { UpdateBloqueProtegidoDto } from './dto/update-bloque-protegido.dto';
 import { QueryBloqueProtegidoDto } from './dto/query-bloque-protegido.dto';
 import { QueryAplicablesDto } from './dto/query-aplicables.dto';
+import { MoverBloqueProtegidoDto } from './dto/mover-bloque-protegido.dto';
 import { bloquePorNumero, mismaJornada, rangoBloques } from '../common/grilla';
 
 type Tx = Prisma.TransactionClient;
@@ -441,6 +442,94 @@ export class BloquesProtegidosService {
           include: { usuario: true },
         },
       },
+    });
+  }
+
+  // ---------- PATCH /horario/bloques-protegidos/mover ----------
+  // Mueve un bloque registrado (sus filas seguidas) a otro día y bloque de inicio
+  async mover(dto: MoverBloqueProtegidoDto) {
+    return this.prisma.$transaction(async (tx) => {
+      const ids = [...new Set(dto.ids)];
+      const filas = await tx.bloqueProtegido.findMany({
+        where: { id_bloque_protegido: { in: ids } },
+        include: { dia: true },
+        orderBy: { id_bloque: 'asc' },
+      });
+      if (filas.length !== ids.length) {
+        throw new NotFoundException(
+          'El bloque protegido ya no existe; recarga la lista',
+        );
+      }
+
+      // Deben ser los bloques seguidos de un mismo bloque protegido
+      const p = filas[0];
+      const mismoGrupo = filas.every(
+        (f, i) =>
+          f.id_dia === p.id_dia &&
+          f.nombre === p.nombre &&
+          f.alcance === p.alcance &&
+          f.codigo_carrera === p.codigo_carrera &&
+          f.semestre === p.semestre &&
+          f.contrato === p.contrato &&
+          f.id_usuario === p.id_usuario &&
+          f.id_bloque === p.id_bloque + i,
+      );
+      if (!mismoGrupo) {
+        throw new BadRequestException(
+          'Solo se mueven los bloques seguidos de un mismo bloque protegido',
+        );
+      }
+
+      const largo = filas.length;
+      const fin = dto.bloque_inicio + largo - 1;
+      if (fin > 12 || !mismaJornada(dto.bloque_inicio, fin)) {
+        throw new BadRequestException(
+          `Un bloque de ${largo} bloque(s) no cabe desde el bloque ${dto.bloque_inicio}: no puede cruzar la colación ni pasar del bloque 12`,
+        );
+      }
+
+      const dia = await tx.dia.findFirst({
+        where: { nombre: dto.dia as TipoDia },
+      });
+      if (!dia) {
+        throw new BadRequestException(`Día no válido: ${dto.dia}`);
+      }
+      if (dia.id_dia === p.id_dia && dto.bloque_inicio === p.id_bloque) {
+        throw new BadRequestException('El bloque ya está en ese lugar');
+      }
+
+      const duplicado = await tx.bloqueProtegido.findFirst({
+        where: {
+          id_bloque_protegido: { notIn: ids },
+          id_dia: dia.id_dia,
+          id_bloque: { in: rangoBloques(dto.bloque_inicio, fin) },
+          nombre: p.nombre,
+          alcance: p.alcance,
+          codigo_carrera: p.codigo_carrera,
+          semestre: p.semestre,
+          contrato: p.contrato,
+          id_usuario: p.id_usuario,
+        },
+      });
+      if (duplicado) {
+        throw new ConflictException(
+          `Ya existe un bloque protegido idéntico el ${dia.nombre} bloque ${duplicado.id_bloque}`,
+        );
+      }
+
+      for (const [i, f] of filas.entries()) {
+        await tx.bloqueProtegido.update({
+          where: { id_bloque_protegido: f.id_bloque_protegido },
+          data: { id_dia: dia.id_dia, id_bloque: dto.bloque_inicio + i },
+        });
+      }
+
+      return {
+        mensaje: `'${p.nombre}' movido al ${dia.nombre} bloques ${dto.bloque_inicio}-${fin}`,
+        ids,
+        // Para deshacer desde la pantalla
+        desde: { dia: p.dia.nombre, bloque_inicio: p.id_bloque },
+      };
     });
   }
 

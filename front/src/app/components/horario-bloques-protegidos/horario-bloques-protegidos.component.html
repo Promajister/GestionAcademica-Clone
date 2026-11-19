@@ -300,14 +300,17 @@
       <div class="card-header">
         <div class="card-title">
           <mat-icon class="card-title-icon">visibility</mat-icon>
-          <span>Vista previa en la grilla</span>
+          <span>Grilla de bloques protegidos</span>
         </div>
       </div>
 
       <div class="preview-wrap">
+        <p class="grilla-hint">Arrastra un bloque registrado a otro día o bloque para moverlo. El bloque que estás creando aparece marcado como vista previa.</p>
         <app-horario-grilla
           modo="lectura"
           [celdas]="previewCeldas"
+          [arrastrable]="true"
+          (mover)="moverBloque($event)"
           titulo=""
           subtitulo="">
         </app-horario-grilla>

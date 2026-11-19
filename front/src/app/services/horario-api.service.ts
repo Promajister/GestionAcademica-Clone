@@ -338,6 +338,23 @@ export class HorarioApiService {
     );
   }
 
+  // Mueve un bloque registrado (todas sus filas) a otro día y bloque de inicio
+  moverBloqueProtegido(
+    ids: number[],
+    dia: DiaSemana,
+    bloque_inicio: number,
+  ): Observable<{
+    mensaje: string;
+    ids: number[];
+    desde: { dia: DiaSemana; bloque_inicio: number };
+  }> {
+    return this.http.patch<{
+      mensaje: string;
+      ids: number[];
+      desde: { dia: DiaSemana; bloque_inicio: number };
+    }>(`${this.baseUrl}/bloques-protegidos/mover`, { ids, dia, bloque_inicio });
+  }
+
   // ---------- DISPONIBILIDAD DOCENTE (DIS-F02) ----------
   // Siempre sobre el docente autenticado: el back toma el id desde la sesión
   getMiDisponibilidad(): Observable<MiDisponibilidadDTO> {
