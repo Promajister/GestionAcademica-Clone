@@ -6,7 +6,7 @@ import { CsrfGuard } from '../../auth/guards/csrf.guard';
 import { PropuestaService } from './propuesta.service';
 import { PeriodoDto } from './dto/periodo.dto';
 
-// GEN-F01: propuesta de horario del semestre
+// GEN-F01 y GEN-F03: propuesta de horario del semestre, cruces y cierre
 @Controller('horario/propuesta')
 @UseGuards(JwtCookieAuthGuard, RolesGuard)
 @Roles('jefatura', 'secretaria')
@@ -24,5 +24,25 @@ export class PropuestaController {
   @UseGuards(CsrfGuard)
   generar(@Body() dto: PeriodoDto) {
     return this.service.generar(dto.year, dto.periodo);
+  }
+
+  // GET /api/horario/propuesta/validacion?year=2026&periodo=2 (GEN-F03)
+  @Get('validacion')
+  validar(@Query() q: PeriodoDto) {
+    return this.service.validar(q.year, q.periodo);
+  }
+
+  // POST /api/horario/propuesta/cerrar { year, periodo }: rechazado si hay cruces
+  @Post('cerrar')
+  @UseGuards(CsrfGuard)
+  cerrar(@Body() dto: PeriodoDto) {
+    return this.service.cerrar(dto.year, dto.periodo);
+  }
+
+  // POST /api/horario/propuesta/reabrir { year, periodo }: vuelve a borrador
+  @Post('reabrir')
+  @UseGuards(CsrfGuard)
+  reabrir(@Body() dto: PeriodoDto) {
+    return this.service.reabrir(dto.year, dto.periodo);
   }
 }

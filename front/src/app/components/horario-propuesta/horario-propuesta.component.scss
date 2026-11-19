@@ -532,3 +532,81 @@
 ::ng-deep .tooltip-multilinea {
   white-space: pre-line;
 }
+
+/* GEN-F03: cruces de sala */
+.cruces-card {
+  border-radius: 14px;
+  padding: 18px 20px;
+  margin-bottom: 16px;
+  border-left: 5px solid #dc2626;
+}
+
+.card-head__icon--rojo {
+  color: #dc2626;
+}
+
+.cruces {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cruce {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #7f1d1d;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+
+  mat-icon {
+    font-size: 17px;
+    width: 17px;
+    height: 17px;
+    flex: none;
+  }
+
+  &:hover {
+    background: #fee2e2;
+  }
+}
+
+.sala-chip__alerta {
+  color: #dc2626;
+}
+
+.sala-chip--activa .sala-chip__alerta {
+  color: #fca5a5;
+}
+
+.cuadro--cruce {
+  background: #fee2e2;
+  border: 2px solid #dc2626;
+}
+
+.celda--cruce {
+  background: #fef2f2;
+  box-shadow: inset 0 0 0 2px #dc2626;
+}
+
+.actividad__alerta {
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+  color: #dc2626;
+}
+
+.actividad--cruce-sala {
+  outline: 2px solid #dc2626;
+  outline-offset: -2px;
+}
