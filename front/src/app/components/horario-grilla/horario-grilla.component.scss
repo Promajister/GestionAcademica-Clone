@@ -156,6 +156,9 @@
 .td-celda {
   padding: 8px;
   position: relative;
+  // Con un alto explícito, .celda-content (height: 100%) llena la celda entera,
+  // así una celda de varios bloques se puede tomar desde cualquiera de ellos
+  height: 1px;
   text-align: left;
   vertical-align: top;
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.04);
