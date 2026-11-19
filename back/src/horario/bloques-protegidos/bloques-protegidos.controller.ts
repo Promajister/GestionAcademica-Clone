@@ -15,6 +15,7 @@ import { CreateBloqueProtegidoDto } from './dto/create-bloque-protegido.dto';
 import { UpdateBloqueProtegidoDto } from './dto/update-bloque-protegido.dto';
 import { QueryBloqueProtegidoDto } from './dto/query-bloque-protegido.dto';
 import { QueryAplicablesDto } from './dto/query-aplicables.dto';
+import { MoverBloqueProtegidoDto } from './dto/mover-bloque-protegido.dto';
 import { JwtCookieAuthGuard } from '../../auth/guards/jwt-cookie-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { Roles } from '../../auth/decorators/roles.decorator';
@@ -49,6 +50,12 @@ export class BloquesProtegidosController {
   @Post()
   create(@Body() dto: CreateBloqueProtegidoDto) {
     return this.service.create(dto);
+  }
+
+  // Extra: mover un bloque registrado arrastrándolo en la grilla (antes de ':id')
+  @Patch('mover')
+  mover(@Body() dto: MoverBloqueProtegidoDto) {
+    return this.service.mover(dto);
   }
 
   @Patch(':id')
