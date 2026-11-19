@@ -52,6 +52,30 @@ export interface SalaPropuestaDTO {
   capacidad: number;
 }
 
+export interface ActividadCruceDTO {
+  id: string;
+  codigo: string;
+  nombre: string;
+  origen: OrigenActividad;
+  sala: string | null;
+}
+
+export interface CruceSalaDTO {
+  id_sala: number;
+  sala: string;
+  id_dia: number;
+  dia: string;
+  bloque_inicio: number;
+  bloque_fin: number;
+  actividades: ActividadCruceDTO[];
+  mensaje: string;
+}
+
+export interface ValidacionDTO {
+  cruces_sala: CruceSalaDTO[];
+  puede_cerrar: boolean;
+}
+
 export interface PropuestaDTO {
   year: number;
   periodo: number;
@@ -61,6 +85,7 @@ export interface PropuestaDTO {
   no_asignadas: NoAsignadaDTO[];
   salas: SalaPropuestaDTO[];
   actividades: ActividadDTO[];
+  validacion: ValidacionDTO;
 }
 
 export interface ResultadoGeneracionDTO {
@@ -98,6 +123,23 @@ export class PropuestaApiService {
   generar(year: number, periodo: number): Observable<ResultadoGeneracionDTO> {
     return this.http.post<ResultadoGeneracionDTO>(
       `${this.baseUrl}/generar`,
+      { year, periodo },
+      this.csrf(),
+    );
+  }
+
+  // GEN-F03: se rechaza (409) mientras existan cruces sin resolver
+  cerrar(year: number, periodo: number): Observable<{ mensaje: string }> {
+    return this.http.post<{ mensaje: string }>(
+      `${this.baseUrl}/cerrar`,
+      { year, periodo },
+      this.csrf(),
+    );
+  }
+
+  reabrir(year: number, periodo: number): Observable<{ mensaje: string }> {
+    return this.http.post<{ mensaje: string }>(
+      `${this.baseUrl}/reabrir`,
       { year, periodo },
       this.csrf(),
     );

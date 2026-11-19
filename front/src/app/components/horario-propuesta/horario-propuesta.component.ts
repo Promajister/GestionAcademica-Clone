@@ -12,6 +12,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
   ActividadDTO,
+  CruceSalaDTO,
   MotivoNoAsignada,
   NoAsignadaDTO,
   PropuestaApiService,
@@ -165,6 +166,78 @@ export class HorarioPropuestaComponent implements OnInit {
     });
   }
 
+  // ---------- GEN-F03: cruces y cierre ----------
+  get crucesSala(): CruceSalaDTO[] {
+    return this.propuesta?.validacion.cruces_sala ?? [];
+  }
+
+  get puedeCerrar(): boolean {
+    return !!this.propuesta?.validacion.puede_cerrar;
+  }
+
+  get motivoNoCerrar(): string {
+    if (!this.generada) return 'Primero genera la propuesta';
+    if (this.crucesSala.length) {
+      return `Hay ${this.crucesSala.length} cruce(s) de sala sin resolver`;
+    }
+    return '';
+  }
+
+  // Actividad marcada en un cruce de sala en este bloque
+  enCruceSala(a: ActividadDTO, bloque: number): boolean {
+    return this.crucesSala.some(
+      (c) =>
+        c.id_dia === a.id_dia &&
+        bloque >= c.bloque_inicio &&
+        bloque <= c.bloque_fin &&
+        c.actividades.some((x) => x.id === a.id),
+    );
+  }
+
+  celdaConCruce(id_dia: number, bloque: number): boolean {
+    return (
+      this.vista !== 'EXTERNAS' &&
+      this.crucesSala.some(
+        (c) =>
+          c.id_sala === this.vista &&
+          c.id_dia === id_dia &&
+          bloque >= c.bloque_inicio &&
+          bloque <= c.bloque_fin,
+      )
+    );
+  }
+
+  irACruce(c: CruceSalaDTO): void {
+    this.vista = c.id_sala;
+  }
+
+  cerrar(): void {
+    if (!confirm('Al cerrar el horario ya no se podrá modificar. ¿Cerrar el horario?')) {
+      return;
+    }
+    this.api.cerrar(this.year, this.periodo).subscribe({
+      next: (r) => {
+        this.avisar(r.mensaje);
+        this.cargar();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.avisar(err.error?.message || 'No se pudo cerrar el horario');
+        this.cargar();
+      },
+    });
+  }
+
+  reabrir(): void {
+    this.api.reabrir(this.year, this.periodo).subscribe({
+      next: (r) => {
+        this.avisar(r.mensaje);
+        this.cargar();
+      },
+      error: (err: HttpErrorResponse) =>
+        this.avisar(err.error?.message || 'No se pudo reabrir el horario'),
+    });
+  }
+
   // Actividades que ocupan este día y bloque en la vista elegida
   actividadesEn(id_dia: number, bloque: number): ActividadDTO[] {
     return (this.propuesta?.actividades ?? []).filter(
@@ -179,6 +252,10 @@ export class HorarioPropuestaComponent implements OnInit {
   contarEnSala(id_sala: number | null): number {
     return (this.propuesta?.actividades ?? []).filter((a) => a.id_sala === id_sala)
       .length;
+  }
+
+  crucesEnSala(id_sala: number): number {
+    return this.crucesSala.filter((c) => c.id_sala === id_sala).length;
   }
 
   docentes(a: ActividadDTO): string {

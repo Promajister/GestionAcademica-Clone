@@ -14,7 +14,8 @@ import {
   NoAsignada,
   generarPropuesta,
 } from './generador';
-import { BloqueActividad, agruparActividades } from './actividades';
+import { Actividad, BloqueActividad, agruparActividades } from './actividades';
+import { crucesDeSala } from './validador';
 
 type Db = Prisma.TransactionClient | PrismaService;
 
@@ -230,7 +231,75 @@ export class PropuestaService {
       }),
       this.bloquesDelPeriodo(year, periodo),
     ]);
-    return { ...estado, salas, actividades: agruparActividades(bloques) };
+    const actividades = agruparActividades(bloques);
+    return {
+      ...estado,
+      salas,
+      actividades,
+      validacion: this.validarActividades(actividades),
+    };
+  }
+
+  // ---------- GET /horario/propuesta/validacion ----------
+  // Revalida el horario completo del periodo
+  async validar(year: number, periodo: number, db: Db = this.prisma) {
+    const actividades = agruparActividades(
+      await this.bloquesDelPeriodo(year, periodo, db),
+    );
+    return this.validarActividades(actividades);
+  }
+
+  private validarActividades(actividades: Actividad[]) {
+    const cruces_sala = crucesDeSala(actividades);
+    return {
+      cruces_sala,
+      puede_cerrar: cruces_sala.length === 0,
+    };
+  }
+
+  // ---------- POST /horario/propuesta/cerrar ----------
+  // GEN-F03 CA2: el horario no se cierra mientras existan cruces sin resolver
+  async cerrar(year: number, periodo: number) {
+    return this.prisma.$transaction(async (tx) => {
+      const actual = await this.estado(year, periodo, tx);
+      if (!actual.generado_en) {
+        throw new ConflictException(
+          `Aún no se genera la propuesta de horario ${periodo}/${year}`,
+        );
+      }
+      if (actual.estado === EstadoHorario.CERRADO) {
+        throw new ConflictException(
+          `El horario ${periodo}/${year} ya está cerrado`,
+        );
+      }
+      const v = await this.validar(year, periodo, tx);
+      if (!v.puede_cerrar) {
+        throw new ConflictException({
+          message: `No se puede cerrar el horario: hay ${v.cruces_sala.length} cruce(s) de sala sin resolver`,
+          validacion: v,
+        });
+      }
+      await tx.periodoHorario.update({
+        where: { year_periodo: { year, periodo } },
+        data: { estado: EstadoHorario.CERRADO, cerrado_en: new Date() },
+      });
+      return { mensaje: `Horario ${periodo}/${year} cerrado` };
+    });
+  }
+
+  // ---------- POST /horario/propuesta/reabrir ----------
+  async reabrir(year: number, periodo: number) {
+    const actual = await this.estado(year, periodo);
+    if (actual.estado !== EstadoHorario.CERRADO) {
+      throw new ConflictException(
+        `El horario ${periodo}/${year} no está cerrado`,
+      );
+    }
+    await this.prisma.periodoHorario.update({
+      where: { year_periodo: { year, periodo } },
+      data: { estado: EstadoHorario.BORRADOR, cerrado_en: null },
+    });
+    return { mensaje: `Horario ${periodo}/${year} reabierto como borrador` };
   }
 
   // Todos los bloques ocupados del periodo: clases propias (Horario) y externas (HorarioExterno)
