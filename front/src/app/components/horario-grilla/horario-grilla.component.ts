@@ -35,6 +35,8 @@ export interface CeldaGrilla {
   seleccionada?: boolean;
   // Texto de un cruce de sala o docente que la página quiere mostrar en la celda
   cruce?: string;
+  // Carrera y nivel de la clase, para la vista por sala donde se mezclan niveles
+  nivel?: string;
 }
 
 // Celda soltada en otro día y bloque: bloque_inicio es el bloque donde se soltó

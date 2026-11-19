@@ -1,7 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -12,7 +11,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { forkJoin, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, map, switchMap } from 'rxjs/operators';
 import {
   HorarioApiService,
   CarreraDTO,
@@ -23,6 +22,10 @@ import {
 } from '../../services/horario-api.service';
 import {
   ActividadDTO,
+  CruceDocenteDTO,
+  CruceSalaDTO,
+  MotivoNoAsignada,
+  NoAsignadaDTO,
   PropuestaApiService,
   PropuestaDTO,
   ValidacionDTO,
@@ -62,6 +65,25 @@ const idDia = (d: DiaSemana) => DIAS.indexOf(d) + 1;
 // Año de la propuesta que se muestra (mismo criterio que Carga docente)
 const YEAR_PROPUESTA = 2026;
 
+const MOTIVOS: Record<MotivoNoAsignada, string> = {
+  SIN_CARGA: 'Sin carga docente',
+  SIN_BLOQUES: 'Sin horas semanales',
+  SIN_SALA: 'Sin sala disponible',
+  SIN_DISPONIBILIDAD: 'Sin disponibilidad del docente',
+  SIN_BLOQUE_LIBRE: 'Sin bloque libre',
+};
+
+// Un nivel, o todos los niveles pares o impares (un semestre del año)
+type FiltroSemestre = number | 'PARES' | 'IMPARES';
+
+// Grilla que se dibuja: una por nivel, o una sola con todas las clases de una sala
+interface GrillaVista {
+  clave: string;
+  titulo: string;
+  subtitulo: string;
+  celdas: CeldaGrilla[];
+}
+
 @Component({
   standalone: true,
   selector: 'app-horario-grilla-page',
@@ -70,7 +92,6 @@ const YEAR_PROPUESTA = 2026;
   imports: [
     CommonModule,
     FormsModule,
-    RouterLink,
     MatCardModule,
     MatFormFieldModule,
     MatSelectModule,
@@ -92,10 +113,13 @@ export class HorarioGrillaPageComponent implements OnInit {
 
   idCarreraSeleccionada: string | number | null = null;
   idPlanSeleccionado: number | null = null;
-  semestreSeleccionado = 2; // Default a 2 para la demo
+  semestreSeleccionado: FiltroSemestre = 2; // Default a 2 para la demo
+  // Con una sala elegida se ve una sola grilla con todas sus clases del semestre
+  salaSeleccionada = 0; // 0: todas las salas
 
   readonly SEMESTRES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
   readonly YEAR = YEAR_PROPUESTA;
+  readonly MOTIVOS = MOTIVOS;
   readonly DIAS_OPCIONES = [
     { id: 1, label: 'Lunes' },
     { id: 2, label: 'Martes' },
@@ -107,10 +131,15 @@ export class HorarioGrillaPageComponent implements OnInit {
 
   cargando = false;
   guardando = false;
-  asignaturas: AsignaturaDTO[] = [];
-  bloquesProtegidos: BloqueProtegidoDTO[] = [];
+  generando = false;
+  verPendientes = false;
+  verSinCarga = false;
+
+  // Asignaturas de todo el plan; la vista toma las de los niveles elegidos
+  asignaturasPlan: AsignaturaDTO[] = [];
+  protegidosPorNivel: Record<number, BloqueProtegidoDTO[]> = {};
   propuesta: PropuestaDTO | null = null;
-  celdasGrilla: CeldaGrilla[] = [];
+  grillas: GrillaVista[] = [];
 
   // GEN-F02: clases de la celda elegida y a dónde moverlas desde el panel
   seleccion: ActividadDTO[] = [];
@@ -120,8 +149,23 @@ export class HorarioGrillaPageComponent implements OnInit {
     this.cargarCarreras();
   }
 
+  // 1er semestre del año: niveles impares; 2do semestre: niveles pares
   get periodo(): number {
-    return this.semestreSeleccionado % 2 === 0 ? 2 : 1;
+    const s = this.semestreSeleccionado;
+    if (s === 'PARES') return 2;
+    if (s === 'IMPARES') return 1;
+    return s % 2 === 0 ? 2 : 1;
+  }
+
+  get nombrePeriodo(): string {
+    return `${this.periodo === 2 ? '2do' : '1er'} semestre ${this.YEAR}`;
+  }
+
+  get etiquetaSemestre(): string {
+    const s = this.semestreSeleccionado;
+    if (s === 'PARES') return 'Semestres pares';
+    if (s === 'IMPARES') return 'Semestres impares';
+    return `Semestre ${s}`;
   }
 
   get generada(): boolean {
@@ -137,14 +181,89 @@ export class HorarioGrillaPageComponent implements OnInit {
     return this.generada && !this.cerrado && !this.guardando;
   }
 
-  get salasClases() {
-    return (this.propuesta?.salas ?? []).filter((s) => s.tipo === 'CLASES');
+  get salas() {
+    return this.propuesta?.salas ?? [];
+  }
+
+  get salaActual() {
+    return this.salas.find((s) => s.id_sala === this.salaSeleccionada);
+  }
+
+  // Clases de la propuesta (propias y externas) del plan elegido
+  private get actividadesPlan(): ActividadDTO[] {
+    return (this.propuesta?.actividades ?? []).filter(
+      (a) => a.id_plan === this.idPlanSeleccionado,
+    );
+  }
+
+  // Niveles que se muestran: el elegido, o los pares o impares que tiene el plan
+  get nivelesVisibles(): number[] {
+    const s = this.semestreSeleccionado;
+    if (typeof s === 'number') return [s];
+    const resto = s === 'PARES' ? 0 : 1;
+    const niveles = new Set<number>([
+      ...this.asignaturasPlan.map((a) => a.semestre),
+      ...this.actividadesPlan.map((a) => a.nivel),
+    ]);
+    return [...niveles].filter((n) => n % 2 === resto).sort((a, b) => a - b);
+  }
+
+  get asignaturas(): AsignaturaDTO[] {
+    const niveles = this.nivelesVisibles;
+    return this.asignaturasPlan.filter((a) => niveles.includes(a.semestre));
+  }
+
+  get asignaturasPropias(): AsignaturaDTO[] {
+    return this.asignaturas.filter(
+      (a) => a.origen === 'PROPIA' || a.origen === 'INTERNA',
+    );
+  }
+
+  // ---------- Resumen de la propuesta (GEN-F01, F03, F04) ----------
+
+  get crucesSala(): CruceSalaDTO[] {
+    return this.propuesta?.validacion.cruces_sala ?? [];
+  }
+
+  get crucesDocente(): CruceDocenteDTO[] {
+    return this.propuesta?.validacion.cruces_docente ?? [];
   }
 
   get totalCruces(): number {
-    const v = this.propuesta?.validacion;
-    return v ? v.cruces_sala.length + v.cruces_docente.length : 0;
+    return this.crucesSala.length + this.crucesDocente.length;
   }
+
+  get puedeCerrar(): boolean {
+    return !!this.propuesta?.validacion.puede_cerrar;
+  }
+
+  get motivoNoCerrar(): string {
+    if (!this.generada) return 'Primero genera la propuesta';
+    const pendientes = [
+      this.crucesSala.length && `${this.crucesSala.length} cruce(s) de sala`,
+      this.crucesDocente.length && `${this.crucesDocente.length} cruce(s) de docente`,
+    ].filter(Boolean);
+    return pendientes.length ? `Hay ${pendientes.join(' y ')} sin resolver` : '';
+  }
+
+  // Las asignaturas sin carga docente van aparte para no tapar el resto
+  get noAsignadas(): NoAsignadaDTO[] {
+    return (this.propuesta?.no_asignadas ?? []).filter((n) => n.motivo !== 'SIN_CARGA');
+  }
+
+  get sinCarga(): NoAsignadaDTO[] {
+    return (this.propuesta?.no_asignadas ?? []).filter((n) => n.motivo === 'SIN_CARGA');
+  }
+
+  get totalPropias(): number {
+    return new Set(
+      (this.propuesta?.actividades ?? [])
+        .filter((a) => a.origen === 'INTERNA')
+        .map((a) => a.id_curso),
+    ).size;
+  }
+
+  // ---------- Carga de datos ----------
 
   cargarCarreras(): void {
     this.cargando = true;
@@ -165,11 +284,7 @@ export class HorarioGrillaPageComponent implements OnInit {
   }
 
   onCarreraChange(): void {
-    const carrera = this.carreras.find(
-      (c) =>
-        c.codigo === this.idCarreraSeleccionada ||
-        String(c.id_carrera) === String(this.idCarreraSeleccionada),
-    );
+    const carrera = this.carreraSeleccionada;
     this.planesDisponibles = carrera ? carrera.planes : [];
 
     if (this.planesDisponibles.length > 0) {
@@ -182,9 +297,9 @@ export class HorarioGrillaPageComponent implements OnInit {
       this.cargarHorarioNivel();
     } else {
       this.idPlanSeleccionado = null;
-      this.asignaturas = [];
-      this.bloquesProtegidos = [];
-      this.celdasGrilla = [];
+      this.asignaturasPlan = [];
+      this.protegidosPorNivel = {};
+      this.grillas = [];
     }
   }
 
@@ -192,46 +307,66 @@ export class HorarioGrillaPageComponent implements OnInit {
     this.cargarHorarioNivel();
   }
 
+  // La sala no cambia el semestre: solo se vuelven a armar las grillas
+  onSalaChange(): void {
+    this.construirGrillas();
+  }
+
   cargarHorarioNivel(): void {
-    if (!this.idPlanSeleccionado || !this.semestreSeleccionado) return;
+    if (!this.idPlanSeleccionado) return;
 
     this.cargando = true;
     const codCarrera = this.carreraSeleccionada?.codigo;
 
     forkJoin({
-      asignaturas: this.horarioApi.getAsignaturas({
-        id_plan: this.idPlanSeleccionado,
-        semestre: this.semestreSeleccionado,
-      }),
-      protegidos: this.horarioApi
-        .getBloquesProtegidosAplicables({
-          codigo_carrera: codCarrera,
-          semestre: this.semestreSeleccionado,
-        })
-        .pipe(catchError(() => of([] as BloqueProtegidoDTO[]))),
+      asignaturas: this.horarioApi.getAsignaturas({ id_plan: this.idPlanSeleccionado }),
       propuesta: this.propuestaApi
         .obtener(this.YEAR, this.periodo)
         .pipe(catchError(() => of(null))),
-    }).subscribe({
-      next: ({ asignaturas, protegidos, propuesta }) => {
-        this.asignaturas = asignaturas;
-        this.bloquesProtegidos = protegidos;
-        this.propuesta = propuesta;
-        this.construirCeldasGrilla();
-        this.cargando = false;
-      },
-      error: () => {
-        this.cargando = false;
-      },
-    });
+    })
+      .pipe(
+        switchMap(({ asignaturas, propuesta }) => {
+          this.asignaturasPlan = asignaturas;
+          this.propuesta = propuesta;
+          if (
+            this.salaSeleccionada !== 0 &&
+            !this.salas.some((s) => s.id_sala === this.salaSeleccionada)
+          ) {
+            this.salaSeleccionada = 0;
+          }
+          // Bloques protegidos que aplican a cada nivel visible
+          const niveles = this.nivelesVisibles;
+          if (!niveles.length) return of([] as [number, BloqueProtegidoDTO[]][]);
+          return forkJoin(
+            niveles.map((n) =>
+              this.horarioApi
+                .getBloquesProtegidosAplicables({ codigo_carrera: codCarrera, semestre: n })
+                .pipe(
+                  catchError(() => of([] as BloqueProtegidoDTO[])),
+                  map((bp) => [n, bp] as [number, BloqueProtegidoDTO[]]),
+                ),
+            ),
+          );
+        }),
+      )
+      .subscribe({
+        next: (porNivel) => {
+          this.protegidosPorNivel = Object.fromEntries(porNivel);
+          this.construirGrillas();
+          this.cargando = false;
+        },
+        error: () => {
+          this.cargando = false;
+        },
+      });
   }
 
-  // Recarga solo la propuesta (después de mover o deshacer), sin parpadeo de la página
+  // Recarga solo la propuesta (después de mover, deshacer, generar o cerrar), sin parpadeo
   private recargarPropuesta(): void {
     this.propuestaApi.obtener(this.YEAR, this.periodo).subscribe({
       next: (p) => {
         this.propuesta = p;
-        this.construirCeldasGrilla();
+        this.construirGrillas();
       },
     });
   }
@@ -250,30 +385,48 @@ export class HorarioGrillaPageComponent implements OnInit {
     );
   }
 
-  get asignaturasPropias(): AsignaturaDTO[] {
-    return this.asignaturas.filter(
-      (a) => a.origen === 'PROPIA' || a.origen === 'INTERNA',
-    );
-  }
-
-  get asignaturasExternas(): AsignaturaDTO[] {
-    return this.asignaturas.filter((a) => a.origen === 'EXTERNA');
-  }
-
-  // Clases de la propuesta (propias y externas) de la carrera, plan y nivel elegidos
-  get actividadesNivel(): ActividadDTO[] {
-    return (this.propuesta?.actividades ?? []).filter(
-      (a) =>
-        a.id_plan === this.idPlanSeleccionado &&
-        a.nivel === this.semestreSeleccionado,
-    );
-  }
-
   // Asignatura propia que ya tiene horario en la propuesta
   tieneHorario(a: AsignaturaDTO): boolean {
-    return this.actividadesNivel.some(
-      (x) => x.origen === 'INTERNA' && x.codigo === a.codigo,
+    return this.actividadesPlan.some(
+      (x) => x.origen === 'INTERNA' && x.codigo === a.codigo && x.nivel === a.semestre,
     );
+  }
+
+  // ---------- Grillas ----------
+
+  private construirGrillas(): void {
+    const sala = this.salaActual;
+    if (sala) {
+      const acts = (this.propuesta?.actividades ?? []).filter(
+        (a) => a.id_sala === sala.id_sala,
+      );
+      this.grillas = [
+        {
+          clave: `sala-${sala.id_sala}`,
+          titulo: `${sala.nombre} · ${this.nombrePeriodo}`,
+          subtitulo: 'Todas las clases de la sala en el semestre, de todas las carreras y niveles',
+          celdas: this.celdasDe(acts, [], true),
+        },
+      ];
+    } else {
+      const carrera = this.carreraSeleccionada?.nombre ?? '';
+      const plan = this.planSeleccionado?.nombre ?? '';
+      this.grillas = this.nivelesVisibles.map((n) => ({
+        clave: `nivel-${n}`,
+        titulo: `${carrera} · Semestre ${n}`,
+        subtitulo: plan,
+        celdas: this.celdasDe(
+          this.actividadesPlan.filter((a) => a.nivel === n),
+          this.protegidosPorNivel[n] ?? [],
+          false,
+        ),
+      }));
+    }
+
+    // Mantiene marcada la selección si la clase sigue en la propuesta
+    const ids = new Set(this.seleccion.map((a) => a.id));
+    this.seleccion = (this.propuesta?.actividades ?? []).filter((a) => ids.has(a.id));
+    this.marcarSeleccion();
   }
 
   // Cruces de sala o docente en los que participa una actividad, en un bloque
@@ -292,13 +445,15 @@ export class HorarioGrillaPageComponent implements OnInit {
     return null;
   }
 
-  private construirCeldasGrilla(): void {
-    const actividades = this.actividadesNivel;
-
+  private celdasDe(
+    actividades: ActividadDTO[],
+    protegidos: BloqueProtegidoDTO[],
+    porSala: boolean,
+  ): CeldaGrilla[] {
     // Bloques protegidos desglosados bloque a bloque
     type SlotProtegido = { dia: DiaSemana; bloque: number; nombre: string; detalle: string };
     const protegidosSlots: SlotProtegido[] = [];
-    for (const bp of this.bloquesProtegidos) {
+    for (const bp of protegidos) {
       const bloquesList =
         bp.bloques && bp.bloques.length > 0
           ? bp.bloques
@@ -333,10 +488,13 @@ export class HorarioGrillaPageComponent implements OnInit {
         );
         const protegido = protegidosSlots.find((p) => p.dia === dia && p.bloque === b);
         if (!acts.length && !protegido) continue;
-        // Dos clases del mismo nivel a la vez también es un cruce para los estudiantes
+        // Dos clases a la vez: en la vista por sala es un cruce de sala;
+        // en la vista por nivel, un cruce para los estudiantes
         const cruce =
           acts.length > 1
-            ? `Cruce de nivel: ${acts.map((a) => a.codigo).join(' y ')} a la misma hora`
+            ? porSala
+              ? `Cruce de sala: ${acts.map((a) => `${a.codigo} (sem. ${a.nivel})`).join(' y ')} en la misma sala`
+              : `Cruce de nivel: ${acts.map((a) => a.codigo).join(' y ')} a la misma hora`
             : acts.map((a) => this.cruceDe(a, b)).find((x) => !!x) ?? null;
         slots.push({
           bloque: b,
@@ -362,16 +520,11 @@ export class HorarioGrillaPageComponent implements OnInit {
           fin = slots[j].bloque;
           j++;
         }
-        celdas.push(this.celdaDe(dia, s.bloque, fin, s.acts, s.protegido, s.cruce));
+        celdas.push(this.celdaDe(dia, s.bloque, fin, s.acts, s.protegido, s.cruce, porSala));
         i = j;
       }
     }
-
-    this.celdasGrilla = celdas;
-    // Mantiene marcada la selección si la clase sigue en la grilla
-    const ids = new Set(this.seleccion.map((a) => a.id));
-    this.seleccion = actividades.filter((a) => ids.has(a.id));
-    this.marcarSeleccion();
+    return celdas;
   }
 
   private celdaDe(
@@ -381,6 +534,7 @@ export class HorarioGrillaPageComponent implements OnInit {
     acts: ActividadDTO[],
     protegido: { nombre: string; detalle: string } | undefined,
     cruce: string | null,
+    porSala: boolean,
   ): CeldaGrilla {
     const base = { dia, bloque_inicio: inicio, bloque_fin: fin, ref: acts };
     if (!acts.length && protegido) {
@@ -393,7 +547,13 @@ export class HorarioGrillaPageComponent implements OnInit {
       tipo: externa ? 'CLASE_EXTERNA' : 'CLASE_PROPIA',
       etiqueta: acts.map((x) => x.nombre).join(' / '),
       codigo: acts.map((x) => x.codigo).join(' / '),
-      sala: acts.map((x) => x.sala ?? x.sala_externa ?? 'Sin sala').join(' / '),
+      // En la vista por sala la sala es la misma: se muestra a qué carrera y nivel pertenece
+      sala: porSala
+        ? undefined
+        : acts.map((x) => x.sala ?? x.sala_externa ?? 'Sin sala').join(' / '),
+      nivel: porSala
+        ? acts.map((x) => `${x.codigo_carrera ?? ''} · Sem. ${x.nivel}`.trim()).join(' / ')
+        : undefined,
       bloqueado: externa,
       advertencia_choque: !!protegido,
       bloque_protegido_nombre: protegido?.nombre,
@@ -406,9 +566,91 @@ export class HorarioGrillaPageComponent implements OnInit {
 
   private marcarSeleccion(): void {
     const ids = new Set(this.seleccion.map((a) => a.id));
-    for (const c of this.celdasGrilla) {
-      c.seleccionada = ((c.ref as ActividadDTO[]) ?? []).some((a) => ids.has(a.id));
+    for (const g of this.grillas) {
+      for (const c of g.celdas) {
+        c.seleccionada = ((c.ref as ActividadDTO[]) ?? []).some((a) => ids.has(a.id));
+      }
     }
+  }
+
+  // ---------- GEN-F01 / GEN-F03: generar, cerrar y reabrir ----------
+
+  generar(): void {
+    if (
+      this.generada &&
+      !confirm(
+        'Se reemplazarán las clases propias de la propuesta actual, incluidos los cambios hechos a mano. ¿Continuar?',
+      )
+    ) {
+      return;
+    }
+    this.generando = true;
+    this.propuestaApi.generar(this.YEAR, this.periodo).subscribe({
+      next: (r) => {
+        this.generando = false;
+        this.avisar(
+          `${r.mensaje}: ${r.resumen.cursos_completos} de ${r.resumen.cursos} cursos completos, ${r.resumen.no_asignadas} con pendientes`,
+        );
+        this.recargarPropuesta();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.generando = false;
+        this.avisar(err.error?.message || 'No se pudo generar la propuesta');
+      },
+    });
+  }
+
+  cerrar(): void {
+    if (!confirm('Al cerrar el horario ya no se podrá modificar. ¿Cerrar el horario?')) {
+      return;
+    }
+    this.propuestaApi.cerrar(this.YEAR, this.periodo).subscribe({
+      next: (r) => {
+        this.avisar(r.mensaje);
+        this.recargarPropuesta();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.avisar(err.error?.message || 'No se pudo cerrar el horario');
+        this.recargarPropuesta();
+      },
+    });
+  }
+
+  reabrir(): void {
+    this.propuestaApi.reabrir(this.YEAR, this.periodo).subscribe({
+      next: (r) => {
+        this.avisar(r.mensaje);
+        this.recargarPropuesta();
+      },
+      error: (err: HttpErrorResponse) =>
+        this.avisar(err.error?.message || 'No se pudo reabrir el horario'),
+    });
+  }
+
+  // Lleva la grilla a la sala del cruce
+  irACruceSala(c: CruceSalaDTO): void {
+    this.verSala(c.id_sala);
+  }
+
+  // Lleva la grilla a la sala de la primera clase del cruce que esté en una sala del departamento
+  irACruceDocente(c: CruceDocenteDTO): void {
+    const ids = new Set(c.actividades.map((x) => x.id));
+    const conSala = (this.propuesta?.actividades ?? []).find(
+      (a) => ids.has(a.id) && a.id_sala != null,
+    );
+    if (conSala?.id_sala != null) {
+      this.verSala(conSala.id_sala);
+    } else {
+      this.avisar('Las clases de este cruce están en salas de otros departamentos');
+    }
+  }
+
+  private verSala(id_sala: number): void {
+    this.salaSeleccionada = id_sala;
+    this.construirGrillas();
+    setTimeout(() =>
+      document.querySelector('.grilla-main-card')?.scrollIntoView({ behavior: 'smooth' }),
+    );
   }
 
   // ---------- GEN-F02: mover clases ----------

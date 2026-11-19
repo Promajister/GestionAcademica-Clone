@@ -126,6 +126,7 @@
                     <span class="celda-protegido-badge" *ngIf="celda.tipo === 'PROTEGIDO' && celda.detalle">
                       {{ celda.detalle }}
                     </span>
+                    <span class="celda-nivel-badge" *ngIf="celda.nivel">{{ celda.nivel }}</span>
                   </div>
 
                   <div class="celda-nombre">{{ celda.etiqueta }}</div>
