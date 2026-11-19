@@ -71,8 +71,20 @@ export interface CruceSalaDTO {
   mensaje: string;
 }
 
+export interface CruceDocenteDTO {
+  id_usuario: number;
+  docente: string;
+  id_dia: number;
+  dia: string;
+  bloque_inicio: number;
+  bloque_fin: number;
+  actividades: ActividadCruceDTO[];
+  mensaje: string;
+}
+
 export interface ValidacionDTO {
   cruces_sala: CruceSalaDTO[];
+  cruces_docente: CruceDocenteDTO[];
   puede_cerrar: boolean;
 }
 

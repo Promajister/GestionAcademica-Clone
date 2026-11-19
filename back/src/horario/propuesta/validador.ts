@@ -21,6 +21,17 @@ export interface CruceSala {
   mensaje: string;
 }
 
+export interface CruceDocente {
+  id_usuario: number;
+  docente: string;
+  id_dia: number;
+  dia: string;
+  bloque_inicio: number;
+  bloque_fin: number;
+  actividades: ActividadCruce[];
+  mensaje: string;
+}
+
 const DIAS: Record<number, string> = {
   1: 'Lunes',
   2: 'Martes',
@@ -143,6 +154,33 @@ export function crucesDeSala(actividades: Actividad[]): CruceSala[] {
       bloque_fin: c.bloque_fin,
       actividades: acts,
       mensaje: `${sala}, ${DIAS[c.id_dia]} ${rango(c.bloque_inicio, c.bloque_fin)}: ${describir(acts)}`,
+    };
+  });
+}
+
+// GEN-F04: un mismo docente en dos actividades del mismo día y bloque (en cualquier sala)
+export function crucesDeDocente(actividades: Actividad[]): CruceDocente[] {
+  const nombres = new Map<number, string>();
+  for (const a of actividades) {
+    for (const d of a.docentes) nombres.set(d.id_usuario, d.nombre);
+  }
+  return coincidencias(actividades, (a) =>
+    a.docentes.map((d) => d.id_usuario),
+  ).map((c) => {
+    const docente = nombres.get(c.clave) ?? `Docente ${c.clave}`;
+    const acts = c.actividades.map(resumen);
+    const detalle = acts
+      .map((a) => `${a.codigo} ${a.nombre} (${a.sala ?? 'sin sala'})`)
+      .join(' y ');
+    return {
+      id_usuario: c.clave,
+      docente,
+      id_dia: c.id_dia,
+      dia: DIAS[c.id_dia] ?? String(c.id_dia),
+      bloque_inicio: c.bloque_inicio,
+      bloque_fin: c.bloque_fin,
+      actividades: acts,
+      mensaje: `${docente}, ${DIAS[c.id_dia]} ${rango(c.bloque_inicio, c.bloque_fin)}: ${detalle}`,
     };
   });
 }

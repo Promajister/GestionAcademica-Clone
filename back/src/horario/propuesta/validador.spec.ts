@@ -1,5 +1,5 @@
 import { Actividad, BloqueActividad, agruparActividades } from './actividades';
-import { crucesDeSala } from './validador';
+import { crucesDeDocente, crucesDeSala } from './validador';
 
 // Arma las actividades a partir de rangos, como las entrega el servicio
 const clase = (
@@ -81,5 +81,50 @@ describe('crucesDeSala (GEN-F03)', () => {
         actividades(clase(1, 1, 1, 2, fuera), clase(2, 1, 1, 2, fuera)),
       ),
     ).toEqual([]);
+  });
+});
+
+describe('crucesDeDocente (GEN-F04)', () => {
+  const profe = { docentes: [{ id_usuario: 7, nombre: 'Ana Pérez' }] };
+
+  it('CA1 y CA2: identifica al docente y las dos actividades, aunque estén en salas distintas', () => {
+    const a = actividades(
+      clase(1, 3, 5, 6, profe),
+      clase(2, 3, 5, 6, { ...profe, id_sala: 2, sala: 'Sala 104' }),
+    );
+    const c = crucesDeDocente(a);
+    expect(c).toHaveLength(1);
+    expect(c[0]).toMatchObject({
+      id_usuario: 7,
+      docente: 'Ana Pérez',
+      id_dia: 3,
+      bloque_inicio: 5,
+      bloque_fin: 6,
+    });
+    expect(c[0].mensaje).toBe(
+      'Ana Pérez, Miércoles bloques 5-6: C1 Curso 1 (Sala 121) y C2 Curso 2 (Sala 104)',
+    );
+    // No es cruce de sala: cada clase tiene su sala
+    expect(crucesDeSala(a)).toEqual([]);
+  });
+
+  it('sin cruce cuando el docente hace clases en bloques distintos', () => {
+    const a = actividades(
+      clase(1, 3, 5, 6, profe),
+      clase(2, 3, 7, 8, { ...profe, id_sala: 2 }),
+    );
+    expect(crucesDeDocente(a)).toEqual([]);
+  });
+
+  it('dos docentes de un mismo curso no generan cruce entre ellos', () => {
+    const coDocencia = {
+      docentes: [
+        { id_usuario: 7, nombre: 'Ana Pérez' },
+        { id_usuario: 8, nombre: 'Luis Soto' },
+      ],
+    };
+    expect(crucesDeDocente(actividades(clase(1, 1, 1, 2, coDocencia)))).toEqual(
+      [],
+    );
   });
 });

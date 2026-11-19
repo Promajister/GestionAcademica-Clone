@@ -12,6 +12,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
   ActividadDTO,
+  CruceDocenteDTO,
   CruceSalaDTO,
   MotivoNoAsignada,
   NoAsignadaDTO,
@@ -175,12 +176,36 @@ export class HorarioPropuestaComponent implements OnInit {
     return !!this.propuesta?.validacion.puede_cerrar;
   }
 
+  get crucesDocente(): CruceDocenteDTO[] {
+    return this.propuesta?.validacion.cruces_docente ?? [];
+  }
+
   get motivoNoCerrar(): string {
     if (!this.generada) return 'Primero genera la propuesta';
-    if (this.crucesSala.length) {
-      return `Hay ${this.crucesSala.length} cruce(s) de sala sin resolver`;
-    }
-    return '';
+    const pendientes = [
+      this.crucesSala.length && `${this.crucesSala.length} cruce(s) de sala`,
+      this.crucesDocente.length && `${this.crucesDocente.length} cruce(s) de docente`,
+    ].filter(Boolean);
+    return pendientes.length ? `Hay ${pendientes.join(' y ')} sin resolver` : '';
+  }
+
+  // GEN-F04: actividad con un docente que está en otra clase al mismo tiempo
+  cruceDocenteDe(a: ActividadDTO, bloque: number): CruceDocenteDTO | undefined {
+    return this.crucesDocente.find(
+      (c) =>
+        c.id_dia === a.id_dia &&
+        bloque >= c.bloque_inicio &&
+        bloque <= c.bloque_fin &&
+        c.actividades.some((x) => x.id === a.id),
+    );
+  }
+
+  // Lleva la grilla a la sala de la primera actividad del cruce
+  irACruceDocente(c: CruceDocenteDTO): void {
+    const primera = this.propuesta?.actividades.find((a) =>
+      c.actividades.some((x) => x.id === a.id),
+    );
+    if (primera) this.vista = primera.id_sala ?? 'EXTERNAS';
   }
 
   // Actividad marcada en un cruce de sala en este bloque
