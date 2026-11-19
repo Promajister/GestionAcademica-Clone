@@ -2,6 +2,7 @@ import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import {
   HorarioApiService,
   BloqueGrillaDTO,
@@ -27,6 +28,25 @@ export interface CeldaGrilla {
   advertencia_choque?: boolean;
   bloque_protegido_nombre?: string;
   bloque_protegido_alcance?: string;
+  // Arrastre (GEN-F02 y bloques protegidos): la página decide qué celdas se mueven
+  arrastrable?: boolean;
+  // Dato de la página para reconocer la celda al moverla o seleccionarla
+  ref?: unknown;
+  seleccionada?: boolean;
+  // Texto de un cruce de sala o docente que la página quiere mostrar en la celda
+  cruce?: string;
+}
+
+// Celda soltada en otro día y bloque: bloque_inicio es el bloque donde se soltó
+export interface MovimientoCelda {
+  celda: CeldaGrilla;
+  dia: DiaSemana;
+  bloque_inicio: number;
+}
+
+interface DestinoCelda {
+  dia: DiaSemana;
+  bloque: number;
 }
 
 @Component({
@@ -34,7 +54,7 @@ export interface CeldaGrilla {
   selector: 'app-horario-grilla',
   templateUrl: './horario-grilla.component.html',
   styleUrls: ['./horario-grilla.component.scss'],
-  imports: [CommonModule, MatIconModule, MatTooltipModule],
+  imports: [CommonModule, MatIconModule, MatTooltipModule, DragDropModule],
 })
 export class HorarioGrillaComponent implements OnInit {
   private horarioApi = inject(HorarioApiService);
@@ -46,7 +66,12 @@ export class HorarioGrillaComponent implements OnInit {
   // 'disponibilidad' muestra la leyenda de DIS-F02 (Disponible / Protegido)
   @Input() leyenda: 'horario' | 'disponibilidad' = 'horario';
 
+  // Activa el arrastre de las celdas con arrastrable = true
+  @Input() arrastrable = false;
+
   @Output() seleccionar = new EventEmitter<{ dia: DiaSemana; bloque: number }>();
+  @Output() mover = new EventEmitter<MovimientoCelda>();
+  @Output() celdaClick = new EventEmitter<CeldaGrilla>();
 
   grilla: BloqueGrillaDTO[] = [];
   cargandoGrilla = false;
@@ -101,10 +126,38 @@ export class HorarioGrillaComponent implements OnInit {
     return Math.max(1, c.bloque_fin - c.bloque_inicio + 1);
   }
 
-  onCeldaClick(dia: DiaSemana, bloqueNum: number): void {
+  onCeldaClick(dia: DiaSemana, bloqueNum: number, celda?: CeldaGrilla): void {
     if (this.modo === 'seleccion') {
       this.seleccionar.emit({ dia, bloque: bloqueNum });
     }
+    if (celda) this.celdaClick.emit(celda);
+  }
+
+  get hayCruces(): boolean {
+    return this.celdas.some((c) => !!c.cruce);
+  }
+
+  tooltipDe(c: CeldaGrilla): string {
+    if (c.tipo === 'PROTEGIDO') {
+      return 'Bloque protegido: ' + c.etiqueta + (c.detalle ? ' (' + c.detalle + ')' : '');
+    }
+    if (c.cruce) return c.cruce;
+    if (c.advertencia_choque) {
+      return 'Superposición con bloque protegido: ' + c.bloque_protegido_nombre;
+    }
+    return '';
+  }
+
+  destino(dia: DiaSemana, bloque: number): DestinoCelda {
+    return { dia, bloque };
+  }
+
+  // La celda soltada empieza en el bloque donde se soltó; la página valida y guarda
+  soltar(event: CdkDragDrop<DestinoCelda, unknown, CeldaGrilla>): void {
+    const celda = event.item.data;
+    const { dia, bloque } = event.container.data;
+    if (dia === celda.dia && bloque === celda.bloque_inicio) return;
+    this.mover.emit({ celda, dia, bloque_inicio: bloque });
   }
 
   private fallbackGrilla(): BloqueGrillaDTO[] {

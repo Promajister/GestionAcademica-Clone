@@ -55,17 +55,6 @@
           <mat-icon>auto_awesome</mat-icon>
           {{ generada ? 'Volver a generar' : 'Generar propuesta' }}
         </button>
-        <!-- GEN-F02 CA3: deshacer mientras el horario no esté cerrado -->
-        @if (!cerrado) {
-          <button
-            mat-stroked-button
-            (click)="deshacer()"
-            [disabled]="!movimientos || guardando"
-            matTooltip="Deshace el último bloque movido">
-            <mat-icon>undo</mat-icon>
-            Deshacer @if (movimientos) { ({{ movimientos }}) }
-          </button>
-        }
         @if (cerrado) {
           <button mat-stroked-button (click)="reabrir()">
             <mat-icon>lock_open</mat-icon>
@@ -230,24 +219,16 @@
       </mat-card>
     }
 
-    <!-- GRILLA POR SALA. GEN-F02: las clases se arrastran a otra celda (día y bloque) o a otra sala -->
-    <mat-card class="elev grilla-card" cdkDropListGroup>
+    <!-- GRILLA POR SALA (solo lectura: las clases se mueven en Grilla semanal) -->
+    <mat-card class="elev grilla-card">
       <div class="card-head card-head--grilla">
         <div>
           <h3>{{ nombreVista }}</h3>
           <p class="muted">
-            @if (puedeArrastrar) {
-              Arrastra una clase a otro día o bloque, o suéltala sobre otra sala. El cambio se guarda al soltar y el horario se revalida completo.
-            } @else if (cerrado) {
-              El horario está cerrado: reábrelo para mover clases.
-            } @else {
-              Horario semanal de la sala elegida.
-            }
+            Horario semanal de la sala elegida. Para mover clases usa
+            <a routerLink="/horario/grilla">Grilla semanal</a>.
           </p>
         </div>
-        @if (guardando) {
-          <mat-spinner diameter="22"></mat-spinner>
-        }
       </div>
 
       <div class="salas">
@@ -256,12 +237,7 @@
             type="button"
             class="sala-chip"
             [class.sala-chip--activa]="vista === s.id_sala"
-            (click)="vista = s.id_sala"
-            cdkDropList
-            cdkDropListSortingDisabled
-            [cdkDropListData]="destinoSala(s.id_sala)"
-            [cdkDropListDisabled]="!puedeArrastrar"
-            (cdkDropListDropped)="soltar($event)">
+            (click)="vista = s.id_sala">
             <mat-icon>meeting_room</mat-icon>
             <span>{{ s.nombre }}</span>
             <span class="sala-chip__n">{{ contarEnSala(s.id_sala) }}</span>
@@ -275,12 +251,7 @@
             type="button"
             class="sala-chip sala-chip--reuniones"
             [class.sala-chip--activa]="vista === s.id_sala"
-            (click)="vista = s.id_sala"
-            cdkDropList
-            cdkDropListSortingDisabled
-            [cdkDropListData]="destinoSala(s.id_sala)"
-            [cdkDropListDisabled]="!puedeArrastrar"
-            (cdkDropListDropped)="soltar($event)">
+            (click)="vista = s.id_sala">
             <mat-icon>groups</mat-icon>
             <span>{{ s.nombre }}</span>
             <span class="sala-chip__n">{{ contarEnSala(s.id_sala) }}</span>
@@ -332,7 +303,6 @@
         </table>
       </div>
 
-      <!-- Declarada dentro de la tarjeta para que las celdas queden en el mismo cdkDropListGroup -->
       <ng-template #fila let-b>
         <tr>
           <td class="td-bloque">
@@ -342,19 +312,10 @@
           @for (d of DIAS; track d.id) {
             <td
               class="celda"
-              [class.celda--cruce]="celdaConCruce(d.id, b.numero)"
-              cdkDropList
-              cdkDropListSortingDisabled
-              [cdkDropListData]="destinoCelda(d.id, b.numero)"
-              [cdkDropListDisabled]="!puedeArrastrar"
-              (cdkDropListDropped)="soltar($event)">
+              [class.celda--cruce]="celdaConCruce(d.id, b.numero)">
               @for (a of actividadesEn(d.id, b.numero); track a.id) {
                 <div
                   class="actividad"
-                  cdkDrag
-                  [cdkDragData]="datosArrastre(a, b.numero)"
-                  [cdkDragDisabled]="!puedeArrastrar"
-                  [class.actividad--movible]="puedeArrastrar"
                   [class.actividad--externa]="a.origen === 'EXTERNA'"
                   [class.actividad--cruce-sala]="enCruceSala(a, b.numero)"
                   [class.actividad--cruce-docente]="cruceDocenteDe(a, b.numero)"

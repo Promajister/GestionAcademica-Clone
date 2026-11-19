@@ -33,12 +33,21 @@
         <span class="leyenda-color color--protegido"></span>
         <span>Horario Protegido</span>
       </div>
+      @if (hayCruces) {
+        <div class="leyenda-item">
+          <span class="leyenda-color color--cruce"></span>
+          <span>Cruce</span>
+        </div>
+      }
     }
   </div>
 
-  <!-- TABLA DE LA GRILLA -->
-  <div class="grilla-table-wrap">
-    <table class="grilla-table" [class.modo-seleccion]="modo === 'seleccion'">
+  <!-- TABLA DE LA GRILLA. Con [arrastrable], las celdas marcadas se arrastran a otro día o bloque -->
+  <div class="grilla-table-wrap" cdkDropListGroup>
+    <table
+      class="grilla-table"
+      [class.modo-seleccion]="modo === 'seleccion'"
+      [class.modo-arrastre]="arrastrable">
       <thead>
         <tr>
           <th class="th-horario">Bloque / Horario</th>
@@ -50,60 +59,7 @@
       <tbody>
         <!-- JORNADA MAÑANA (Bloques 1 a 6) -->
         @for (b of bloquesManana; track b.numero) {
-          <tr>
-            <td class="td-bloque-info">
-              <span class="bloque-num">B{{ b.numero }}</span>
-              <span class="bloque-hora">{{ b.hora_inicio }} – {{ b.hora_fin }}</span>
-            </td>
-
-            @for (d of DIAS; track d.dia) {
-              @if (!estaCubierto(d.dia, b.numero)) {
-                @if (celdaQueInicia(d.dia, b.numero); as celda) {
-                  <td
-                    class="td-celda"
-                    [attr.rowspan]="calcularRowspan(celda)"
-                    [class.celda-externa]="celda.tipo === 'CLASE_EXTERNA'"
-                    [class.celda-propia]="celda.tipo === 'CLASE_PROPIA'"
-                    [class.celda-protegido]="celda.tipo === 'PROTEGIDO'"
-                    [class.celda-disponible]="celda.tipo === 'DISPONIBLE'"
-                    [class.celda-alerta-choque]="celda.advertencia_choque"
-                    [matTooltip]="celda.tipo === 'PROTEGIDO' ? 'Bloque protegido: ' + celda.etiqueta + (celda.detalle ? ' (' + celda.detalle + ')' : '') : (celda.advertencia_choque ? 'Superposición con bloque protegido: ' + celda.bloque_protegido_nombre : '')"
-                    (click)="onCeldaClick(d.dia, b.numero)">
-                    <div class="celda-content">
-                      <div class="celda-top">
-                        <span class="celda-codigo" *ngIf="celda.codigo">{{ celda.codigo }}</span>
-                        <mat-icon class="celda-check" *ngIf="celda.tipo === 'DISPONIBLE'">check_circle</mat-icon>
-                        <mat-icon class="celda-lock" *ngIf="celda.bloqueado" matTooltip="Bloque fijo externo bloqueado">
-                          lock
-                        </mat-icon>
-                        <span class="celda-protegido-badge" *ngIf="celda.tipo === 'PROTEGIDO' && celda.detalle">
-                          {{ celda.detalle }}
-                        </span>
-                      </div>
-
-                      <div class="celda-nombre">{{ celda.etiqueta }}</div>
-
-                      <div class="celda-footer" *ngIf="celda.sala">
-                        <mat-icon class="celda-sala-icon">meeting_room</mat-icon>
-                        <span class="celda-sala">{{ celda.sala }}</span>
-                      </div>
-
-                      <!-- Sub-banner si colisiona con bloque protegido -->
-                      <div class="choque-banner" *ngIf="celda.advertencia_choque">
-                        <mat-icon class="choque-icon">warning</mat-icon>
-                        <span class="choque-texto">Protegido: {{ celda.bloque_protegido_nombre }}</span>
-                      </div>
-                    </div>
-                  </td>
-                } @else {
-                  <td
-                    class="td-celda-vacia"
-                    (click)="onCeldaClick(d.dia, b.numero)">
-                  </td>
-                }
-              }
-            }
-          </tr>
+          <ng-container *ngTemplateOutlet="fila; context: { $implicit: b }"></ng-container>
         }
 
         <!-- FRANJA DE COLACIÓN -->
@@ -122,62 +78,90 @@
 
         <!-- JORNADA TARDE (Bloques 7 a 12) -->
         @for (b of bloquesTarde; track b.numero) {
-          <tr>
-            <td class="td-bloque-info">
-              <span class="bloque-num">B{{ b.numero }}</span>
-              <span class="bloque-hora">{{ b.hora_inicio }} – {{ b.hora_fin }}</span>
-            </td>
-
-            @for (d of DIAS; track d.dia) {
-              @if (!estaCubierto(d.dia, b.numero)) {
-                @if (celdaQueInicia(d.dia, b.numero); as celda) {
-                  <td
-                    class="td-celda"
-                    [attr.rowspan]="calcularRowspan(celda)"
-                    [class.celda-externa]="celda.tipo === 'CLASE_EXTERNA'"
-                    [class.celda-propia]="celda.tipo === 'CLASE_PROPIA'"
-                    [class.celda-protegido]="celda.tipo === 'PROTEGIDO'"
-                    [class.celda-disponible]="celda.tipo === 'DISPONIBLE'"
-                    [class.celda-alerta-choque]="celda.advertencia_choque"
-                    [matTooltip]="celda.tipo === 'PROTEGIDO' ? 'Bloque protegido: ' + celda.etiqueta + (celda.detalle ? ' (' + celda.detalle + ')' : '') : (celda.advertencia_choque ? 'Superposición con bloque protegido: ' + celda.bloque_protegido_nombre : '')"
-                    (click)="onCeldaClick(d.dia, b.numero)">
-                    <div class="celda-content">
-                      <div class="celda-top">
-                        <span class="celda-codigo" *ngIf="celda.codigo">{{ celda.codigo }}</span>
-                        <mat-icon class="celda-check" *ngIf="celda.tipo === 'DISPONIBLE'">check_circle</mat-icon>
-                        <mat-icon class="celda-lock" *ngIf="celda.bloqueado" matTooltip="Bloque fijo externo bloqueado">
-                          lock
-                        </mat-icon>
-                        <span class="celda-protegido-badge" *ngIf="celda.tipo === 'PROTEGIDO' && celda.detalle">
-                          {{ celda.detalle }}
-                        </span>
-                      </div>
-
-                      <div class="celda-nombre">{{ celda.etiqueta }}</div>
-
-                      <div class="celda-footer" *ngIf="celda.sala">
-                        <mat-icon class="celda-sala-icon">meeting_room</mat-icon>
-                        <span class="celda-sala">{{ celda.sala }}</span>
-                      </div>
-
-                      <!-- Sub-banner si colisiona con bloque protegido -->
-                      <div class="choque-banner" *ngIf="celda.advertencia_choque">
-                        <mat-icon class="choque-icon">warning</mat-icon>
-                        <span class="choque-texto">Protegido: {{ celda.bloque_protegido_nombre }}</span>
-                      </div>
-                    </div>
-                  </td>
-                } @else {
-                  <td
-                    class="td-celda-vacia"
-                    (click)="onCeldaClick(d.dia, b.numero)">
-                  </td>
-                }
-              }
-            }
-          </tr>
+          <ng-container *ngTemplateOutlet="fila; context: { $implicit: b }"></ng-container>
         }
       </tbody>
     </table>
+
+    <!-- Declarada dentro del cdkDropListGroup para que todas las celdas queden conectadas -->
+    <ng-template #fila let-b>
+      <tr>
+        <td class="td-bloque-info">
+          <span class="bloque-num">B{{ b.numero }}</span>
+          <span class="bloque-hora">{{ b.hora_inicio }} – {{ b.hora_fin }}</span>
+        </td>
+
+        @for (d of DIAS; track d.dia) {
+          @if (!estaCubierto(d.dia, b.numero)) {
+            @if (celdaQueInicia(d.dia, b.numero); as celda) {
+              <td
+                class="td-celda"
+                [attr.rowspan]="calcularRowspan(celda)"
+                [class.celda-externa]="celda.tipo === 'CLASE_EXTERNA'"
+                [class.celda-propia]="celda.tipo === 'CLASE_PROPIA'"
+                [class.celda-protegido]="celda.tipo === 'PROTEGIDO'"
+                [class.celda-disponible]="celda.tipo === 'DISPONIBLE'"
+                [class.celda-alerta-choque]="celda.advertencia_choque"
+                [class.celda-cruce]="celda.cruce"
+                [class.celda-seleccionada]="celda.seleccionada"
+                [matTooltip]="tooltipDe(celda)"
+                cdkDropList
+                cdkDropListSortingDisabled
+                [cdkDropListData]="destino(d.dia, b.numero)"
+                [cdkDropListDisabled]="!arrastrable"
+                (cdkDropListDropped)="soltar($event)"
+                (click)="onCeldaClick(d.dia, b.numero, celda)">
+                <div
+                  class="celda-content"
+                  cdkDrag
+                  [cdkDragData]="celda"
+                  [cdkDragDisabled]="!arrastrable || !celda.arrastrable"
+                  [class.celda-movible]="arrastrable && celda.arrastrable">
+                  <div class="celda-top">
+                    <span class="celda-codigo" *ngIf="celda.codigo">{{ celda.codigo }}</span>
+                    <mat-icon class="celda-check" *ngIf="celda.tipo === 'DISPONIBLE'">check_circle</mat-icon>
+                    <mat-icon class="celda-lock" *ngIf="celda.bloqueado" matTooltip="Bloque fijo externo bloqueado">
+                      lock
+                    </mat-icon>
+                    <span class="celda-protegido-badge" *ngIf="celda.tipo === 'PROTEGIDO' && celda.detalle">
+                      {{ celda.detalle }}
+                    </span>
+                  </div>
+
+                  <div class="celda-nombre">{{ celda.etiqueta }}</div>
+
+                  <div class="celda-footer" *ngIf="celda.sala">
+                    <mat-icon class="celda-sala-icon">meeting_room</mat-icon>
+                    <span class="celda-sala">{{ celda.sala }}</span>
+                  </div>
+
+                  <!-- Sub-banner si colisiona con bloque protegido -->
+                  <div class="choque-banner" *ngIf="celda.advertencia_choque">
+                    <mat-icon class="choque-icon">warning</mat-icon>
+                    <span class="choque-texto">Protegido: {{ celda.bloque_protegido_nombre }}</span>
+                  </div>
+
+                  <!-- Cruce de sala o de docente informado por la página -->
+                  <div class="cruce-banner" *ngIf="celda.cruce">
+                    <mat-icon class="choque-icon">warning</mat-icon>
+                    <span class="choque-texto">{{ celda.cruce }}</span>
+                  </div>
+                </div>
+              </td>
+            } @else {
+              <td
+                class="td-celda-vacia"
+                cdkDropList
+                cdkDropListSortingDisabled
+                [cdkDropListData]="destino(d.dia, b.numero)"
+                [cdkDropListDisabled]="!arrastrable"
+                (cdkDropListDropped)="soltar($event)"
+                (click)="onCeldaClick(d.dia, b.numero)">
+              </td>
+            }
+          }
+        }
+      </tr>
+    </ng-template>
   </div>
 </div>

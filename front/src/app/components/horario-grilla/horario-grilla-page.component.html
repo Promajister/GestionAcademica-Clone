@@ -86,10 +86,119 @@
       <p>Cargando horario semanal...</p>
     </div>
   } @else {
+    <!-- GEN-F02: estado de la propuesta del semestre y acciones de edición -->
+    <mat-card class="elev propuesta-bar">
+      @if (!generada) {
+        <div class="propuesta-bar__info">
+          <mat-icon>info</mat-icon>
+          <span>
+            Aún no hay propuesta de horario para el {{ periodo === 2 ? '2do' : '1er' }} semestre {{ YEAR }}.
+            Genérala en <a routerLink="/horario/propuesta">Propuesta de horario</a> para ver y mover las clases propias aquí.
+          </span>
+        </div>
+      } @else {
+        <div class="propuesta-bar__info">
+          <span class="estado-chip" [class.estado-chip--cerrado]="cerrado">
+            <mat-icon>{{ cerrado ? 'lock' : 'edit_note' }}</mat-icon>
+            {{ cerrado ? 'Horario cerrado' : 'Borrador' }}
+          </span>
+          <span class="muted">
+            @if (cerrado) {
+              Reábrelo en <a routerLink="/horario/propuesta">Propuesta de horario</a> para mover clases.
+            } @else {
+              Arrastra una clase a otro día o bloque, o haz clic en ella para cambiarla de sala. Se guarda al soltar.
+            }
+          </span>
+          @if (totalCruces) {
+            <a class="cruces-link" routerLink="/horario/propuesta">
+              <mat-icon>warning</mat-icon>
+              {{ totalCruces }} cruce(s) en el horario
+            </a>
+          }
+        </div>
+        @if (!cerrado) {
+          <div class="propuesta-bar__acciones">
+            @if (guardando) {
+              <mat-spinner diameter="20"></mat-spinner>
+            }
+            <button
+              mat-stroked-button
+              (click)="deshacer()"
+              [disabled]="!propuesta?.movimientos || guardando"
+              matTooltip="Deshace el último bloque movido">
+              <mat-icon>undo</mat-icon>
+              Deshacer @if (propuesta?.movimientos) { ({{ propuesta?.movimientos }}) }
+            </button>
+          </div>
+        }
+      }
+    </mat-card>
+
+    <!-- Clase seleccionada: mover a otro día, bloque o sala -->
+    @if (seleccion.length) {
+      <mat-card class="elev seleccion-card">
+        <div class="seleccion-head">
+          <strong>Mover clase</strong>
+          <button mat-icon-button (click)="cerrarSeleccion()" matTooltip="Cerrar">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+        @for (a of seleccion; track a.id) {
+          <div class="seleccion-item">
+            <div class="seleccion-item__info">
+              <span class="propia-codigo">{{ a.codigo }}</span>
+              <span>{{ a.nombre }}</span>
+              <span class="muted">
+                · B{{ a.bloque_inicio }}–B{{ a.bloque_fin }} · {{ a.sala || a.sala_externa || 'Sin sala' }}
+                @if (a.origen === 'EXTERNA') { · Externa }
+              </span>
+            </div>
+            @if (editable) {
+              <div class="seleccion-item__campos">
+                <mat-form-field appearance="outline">
+                  <mat-label>Día</mat-label>
+                  <mat-select [(ngModel)]="destinos[a.id].id_dia">
+                    @for (d of DIAS_OPCIONES; track d.id) {
+                      <mat-option [value]="d.id">{{ d.label }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Desde el bloque</mat-label>
+                  <mat-select [(ngModel)]="destinos[a.id].bloque">
+                    @for (b of BLOQUES; track b) {
+                      <mat-option [value]="b">B{{ b }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+                @if (a.id_sala != null) {
+                  <mat-form-field appearance="outline">
+                    <mat-label>Sala</mat-label>
+                    <mat-select [(ngModel)]="destinos[a.id].id_sala">
+                      @for (s of propuesta?.salas ?? []; track s.id_sala) {
+                        <mat-option [value]="s.id_sala">{{ s.nombre }} ({{ s.capacidad }})</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+                }
+                <button mat-flat-button color="primary" (click)="moverDesdePanel(a)" [disabled]="guardando">
+                  <mat-icon>open_with</mat-icon>
+                  Mover
+                </button>
+              </div>
+            }
+          </div>
+        }
+      </mat-card>
+    }
+
     <!-- GRILLA SEMANAL BASE -->
     <mat-card class="elev grilla-main-card">
       <app-horario-grilla
         [celdas]="celdasGrilla"
+        [arrastrable]="editable"
+        (mover)="onMover($event)"
+        (celdaClick)="onCeldaClick($event)"
         [titulo]="(carreraSeleccionada?.nombre || '') + ' · Semestre ' + semestreSeleccionado"
         [subtitulo]="planSeleccionado?.nombre || ''">
       </app-horario-grilla>
@@ -129,7 +238,11 @@
                   <mat-icon>schedule</mat-icon>
                   {{ a.bloques_semanales }} bloques/sem
                 </span>
-                <span class="propia-tag">Pendiente de horario</span>
+                @if (tieneHorario(a)) {
+                  <span class="propia-tag propia-tag--ok">Con horario</span>
+                } @else {
+                  <span class="propia-tag">Pendiente de horario</span>
+                }
               </div>
             </div>
           }

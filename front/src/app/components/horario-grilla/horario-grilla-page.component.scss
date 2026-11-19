@@ -303,3 +303,120 @@
     font-weight: 600;
   }
 }
+
+/* GEN-F02: propuesta en la grilla semanal */
+.muted {
+  color: #64748b;
+}
+
+.propuesta-bar {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 18px;
+  border-radius: 14px;
+  margin-bottom: 16px;
+  font-size: 13px;
+
+  &__info {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+
+    > mat-icon {
+      color: #0284c7;
+    }
+  }
+
+  &__acciones {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+}
+
+.estado-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #e0f2fe;
+  color: #075985;
+  font-weight: 700;
+  font-size: 12px;
+
+  mat-icon {
+    font-size: 15px;
+    width: 15px;
+    height: 15px;
+  }
+
+  &--cerrado {
+    background: #dcfce7;
+    color: #166534;
+  }
+}
+
+.cruces-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #b91c1c;
+  font-weight: 700;
+  text-decoration: none;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.seleccion-card {
+  border-radius: 14px;
+  padding: 12px 18px;
+  margin-bottom: 16px;
+  border-left: 5px solid #0f172a;
+}
+
+.seleccion-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.seleccion-item {
+  padding: 6px 0;
+
+  &__info {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+
+  &__campos {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+
+    mat-form-field {
+      width: 170px;
+      margin-bottom: -1.25em;
+    }
+  }
+}
+
+.propia-item .propia-tag--ok {
+  color: #15803d;
+  font-style: normal;
+  font-weight: 700;
+}
