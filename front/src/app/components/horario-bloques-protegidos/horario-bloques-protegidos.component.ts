@@ -23,6 +23,7 @@ import {
 import {
   HorarioGrillaComponent,
   CeldaGrilla,
+  MovimientoCelda,
 } from '../horario-grilla/horario-grilla.component';
 
 export function formatoAlcanceTexto(bp: {
@@ -217,8 +218,65 @@ export class HorarioBloquesProtegidosComponent implements OnInit {
     this.bloqueFin = 12;
   }
 
-  // Vista previa dinámica en la grilla
+  // Grilla: bloques registrados (se arrastran) más la vista previa del formulario
   get previewCeldas(): CeldaGrilla[] {
+    const registrados: CeldaGrilla[] = this.bloques
+      .filter((b) => b.id_bloque_protegido !== this.editandoId)
+      .map((b) => ({
+        dia: b.dia,
+        bloque_inicio: b.bloque_inicio,
+        bloque_fin: b.bloque_fin,
+        tipo: 'PROTEGIDO',
+        etiqueta: b.nombre,
+        detalle: formatoAlcanceTexto(b),
+        arrastrable: !this.moviendo,
+        ref: b,
+      }));
+
+    // La vista previa solo aparece cuando se está escribiendo o editando un bloque
+    if (!this.nombre.trim() && !this.editandoId) return registrados;
+    return [...this.celdasFormulario(), ...registrados];
+  }
+
+  // ---------- Extra: mover bloques registrados arrastrándolos ----------
+  moviendo = false;
+
+  moverBloque(m: MovimientoCelda): void {
+    const b = m.celda.ref as BloqueProtegidoDTO | undefined;
+    if (!b || this.moviendo) return;
+    const ids = b.ids?.length ? b.ids : [b.id_bloque_protegido];
+    this.moviendo = true;
+    this.horarioApi.moverBloqueProtegido(ids, m.dia, m.bloque_inicio).subscribe({
+      next: (r) => {
+        this.moviendo = false;
+        this.cargarBloques();
+        const ref = this.snack.open(r.mensaje, 'Deshacer', { duration: 8000 });
+        ref.onAction().subscribe(() =>
+          this.horarioApi
+            .moverBloqueProtegido(r.ids, r.desde.dia, r.desde.bloque_inicio)
+            .subscribe({
+              next: () => {
+                this.snack.open('Cambio deshecho', 'Cerrar', { duration: 3000 });
+                this.cargarBloques();
+              },
+              error: (err) =>
+                this.snack.open(err.error?.message || 'No se pudo deshacer', 'Cerrar', {
+                  duration: 5000,
+                }),
+            }),
+        );
+      },
+      error: (err) => {
+        this.moviendo = false;
+        this.snack.open(err.error?.message || 'No se pudo mover el bloque', 'Cerrar', {
+          duration: 5000,
+        });
+      },
+    });
+  }
+
+  // Vista previa del bloque que se está creando o editando
+  private celdasFormulario(): CeldaGrilla[] {
     const celdas: CeldaGrilla[] = [];
     const diasSeleccionados = (
       Object.keys(this.diasCheck) as DiaSemana[]
@@ -239,8 +297,9 @@ export class HorarioBloquesProtegidosComponent implements OnInit {
         bloque_inicio: this.bloqueInicio,
         bloque_fin: this.bloqueFin,
         tipo: 'PROTEGIDO',
-        etiqueta,
+        etiqueta: `Vista previa: ${etiqueta}`,
         detalle,
+        seleccionada: true,
       });
     }
 

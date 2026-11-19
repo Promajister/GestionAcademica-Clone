@@ -1,7 +1,16 @@
-import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input,
+  OnInit,
+  Output,
+  inject,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import {
   HorarioApiService,
   BloqueGrillaDTO,
@@ -27,6 +36,27 @@ export interface CeldaGrilla {
   advertencia_choque?: boolean;
   bloque_protegido_nombre?: string;
   bloque_protegido_alcance?: string;
+  // Arrastre (GEN-F02 y bloques protegidos): la página decide qué celdas se mueven
+  arrastrable?: boolean;
+  // Dato de la página para reconocer la celda al moverla o seleccionarla
+  ref?: unknown;
+  seleccionada?: boolean;
+  // Texto de un cruce de sala o docente que la página quiere mostrar en la celda
+  cruce?: string;
+  // Carrera y nivel de la clase, para la vista por sala donde se mezclan niveles
+  nivel?: string;
+}
+
+// Celda soltada en otro día y bloque: bloque_inicio es el bloque donde se soltó
+export interface MovimientoCelda {
+  celda: CeldaGrilla;
+  dia: DiaSemana;
+  bloque_inicio: number;
+}
+
+interface DestinoCelda {
+  dia: DiaSemana;
+  bloque: number;
 }
 
 @Component({
@@ -34,10 +64,14 @@ export interface CeldaGrilla {
   selector: 'app-horario-grilla',
   templateUrl: './horario-grilla.component.html',
   styleUrls: ['./horario-grilla.component.scss'],
-  imports: [CommonModule, MatIconModule, MatTooltipModule],
+  imports: [CommonModule, MatIconModule, MatTooltipModule, DragDropModule],
 })
 export class HorarioGrillaComponent implements OnInit {
   private horarioApi = inject(HorarioApiService);
+  private host = inject<ElementRef<HTMLElement>>(ElementRef);
+
+  // Bloque de la celda por donde se tomó al arrastrar (0 = su primer bloque)
+  private filaTomada = 0;
 
   @Input() celdas: CeldaGrilla[] = [];
   @Input() titulo = '';
@@ -46,7 +80,12 @@ export class HorarioGrillaComponent implements OnInit {
   // 'disponibilidad' muestra la leyenda de DIS-F02 (Disponible / Protegido)
   @Input() leyenda: 'horario' | 'disponibilidad' = 'horario';
 
+  // Activa el arrastre de las celdas con arrastrable = true
+  @Input() arrastrable = false;
+
   @Output() seleccionar = new EventEmitter<{ dia: DiaSemana; bloque: number }>();
+  @Output() mover = new EventEmitter<MovimientoCelda>();
+  @Output() celdaClick = new EventEmitter<CeldaGrilla>();
 
   grilla: BloqueGrillaDTO[] = [];
   cargandoGrilla = false;
@@ -101,10 +140,65 @@ export class HorarioGrillaComponent implements OnInit {
     return Math.max(1, c.bloque_fin - c.bloque_inicio + 1);
   }
 
-  onCeldaClick(dia: DiaSemana, bloqueNum: number): void {
+  onCeldaClick(dia: DiaSemana, bloqueNum: number, celda?: CeldaGrilla): void {
     if (this.modo === 'seleccion') {
       this.seleccionar.emit({ dia, bloque: bloqueNum });
     }
+    if (celda) this.celdaClick.emit(celda);
+  }
+
+  get hayCruces(): boolean {
+    return this.celdas.some((c) => !!c.cruce);
+  }
+
+  tooltipDe(c: CeldaGrilla): string {
+    if (c.tipo === 'PROTEGIDO') {
+      return 'Bloque protegido: ' + c.etiqueta + (c.detalle ? ' (' + c.detalle + ')' : '');
+    }
+    if (c.cruce) return c.cruce;
+    if (c.advertencia_choque) {
+      return 'Superposición con bloque protegido: ' + c.bloque_protegido_nombre;
+    }
+    return '';
+  }
+
+  destino(dia: DiaSemana, bloque: number): DestinoCelda {
+    return { dia, bloque };
+  }
+
+  // Fila (bloque) de la grilla que está a la altura del puntero
+  private bloqueEn(y: number): number | null {
+    const filas = this.host.nativeElement.querySelectorAll<HTMLElement>('tr[data-bloque]');
+    for (const tr of Array.from(filas)) {
+      const r = tr.getBoundingClientRect();
+      if (y >= r.top && y < r.bottom) return Number(tr.dataset['bloque']);
+    }
+    return null;
+  }
+
+  // Se recuerda por qué bloque se tomó la celda, para conservar ese desplazamiento al soltar
+  tomar(event: PointerEvent, celda: CeldaGrilla): void {
+    const bloque = this.bloqueEn(event.clientY);
+    this.filaTomada =
+      bloque != null && bloque >= celda.bloque_inicio && bloque <= celda.bloque_fin
+        ? bloque - celda.bloque_inicio
+        : 0;
+  }
+
+  // La celda soltada empieza donde queda su bloque tomado; la página valida y guarda.
+  // Una celda de varios bloques es un solo <td>: el bloque se calcula con la altura del puntero,
+  // así también se puede soltar sobre la misma celda (correrla un bloque, por ejemplo)
+  soltar(event: CdkDragDrop<DestinoCelda, unknown, CeldaGrilla>): void {
+    const celda = event.item.data;
+    const { dia, bloque } = event.container.data;
+    const td = event.container.element.nativeElement as HTMLElement;
+    const filas = Number(td.getAttribute('rowspan') ?? 1) || 1;
+    const bajo = this.bloqueEn(event.dropPoint.y) ?? bloque;
+    const destino = Math.min(Math.max(bajo, bloque), bloque + filas - 1);
+    const inicio = destino - this.filaTomada;
+    this.filaTomada = 0;
+    if (dia === celda.dia && inicio === celda.bloque_inicio) return;
+    this.mover.emit({ celda, dia, bloque_inicio: inicio });
   }
 
   private fallbackGrilla(): BloqueGrillaDTO[] {

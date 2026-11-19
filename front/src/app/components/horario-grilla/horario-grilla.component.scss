@@ -156,6 +156,9 @@
 .td-celda {
   padding: 8px;
   position: relative;
+  // Con un alto explícito, .celda-content (height: 100%) llena la celda entera,
+  // así una celda de varios bloques se puede tomar desde cualquiera de ellos
+  height: 1px;
   text-align: left;
   vertical-align: top;
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.04);
@@ -202,6 +205,16 @@
   color: #334155;
   text-transform: uppercase;
   letter-spacing: 0.03em;
+}
+
+.celda-nivel-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #0f172a;
+  color: #f8fafc;
+  white-space: nowrap;
 }
 
 .celda-nombre {
@@ -395,4 +408,65 @@
     background: #f0fdf4 !important;
     box-shadow: inset 0 0 0 2px #86efac;
   }
+}
+
+// ---------- Arrastre (GEN-F02 y bloques protegidos) y cruces ----------
+.grilla-leyenda .color--cruce {
+  background: #fee2e2;
+  border-color: #dc2626;
+}
+
+.celda-cruce {
+  box-shadow: inset 0 0 0 2px #dc2626 !important;
+}
+
+.cruce-banner {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  padding: 3px 6px;
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #991b1b;
+
+  .choque-icon {
+    color: #dc2626;
+  }
+}
+
+.celda-seleccionada {
+  box-shadow: inset 0 0 0 3px #0f172a !important;
+}
+
+.grilla-table.modo-arrastre {
+  .td-celda {
+    cursor: pointer;
+  }
+
+  .td-celda-vacia.cdk-drop-list-dragging,
+  .td-celda.cdk-drop-list-dragging {
+    background: #e0f2fe !important;
+    box-shadow: inset 0 0 0 2px #38bdf8;
+  }
+}
+
+.celda-movible {
+  cursor: grab;
+}
+
+.cdk-drag-preview.celda-content {
+  padding: 8px;
+  border-radius: 6px;
+  background: #e0f2fe;
+  border-left: 4px solid #0284c7;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.25);
+  font-size: 12px;
+}
+
+.cdk-drag-placeholder {
+  opacity: 0.35;
 }

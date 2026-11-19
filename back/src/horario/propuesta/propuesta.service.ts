@@ -1,4 +1,9 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   EstadoHorario,
   Prisma,
@@ -16,8 +21,17 @@ import {
 } from './generador';
 import { Actividad, BloqueActividad, agruparActividades } from './actividades';
 import { crucesDeDocente, crucesDeSala } from './validador';
+import { MoverBloqueDto } from './dto/mover-bloque.dto';
+import { TOTAL_BLOQUES, mismaJornada, rangoBloques } from '../common/grilla';
 
 type Db = Prisma.TransactionClient | PrismaService;
+
+// Primer bloque de una clase y su sala (null: sala de otro departamento)
+interface Ubicacion {
+  id_dia: number;
+  bloque: number;
+  id_sala: number | null;
+}
 
 const INCLUDE_CURSO = {
   asignatura: true,
@@ -46,8 +60,9 @@ export class PropuestaService {
       year,
       periodo,
       estado: fila?.estado ?? EstadoHorario.BORRADOR,
-      generado_en: fila?.generado_en ?? null,
-      cerrado_en: fila?.cerrado_en ?? null,
+      // En ISO: el interceptor global de fechas solo convierte objetos Date
+      generado_en: fila?.generado_en?.toISOString() ?? null,
+      cerrado_en: fila?.cerrado_en?.toISOString() ?? null,
       no_asignadas: (fila?.no_asignadas as unknown as NoAsignada[]) ?? [],
     };
   }
@@ -183,6 +198,9 @@ export class PropuestaService {
           );
         if (filas.length) await tx.horario.createMany({ data: filas });
 
+        // Los cambios a mano de la propuesta anterior ya no se pueden deshacer
+        await tx.movimientoHorario.deleteMany({ where: { year, periodo } });
+
         await tx.periodoHorario.upsert({
           where: { year_periodo: { year, periodo } },
           create: {
@@ -222,7 +240,7 @@ export class PropuestaService {
 
   // ---------- GET /horario/propuesta ----------
   async obtener(year: number, periodo: number) {
-    const [estado, salas, bloques] = await Promise.all([
+    const [estado, salas, bloques, movimientos] = await Promise.all([
       this.estado(year, periodo),
       this.prisma.sala.findMany({
         where: { activo: true },
@@ -230,6 +248,7 @@ export class PropuestaService {
         select: { id_sala: true, nombre: true, tipo: true, capacidad: true },
       }),
       this.bloquesDelPeriodo(year, periodo),
+      this.prisma.movimientoHorario.count({ where: { year, periodo } }),
     ]);
     const actividades = agruparActividades(bloques);
     return {
@@ -237,7 +256,228 @@ export class PropuestaService {
       salas,
       actividades,
       validacion: this.validarActividades(actividades),
+      movimientos,
     };
+  }
+
+  // ---------- PATCH /horario/propuesta/mover ----------
+  // GEN-F02: mueve una clase a otro día, bloque o sala, guarda el movimiento y revalida todo.
+  // Los cruces no impiden mover (se avisan); sí impiden cerrar el horario.
+  async mover(dto: MoverBloqueDto) {
+    return this.prisma.$transaction(async (tx) => {
+      await this.asegurarBorrador(dto.year, dto.periodo, tx);
+      const largo = dto.bloque_fin - dto.bloque_inicio + 1;
+      const desde: Ubicacion = {
+        id_dia: dto.id_dia,
+        bloque: dto.bloque_inicio,
+        id_sala: dto.id_sala,
+      };
+      const hacia: Ubicacion = {
+        id_dia: dto.hacia_dia,
+        bloque: dto.hacia_bloque,
+        id_sala: dto.hacia_sala ?? dto.id_sala,
+      };
+      if (largo < 1) {
+        throw new BadRequestException(
+          'bloque_fin no puede ser menor que bloque_inicio',
+        );
+      }
+      if (
+        desde.id_dia === hacia.id_dia &&
+        desde.bloque === hacia.bloque &&
+        desde.id_sala === hacia.id_sala
+      ) {
+        throw new BadRequestException('La clase ya está en ese lugar');
+      }
+
+      await this.trasladar(tx, dto.origen, dto.id_curso, largo, desde, hacia);
+      await tx.movimientoHorario.create({
+        data: {
+          year: dto.year,
+          periodo: dto.periodo,
+          origen: dto.origen as TipoOrigen,
+          id_curso: dto.id_curso,
+          largo,
+          desde_dia: desde.id_dia,
+          desde_bloque: desde.bloque,
+          desde_sala: desde.id_sala,
+          hacia_dia: hacia.id_dia,
+          hacia_bloque: hacia.bloque,
+          hacia_sala: hacia.id_sala,
+        },
+      });
+
+      return {
+        mensaje: 'Clase movida',
+        validacion: await this.validar(dto.year, dto.periodo, tx),
+        movimientos: await tx.movimientoHorario.count({
+          where: { year: dto.year, periodo: dto.periodo },
+        }),
+      };
+    });
+  }
+
+  // ---------- POST /horario/propuesta/deshacer ----------
+  // GEN-F02 CA3: deshace el último movimiento mientras el horario no esté cerrado
+  async deshacer(year: number, periodo: number) {
+    return this.prisma.$transaction(async (tx) => {
+      await this.asegurarBorrador(year, periodo, tx);
+      const ultimo = await tx.movimientoHorario.findFirst({
+        where: { year, periodo },
+        orderBy: { id: 'desc' },
+      });
+      if (!ultimo) {
+        throw new ConflictException('No hay cambios para deshacer');
+      }
+      await this.trasladar(
+        tx,
+        ultimo.origen,
+        ultimo.id_curso,
+        ultimo.largo,
+        {
+          id_dia: ultimo.hacia_dia,
+          bloque: ultimo.hacia_bloque,
+          id_sala: ultimo.hacia_sala,
+        },
+        {
+          id_dia: ultimo.desde_dia,
+          bloque: ultimo.desde_bloque,
+          id_sala: ultimo.desde_sala,
+        },
+      );
+      await tx.movimientoHorario.delete({ where: { id: ultimo.id } });
+
+      return {
+        mensaje: 'Cambio deshecho',
+        validacion: await this.validar(year, periodo, tx),
+        movimientos: await tx.movimientoHorario.count({
+          where: { year, periodo },
+        }),
+      };
+    });
+  }
+
+  // Cambia de lugar los bloques de una clase (todas las cargas del curso si es propia)
+  private async trasladar(
+    tx: Prisma.TransactionClient,
+    origen: 'INTERNA' | 'EXTERNA',
+    id_curso: number,
+    largo: number,
+    desde: Ubicacion,
+    hacia: Ubicacion,
+  ) {
+    const fin = hacia.bloque + largo - 1;
+    if (fin > TOTAL_BLOQUES || !mismaJornada(hacia.bloque, fin)) {
+      throw new BadRequestException(
+        `Una clase de ${largo} bloque(s) no cabe desde el bloque ${hacia.bloque}: no puede cruzar la colación ni pasar del bloque ${TOTAL_BLOQUES}`,
+      );
+    }
+    const bloquesDesde = rangoBloques(desde.bloque, desde.bloque + largo - 1);
+    const bloquesHacia = rangoBloques(hacia.bloque, fin);
+
+    if (hacia.id_sala !== desde.id_sala) {
+      if (hacia.id_sala == null || desde.id_sala == null) {
+        throw new BadRequestException(
+          'Una clase en sala de otro departamento solo cambia de día o bloque',
+        );
+      }
+      const sala = await tx.sala.findUnique({
+        where: { id_sala: hacia.id_sala },
+      });
+      if (!sala || !sala.activo) {
+        throw new BadRequestException(
+          'La sala de destino no existe o está inactiva',
+        );
+      }
+    }
+
+    if (origen === 'INTERNA') {
+      if (desde.id_sala == null || hacia.id_sala == null) {
+        throw new BadRequestException(
+          'Una clase propia siempre usa una sala del departamento',
+        );
+      }
+      const filas = await tx.horario.findMany({
+        where: {
+          carga: { id_curso },
+          id_dia: desde.id_dia,
+          id_bloque: { in: bloquesDesde },
+          id_sala: desde.id_sala,
+        },
+      });
+      if (new Set(filas.map((f) => f.id_bloque)).size !== largo) {
+        throw new NotFoundException(
+          'La clase ya no está en ese lugar; recarga la propuesta',
+        );
+      }
+      const otras = await tx.horario.findFirst({
+        where: {
+          carga: { id_curso },
+          id_dia: hacia.id_dia,
+          id_bloque: { in: bloquesHacia },
+          NOT: { OR: filas.map((f) => ({ ...f })) },
+        },
+      });
+      if (otras) {
+        throw new ConflictException(
+          'La asignatura ya tiene otra clase en esos bloques',
+        );
+      }
+      await tx.horario.deleteMany({
+        where: { OR: filas.map((f) => ({ ...f })) },
+      });
+      await tx.horario.createMany({
+        data: filas.map((f) => ({
+          id_carga: f.id_carga,
+          id_dia: hacia.id_dia,
+          id_bloque: hacia.bloque + (f.id_bloque - desde.bloque),
+          id_sala: hacia.id_sala as number,
+        })),
+      });
+      return;
+    }
+
+    const filas = await tx.horarioExterno.findMany({
+      where: {
+        id_curso,
+        id_dia: desde.id_dia,
+        id_bloque: { in: bloquesDesde },
+        ...(desde.id_sala != null
+          ? { id_sala: desde.id_sala }
+          : { id_sala: null }),
+      },
+    });
+    if (filas.length !== largo) {
+      throw new NotFoundException(
+        'La clase ya no está en ese lugar; recarga la propuesta',
+      );
+    }
+    const otras = await tx.horarioExterno.findFirst({
+      where: {
+        id_curso,
+        id_dia: hacia.id_dia,
+        id_bloque: { in: bloquesHacia },
+        id: { notIn: filas.map((f) => f.id) },
+      },
+    });
+    if (otras) {
+      throw new ConflictException(
+        'La asignatura ya tiene otra clase en esos bloques',
+      );
+    }
+    // Se borra y se vuelve a crear para no chocar con la clave única (curso, día, bloque)
+    await tx.horarioExterno.deleteMany({
+      where: { id: { in: filas.map((f) => f.id) } },
+    });
+    await tx.horarioExterno.createMany({
+      data: filas.map((f) => ({
+        id_curso,
+        id_dia: hacia.id_dia,
+        id_bloque: hacia.bloque + (f.id_bloque - desde.bloque),
+        id_sala: hacia.id_sala,
+        sala_externa: f.sala_externa,
+      })),
+    });
   }
 
   // ---------- GET /horario/propuesta/validacion ----------
@@ -290,6 +530,8 @@ export class PropuestaService {
         where: { year_periodo: { year, periodo } },
         data: { estado: EstadoHorario.CERRADO, cerrado_en: new Date() },
       });
+      // GEN-F02 CA3: al cerrar, los cambios quedan definitivos
+      await tx.movimientoHorario.deleteMany({ where: { year, periodo } });
       return { mensaje: `Horario ${periodo}/${year} cerrado` };
     });
   }

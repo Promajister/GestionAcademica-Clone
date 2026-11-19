@@ -11,7 +11,7 @@
 
         <div class="hero__titles">
           <h1>Grilla Semanal de Horario</h1>
-          <p>Visualización del horario pedagógico por carrera, plan curricular y nivel semestral.</p>
+          <p>Genera la propuesta del semestre, revisa sus cruces y ajústala moviendo las clases en la grilla.</p>
 
           <div class="hero__chips">
             <span class="chip" *ngIf="carreraSeleccionada">
@@ -21,7 +21,12 @@
 
             <span class="chip chip--soft" *ngIf="planSeleccionado">
               <mat-icon>description</mat-icon>
-              <span>{{ planSeleccionado.nombre }} · Semestre {{ semestreSeleccionado }}</span>
+              <span>{{ planSeleccionado.nombre }} · {{ etiquetaSemestre }}</span>
+            </span>
+
+            <span class="chip chip--soft" *ngIf="salaActual">
+              <mat-icon>meeting_room</mat-icon>
+              <span>{{ salaActual.nombre }}</span>
             </span>
           </div>
         </div>
@@ -29,7 +34,7 @@
     </div>
   </div>
 
-  <!-- SELECTORES DE NIVEL -->
+  <!-- FILTROS -->
   <mat-card class="elev selectors-card">
     <mat-card-content class="selectors-bar">
       <div class="selectors-grid">
@@ -64,10 +69,22 @@
           <mat-select
             [(ngModel)]="semestreSeleccionado"
             (selectionChange)="onPlanOSemestreChange()">
+            <mat-option value="IMPARES">Todos los impares (1er semestre)</mat-option>
+            <mat-option value="PARES">Todos los pares (2do semestre)</mat-option>
             @for (s of SEMESTRES; track s) {
               <mat-option [value]="s">
                 Semestre {{ s }}
               </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Sala</mat-label>
+          <mat-select [(ngModel)]="salaSeleccionada" (selectionChange)="onSalaChange()">
+            <mat-option [value]="0">Todas las salas</mat-option>
+            @for (s of salas; track s.id_sala) {
+              <mat-option [value]="s.id_sala">{{ s.nombre }} ({{ s.capacidad }})</mat-option>
             }
           </mat-select>
         </mat-form-field>
@@ -86,55 +103,332 @@
       <p>Cargando horario semanal...</p>
     </div>
   } @else {
-    <!-- GRILLA SEMANAL BASE -->
-    <mat-card class="elev grilla-main-card">
-      <app-horario-grilla
-        [celdas]="celdasGrilla"
-        [titulo]="(carreraSeleccionada?.nombre || '') + ' · Semestre ' + semestreSeleccionado"
-        [subtitulo]="planSeleccionado?.nombre || ''">
-      </app-horario-grilla>
-    </mat-card>
-
-    <!-- LISTA DE ASIGNATURAS PROPIAS PENDIENTES DE PROGRAMACIÓN -->
-    <mat-card class="elev propias-card">
-      <div class="propias-header">
-        <div class="propias-title-wrap">
-          <div class="propias-icon">
-            <mat-icon>pending_actions</mat-icon>
-          </div>
+    <!-- PROPUESTA DEL SEMESTRE: generar (GEN-F01), cruces (GEN-F03/F04), deshacer (GEN-F02) y cierre -->
+    <mat-card class="elev propuesta-card">
+      <div class="propuesta-head">
+        <div class="propuesta-head__titulo">
+          <mat-icon class="propuesta-head__icon">auto_awesome</mat-icon>
           <div>
-            <h3>Asignaturas Propias del Semestre</h3>
-            <p class="muted">
-              Asignaturas dictadas por el departamento que requieren agendamiento de bloques.
-            </p>
+            <h3>Propuesta de horario · {{ nombrePeriodo }}</h3>
+            <div class="propuesta-head__estado">
+              @if (generada) {
+                <span class="estado-chip" [class.estado-chip--cerrado]="cerrado">
+                  <mat-icon>{{ cerrado ? 'lock' : 'edit_note' }}</mat-icon>
+                  {{ cerrado ? 'Horario cerrado' : 'Borrador' }}
+                </span>
+                <span class="muted">Generada el {{ propuesta?.generado_en | date: 'dd/MM/yyyy HH:mm' }}</span>
+              } @else {
+                <span class="muted">Aún no hay propuesta para este semestre: genérala para ver y mover las clases propias.</span>
+              }
+            </div>
           </div>
+        </div>
+
+        <div class="propuesta-head__acciones">
+          @if (guardando || generando) {
+            <mat-spinner diameter="20"></mat-spinner>
+          }
+          @if (generada && !cerrado) {
+            <button
+              mat-stroked-button
+              (click)="deshacer()"
+              [disabled]="!propuesta?.movimientos || guardando"
+              matTooltip="Deshace el último bloque movido">
+              <mat-icon>undo</mat-icon>
+              Deshacer @if (propuesta?.movimientos) { ({{ propuesta?.movimientos }}) }
+            </button>
+          }
+          <button
+            mat-flat-button
+            color="primary"
+            (click)="generar()"
+            [disabled]="generando || cerrado || !propuesta"
+            [matTooltip]="cerrado ? 'El horario está cerrado' : ''">
+            <mat-icon>auto_awesome</mat-icon>
+            {{ generada ? 'Volver a generar' : 'Generar propuesta' }}
+          </button>
+          @if (cerrado) {
+            <button mat-stroked-button (click)="reabrir()">
+              <mat-icon>lock_open</mat-icon>
+              Reabrir
+            </button>
+          } @else {
+            <!-- GEN-F03 CA2: no se cierra mientras haya cruces -->
+            <span [matTooltip]="motivoNoCerrar">
+              <button
+                mat-stroked-button
+                color="primary"
+                (click)="cerrar()"
+                [disabled]="!generada || !puedeCerrar">
+                <mat-icon>lock</mat-icon>
+                Cerrar horario
+              </button>
+            </span>
+          }
         </div>
       </div>
 
-      @if (asignaturasPropias.length === 0) {
-        <div class="propias-empty">
-          <p>No hay asignaturas propias registradas para este semestre.</p>
-        </div>
-      } @else {
-        <div class="propias-grid">
-          @for (a of asignaturasPropias; track a.codigo) {
-            <div class="propia-item">
-              <div class="propia-item__top">
-                <span class="propia-codigo">{{ a.codigo }}</span>
-                <span class="propia-cupo">Cupo: {{ a.cupo }}</span>
-              </div>
-              <div class="propia-item__nombre">{{ a.nombre }}</div>
-              <div class="propia-item__footer">
-                <span class="propia-bloques">
-                  <mat-icon>schedule</mat-icon>
-                  {{ a.bloques_semanales }} bloques/sem
-                </span>
-                <span class="propia-tag">Pendiente de horario</span>
-              </div>
-            </div>
+      @if (generada) {
+        <p class="propuesta-ayuda muted">
+          @if (cerrado) {
+            El horario está cerrado. Reábrelo para mover clases.
+          } @else {
+            Arrastra una clase a otro día o bloque, o haz clic en ella para cambiarla de sala. Se guarda al soltar.
           }
+        </p>
+
+        <!-- RESUMEN -->
+        <div class="resumen">
+          <div class="resumen__item">
+            <span class="resumen__num">{{ totalPropias }}</span>
+            <span class="resumen__label">asignaturas propias con horario</span>
+          </div>
+          <button
+            type="button"
+            class="resumen__item resumen__item--boton"
+            [class.resumen__item--alerta]="noAsignadas.length"
+            (click)="verPendientes = !verPendientes">
+            <span class="resumen__num">{{ noAsignadas.length }}</span>
+            <span class="resumen__label">no se pudieron asignar · {{ sinCarga.length }} sin carga docente</span>
+            <span class="resumen__ver">
+              {{ verPendientes ? 'Ocultar' : 'Ver detalle' }}
+              <mat-icon>{{ verPendientes ? 'expand_less' : 'expand_more' }}</mat-icon>
+            </span>
+          </button>
+          <div class="resumen__item" [class.resumen__item--alerta]="crucesSala.length">
+            <span class="resumen__num">{{ crucesSala.length }}</span>
+            <span class="resumen__label">cruces de sala</span>
+          </div>
+          <div class="resumen__item" [class.resumen__item--alerta]="crucesDocente.length">
+            <span class="resumen__num">{{ crucesDocente.length }}</span>
+            <span class="resumen__label">cruces de docente</span>
+          </div>
         </div>
+
+        <!-- GEN-F01 CA3: asignaturas que no pudieron asignarse y su motivo -->
+        @if (verPendientes) {
+          <div class="pendientes">
+            @if (noAsignadas.length) {
+              <table class="tabla">
+                <thead>
+                  <tr>
+                    <th>Asignatura</th>
+                    <th>Nivel</th>
+                    <th>Bloques</th>
+                    <th>Motivo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (n of noAsignadas; track n.id_curso) {
+                    <tr>
+                      <td>
+                        <span class="codigo">{{ n.codigo }}</span> {{ n.nombre }}
+                        <span class="muted">· Grupo {{ n.grupo }}</span>
+                      </td>
+                      <td>{{ n.nivel }}</td>
+                      <td>{{ n.bloques_asignados }} / {{ n.bloques_requeridos }}</td>
+                      <td>
+                        <span class="motivo" [attr.data-motivo]="n.motivo">{{ MOTIVOS[n.motivo] }}</span>
+                        <div class="muted detalle">{{ n.detalle }}</div>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            } @else {
+              <p class="muted">Todas las asignaturas con carga docente quedaron con horario completo.</p>
+            }
+
+            @if (sinCarga.length) {
+              <button mat-button class="toggle" (click)="verSinCarga = !verSinCarga">
+                <mat-icon>{{ verSinCarga ? 'expand_less' : 'expand_more' }}</mat-icon>
+                {{ sinCarga.length }} asignaturas sin docente asignado en «Carga docente»
+              </button>
+              @if (verSinCarga) {
+                <div class="sin-carga">
+                  @for (n of sinCarga; track n.id_curso) {
+                    <span class="sin-carga__item"><span class="codigo">{{ n.codigo }}</span> {{ n.nombre }} (nivel {{ n.nivel }})</span>
+                  }
+                </div>
+              }
+            }
+          </div>
+        }
+
+        <!-- GEN-F03 y GEN-F04: cruces; al hacer clic se ve la sala del cruce -->
+        @if (totalCruces) {
+          <div class="cruces-wrap">
+            @if (crucesSala.length) {
+              <div class="cruces-col">
+                <h4><mat-icon class="rojo">warning</mat-icon> Cruces de sala</h4>
+                <ul class="cruces">
+                  @for (c of crucesSala; track c.mensaje) {
+                    <li>
+                      <button type="button" class="cruce" (click)="irACruceSala(c)" matTooltip="Ver la sala en la grilla">
+                        <mat-icon>meeting_room</mat-icon>
+                        <span>{{ c.mensaje }}</span>
+                      </button>
+                    </li>
+                  }
+                </ul>
+              </div>
+            }
+            @if (crucesDocente.length) {
+              <div class="cruces-col">
+                <h4><mat-icon class="naranjo">person_off</mat-icon> Cruces de docente</h4>
+                <ul class="cruces">
+                  @for (c of crucesDocente; track c.mensaje) {
+                    <li>
+                      <button type="button" class="cruce cruce--docente" (click)="irACruceDocente(c)" matTooltip="Ver la sala en la grilla">
+                        <mat-icon>person</mat-icon>
+                        <span>{{ c.mensaje }}</span>
+                      </button>
+                    </li>
+                  }
+                </ul>
+              </div>
+            }
+          </div>
+        }
       }
     </mat-card>
+
+    <!-- Clase seleccionada: mover a otro día, bloque o sala -->
+    @if (seleccion.length) {
+      <mat-card class="elev seleccion-card">
+        <div class="seleccion-head">
+          <strong>Mover clase</strong>
+          <button mat-icon-button (click)="cerrarSeleccion()" matTooltip="Cerrar">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+        @for (a of seleccion; track a.id) {
+          <div class="seleccion-item">
+            <div class="seleccion-item__info">
+              <span class="propia-codigo">{{ a.codigo }}</span>
+              <span>{{ a.nombre }}</span>
+              <span class="muted">
+                · Sem. {{ a.nivel }} · B{{ a.bloque_inicio }}–B{{ a.bloque_fin }} · {{ a.sala || a.sala_externa || 'Sin sala' }}
+                @if (a.origen === 'EXTERNA') { · Externa }
+              </span>
+            </div>
+            @if (editable) {
+              <div class="seleccion-item__campos">
+                <mat-form-field appearance="outline">
+                  <mat-label>Día</mat-label>
+                  <mat-select [(ngModel)]="destinos[a.id].id_dia">
+                    @for (d of DIAS_OPCIONES; track d.id) {
+                      <mat-option [value]="d.id">{{ d.label }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Desde el bloque</mat-label>
+                  <mat-select [(ngModel)]="destinos[a.id].bloque">
+                    @for (b of BLOQUES; track b) {
+                      <mat-option [value]="b">B{{ b }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+                @if (a.id_sala != null) {
+                  <mat-form-field appearance="outline">
+                    <mat-label>Sala</mat-label>
+                    <mat-select [(ngModel)]="destinos[a.id].id_sala">
+                      @for (s of salas; track s.id_sala) {
+                        <mat-option [value]="s.id_sala">{{ s.nombre }} ({{ s.capacidad }})</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+                }
+                <button mat-flat-button color="primary" (click)="moverDesdePanel(a)" [disabled]="guardando">
+                  <mat-icon>open_with</mat-icon>
+                  Mover
+                </button>
+              </div>
+            }
+          </div>
+        }
+      </mat-card>
+    }
+
+    <!-- GRILLAS: una por nivel, o una sola con todas las clases de la sala elegida -->
+    @if (salaActual) {
+      <div class="vista-sala muted">
+        <mat-icon>meeting_room</mat-icon>
+        <span>
+          Viendo todas las clases de <strong>{{ salaActual.nombre }}</strong> en el {{ nombrePeriodo }},
+          de todas las carreras y niveles. Dos clases en la misma celda son un cruce de sala.
+        </span>
+        <button mat-button (click)="salaSeleccionada = 0; onSalaChange()">
+          <mat-icon>close</mat-icon>
+          Quitar filtro
+        </button>
+      </div>
+    }
+
+    @for (g of grillas; track g.clave) {
+      <mat-card class="elev grilla-main-card">
+        <app-horario-grilla
+          [celdas]="g.celdas"
+          [arrastrable]="editable"
+          (mover)="onMover($event)"
+          (celdaClick)="onCeldaClick($event)"
+          [titulo]="g.titulo"
+          [subtitulo]="g.subtitulo">
+        </app-horario-grilla>
+      </mat-card>
+    } @empty {
+      <mat-card class="elev grilla-main-card">
+        <p class="muted">El plan no tiene asignaturas en los semestres elegidos.</p>
+      </mat-card>
+    }
+
+    <!-- LISTA DE ASIGNATURAS PROPIAS DE LOS NIVELES ELEGIDOS -->
+    @if (!salaActual) {
+      <mat-card class="elev propias-card">
+        <div class="propias-header">
+          <div class="propias-title-wrap">
+            <div class="propias-icon">
+              <mat-icon>pending_actions</mat-icon>
+            </div>
+            <div>
+              <h3>Asignaturas Propias · {{ etiquetaSemestre }}</h3>
+              <p class="muted">
+                Asignaturas dictadas por el departamento que requieren agendamiento de bloques.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        @if (asignaturasPropias.length === 0) {
+          <div class="propias-empty">
+            <p>No hay asignaturas propias registradas para este semestre.</p>
+          </div>
+        } @else {
+          <div class="propias-grid">
+            @for (a of asignaturasPropias; track a.codigo + '-' + a.semestre) {
+              <div class="propia-item">
+                <div class="propia-item__top">
+                  <span class="propia-codigo">{{ a.codigo }}</span>
+                  <span class="propia-cupo">Sem. {{ a.semestre }} · Cupo: {{ a.cupo }}</span>
+                </div>
+                <div class="propia-item__nombre">{{ a.nombre }}</div>
+                <div class="propia-item__footer">
+                  <span class="propia-bloques">
+                    <mat-icon>schedule</mat-icon>
+                    {{ a.bloques_semanales }} bloques/sem
+                  </span>
+                  @if (tieneHorario(a)) {
+                    <span class="propia-tag propia-tag--ok">Con horario</span>
+                  } @else {
+                    <span class="propia-tag">Pendiente de horario</span>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </mat-card>
+    }
   }
 </div>

@@ -98,6 +98,28 @@ export interface PropuestaDTO {
   salas: SalaPropuestaDTO[];
   actividades: ActividadDTO[];
   validacion: ValidacionDTO;
+  movimientos: number;
+}
+
+// GEN-F02: clase que se mueve y dónde se suelta
+export interface MoverPayload {
+  year: number;
+  periodo: number;
+  origen: OrigenActividad;
+  id_curso: number;
+  id_dia: number;
+  bloque_inicio: number;
+  bloque_fin: number;
+  id_sala: number | null;
+  hacia_dia: number;
+  hacia_bloque: number;
+  hacia_sala?: number;
+}
+
+export interface ResultadoMovimientoDTO {
+  mensaje: string;
+  validacion: ValidacionDTO;
+  movimientos: number;
 }
 
 export interface ResultadoGeneracionDTO {
@@ -135,6 +157,23 @@ export class PropuestaApiService {
   generar(year: number, periodo: number): Observable<ResultadoGeneracionDTO> {
     return this.http.post<ResultadoGeneracionDTO>(
       `${this.baseUrl}/generar`,
+      { year, periodo },
+      this.csrf(),
+    );
+  }
+
+  // GEN-F02: el cambio queda guardado al soltar y el back revalida el horario completo
+  mover(payload: MoverPayload): Observable<ResultadoMovimientoDTO> {
+    return this.http.patch<ResultadoMovimientoDTO>(
+      `${this.baseUrl}/mover`,
+      payload,
+      this.csrf(),
+    );
+  }
+
+  deshacer(year: number, periodo: number): Observable<ResultadoMovimientoDTO> {
+    return this.http.post<ResultadoMovimientoDTO>(
+      `${this.baseUrl}/deshacer`,
       { year, periodo },
       this.csrf(),
     );
