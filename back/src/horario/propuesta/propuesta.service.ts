@@ -15,7 +15,7 @@ import {
   generarPropuesta,
 } from './generador';
 import { Actividad, BloqueActividad, agruparActividades } from './actividades';
-import { crucesDeSala } from './validador';
+import { crucesDeDocente, crucesDeSala } from './validador';
 
 type Db = Prisma.TransactionClient | PrismaService;
 
@@ -251,14 +251,16 @@ export class PropuestaService {
 
   private validarActividades(actividades: Actividad[]) {
     const cruces_sala = crucesDeSala(actividades);
+    const cruces_docente = crucesDeDocente(actividades);
     return {
       cruces_sala,
-      puede_cerrar: cruces_sala.length === 0,
+      cruces_docente,
+      puede_cerrar: cruces_sala.length === 0 && cruces_docente.length === 0,
     };
   }
 
   // ---------- POST /horario/propuesta/cerrar ----------
-  // GEN-F03 CA2: el horario no se cierra mientras existan cruces sin resolver
+  // GEN-F03 CA2 y GEN-F04 CA3: el horario no se cierra mientras existan cruces sin resolver
   async cerrar(year: number, periodo: number) {
     return this.prisma.$transaction(async (tx) => {
       const actual = await this.estado(year, periodo, tx);
@@ -274,8 +276,13 @@ export class PropuestaService {
       }
       const v = await this.validar(year, periodo, tx);
       if (!v.puede_cerrar) {
+        const pendientes = [
+          v.cruces_sala.length && `${v.cruces_sala.length} cruce(s) de sala`,
+          v.cruces_docente.length &&
+            `${v.cruces_docente.length} cruce(s) de docente`,
+        ].filter(Boolean);
         throw new ConflictException({
-          message: `No se puede cerrar el horario: hay ${v.cruces_sala.length} cruce(s) de sala sin resolver`,
+          message: `No se puede cerrar el horario: hay ${pendientes.join(' y ')} sin resolver`,
           validacion: v,
         });
       }

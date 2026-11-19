@@ -610,3 +610,35 @@
   outline: 2px solid #dc2626;
   outline-offset: -2px;
 }
+
+/* GEN-F04: cruces de docente */
+.cruces-card--docente {
+  border-left-color: #ea580c;
+}
+
+.card-head__icon--naranjo {
+  color: #ea580c;
+}
+
+.cruce--docente {
+  border-color: #fed7aa;
+  background: #fff7ed;
+  color: #7c2d12;
+
+  &:hover {
+    background: #ffedd5;
+  }
+}
+
+.cuadro--cruce-docente {
+  background: #fff7ed;
+  border: 2px dashed #ea580c;
+}
+
+.actividad__alerta--docente {
+  color: #ea580c;
+}
+
+.actividad--cruce-docente {
+  box-shadow: 0 0 0 2px #ea580c;
+}

@@ -111,7 +111,34 @@
         <span class="resumen__num">{{ crucesSala.length }}</span>
         <span class="resumen__label">cruces de sala</span>
       </div>
+      <div class="resumen__item" [class.resumen__item--alerta]="crucesDocente.length">
+        <span class="resumen__num">{{ crucesDocente.length }}</span>
+        <span class="resumen__label">cruces de docente</span>
+      </div>
     </div>
+
+    <!-- GEN-F04: cruces de docente, con el docente y sus dos actividades -->
+    @if (crucesDocente.length) {
+      <mat-card class="elev cruces-card cruces-card--docente">
+        <div class="card-head">
+          <mat-icon class="card-head__icon card-head__icon--naranjo">person_off</mat-icon>
+          <div>
+            <h3>Cruces de docente</h3>
+            <p class="muted">Un docente quedó en dos actividades al mismo tiempo. Resuélvelos antes de cerrar el horario.</p>
+          </div>
+        </div>
+        <ul class="cruces">
+          @for (c of crucesDocente; track c.mensaje) {
+            <li>
+              <button type="button" class="cruce cruce--docente" (click)="irACruceDocente(c)">
+                <mat-icon>person</mat-icon>
+                <span>{{ c.mensaje }}</span>
+              </button>
+            </li>
+          }
+        </ul>
+      </mat-card>
+    }
 
     <!-- GEN-F03: cruces de sala, con sala, día y bloques -->
     @if (crucesSala.length) {
@@ -242,6 +269,7 @@
         <span><i class="cuadro cuadro--propia"></i> Asignatura propia</span>
         <span><i class="cuadro cuadro--externa"></i><mat-icon>lock</mat-icon> Asignatura externa (bloque fijo)</span>
         <span><i class="cuadro cuadro--cruce"></i> Cruce de sala</span>
+        <span><i class="cuadro cuadro--cruce-docente"></i> Cruce de docente</span>
       </div>
 
       <div class="tabla-wrap">
@@ -285,6 +313,7 @@
             class="actividad"
             [class.actividad--externa]="a.origen === 'EXTERNA'"
             [class.actividad--cruce-sala]="enCruceSala(a, b.numero)"
+            [class.actividad--cruce-docente]="cruceDocenteDe(a, b.numero)"
             [class.actividad--sigue]="b.numero !== a.bloque_inicio"
             [matTooltip]="tooltip(a)"
             matTooltipClass="tooltip-multilinea">
@@ -295,6 +324,9 @@
               }
               @if (enCruceSala(a, b.numero)) {
                 <mat-icon class="actividad__alerta" matTooltip="Cruce de sala">warning</mat-icon>
+              }
+              @if (cruceDocenteDe(a, b.numero); as cd) {
+                <mat-icon class="actividad__alerta actividad__alerta--docente" [matTooltip]="'Cruce de docente: ' + cd.mensaje">person_off</mat-icon>
               }
               <span class="actividad__rango">B{{ a.bloque_inicio }}–{{ a.bloque_fin }}</span>
             </div>

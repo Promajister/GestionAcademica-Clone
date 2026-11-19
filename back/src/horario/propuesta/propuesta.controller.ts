@@ -6,7 +6,7 @@ import { CsrfGuard } from '../../auth/guards/csrf.guard';
 import { PropuestaService } from './propuesta.service';
 import { PeriodoDto } from './dto/periodo.dto';
 
-// GEN-F01 y GEN-F03: propuesta de horario del semestre, cruces y cierre
+// GEN-F01, F03 y F04: propuesta de horario del semestre, cruces y cierre
 @Controller('horario/propuesta')
 @UseGuards(JwtCookieAuthGuard, RolesGuard)
 @Roles('jefatura', 'secretaria')
