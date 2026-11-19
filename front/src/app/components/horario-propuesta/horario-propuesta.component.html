@@ -1,0 +1,259 @@
+<div class="container section propuesta-page">
+  <!-- CABECERA -->
+  <div class="hero">
+    <div class="hero__content">
+      <div class="hero__left">
+        <div class="hero__icon">
+          <mat-icon>auto_awesome</mat-icon>
+        </div>
+        <div class="hero__titles">
+          <h1>Propuesta de horario</h1>
+          <p>Genera el horario del semestre a partir de la carga docente, las salas, la disponibilidad y los bloques protegidos.</p>
+          <div class="hero__chips" *ngIf="propuesta">
+            <span class="chip" [class.chip--cerrado]="cerrado">
+              <mat-icon>{{ cerrado ? 'lock' : 'edit_note' }}</mat-icon>
+              <span>{{ cerrado ? 'Cerrado' : 'Borrador' }}</span>
+            </span>
+            <span class="chip chip--soft" *ngIf="propuesta.generado_en">
+              <mat-icon>schedule</mat-icon>
+              <span>Generada el {{ propuesta.generado_en | date: 'dd/MM/yyyy HH:mm' }}</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PERIODO Y ACCIONES -->
+  <mat-card class="elev barra-card">
+    <mat-card-content class="barra">
+      <div class="barra__campos">
+        <mat-form-field appearance="outline">
+          <mat-label>Año</mat-label>
+          <mat-select [(ngModel)]="year" (selectionChange)="cargar()">
+            @for (y of YEARS; track y) {
+              <mat-option [value]="y">{{ y }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Semestre</mat-label>
+          <mat-select [(ngModel)]="periodo" (selectionChange)="cargar()">
+            <mat-option [value]="1">1er semestre (niveles impares)</mat-option>
+            <mat-option [value]="2">2do semestre (niveles pares)</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div class="barra__acciones">
+        <button
+          mat-flat-button
+          color="primary"
+          (click)="generar()"
+          [disabled]="generando || cerrado || cargando"
+          [matTooltip]="cerrado ? 'El horario está cerrado' : ''">
+          <mat-icon>auto_awesome</mat-icon>
+          {{ generada ? 'Volver a generar' : 'Generar propuesta' }}
+        </button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  @if (cargando && !propuesta) {
+    <div class="loading-wrap">
+      <mat-spinner diameter="46"></mat-spinner>
+      <p>Cargando propuesta...</p>
+    </div>
+  } @else if (propuesta) {
+    @if (!generada) {
+      <mat-card class="elev vacio-card">
+        <mat-icon>event_note</mat-icon>
+        <div>
+          <h3>Aún no hay una propuesta para este semestre</h3>
+          <p class="muted">Presiona «Generar propuesta» para armarla con los datos cargados en el módulo.</p>
+        </div>
+      </mat-card>
+    }
+
+    <!-- RESUMEN -->
+    <div class="resumen">
+      <div class="resumen__item">
+        <span class="resumen__num">{{ totalPropias }}</span>
+        <span class="resumen__label">asignaturas propias con horario</span>
+      </div>
+      <div class="resumen__item" [class.resumen__item--alerta]="noAsignadas.length">
+        <span class="resumen__num">{{ noAsignadas.length }}</span>
+        <span class="resumen__label">no se pudieron asignar</span>
+      </div>
+      <div class="resumen__item resumen__item--suave">
+        <span class="resumen__num">{{ sinCarga.length }}</span>
+        <span class="resumen__label">sin carga docente</span>
+      </div>
+    </div>
+
+    <!-- GEN-F01 CA3: asignaturas que no pudieron asignarse y su motivo -->
+    @if (noAsignadas.length || sinCarga.length) {
+      <mat-card class="elev pendientes-card">
+        <div class="card-head">
+          <mat-icon class="card-head__icon">report</mat-icon>
+          <div>
+            <h3>Asignaturas sin horario completo</h3>
+            <p class="muted">El generador no las omite: indica por qué no pudo ubicarlas.</p>
+          </div>
+        </div>
+
+        @if (noAsignadas.length) {
+          <table class="tabla">
+            <thead>
+              <tr>
+                <th>Asignatura</th>
+                <th>Nivel</th>
+                <th>Bloques</th>
+                <th>Motivo</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (n of noAsignadas; track n.id_curso) {
+                <tr>
+                  <td>
+                    <span class="codigo">{{ n.codigo }}</span> {{ n.nombre }}
+                    <span class="muted">· Grupo {{ n.grupo }}</span>
+                  </td>
+                  <td>{{ n.nivel }}</td>
+                  <td>{{ n.bloques_asignados }} / {{ n.bloques_requeridos }}</td>
+                  <td>
+                    <span class="motivo" [attr.data-motivo]="n.motivo">{{ MOTIVOS[n.motivo] }}</span>
+                    <div class="muted detalle">{{ n.detalle }}</div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+
+        @if (sinCarga.length) {
+          <button mat-button class="toggle" (click)="verSinCarga = !verSinCarga">
+            <mat-icon>{{ verSinCarga ? 'expand_less' : 'expand_more' }}</mat-icon>
+            {{ sinCarga.length }} asignaturas sin docente asignado en «Carga docente»
+          </button>
+          @if (verSinCarga) {
+            <div class="sin-carga">
+              @for (n of sinCarga; track n.id_curso) {
+                <span class="sin-carga__item"><span class="codigo">{{ n.codigo }}</span> {{ n.nombre }} (nivel {{ n.nivel }})</span>
+              }
+            </div>
+          }
+        }
+      </mat-card>
+    }
+
+    <!-- GRILLA POR SALA -->
+    <mat-card class="elev grilla-card">
+      <div class="card-head card-head--grilla">
+        <div>
+          <h3>{{ nombreVista }}</h3>
+          <p class="muted">Horario semanal de la sala elegida.</p>
+        </div>
+      </div>
+
+      <div class="salas">
+        @for (s of salasClases; track s.id_sala) {
+          <button
+            type="button"
+            class="sala-chip"
+            [class.sala-chip--activa]="vista === s.id_sala"
+            (click)="vista = s.id_sala">
+            <mat-icon>meeting_room</mat-icon>
+            <span>{{ s.nombre }}</span>
+            <span class="sala-chip__n">{{ contarEnSala(s.id_sala) }}</span>
+          </button>
+        }
+        @for (s of salasReuniones; track s.id_sala) {
+          <button
+            type="button"
+            class="sala-chip sala-chip--reuniones"
+            [class.sala-chip--activa]="vista === s.id_sala"
+            (click)="vista = s.id_sala">
+            <mat-icon>groups</mat-icon>
+            <span>{{ s.nombre }}</span>
+            <span class="sala-chip__n">{{ contarEnSala(s.id_sala) }}</span>
+          </button>
+        }
+        <button
+          type="button"
+          class="sala-chip sala-chip--externa"
+          [class.sala-chip--activa]="vista === 'EXTERNAS'"
+          (click)="vista = 'EXTERNAS'">
+          <mat-icon>apartment</mat-icon>
+          <span>Otros departamentos</span>
+          <span class="sala-chip__n">{{ contarEnSala(null) }}</span>
+        </button>
+      </div>
+
+      <div class="leyenda">
+        <span><i class="cuadro cuadro--propia"></i> Asignatura propia</span>
+        <span><i class="cuadro cuadro--externa"></i><mat-icon>lock</mat-icon> Asignatura externa (bloque fijo)</span>
+      </div>
+
+      <div class="tabla-wrap">
+        <table class="grilla">
+          <thead>
+            <tr>
+              <th class="th-bloque">Bloque</th>
+              @for (d of DIAS; track d.id) {
+                <th>{{ d.label }}</th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (b of bloquesManana; track b.numero) {
+              <ng-container *ngTemplateOutlet="fila; context: { $implicit: b }"></ng-container>
+            }
+            <tr class="colacion">
+              <td class="td-bloque"><strong>Colación</strong><span>12:50 – 14:45</span></td>
+              <td colspan="5"><mat-icon>restaurant</mat-icon> Receso de mediodía</td>
+            </tr>
+            @for (b of bloquesTarde; track b.numero) {
+              <ng-container *ngTemplateOutlet="fila; context: { $implicit: b }"></ng-container>
+            }
+          </tbody>
+        </table>
+      </div>
+    </mat-card>
+  }
+</div>
+
+<ng-template #fila let-b>
+  <tr>
+    <td class="td-bloque">
+      <strong>B{{ b.numero }}</strong>
+      <span>{{ b.hora_inicio }} – {{ b.hora_fin }}</span>
+    </td>
+    @for (d of DIAS; track d.id) {
+      <td class="celda">
+        @for (a of actividadesEn(d.id, b.numero); track a.id) {
+          <div
+            class="actividad"
+            [class.actividad--externa]="a.origen === 'EXTERNA'"
+            [class.actividad--sigue]="b.numero !== a.bloque_inicio"
+            [matTooltip]="tooltip(a)"
+            matTooltipClass="tooltip-multilinea">
+            <div class="actividad__top">
+              <span class="codigo">{{ a.codigo }}</span>
+              @if (a.origen === 'EXTERNA') {
+                <mat-icon class="actividad__lock">lock</mat-icon>
+              }
+              <span class="actividad__rango">B{{ a.bloque_inicio }}–{{ a.bloque_fin }}</span>
+            </div>
+            @if (b.numero === a.bloque_inicio) {
+              <div class="actividad__nombre">{{ a.nombre }}</div>
+              <div class="actividad__meta">
+                {{ a.origen === 'EXTERNA' ? (a.sala_externa || 'Externa') : docentes(a) }}
+              </div>
+            }
+          </div>
+        }
+      </td>
+    }
+  </tr>
+</ng-template>

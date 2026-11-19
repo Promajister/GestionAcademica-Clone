@@ -1116,3 +1116,23 @@ model HorarioExterno {
   @@unique([id_curso, id_dia, id_bloque])
   @@map("horarios_externos")
 }
+
+enum EstadoHorario {
+  BORRADOR
+  CERRADO
+}
+
+// GEN-F01: propuesta de horario de un periodo (año + semestre 1 o 2).
+// Las clases propuestas quedan en Horario; aquí se guarda su estado y las
+// asignaturas que el generador no pudo ubicar, con su motivo.
+model PeriodoHorario {
+  year         Int
+  periodo      Int
+  estado       EstadoHorario @default(BORRADOR)
+  generado_en  DateTime?
+  cerrado_en   DateTime?
+  no_asignadas Json?
+
+  @@id([year, periodo])
+  @@map("periodos_horario")
+}
