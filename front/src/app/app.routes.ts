@@ -84,13 +84,10 @@ export const routes: Routes = [
       import('./components/horario-grilla/horario-grilla-page.component').then(m => m.HorarioGrillaPageComponent),
   },
   {
+    // La propuesta de horario se gestiona dentro de Grilla semanal
     path: 'horario/propuesta',
-    canActivate: [authGuard, roleGuard],
-    data: { allowedRoles: ['jefatura', 'secretaria'] },
-    loadComponent: () =>
-      import('./components/horario-propuesta/horario-propuesta.component').then(
-        (m) => m.HorarioPropuestaComponent,
-      ),
+    redirectTo: '/horario/grilla',
+    pathMatch: 'full',
   },
   {
     path: 'horario/bloques-protegidos',
