@@ -85,7 +85,7 @@
 
     <!-- Declarada dentro del cdkDropListGroup para que todas las celdas queden conectadas -->
     <ng-template #fila let-b>
-      <tr>
+      <tr [attr.data-bloque]="b.numero">
         <td class="td-bloque-info">
           <span class="bloque-num">B{{ b.numero }}</span>
           <span class="bloque-hora">{{ b.hora_inicio }} – {{ b.hora_fin }}</span>
@@ -115,6 +115,7 @@
                   class="celda-content"
                   cdkDrag
                   [cdkDragData]="celda"
+                  (pointerdown)="tomar($event, celda)"
                   [cdkDragDisabled]="!arrastrable || !celda.arrastrable"
                   [class.celda-movible]="arrastrable && celda.arrastrable">
                   <div class="celda-top">

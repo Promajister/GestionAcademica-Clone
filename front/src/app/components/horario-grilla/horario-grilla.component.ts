@@ -1,4 +1,12 @@
-import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input,
+  OnInit,
+  Output,
+  inject,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -60,6 +68,10 @@ interface DestinoCelda {
 })
 export class HorarioGrillaComponent implements OnInit {
   private horarioApi = inject(HorarioApiService);
+  private host = inject<ElementRef<HTMLElement>>(ElementRef);
+
+  // Bloque de la celda por donde se tomó al arrastrar (0 = su primer bloque)
+  private filaTomada = 0;
 
   @Input() celdas: CeldaGrilla[] = [];
   @Input() titulo = '';
@@ -154,12 +166,39 @@ export class HorarioGrillaComponent implements OnInit {
     return { dia, bloque };
   }
 
-  // La celda soltada empieza en el bloque donde se soltó; la página valida y guarda
+  // Fila (bloque) de la grilla que está a la altura del puntero
+  private bloqueEn(y: number): number | null {
+    const filas = this.host.nativeElement.querySelectorAll<HTMLElement>('tr[data-bloque]');
+    for (const tr of Array.from(filas)) {
+      const r = tr.getBoundingClientRect();
+      if (y >= r.top && y < r.bottom) return Number(tr.dataset['bloque']);
+    }
+    return null;
+  }
+
+  // Se recuerda por qué bloque se tomó la celda, para conservar ese desplazamiento al soltar
+  tomar(event: PointerEvent, celda: CeldaGrilla): void {
+    const bloque = this.bloqueEn(event.clientY);
+    this.filaTomada =
+      bloque != null && bloque >= celda.bloque_inicio && bloque <= celda.bloque_fin
+        ? bloque - celda.bloque_inicio
+        : 0;
+  }
+
+  // La celda soltada empieza donde queda su bloque tomado; la página valida y guarda.
+  // Una celda de varios bloques es un solo <td>: el bloque se calcula con la altura del puntero,
+  // así también se puede soltar sobre la misma celda (correrla un bloque, por ejemplo)
   soltar(event: CdkDragDrop<DestinoCelda, unknown, CeldaGrilla>): void {
     const celda = event.item.data;
     const { dia, bloque } = event.container.data;
-    if (dia === celda.dia && bloque === celda.bloque_inicio) return;
-    this.mover.emit({ celda, dia, bloque_inicio: bloque });
+    const td = event.container.element.nativeElement as HTMLElement;
+    const filas = Number(td.getAttribute('rowspan') ?? 1) || 1;
+    const bajo = this.bloqueEn(event.dropPoint.y) ?? bloque;
+    const destino = Math.min(Math.max(bajo, bloque), bloque + filas - 1);
+    const inicio = destino - this.filaTomada;
+    this.filaTomada = 0;
+    if (dia === celda.dia && inicio === celda.bloque_inicio) return;
+    this.mover.emit({ celda, dia, bloque_inicio: inicio });
   }
 
   private fallbackGrilla(): BloqueGrillaDTO[] {
