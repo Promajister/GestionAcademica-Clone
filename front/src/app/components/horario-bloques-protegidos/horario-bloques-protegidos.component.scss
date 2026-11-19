@@ -173,6 +173,8 @@
 }
 
 .bp-list-card {
+  margin-bottom: 24px;
+
   .list-header {
     flex-wrap: wrap;
     gap: 16px;
@@ -232,6 +234,7 @@
   .td-nombre {
     color: #0f172a;
     font-size: 14px;
+    overflow-wrap: anywhere;
   }
 
   .td-destinatario {

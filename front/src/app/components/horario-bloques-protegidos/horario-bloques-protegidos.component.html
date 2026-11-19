@@ -14,6 +14,105 @@
     </div>
   </div>
 
+  <!-- SECCIÓN LISTA DE BLOQUES PROTEGIDOS -->
+  <mat-card class="bp-card bp-list-card">
+    <div class="card-header list-header">
+      <div class="card-title">
+        <mat-icon class="card-title-icon">table_chart</mat-icon>
+        <span>Bloques Protegidos Registrados</span>
+        <span class="count-badge" *ngIf="!cargando">{{ bloques.length }}</span>
+      </div>
+
+      <!-- Filtros -->
+      <div class="filtros-wrap">
+        <mat-form-field appearance="outline" class="filtro-field">
+          <mat-label>Filtrar por alcance</mat-label>
+          <mat-select [(ngModel)]="filtroAlcance" (selectionChange)="onFiltrosChange()">
+            <mat-option value="">Todos los alcances</mat-option>
+            @for (a of ALCANCES; track a.valor) {
+              <mat-option [value]="a.valor">{{ a.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filtro-field">
+          <mat-label>Filtrar por día</mat-label>
+          <mat-select [(ngModel)]="filtroDia" (selectionChange)="onFiltrosChange()">
+            <mat-option value="">Todos los días</mat-option>
+            @for (d of DIAS_LISTA; track d.dia) {
+              <mat-option [value]="d.dia">{{ d.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </div>
+
+    <!-- Spinner de carga -->
+    <div class="loading-state" *ngIf="cargando">
+      <mat-spinner diameter="36"></mat-spinner>
+      <span>Cargando bloques protegidos...</span>
+    </div>
+
+    <!-- Estado vacío -->
+    <div class="empty-state" *ngIf="!cargando && bloques.length === 0">
+      <mat-icon class="empty-icon">event_busy</mat-icon>
+      <h3>No se encontraron bloques protegidos</h3>
+      <p>Ajusta los filtros o registra un nuevo bloque protegido desde el formulario superior.</p>
+    </div>
+
+    <!-- Tabla de resultados -->
+    <div class="table-wrap" *ngIf="!cargando && bloques.length > 0">
+      <table class="bp-table">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Alcance</th>
+            <th>Destinatario</th>
+            <th>Día y Horario</th>
+            <th class="th-actions">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (b of bloques; track b.id_bloque_protegido) {
+            <tr>
+              <td class="td-nombre">
+                <strong>{{ b.nombre }}</strong>
+              </td>
+              <td>
+                <span class="alcance-pill" [attr.data-alcance]="b.alcance">
+                  {{ formatoAlcance(b) }}
+                </span>
+              </td>
+              <td class="td-destinatario">
+                {{ formatoDestinatario(b) }}
+              </td>
+              <td class="td-horario">
+                <span class="horario-dia">{{ b.dia }}</span>
+                <span class="horario-horas">{{ b.hora_inicio }} – {{ b.hora_fin }} (B{{ b.bloque_inicio }}–B{{ b.bloque_fin }})</span>
+              </td>
+              <td class="td-actions">
+                <button
+                  mat-icon-button
+                  color="primary"
+                  matTooltip="Editar bloque"
+                  (click)="editar(b)">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button
+                  mat-icon-button
+                  color="warn"
+                  matTooltip="Eliminar bloque"
+                  (click)="confirmarEliminar(b)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </mat-card>
+
   <!-- SECCIÓN FORMULARIO + VISTA PREVIA -->
   <div class="bp-grid-layout">
     <!-- TARJETA FORMULARIO -->
@@ -39,8 +138,10 @@
           <input
             matInput
             [(ngModel)]="nombre"
+            [maxlength]="NOMBRE_MAX"
             placeholder="Ej. Horario protegido, Práctica 6° sem, Consejo de profesores"
             required />
+          <mat-hint align="end">{{ nombre.length }} / {{ NOMBRE_MAX }}</mat-hint>
         </mat-form-field>
 
         <!-- 2. Alcance -->
@@ -213,105 +314,6 @@
       </div>
     </mat-card>
   </div>
-
-  <!-- SECCIÓN LISTA DE BLOQUES PROTEGIDOS -->
-  <mat-card class="bp-card bp-list-card">
-    <div class="card-header list-header">
-      <div class="card-title">
-        <mat-icon class="card-title-icon">table_chart</mat-icon>
-        <span>Bloques Protegidos Registrados</span>
-        <span class="count-badge" *ngIf="!cargando">{{ bloques.length }}</span>
-      </div>
-
-      <!-- Filtros -->
-      <div class="filtros-wrap">
-        <mat-form-field appearance="outline" class="filtro-field">
-          <mat-label>Filtrar por alcance</mat-label>
-          <mat-select [(ngModel)]="filtroAlcance" (selectionChange)="onFiltrosChange()">
-            <mat-option value="">Todos los alcances</mat-option>
-            @for (a of ALCANCES; track a.valor) {
-              <mat-option [value]="a.valor">{{ a.label }}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="filtro-field">
-          <mat-label>Filtrar por día</mat-label>
-          <mat-select [(ngModel)]="filtroDia" (selectionChange)="onFiltrosChange()">
-            <mat-option value="">Todos los días</mat-option>
-            @for (d of DIAS_LISTA; track d.dia) {
-              <mat-option [value]="d.dia">{{ d.label }}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
-      </div>
-    </div>
-
-    <!-- Spinner de carga -->
-    <div class="loading-state" *ngIf="cargando">
-      <mat-spinner diameter="36"></mat-spinner>
-      <span>Cargando bloques protegidos...</span>
-    </div>
-
-    <!-- Estado vacío -->
-    <div class="empty-state" *ngIf="!cargando && bloques.length === 0">
-      <mat-icon class="empty-icon">event_busy</mat-icon>
-      <h3>No se encontraron bloques protegidos</h3>
-      <p>Ajusta los filtros o registra un nuevo bloque protegido desde el formulario superior.</p>
-    </div>
-
-    <!-- Tabla de resultados -->
-    <div class="table-wrap" *ngIf="!cargando && bloques.length > 0">
-      <table class="bp-table">
-        <thead>
-          <tr>
-            <th>Nombre</th>
-            <th>Alcance</th>
-            <th>Destinatario</th>
-            <th>Día y Horario</th>
-            <th class="th-actions">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (b of bloques; track b.id_bloque_protegido) {
-            <tr>
-              <td class="td-nombre">
-                <strong>{{ b.nombre }}</strong>
-              </td>
-              <td>
-                <span class="alcance-pill" [attr.data-alcance]="b.alcance">
-                  {{ formatoAlcance(b) }}
-                </span>
-              </td>
-              <td class="td-destinatario">
-                {{ formatoDestinatario(b) }}
-              </td>
-              <td class="td-horario">
-                <span class="horario-dia">{{ b.dia }}</span>
-                <span class="horario-horas">{{ b.hora_inicio }} – {{ b.hora_fin }} (B{{ b.bloque_inicio }}–B{{ b.bloque_fin }})</span>
-              </td>
-              <td class="td-actions">
-                <button
-                  mat-icon-button
-                  color="primary"
-                  matTooltip="Editar bloque"
-                  (click)="editar(b)">
-                  <mat-icon>edit</mat-icon>
-                </button>
-                <button
-                  mat-icon-button
-                  color="warn"
-                  matTooltip="Eliminar bloque"
-                  (click)="confirmarEliminar(b)">
-                  <mat-icon>delete</mat-icon>
-                </button>
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-  </mat-card>
 
   <!-- MODAL / DIALOG DE CONFIRMACIÓN DE ELIMINACIÓN -->
   <div class="modal-backdrop" *ngIf="bloquePorEliminar" (click)="cancelarEliminar()">

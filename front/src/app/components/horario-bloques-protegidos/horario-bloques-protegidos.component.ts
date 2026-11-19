@@ -97,6 +97,8 @@ export class HorarioBloquesProtegidosComponent implements OnInit {
   // Formulario
   mostrarFormulario = true;
   editandoId: number | null = null;
+  // Largo máximo del nombre (el back valida lo mismo)
+  readonly NOMBRE_MAX = 40;
   nombre = '';
   alcance: AlcanceBloqueProtegidoUI = 'UNIVERSIDAD';
   bloqueInicio = 5;
@@ -426,8 +428,10 @@ export class HorarioBloquesProtegidosComponent implements OnInit {
     this.contrato = b.contrato ?? '';
     this.idUsuarioProfesor = b.id_usuario ?? null;
 
-    // Hacer scroll al formulario
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Hacer scroll al formulario (queda bajo la lista de bloques registrados)
+    document
+      .querySelector('.bp-form-card')
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   cancelarEdicion(): void {

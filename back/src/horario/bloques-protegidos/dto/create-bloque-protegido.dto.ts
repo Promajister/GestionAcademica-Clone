@@ -4,6 +4,7 @@ import {
   IsEnum,
   IsInt,
   IsNotEmpty,
+  MaxLength,
   IsOptional,
   IsString,
   Max,
@@ -16,6 +17,9 @@ export class CreateBloqueProtegidoDto {
   @Transform(trim)
   @IsString()
   @IsNotEmpty({ message: 'El nombre del bloque protegido es obligatorio' })
+  @MaxLength(40, {
+    message: 'El nombre del bloque protegido admite hasta 40 caracteres',
+  })
   nombre!: string;
 
   @IsEnum(AlcanceBloqueProtegido, {
