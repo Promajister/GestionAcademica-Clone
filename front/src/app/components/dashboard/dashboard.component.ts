@@ -190,6 +190,12 @@ export class DashboardComponent implements OnInit {
           desc: 'Gestión y asignación de horas docentes por curso',
         },
         {
+          title: 'Propuesta de horario',
+          icon: 'auto_awesome',
+          route: '/horario/propuesta',
+          desc: 'Genera y ajusta el horario del semestre',
+        },
+        {
           title: 'Usuarios',
           icon: 'manage_accounts',
           route: '/usuarios',
@@ -438,6 +444,12 @@ export class DashboardComponent implements OnInit {
               icon: 'assignment_ind',
               route: '/horario/carga-docente',
               desc: 'Gestión y asignación de horas docentes por curso.',
+            },
+            {
+              title: 'Propuesta de horario',
+              icon: 'auto_awesome',
+              route: '/horario/propuesta',
+              desc: 'Genera y ajusta el horario del semestre',
             },
           ],
         },
