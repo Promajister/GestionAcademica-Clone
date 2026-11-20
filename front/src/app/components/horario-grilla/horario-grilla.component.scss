@@ -391,3 +391,44 @@
     box-shadow: inset 0 0 0 2px #86efac;
   }
 }
+
+// ---------- Propuesta de horario ----------
+.grilla-leyenda .color--propuesta {
+  background: #ede9fe;
+  border-color: #c4b5fd;
+}
+
+.celda-propuesta {
+  background: #ede9fe !important;
+  border-left: 4px solid #7c3aed !important;
+
+  .celda-codigo {
+    color: #5b21b6;
+    background: #ddd6fe;
+  }
+
+  .celda-nombre {
+    color: #3b0764;
+  }
+}
+
+.celda-sin-docente {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #9a3412;
+  font-size: 10px;
+  font-weight: 700;
+  align-self: flex-start;
+
+  mat-icon {
+    font-size: 12px;
+    width: 12px;
+    height: 12px;
+  }
+}

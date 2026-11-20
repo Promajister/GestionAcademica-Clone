@@ -84,6 +84,16 @@ export const routes: Routes = [
       import('./components/horario-grilla/horario-grilla-page.component').then(m => m.HorarioGrillaPageComponent),
   },
   {
+    // Se accede desde la Grilla Semanal (botón "Propuesta"); no va en el sidebar
+    path: 'horario/propuesta',
+    canActivate: [authGuard, roleGuard],
+    data: { allowedRoles: ['jefatura', 'secretaria'] },
+    loadComponent: () =>
+      import('./components/horario-propuesta/horario-propuesta.component').then(
+        (m) => m.HorarioPropuestaComponent,
+      ),
+  },
+  {
     path: 'horario/bloques-protegidos',
     canActivate: [authGuard, roleGuard],
     data: { allowedRoles: ['jefatura', 'secretaria'] },

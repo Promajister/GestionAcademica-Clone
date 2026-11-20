@@ -1,5 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -19,7 +20,7 @@ import {
 } from '../../services/horario-api.service';
 import { HorarioGrillaComponent, CeldaGrilla } from './horario-grilla.component';
 
-function formatoAlcanceLegible(bp: BloqueProtegidoDTO): string {
+export function formatoAlcanceLegible(bp: BloqueProtegidoDTO): string {
   switch (bp.alcance) {
     case 'UNIVERSIDAD':
       return 'Universidad';
@@ -61,6 +62,7 @@ function formatoAlcanceLegible(bp: BloqueProtegidoDTO): string {
 })
 export class HorarioGrillaPageComponent implements OnInit {
   private horarioApi = inject(HorarioApiService);
+  private router = inject(Router);
 
   carreras: CarreraDTO[] = [];
   planesDisponibles: PlanDTO[] = [];
@@ -124,6 +126,17 @@ export class HorarioGrillaPageComponent implements OnInit {
 
   onPlanOSemestreChange(): void {
     this.cargarHorarioNivel();
+  }
+
+  // Abre la generación de propuesta con el mismo nivel seleccionado
+  irAPropuesta(): void {
+    this.router.navigate(['/horario/propuesta'], {
+      queryParams: {
+        carrera: this.carreraSeleccionada?.codigo ?? this.idCarreraSeleccionada,
+        plan: this.idPlanSeleccionado,
+        semestre: this.semestreSeleccionado,
+      },
+    });
   }
 
   cargarHorarioNivel(): void {

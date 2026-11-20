@@ -12,7 +12,8 @@ export type TipoCeldaGrilla =
   | 'CLASE_PROPIA'
   | 'CLASE_EXTERNA'
   | 'PROTEGIDO'
-  | 'DISPONIBLE';
+  | 'DISPONIBLE'
+  | 'PROPUESTA';
 
 export interface CeldaGrilla {
   dia: DiaSemana;
@@ -27,6 +28,9 @@ export interface CeldaGrilla {
   advertencia_choque?: boolean;
   bloque_protegido_nombre?: string;
   bloque_protegido_alcance?: string;
+  // Propuesta de horario: docente(s) del curso o aviso de curso sin docente
+  docente?: string;
+  sin_docente?: boolean;
 }
 
 @Component({
@@ -44,7 +48,8 @@ export class HorarioGrillaComponent implements OnInit {
   @Input() subtitulo = '';
   @Input() modo: 'lectura' | 'seleccion' = 'lectura';
   // 'disponibilidad' muestra la leyenda de DIS-F02 (Disponible / Protegido)
-  @Input() leyenda: 'horario' | 'disponibilidad' = 'horario';
+  // 'propuesta' muestra Externa / Propuesta / Protegido
+  @Input() leyenda: 'horario' | 'disponibilidad' | 'propuesta' = 'horario';
 
   @Output() seleccionar = new EventEmitter<{ dia: DiaSemana; bloque: number }>();
 

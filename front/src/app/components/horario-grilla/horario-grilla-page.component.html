@@ -75,6 +75,15 @@
 
       <div class="selectors-summary muted">
         <span>{{ asignaturas.length }} asignaturas registradas</span>
+        <button
+          mat-flat-button
+          color="primary"
+          class="btn-propuesta"
+          [disabled]="!idPlanSeleccionado || !semestreSeleccionado || cargando"
+          (click)="irAPropuesta()">
+          <mat-icon>auto_awesome</mat-icon>
+          Propuesta
+        </button>
       </div>
     </mat-card-content>
   </mat-card>

@@ -19,6 +19,20 @@
         <span class="leyenda-color color--vacia"></span>
         <span>No disponible</span>
       </div>
+    } @else if (leyenda === 'propuesta') {
+      <div class="leyenda-item">
+        <span class="leyenda-color color--externa"></span>
+        <mat-icon class="leyenda-icon">lock</mat-icon>
+        <span>Asignatura Externa (no se modifica)</span>
+      </div>
+      <div class="leyenda-item">
+        <span class="leyenda-color color--propuesta"></span>
+        <span>Curso propuesto</span>
+      </div>
+      <div class="leyenda-item">
+        <span class="leyenda-color color--protegido"></span>
+        <span>Horario Protegido</span>
+      </div>
     } @else {
       <div class="leyenda-item">
         <span class="leyenda-color color--externa"></span>
@@ -66,6 +80,7 @@
                     [class.celda-propia]="celda.tipo === 'CLASE_PROPIA'"
                     [class.celda-protegido]="celda.tipo === 'PROTEGIDO'"
                     [class.celda-disponible]="celda.tipo === 'DISPONIBLE'"
+                    [class.celda-propuesta]="celda.tipo === 'PROPUESTA'"
                     [class.celda-alerta-choque]="celda.advertencia_choque"
                     [matTooltip]="celda.tipo === 'PROTEGIDO' ? 'Bloque protegido: ' + celda.etiqueta + (celda.detalle ? ' (' + celda.detalle + ')' : '') : (celda.advertencia_choque ? 'Superposición con bloque protegido: ' + celda.bloque_protegido_nombre : '')"
                     (click)="onCeldaClick(d.dia, b.numero)">
@@ -86,6 +101,15 @@
                       <div class="celda-footer" *ngIf="celda.sala">
                         <mat-icon class="celda-sala-icon">meeting_room</mat-icon>
                         <span class="celda-sala">{{ celda.sala }}</span>
+                      </div>
+
+                      <div class="celda-footer" *ngIf="celda.docente">
+                        <mat-icon class="celda-sala-icon">person</mat-icon>
+                        <span class="celda-sala">{{ celda.docente }}</span>
+                      </div>
+                      <div class="celda-sin-docente" *ngIf="celda.sin_docente">
+                        <mat-icon>person_off</mat-icon>
+                        <span>Sin docente</span>
                       </div>
 
                       <!-- Sub-banner si colisiona con bloque protegido -->
@@ -138,6 +162,7 @@
                     [class.celda-propia]="celda.tipo === 'CLASE_PROPIA'"
                     [class.celda-protegido]="celda.tipo === 'PROTEGIDO'"
                     [class.celda-disponible]="celda.tipo === 'DISPONIBLE'"
+                    [class.celda-propuesta]="celda.tipo === 'PROPUESTA'"
                     [class.celda-alerta-choque]="celda.advertencia_choque"
                     [matTooltip]="celda.tipo === 'PROTEGIDO' ? 'Bloque protegido: ' + celda.etiqueta + (celda.detalle ? ' (' + celda.detalle + ')' : '') : (celda.advertencia_choque ? 'Superposición con bloque protegido: ' + celda.bloque_protegido_nombre : '')"
                     (click)="onCeldaClick(d.dia, b.numero)">
@@ -158,6 +183,15 @@
                       <div class="celda-footer" *ngIf="celda.sala">
                         <mat-icon class="celda-sala-icon">meeting_room</mat-icon>
                         <span class="celda-sala">{{ celda.sala }}</span>
+                      </div>
+
+                      <div class="celda-footer" *ngIf="celda.docente">
+                        <mat-icon class="celda-sala-icon">person</mat-icon>
+                        <span class="celda-sala">{{ celda.docente }}</span>
+                      </div>
+                      <div class="celda-sin-docente" *ngIf="celda.sin_docente">
+                        <mat-icon>person_off</mat-icon>
+                        <span>Sin docente</span>
                       </div>
 
                       <!-- Sub-banner si colisiona con bloque protegido -->

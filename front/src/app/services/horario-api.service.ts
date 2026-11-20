@@ -175,6 +175,105 @@ export interface MiDisponibilidadDTO {
   bloques: BloqueDisponibleDTO[];
 }
 
+// ---------- PROPUESTA DE HORARIO (HOR · Generar propuesta) ----------
+// Lo que se asigna son CURSOS (no asignaturas): cada asignatura propia genera
+// un curso por cada tipo con horas > 0 (catedraSemanal, tallerSemanal, labSemanal).
+// Contrato propuesto: se ajusta cuando se implemente el back.
+export type TipoCurso = 'CATEDRA' | 'TALLER' | 'LABORATORIO';
+
+export type EstadoCursoPropuesta = 'ASIGNADO' | 'PARCIAL' | 'NO_ASIGNADO';
+
+// Motivos por los que el algoritmo no pudo ubicar (todos o parte de) los bloques de un curso
+export type MotivoNoAsignado =
+  | 'SIN_BLOQUES_LIBRES' // no quedan pares de bloques libres en el nivel
+  | 'SIN_SALA_CON_CAPACIDAD' // hay bloques libres, pero ninguna sala libre con capacidad suficiente
+  | 'DOCENTE_SIN_DISPONIBILIDAD' // docente por horas sin disponibilidad compatible (o sin declarar = 0 bloques)
+  | 'DOCENTE_OCUPADO' // el docente ya tiene otros cursos en los bloques candidatos
+  | 'OTRO';
+
+// Advertencias: no detienen ni alteran la generación, solo se informan
+export type AdvertenciaCursoPropuesta =
+  | 'SIN_DOCENTE' // curso sin docente preasignado: se asume siempre disponible
+  | 'SIN_INSCRITOS'; // no hay dato de inscritos: la capacidad de la sala no se validó
+
+export interface DocentePropuestaDTO {
+  id_usuario: number;
+  nombre: string;
+  contrato: 'PLANTA' | 'HORAS';
+}
+
+// Una sesión = bloques consecutivos del mismo día (normalmente un par: 1-2, 3-4, 5-6...)
+export interface SesionPropuestaDTO {
+  dia: DiaSemana;
+  bloque_inicio: number;
+  bloque_fin: number;
+  id_sala: number;
+  sala_nombre: string;
+}
+
+export interface CursoPropuestaDTO {
+  // TEMPORAL: mientras no exista la info de cursos, la generación los crea.
+  // No se muestra en la interfaz; se quitará cuando los cursos vengan cargados.
+  id_curso: number | null; // null si el curso no existe y se creará al aceptar
+  curso_nuevo: boolean;
+  tipo: TipoCurso;
+  grupo: string;
+  codigo_asignatura: string;
+  nombre_asignatura: string;
+  bloques_requeridos: number;
+  inscritos: number | null;
+  docentes: DocentePropuestaDTO[];
+  sesiones: SesionPropuestaDTO[];
+  estado: EstadoCursoPropuesta;
+  motivo?: MotivoNoAsignado | null;
+  detalle_motivo?: string | null;
+  advertencias: AdvertenciaCursoPropuesta[];
+}
+
+export interface ResumenPropuestaDTO {
+  total_cursos: number;
+  asignados: number;
+  parciales: number;
+  no_asignados: number;
+  cursos_nuevos: number; // TEMPORAL: no se muestra en la interfaz
+  sin_docente: number;
+}
+
+export interface PropuestaHorarioDTO {
+  id_propuesta: number | null; // borrador guardado en el back
+  generada_en: string;
+  codigo_carrera: string;
+  id_plan: number;
+  semestre: number;
+  cursos: CursoPropuestaDTO[];
+  resumen: ResumenPropuestaDTO;
+}
+
+export interface GenerarPropuestaPayload {
+  codigo_carrera: string;
+  id_plan: number;
+  semestre: number;
+}
+
+export const TIPO_CURSO_LABEL: Record<TipoCurso, string> = {
+  CATEDRA: 'Cátedra',
+  TALLER: 'Taller',
+  LABORATORIO: 'Laboratorio',
+};
+
+export const MOTIVO_NO_ASIGNADO_LABEL: Record<MotivoNoAsignado, string> = {
+  SIN_BLOQUES_LIBRES: 'Sin bloques libres',
+  SIN_SALA_CON_CAPACIDAD: 'Sin sala con capacidad',
+  DOCENTE_SIN_DISPONIBILIDAD: 'Docente sin disponibilidad',
+  DOCENTE_OCUPADO: 'Docente ocupado',
+  OTRO: 'Otro motivo',
+};
+
+export const ADVERTENCIA_LABEL: Record<AdvertenciaCursoPropuesta, string> = {
+  SIN_DOCENTE: 'Sin docente',
+  SIN_INSCRITOS: 'Inscritos no informados',
+};
+
 @Injectable({ providedIn: 'root' })
 export class HorarioApiService {
   private http = inject(HttpClient);
@@ -358,6 +457,41 @@ export class HorarioApiService {
           'X-CSRF-Token': localStorage.getItem('app.token') ?? '',
         }),
       },
+    );
+  }
+
+  // ---------- PROPUESTA DE HORARIO ----------
+  // Endpoints propuestos (aún no existen en el back)
+  private csrfHeaders(): HttpHeaders {
+    return new HttpHeaders({
+      'X-CSRF-Token': localStorage.getItem('app.token') ?? '',
+    });
+  }
+
+  generarPropuesta(
+    payload: GenerarPropuestaPayload,
+  ): Observable<PropuestaHorarioDTO> {
+    return this.http.post<PropuestaHorarioDTO>(
+      `${this.baseUrl}/propuestas/generar`,
+      payload,
+      { headers: this.csrfHeaders() },
+    );
+  }
+
+  aceptarPropuesta(
+    idPropuesta: number,
+  ): Observable<{ mensaje: string; cursos_creados?: number }> {
+    return this.http.post<{ mensaje: string; cursos_creados?: number }>(
+      `${this.baseUrl}/propuestas/${idPropuesta}/aceptar`,
+      {},
+      { headers: this.csrfHeaders() },
+    );
+  }
+
+  descartarPropuesta(idPropuesta: number): Observable<{ mensaje: string }> {
+    return this.http.delete<{ mensaje: string }>(
+      `${this.baseUrl}/propuestas/${idPropuesta}`,
+      { headers: this.csrfHeaders() },
     );
   }
 }
