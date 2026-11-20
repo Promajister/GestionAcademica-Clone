@@ -83,6 +83,25 @@ export class AsignacionCargaComponent implements OnInit {
       c.codigo_asignatura.toLowerCase().includes(termino)
     );
   }
+  // Máximo de horas semanales de la asignatura seleccionada (HC + HT + HL)
+  get maxHorasAsignatura(): number {
+    const asig = this.cursoSeleccionado?.asignatura;
+    if (!asig) return 0;
+    return (asig.catedraSemanal || 0) + (asig.tallerSemanal || 0) + (asig.labSemanal || 0);
+  }
+
+  // Suma de horas actualmente ingresadas en la tabla para este curso
+  get totalHorasAsignadasCurso(): number {
+    return this.profesoresAsignados.reduce(
+      (total, item) => total + (Number(item.cantidad_horas) || 0),
+      0
+    );
+  }
+
+  // True si se excede el máximo permitido
+  get excedeLimiteHoras(): boolean {
+    return this.totalHorasAsignadasCurso > this.maxHorasAsignatura;
+  }
 
   seleccionarCurso(curso: any) {
     this.cursoSeleccionado = curso;

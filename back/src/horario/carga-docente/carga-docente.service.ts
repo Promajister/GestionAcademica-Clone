@@ -77,6 +77,22 @@ export class CargaDocenteService {
       );
     }
 
+    const maxHorasRamo =
+      curso.asignatura.catedraSemanal +
+      curso.asignatura.tallerSemanal +
+      curso.asignatura.labSemanal;
+
+    const totalHorasEnviadas = dto.profesores.reduce(
+      (acum, prof) => acum + prof.cantidad_horas,
+      0,
+    );
+
+    if (totalHorasEnviadas > maxHorasRamo) {
+      throw new BadRequestException(
+        `La suma de horas asignadas (${totalHorasEnviadas} hrs) supera el máximo semanal de la asignatura (${maxHorasRamo} hrs)`,
+      );
+    }
+
     const ids = dto.profesores.map((p) => p.id_usuario);
     if (new Set(ids).size !== ids.length) {
       throw new BadRequestException('Un profesor está repetido en la lista');
