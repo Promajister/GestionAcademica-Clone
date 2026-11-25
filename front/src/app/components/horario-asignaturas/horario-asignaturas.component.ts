@@ -31,6 +31,12 @@ import {
   UpdateAsignaturaPayload,
 } from '../../services/horario-api.service';
 import { SalasApiService, SalaDTO } from '../../services/salas-api.service';
+import { ActividadDTO, PropuestaApiService } from '../../services/propuesta-api.service';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+
+// Año de la propuesta de horario (mismo criterio que Grilla semanal y Carga docente)
+const YEAR_PROPUESTA = 2026;
 
 interface BloqueFilaForm {
   dia: DiaSemana;
@@ -65,6 +71,10 @@ interface BloqueFilaForm {
 export class HorarioAsignaturasComponent implements OnInit {
   private horarioApi = inject(HorarioApiService);
   private salasApi = inject(SalasApiService);
+  private propuestaApi = inject(PropuestaApiService);
+
+  // Clases propias de la propuesta de horario (ambos semestres), para la columna "Horario asignado"
+  clasesPropuesta: ActividadDTO[] = [];
   private fb = inject(FormBuilder);
   private snack = inject(MatSnackBar);
 
@@ -160,6 +170,13 @@ export class HorarioAsignaturasComponent implements OnInit {
     return (a.grupos ?? []).map((g) => `Grupo ${g.grupo}: ${g.cupo}`).join(' · ');
   }
 
+  // Clases de la asignatura en la propuesta de horario, en orden de día y bloque
+  clasesDe(a: AsignaturaDTO): ActividadDTO[] {
+    return this.clasesPropuesta
+      .filter((x) => x.codigo === a.codigo && x.id_plan === a.id_plan)
+      .sort((x, y) => x.id_dia - y.id_dia || x.bloque_inicio - y.bloque_inicio);
+  }
+
   // Resumen para la tabla: "2 grupos · 55 est."
   totalGrupos(a: AsignaturaDTO): number {
     return (a.grupos ?? []).reduce((t, g) => t + g.cupo, 0);
@@ -178,6 +195,15 @@ export class HorarioAsignaturasComponent implements OnInit {
 
   cargarDatosIniciales(): void {
     this.cargando = true;
+    forkJoin(
+      [1, 2].map((periodo) =>
+        this.propuestaApi.obtener(YEAR_PROPUESTA, periodo).pipe(catchError(() => of(null))),
+      ),
+    ).subscribe((propuestas) => {
+      this.clasesPropuesta = propuestas
+        .flatMap((p) => p?.actividades ?? [])
+        .filter((x) => x.origen === 'INTERNA');
+    });
     this.horarioApi.getCarreras().subscribe({
       next: (carreras) => {
         this.carreras = carreras;
