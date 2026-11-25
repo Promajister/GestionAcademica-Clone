@@ -1,0 +1,901 @@
+{
+  "descripcion": "Grupos y carga docente 2026 según las planillas \"carga docente primer/segundo semestre.xlsx\". Generado con claude space/scripts/generar-datos-carga.js",
+  "docentes": [
+    {
+      "email": "alan.jofre@docente.test",
+      "nombre": "Alan Sebastián Jofré Quispe",
+      "contrato": "HORAS"
+    },
+    {
+      "email": "alan.rodriguez@docente.test",
+      "nombre": "Alan Erick Rodriguez Valdivia",
+      "contrato": "HORAS"
+    },
+    {
+      "email": "alberto.diaz@docente.test",
+      "nombre": "Alberto Eugenio Díaz Araya",
+      "contrato": "PLANTA"
+    },
+    {
+      "email": "alfonso.diaz@docente.test",
+      "nombre": "Alfonso Alejandro Díaz Aguad",
+      "contrato": "PLANTA"
+    },
+    {
+      "email": "amalia.rojas@docente.test",
+      "nombre": "Amalia Paz Rojas Varela",
+      "contrato": "HORAS"
+    },
+    {
+      "email": "arantzazu.ardiles@docente.test",
+      "nombre": "Arantzazu Caterina Ardiles Villalobos",
+      "contrato": "HORAS"
+    },
+    {
+      "email": "carlos.choque@docente.test",
+      "nombre": "Carlos Omar Choque Mariño",
+      "contrato": "PLANTA"
+    },
+    {
+      "email": "carlos.donoso@docente.test",
+      "nombre": "Carlos David Donoso Rojas",
+      "contrato": "PLANTA"
+    },
+    {
+      "email": "christian.jamett@docente.test",
+      "nombre": "Christian Rodrigo Jamett Ibarra",
+      "contrato": "HORAS"
+    },
+    {
+      "email": "elias.pizarro@docente.test",
+      "nombre": "Elias Pizarro Pizarro",
+      "contrato": "PLANTA"
+    },
+    {
+      "email": "guillem.serra@docente.test",
+      "nombre": "Guillem Serra Bou",
+      "contrato": "HORAS"
+    },
+    {
+      "email": "ignacio.jara@docente.test",
+      "nombre": "Ignacio Alonso Jara Parra",
+      "contrato": "PLANTA"
+    },
+    {
+      "email": "ivanna.margarucci@docente.test",
+      "nombre": "Ivanna Margarucci",
+      "contrato": "PLANTA"
+    },
+    {
+      "email": "jeans.gonzalez@docente.test",
+      "nombre": "Jeans Manuel González Sperrhake",
+      "contrato": "HORAS"
+    },
+    {
+      "email": "jose.soto@docente.test",
+      "nombre": "José Julián Soto Lara",
+      "contrato": "HORAS"
+    },
+    {
+      "email": "juan.leon@docente.test",
+      "nombre": "Juan Pablo Leon Ancasi",
+      "contrato": "HORAS"
+    },
+    {
+      "email": "luis.castro@docente.test",
+      "nombre": "Luis Eduardo Castro Castro",
+      "contrato": "PLANTA"
+    },
+    {
+      "email": "manuel.prieto@docente.test",
+      "nombre": "Manuel José Prieto Montt",
+      "contrato": "PLANTA"
+    },
+    {
+      "email": "marisol.palma@docente.test",
+      "nombre": "Marisol Haydee Palma Behnke",
+      "contrato": "PLANTA"
+    },
+    {
+      "email": "misael.camus@docente.test",
+      "nombre": "Misael Heriberto Camus Ibacache",
+      "contrato": "PLANTA"
+    },
+    {
+      "email": "monica.meza@docente.test",
+      "nombre": "Monica Soledad Meza Aliaga",
+      "contrato": "PLANTA"
+    },
+    {
+      "email": "oliver.meseguer@docente.test",
+      "nombre": "Oliver Meseguer Ruiz",
+      "contrato": "PLANTA"
+    },
+    {
+      "email": "oscar.corvacho@docente.test",
+      "nombre": "Oscar Alexander Corvacho Ganahin",
+      "contrato": "HORAS"
+    },
+    {
+      "email": "patricia.palma@docente.test",
+      "nombre": "Patricia Nataly Palma Maturana",
+      "contrato": "PLANTA"
+    },
+    {
+      "email": "raul.bustos@docente.test",
+      "nombre": "Raul Antonio Bustos Gonzalez",
+      "contrato": "HORAS"
+    },
+    {
+      "email": "rodrigo.ruz@docente.test",
+      "nombre": "Rodrigo Daniel Ruz Zagal",
+      "contrato": "PLANTA"
+    }
+  ],
+  "asignaturas_nuevas": [
+    {
+      "codigo": "HG055",
+      "nombre": "SEMINARIO ESCUELAS HISTORIOGRAFICAS CONTEMPORANEAS",
+      "codigo_carrera": "336",
+      "year": 2005,
+      "semestre": 9,
+      "catedraSemanal": 4,
+      "tallerSemanal": 0,
+      "labSemanal": 0
+    },
+    {
+      "codigo": "HG058",
+      "nombre": "S.GEO: TECNICAS DE ANALISIS REGIONAL",
+      "codigo_carrera": "336",
+      "year": 2005,
+      "semestre": 8,
+      "catedraSemanal": 6,
+      "tallerSemanal": 0,
+      "labSemanal": 0
+    },
+    {
+      "codigo": "HG059",
+      "nombre": "E.F.P:MIGRACIONES GLOBALES CONTEMPORANEAS A LAS AMERICAS",
+      "codigo_carrera": "336",
+      "year": 2005,
+      "semestre": 9,
+      "catedraSemanal": 4,
+      "tallerSemanal": 0,
+      "labSemanal": 0
+    },
+    {
+      "codigo": "HG097",
+      "nombre": "TALLER DE ACTIVIDAD DE GRADO",
+      "codigo_carrera": "311",
+      "year": 2016,
+      "semestre": 9,
+      "catedraSemanal": 0,
+      "tallerSemanal": 2,
+      "labSemanal": 0
+    },
+    {
+      "codigo": "HG098",
+      "nombre": "TALLER DE FORMULACION DE PROYECTO",
+      "codigo_carrera": "311",
+      "year": 2016,
+      "semestre": 9,
+      "catedraSemanal": 2,
+      "tallerSemanal": 4,
+      "labSemanal": 0
+    },
+    {
+      "codigo": "HG378",
+      "nombre": "S.ELE .ARICA Y TACNA EN TPOS DEL CENT.(1910) VIS. A TRAV. PRENSA",
+      "codigo_carrera": "336",
+      "year": 2005,
+      "semestre": 9,
+      "catedraSemanal": 6,
+      "tallerSemanal": 0,
+      "labSemanal": 0
+    },
+    {
+      "codigo": "HG386",
+      "nombre": "HISTORIA ORAL. TRADICIONES EN EL NORTE CHILENO",
+      "codigo_carrera": "336",
+      "year": 2005,
+      "semestre": 9,
+      "catedraSemanal": 6,
+      "tallerSemanal": 0,
+      "labSemanal": 0
+    },
+    {
+      "codigo": "HG388",
+      "nombre": "SEMINARIO DE EVALUACION DE IMPACTO AMBIENTAL",
+      "codigo_carrera": "336",
+      "year": 2005,
+      "semestre": 9,
+      "catedraSemanal": 4,
+      "tallerSemanal": 0,
+      "labSemanal": 0
+    },
+    {
+      "codigo": "HG390",
+      "nombre": "HISTORIA SOCIAL Y MEMORIA EN EL NORTE DE CHILE",
+      "codigo_carrera": "336",
+      "year": 2005,
+      "semestre": 8,
+      "catedraSemanal": 6,
+      "tallerSemanal": 0,
+      "labSemanal": 0
+    },
+    {
+      "codigo": "HG943",
+      "nombre": "S.PROF: CAMBIO Y VARIABILIDAD CLIMATICAS",
+      "codigo_carrera": "336",
+      "year": 2005,
+      "semestre": 9,
+      "catedraSemanal": 4,
+      "tallerSemanal": 0,
+      "labSemanal": 0
+    },
+    {
+      "codigo": "HG946",
+      "nombre": "E.ESP: NATURALEZA Y SOCIEDAD",
+      "codigo_carrera": "336",
+      "year": 2005,
+      "semestre": 9,
+      "catedraSemanal": 4,
+      "tallerSemanal": 0,
+      "labSemanal": 0
+    },
+    {
+      "codigo": "HG956",
+      "nombre": "E.ESP. EN HISTORIA Y GEOGRAFIA: ESTRATEGIAS PARA LA ACCION EDUCATIVA DESDE LA HISTORIA Y GEOGRAFIA",
+      "codigo_carrera": "311",
+      "year": 2016,
+      "semestre": 8,
+      "catedraSemanal": 4,
+      "tallerSemanal": 2,
+      "labSemanal": 0
+    }
+  ],
+  "grupos": [
+    {
+      "codigo": "HG055",
+      "grupo": "A",
+      "inscritos": 1,
+      "docentes": [
+        {
+          "email": "carlos.donoso@docente.test",
+          "horas": 4
+        }
+      ]
+    },
+    {
+      "codigo": "HG057",
+      "grupo": "A",
+      "inscritos": 3,
+      "docentes": [
+        {
+          "email": "marisol.palma@docente.test",
+          "horas": 6
+        }
+      ]
+    },
+    {
+      "codigo": "HG058",
+      "grupo": "A",
+      "inscritos": 2,
+      "docentes": [
+        {
+          "email": "guillem.serra@docente.test",
+          "horas": 6
+        }
+      ]
+    },
+    {
+      "codigo": "HG059",
+      "grupo": "A",
+      "inscritos": 2,
+      "docentes": [
+        {
+          "email": "patricia.palma@docente.test",
+          "horas": 4
+        }
+      ]
+    },
+    {
+      "codigo": "HG068",
+      "grupo": "A",
+      "inscritos": 22,
+      "docentes": [
+        {
+          "email": "christian.jamett@docente.test",
+          "horas": 6
+        }
+      ]
+    },
+    {
+      "codigo": "HG069",
+      "grupo": "A",
+      "inscritos": 23,
+      "docentes": [
+        {
+          "email": "luis.castro@docente.test",
+          "horas": 6
+        }
+      ]
+    },
+    {
+      "codigo": "HG070",
+      "grupo": "A",
+      "inscritos": 23,
+      "docentes": [
+        {
+          "email": "monica.meza@docente.test",
+          "horas": 6
+        }
+      ]
+    },
+    {
+      "codigo": "HG075",
+      "grupo": "A",
+      "inscritos": 22,
+      "docentes": [
+        {
+          "email": "ivanna.margarucci@docente.test",
+          "horas": 4
+        }
+      ]
+    },
+    {
+      "codigo": "HG076",
+      "grupo": "A",
+      "inscritos": 21,
+      "docentes": [
+        {
+          "email": "jose.soto@docente.test",
+          "horas": 6
+        }
+      ]
+    },
+    {
+      "codigo": "HG077",
+      "grupo": "A",
+      "inscritos": 21,
+      "docentes": [
+        {
+          "email": "misael.camus@docente.test",
+          "horas": 4
+        }
+      ]
+    },
+    {
+      "codigo": "HG078",
+      "grupo": "A",
+      "inscritos": 17,
+      "docentes": [
+        {
+          "email": "ignacio.jara@docente.test",
+          "horas": 4
+        }
+      ]
+    },
+    {
+      "codigo": "HG079",
+      "grupo": "A",
+      "inscritos": 18,
+      "docentes": [
+        {
+          "email": "ivanna.margarucci@docente.test",
+          "horas": 6
+        }
+      ]
+    },
+    {
+      "codigo": "HG094",
+      "grupo": "A",
+      "inscritos": 15,
+      "docentes": [
+        {
+          "email": "juan.leon@docente.test",
+          "horas": 4
+        }
+      ]
+    },
+    {
+      "codigo": "HG095",
+      "grupo": "A",
+      "inscritos": 10,
+      "docentes": [
+        {
+          "email": "raul.bustos@docente.test",
+          "horas": 4
+        }
+      ]
+    },
+    {
+      "codigo": "HG096",
+      "grupo": "A",
+      "inscritos": 11,
+      "docentes": [
+        {
+          "email": "amalia.rojas@docente.test",
+          "horas": 4
+        }
+      ]
+    },
+    {
+      "codigo": "HG097",
+      "grupo": "A",
+      "inscritos": 10,
+      "docentes": [
+        {
+          "email": "arantzazu.ardiles@docente.test",
+          "horas": 2
+        }
+      ]
+    },
+    {
+      "codigo": "HG098",
+      "grupo": "A",
+      "inscritos": 11,
+      "docentes": [
+        {
+          "email": "christian.jamett@docente.test",
+          "horas": 6
+        }
+      ]
+    },
+    {
+      "codigo": "HG139",
+      "grupo": "A",
+      "inscritos": 11,
+      "docentes": [
+        {
+          "email": "christian.jamett@docente.test",
+          "horas": 6
+        }
+      ]
+    },
+    {
+      "codigo": "HG272",
+      "grupo": "A",
+      "inscritos": 1,
+      "docentes": [
+        {
+          "email": "elias.pizarro@docente.test",
+          "horas": 6
+        }
+      ]
+    },
+    {
+      "codigo": "HG275",
+      "grupo": "A",
+      "inscritos": 2,
+      "docentes": [
+        {
+          "email": "marisol.palma@docente.test",
+          "horas": 4
+        }
+      ]
+    },
+    {
+      "codigo": "HG276",
+      "grupo": "A",
+      "inscritos": 2,
+      "docentes": [
+        {
+          "email": "carlos.donoso@docente.test",
+          "horas": 6
+        }
+      ]
+    },
+    {
+      "codigo": "HG278",
+      "grupo": "A",
+      "inscritos": 2,
+      "docentes": [
+        {
+          "email": "alan.rodriguez@docente.test",
+          "horas": 4
+        }
+      ]
+    },
+    {
+      "codigo": "HG378",
+      "grupo": "A",
+      "inscritos": 1,
+      "docentes": [
+        {
+          "email": "elias.pizarro@docente.test",
+          "horas": 6
+        }
+      ]
+    },
+    {
+      "codigo": "HG386",
+      "grupo": "A",
+      "inscritos": 1,
+      "docentes": [
+        {
+          "email": "carlos.choque@docente.test",
+          "horas": 6
+        }
+      ]
+    },
+    {
+      "codigo": "HG388",
+      "grupo": "A",
+      "inscritos": 1,
+      "docentes": [
+        {
+          "email": "alan.jofre@docente.test",
+          "horas": 4
+        }
+      ]
+    },
+    {
+      "codigo": "HG390",
+      "grupo": "A",
+      "inscritos": 1,
+      "docentes": [
+        {
+          "email": "rodrigo.ruz@docente.test",
+          "horas": 6
+        }
+      ]
+    },
+    {
+      "codigo": "HG402",
+      "grupo": "A",
+      "inscritos": 2,
+      "docentes": [
+        {
+          "email": "misael.camus@docente.test",
+          "horas": 4
+        }
+      ]
+    },
+    {
+      "codigo": "HG407",
+      "grupo": "A",
+      "inscritos": 2,
+      "docentes": [
+        {
+          "email": "jeans.gonzalez@docente.test",
+          "horas": 4
+        }
+      ]
+    },
+    {
+      "codigo": "HG408",
+      "grupo": "A",
+      "inscritos": 1,
+      "docentes": [
+        {
+          "email": "oscar.corvacho@docente.test",
+          "horas": 8
+        }
+      ]
+    },
+    {
+      "codigo": "HG411",
+      "grupo": "D",
+      "inscritos": 1,
+      "docentes": []
+    },
+    {
+      "codigo": "HG412",
+      "grupo": "A",
+      "inscritos": 1,
+      "docentes": []
+    },
+    {
+      "codigo": "HG418",
+      "grupo": "A",
+      "inscritos": 2,
+      "docentes": [],
+      "nota": "HG418-C-A se dicta junto con HG079-C-A: sin carga para no duplicar al docente"
+    },
+    {
+      "codigo": "HG422",
+      "grupo": "A",
+      "inscritos": 18,
+      "docentes": [
+        {
+          "email": "alberto.diaz@docente.test",
+          "horas": 4
+        }
+      ]
+    },
+    {
+      "codigo": "HG423",
+      "grupo": "A",
+      "inscritos": 19,
+      "docentes": [
+        {
+          "email": "ignacio.jara@docente.test",
+          "horas": 4
+        }
+      ]
+    },
+    {
+      "codigo": "HG424",
+      "grupo": "A",
+      "inscritos": 18,
+      "docentes": [
+        {
+          "email": "oscar.corvacho@docente.test",
+          "horas": 4
+        }
+      ]
+    },
+    {
+      "codigo": "HG426",
+      "grupo": "A",
+      "inscritos": 15,
+      "docentes": [
+        {
+          "email": "misael.camus@docente.test",
+          "horas": 4
+        }
+      ]
+    },
+    {
+      "codigo": "HG427",
+      "grupo": "A",
+      "inscritos": 16,
+      "docentes": [
+        {
+          "email": "carlos.choque@docente.test",
+          "horas": 4
+        }
+      ]
+    },
+    {
+      "codigo": "HG428",
+      "grupo": "A",
+      "inscritos": 16,
+      "docentes": [
+        {
+          "email": "oliver.meseguer@docente.test",
+          "horas": 4
+        }
+      ]
+    },
+    {
+      "codigo": "HG429",
+      "grupo": "A",
+      "inscritos": 15,
+      "docentes": [
+        {
+          "email": "christian.jamett@docente.test",
+          "horas": 4
+        }
+      ]
+    },
+    {
+      "codigo": "HG430",
+      "grupo": "A",
+      "inscritos": 12,
+      "docentes": [
+        {
+          "email": "carlos.choque@docente.test",
+          "horas": 4
+        }
+      ]
+    },
+    {
+      "codigo": "HG431",
+      "grupo": "A",
+      "inscritos": 11,
+      "docentes": [
+        {
+          "email": "misael.camus@docente.test",
+          "horas": 4
+        }
+      ]
+    },
+    {
+      "codigo": "HG432",
+      "grupo": "A",
+      "inscritos": 12,
+      "docentes": [
+        {
+          "email": "elias.pizarro@docente.test",
+          "horas": 4
+        }
+      ]
+    },
+    {
+      "codigo": "HG433",
+      "grupo": "A",
+      "inscritos": 12,
+      "docentes": [
+        {
+          "email": "guillem.serra@docente.test",
+          "horas": 4
+        }
+      ]
+    },
+    {
+      "codigo": "HG434",
+      "grupo": "A",
+      "inscritos": 11,
+      "docentes": [
+        {
+          "email": "guillem.serra@docente.test",
+          "horas": 4
+        }
+      ]
+    },
+    {
+      "codigo": "HG435",
+      "grupo": "A",
+      "inscritos": 12,
+      "docentes": [
+        {
+          "email": "luis.castro@docente.test",
+          "horas": 4
+        }
+      ]
+    },
+    {
+      "codigo": "HG436",
+      "grupo": "A",
+      "inscritos": 12,
+      "docentes": [
+        {
+          "email": "alfonso.diaz@docente.test",
+          "horas": 4
+        }
+      ]
+    },
+    {
+      "codigo": "HG437",
+      "grupo": "A",
+      "inscritos": 13,
+      "docentes": [
+        {
+          "email": "elias.pizarro@docente.test",
+          "horas": 6
+        }
+      ]
+    },
+    {
+      "codigo": "HG438",
+      "grupo": "A",
+      "inscritos": 17,
+      "docentes": [
+        {
+          "email": "guillem.serra@docente.test",
+          "horas": 4
+        }
+      ]
+    },
+    {
+      "codigo": "HG439",
+      "grupo": "A",
+      "inscritos": 14,
+      "docentes": [
+        {
+          "email": "ignacio.jara@docente.test",
+          "horas": 4
+        }
+      ]
+    },
+    {
+      "codigo": "HG441",
+      "grupo": "A",
+      "inscritos": 13,
+      "docentes": [
+        {
+          "email": "patricia.palma@docente.test",
+          "horas": 4
+        }
+      ]
+    },
+    {
+      "codigo": "HG442",
+      "grupo": "A",
+      "inscritos": 15,
+      "docentes": [
+        {
+          "email": "alfonso.diaz@docente.test",
+          "horas": 4
+        }
+      ]
+    },
+    {
+      "codigo": "HG443",
+      "grupo": "A",
+      "inscritos": 15,
+      "docentes": [
+        {
+          "email": "juan.leon@docente.test",
+          "horas": 6
+        }
+      ]
+    },
+    {
+      "codigo": "HG444",
+      "grupo": "A",
+      "inscritos": 11,
+      "docentes": [
+        {
+          "email": "guillem.serra@docente.test",
+          "horas": 4
+        }
+      ]
+    },
+    {
+      "codigo": "HG445",
+      "grupo": "A",
+      "inscritos": 14,
+      "docentes": [
+        {
+          "email": "guillem.serra@docente.test",
+          "horas": 4
+        }
+      ]
+    },
+    {
+      "codigo": "HG450",
+      "grupo": "A",
+      "inscritos": 9,
+      "docentes": [
+        {
+          "email": "alan.rodriguez@docente.test",
+          "horas": 4
+        }
+      ]
+    },
+    {
+      "codigo": "HG454",
+      "grupo": "C",
+      "inscritos": 6,
+      "docentes": []
+    },
+    {
+      "codigo": "HG454",
+      "grupo": "D",
+      "inscritos": 3,
+      "docentes": []
+    },
+    {
+      "codigo": "HG943",
+      "grupo": "A",
+      "inscritos": 1,
+      "docentes": [
+        {
+          "email": "oliver.meseguer@docente.test",
+          "horas": 4
+        }
+      ]
+    },
+    {
+      "codigo": "HG946",
+      "grupo": "A",
+      "inscritos": 2,
+      "docentes": [
+        {
+          "email": "manuel.prieto@docente.test",
+          "horas": 4
+        }
+      ]
+    },
+    {
+      "codigo": "HG956",
+      "grupo": "A",
+      "inscritos": 12,
+      "docentes": [
+        {
+          "email": "amalia.rojas@docente.test",
+          "horas": 6
+        }
+      ]
+    }
+  ],
+  "omitidas": [
+    {
+      "codigo": "HG054",
+      "motivo": "De la carrera 229 (Ingeniería Química Ambiental), sin plan en el sistema"
+    }
+  ]
+}
