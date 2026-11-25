@@ -42,6 +42,7 @@
           <mat-label>Carrera</mat-label>
           <mat-select
             [(ngModel)]="idCarreraSeleccionada"
+            [disabled]="!!salaActual"
             (selectionChange)="onCarreraChange()">
             @for (c of carreras; track c.codigo) {
               <mat-option [value]="c.codigo">
@@ -55,6 +56,7 @@
           <mat-label>Plan de estudios</mat-label>
           <mat-select
             [(ngModel)]="idPlanSeleccionado"
+            [disabled]="!!salaActual"
             (selectionChange)="onPlanOSemestreChange()">
             @for (p of planesDisponibles; track p.id_plan) {
               <mat-option [value]="p.id_plan">
@@ -376,8 +378,9 @@
       <div class="vista-sala muted">
         <mat-icon>meeting_room</mat-icon>
         <span>
-          Viendo todas las clases de <strong>{{ salaActual.nombre }}</strong> en el {{ nombrePeriodo }},
-          de todas las carreras y niveles. Dos clases en la misma celda son un cruce de sala.
+          Viendo todas las clases de <strong>{{ salaActual.nombre }}</strong> ({{ etiquetaSemestre | lowercase }}, {{ nombrePeriodo }}),
+          de todas las carreras y planes; Carrera y Plan no aplican mientras haya una sala elegida.
+          Dos clases en la misma celda son un cruce de sala.
         </span>
         <button mat-button (click)="salaSeleccionada = 0; onSalaChange()">
           <mat-icon>close</mat-icon>

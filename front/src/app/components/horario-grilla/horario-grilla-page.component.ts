@@ -190,10 +190,18 @@ export class HorarioGrillaPageComponent implements OnInit {
     return this.salas.find((s) => s.id_sala === this.salaSeleccionada);
   }
 
+  // Clases de una sala en el semestre elegido, de cualquier carrera y plan.
+  // Con un nivel elegido (ej. Semestre 4) solo las de ese nivel; con pares o impares, todas
+  clasesEnSala(id_sala: number): ActividadDTO[] {
+    const nivel = this.semestreSeleccionado;
+    return (this.propuesta?.actividades ?? []).filter(
+      (a) => a.id_sala === id_sala && (typeof nivel !== 'number' || a.nivel === nivel),
+    );
+  }
+
   // Uso de la sala en la propuesta del semestre (ej. "34 bloques" o "sin clases")
   usoSala(id_sala: number): string {
-    const bloques = (this.propuesta?.actividades ?? [])
-      .filter((a) => a.id_sala === id_sala)
+    const bloques = this.clasesEnSala(id_sala)
       .reduce((t, a) => t + a.bloque_fin - a.bloque_inicio + 1, 0);
     if (!bloques) return 'sin clases';
     return `${bloques} bloque${bloques === 1 ? '' : 's'}`;
@@ -414,14 +422,12 @@ export class HorarioGrillaPageComponent implements OnInit {
   private construirGrillas(): void {
     const sala = this.salaActual;
     if (sala) {
-      const acts = (this.propuesta?.actividades ?? []).filter(
-        (a) => a.id_sala === sala.id_sala,
-      );
+      const acts = this.clasesEnSala(sala.id_sala);
       this.grillas = [
         {
           clave: `sala-${sala.id_sala}`,
-          titulo: `${sala.nombre} · ${this.nombrePeriodo}`,
-          subtitulo: 'Todas las clases de la sala en el semestre, de todas las carreras y niveles',
+          titulo: `${sala.nombre} · ${this.etiquetaSemestre} · ${this.nombrePeriodo}`,
+          subtitulo: 'Todas las clases de la sala, de todas las carreras y planes',
           celdas: this.celdasDe(acts, [], true),
         },
       ];
