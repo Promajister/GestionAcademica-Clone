@@ -98,6 +98,8 @@ describe('generarPropuesta (GEN-F01)', () => {
         id_bloque: b,
         id_sala: null,
         cohorte: '2-2',
+        codigo: 'EXT',
+        grupo: 'A',
       })),
     );
     const r = generarPropuesta(
@@ -117,6 +119,8 @@ describe('generarPropuesta (GEN-F01)', () => {
         id_bloque: i + 1,
         id_sala: 1,
         cohorte: '9-9',
+        codigo: 'EXT',
+        grupo: 'A',
       })),
     );
     const r = generarPropuesta(base({ cursos: [curso(1)], externos }));
@@ -249,5 +253,86 @@ describe('generarPropuesta (GEN-F01)', () => {
       }
     }
     expect(r.no_asignadas).toEqual([]);
+  });
+
+  describe('grupos de una misma asignatura', () => {
+    // Solo queda libre el lunes, bloques 1-2: así se ve si dos clases pueden ir a la misma hora
+    const soloLunesB1B2 = [1, 2, 3, 4, 5].flatMap((d) =>
+      Array.from({ length: 12 }, (_, i) => i + 1)
+        .filter((b) => !(d === 1 && b <= 2))
+        .map((b) => protegido(d, b)),
+    );
+    const clase = (
+      id: number,
+      codigo: string,
+      grupo: string,
+      id_docente: number,
+    ) =>
+      curso(id, { codigo, grupo, bloques: 2, docentes: [docente(id_docente)] });
+
+    it('dos grupos distintos de la misma asignatura pueden ir a la misma hora', () => {
+      const r = generarPropuesta(
+        base({
+          cursos: [clase(1, 'HIS', 'A', 301), clase(2, 'HIS', 'B', 302)],
+          protegidos: soloLunesB1B2,
+        }),
+      );
+      expect(r.no_asignadas).toEqual([]);
+      expect(ocupados(r, 1)).toEqual(['1-1', '1-2']);
+      expect(ocupados(r, 2)).toEqual(['1-1', '1-2']);
+      // Cada grupo en su propia sala
+      expect(new Set(r.sesiones.map((x) => x.id_sala)).size).toBe(2);
+    });
+
+    it('el mismo grupo (por ejemplo su cátedra y su taller) no puede ir a la misma hora', () => {
+      const r = generarPropuesta(
+        base({
+          cursos: [clase(1, 'HIS', 'A', 301), clase(2, 'HIS', 'A', 302)],
+          protegidos: soloLunesB1B2,
+        }),
+      );
+      expect(r.no_asignadas).toHaveLength(1);
+      expect(r.no_asignadas[0].motivo).toBe('SIN_BLOQUE_LIBRE');
+    });
+
+    it('asignaturas distintas del mismo nivel siguen chocando aunque sean de otro grupo', () => {
+      const r = generarPropuesta(
+        base({
+          cursos: [clase(1, 'HIS', 'A', 301), clase(2, 'GEO', 'B', 302)],
+          protegidos: soloLunesB1B2,
+        }),
+      );
+      expect(r.no_asignadas).toHaveLength(1);
+    });
+
+    it('un mismo docente no puede dictar dos grupos a la vez', () => {
+      const r = generarPropuesta(
+        base({
+          cursos: [clase(1, 'HIS', 'A', 301), clase(2, 'HIS', 'B', 301)],
+          protegidos: soloLunesB1B2,
+        }),
+      );
+      expect(r.no_asignadas).toHaveLength(1);
+    });
+
+    it('un bloque externo de otro grupo de la misma asignatura no ocupa al nivel', () => {
+      const externos = [1, 2].map((b) => ({
+        id_dia: 1,
+        id_bloque: b,
+        id_sala: null,
+        cohorte: '2-2',
+        codigo: 'HIS',
+        grupo: 'B',
+      }));
+      const r = generarPropuesta(
+        base({
+          cursos: [clase(1, 'HIS', 'A', 301)],
+          protegidos: soloLunesB1B2,
+          externos,
+        }),
+      );
+      expect(r.no_asignadas).toEqual([]);
+      expect(ocupados(r, 1)).toEqual(['1-1', '1-2']);
+    });
   });
 });

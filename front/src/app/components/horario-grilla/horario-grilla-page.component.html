@@ -203,6 +203,10 @@
             <span class="resumen__num">{{ crucesDocente.length }}</span>
             <span class="resumen__label">cruces de docente</span>
           </div>
+          <div class="resumen__item" [class.resumen__item--alerta]="crucesProtegido.length">
+            <span class="resumen__num">{{ crucesProtegido.length }}</span>
+            <span class="resumen__label">clases en bloque protegido</span>
+          </div>
         </div>
 
         <!-- GEN-F01 CA3: asignaturas que no pudieron asignarse y su motivo -->
@@ -255,7 +259,7 @@
           </div>
         }
 
-        <!-- GEN-F03 y GEN-F04: cruces; al hacer clic se ve la sala del cruce -->
+        <!-- GEN-F03 y GEN-F04: cruces (y clases en bloques protegidos); al hacer clic se ve la sala -->
         @if (totalCruces) {
           <div class="cruces-wrap">
             @if (crucesSala.length) {
@@ -288,6 +292,21 @@
                 </ul>
               </div>
             }
+            @if (crucesProtegido.length) {
+              <div class="cruces-col">
+                <h4><mat-icon class="gris">lock_clock</mat-icon> Clases en bloques protegidos</h4>
+                <ul class="cruces">
+                  @for (c of crucesProtegido; track c.mensaje) {
+                    <li>
+                      <button type="button" class="cruce cruce--protegido" (click)="irACruceDocente(c)" matTooltip="Ver la sala en la grilla">
+                        <mat-icon>lock_clock</mat-icon>
+                        <span>{{ c.mensaje }}</span>
+                      </button>
+                    </li>
+                  }
+                </ul>
+              </div>
+            }
           </div>
         }
       }
@@ -307,6 +326,7 @@
             <div class="seleccion-item__info">
               <span class="propia-codigo">{{ a.codigo }}</span>
               <span>{{ a.nombre }}</span>
+              <span class="muted">· Grupo {{ a.grupo }}</span>
               <span class="muted">
                 · Sem. {{ a.nivel }} · B{{ a.bloque_inicio }}–B{{ a.bloque_fin }} · {{ a.sala || a.sala_externa || 'Sin sala' }}
                 @if (a.origen === 'EXTERNA') { · Externa }

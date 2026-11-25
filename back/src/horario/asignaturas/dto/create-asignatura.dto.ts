@@ -1,5 +1,7 @@
 import { Transform, Type } from 'class-transformer';
 import {
+  ArrayMaxSize,
+  ArrayMinSize,
   IsArray,
   IsEnum,
   IsInt,
@@ -7,6 +9,7 @@ import {
   IsOptional,
   IsPositive,
   IsString,
+  Matches,
   Max,
   MaxLength,
   Min,
@@ -19,6 +22,23 @@ export enum OrigenEntrada {
   INTERNA = 'INTERNA',
   EXTERNA = 'EXTERNA',
   PROPIA = 'PROPIA',
+}
+
+// Un grupo (sección) de una asignatura propia: cada uno es un curso con su cupo y su docente
+export class GrupoDto {
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim().toUpperCase() : value,
+  )
+  @IsString()
+  @Matches(/^[A-Z0-9]{1,3}$/, {
+    message: 'El grupo se identifica con hasta 3 letras o números (ej. A, B)',
+  })
+  grupo!: string;
+
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  cupo!: number;
 }
 
 export class CreateAsignaturaDto {
@@ -72,6 +92,15 @@ export class CreateAsignaturaDto {
   @Min(1)
   @Max(100)
   cupo?: number;
+
+  // Grupos de una asignatura propia. Si no se envían, hay un solo grupo A con el cupo indicado.
+  @IsOptional()
+  @IsArray()
+  @ArrayMinSize(1, { message: 'La asignatura debe tener al menos un grupo' })
+  @ArrayMaxSize(10)
+  @ValidateNested({ each: true })
+  @Type(() => GrupoDto)
+  grupos?: GrupoDto[];
 
   @IsEnum(OrigenEntrada, {
     message: 'El origen debe ser INTERNA, PROPIA o EXTERNA',

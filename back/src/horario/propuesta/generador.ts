@@ -24,7 +24,9 @@ export interface CursoEntrada {
   bloques: number; // bloques de 45 min por semana
   nivel: number; // semestre de la malla
   codigo_carrera: string | null;
-  cohorte: string | null; // mismo plan y nivel: los estudiantes no pueden estar en dos clases a la vez
+  // Mismo plan y nivel: los estudiantes no pueden estar en dos clases a la vez,
+  // salvo grupos distintos de la misma asignatura (son estudiantes distintos)
+  cohorte: string | null;
   docentes: DocenteEntrada[];
 }
 
@@ -51,6 +53,15 @@ export interface ExternoEntrada {
   id_bloque: number;
   id_sala: number | null;
   cohorte: string | null;
+  codigo: string;
+  grupo: string;
+}
+
+// Lo que se necesita saber de una clase para decidir si un bloque protegido la alcanza
+export interface AfectadoPorProtegido {
+  codigo_carrera: string | null;
+  nivel: number;
+  docentes: { id_usuario: number; contrato: TipoContrato }[];
 }
 
 export interface Sesion {
@@ -94,7 +105,13 @@ export interface ResultadoGenerador {
 const clave = (id_dia: number, bloque: number) => `${id_dia}-${bloque}`;
 
 // Un bloque protegido afecta al curso si alcanza a sus estudiantes o a alguno de sus docentes
-export function protegidoAfecta(p: ProtegidoEntrada, c: CursoEntrada): boolean {
+export function protegidoAfecta(
+  p: Pick<
+    ProtegidoEntrada,
+    'alcance' | 'codigo_carrera' | 'semestre' | 'contrato' | 'id_usuario'
+  >,
+  c: AfectadoPorProtegido,
+): boolean {
   switch (p.alcance) {
     case AlcanceBloqueProtegido.UNIVERSIDAD:
     case AlcanceBloqueProtegido.FACULTAD:
@@ -141,7 +158,13 @@ const usaDisponibilidad = (d: DocenteEntrada) =>
 export function generarPropuesta(e: EntradaGenerador): ResultadoGenerador {
   const salaOcupada = new Set<string>(); // `${id_sala}-${dia}-${bloque}`
   const docenteOcupado = new Set<string>(); // `${id_usuario}-${dia}-${bloque}`
-  const cohorteOcupada = new Set<string>(); // `${cohorte}-${dia}-${bloque}`
+  // `${cohorte}-${dia}-${bloque}` -> asignaturas y grupos que ya ocupan ese bloque
+  const cohorteOcupada = new Map<string, { codigo: string; grupo: string }[]>();
+  const ocuparCohorte = (k: string, codigo: string, grupo: string) =>
+    cohorteOcupada.set(k, [
+      ...(cohorteOcupada.get(k) ?? []),
+      { codigo, grupo },
+    ]);
   const cargaCohorte = new Map<string, number>(); // `${cohorte}-${dia}` -> bloques
   const usoSala = new Map<number, number>();
 
@@ -150,7 +173,11 @@ export function generarPropuesta(e: EntradaGenerador): ResultadoGenerador {
       salaOcupada.add(`${x.id_sala}-${x.id_dia}-${x.id_bloque}`);
     }
     if (x.cohorte) {
-      cohorteOcupada.add(`${x.cohorte}-${x.id_dia}-${x.id_bloque}`);
+      ocuparCohorte(
+        `${x.cohorte}-${x.id_dia}-${x.id_bloque}`,
+        x.codigo,
+        x.grupo,
+      );
     }
   }
 
@@ -240,10 +267,18 @@ export function generarPropuesta(e: EntradaGenerador): ResultadoGenerador {
         .map((p) => clave(p.id_dia, p.id_bloque)),
     );
 
+    // Choca con el nivel si a esa hora hay otra clase de sus estudiantes: otra asignatura,
+    // o la misma asignatura y el mismo grupo (por ejemplo su taller). Otro grupo no choca.
+    const chocaNivel = (dia: number, b: number) =>
+      !!c.cohorte &&
+      (cohorteOcupada.get(`${c.cohorte}-${dia}-${b}`) ?? []).some(
+        (o) => o.codigo !== c.codigo || o.grupo === c.grupo,
+      );
+
     // Libre en tiempo: sin protegido, sin clase del mismo nivel y con los docentes libres
     const bloqueLibre = (dia: number, b: number, conDisponibilidad: boolean) =>
       !protegidos.has(clave(dia, b)) &&
-      !(c.cohorte && cohorteOcupada.has(`${c.cohorte}-${dia}-${b}`)) &&
+      !chocaNivel(dia, b) &&
       c.docentes.every(
         (d) =>
           !docenteOcupado.has(`${d.id_usuario}-${dia}-${b}`) &&
@@ -341,7 +376,11 @@ export function generarPropuesta(e: EntradaGenerador): ResultadoGenerador {
       for (const b of ubicada.bloques) {
         salaOcupada.add(`${ubicada.id_sala}-${ubicada.id_dia}-${b}`);
         if (c.cohorte)
-          cohorteOcupada.add(`${c.cohorte}-${ubicada.id_dia}-${b}`);
+          ocuparCohorte(
+            `${c.cohorte}-${ubicada.id_dia}-${b}`,
+            c.codigo,
+            c.grupo,
+          );
         for (const d of c.docentes) {
           docenteOcupado.add(`${d.id_usuario}-${ubicada.id_dia}-${b}`);
         }

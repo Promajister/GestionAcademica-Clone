@@ -443,6 +443,9 @@
 }
 
 .grilla-table.modo-arrastre {
+  // Al arrastrar, el puntero pasa sobre otras celdas: sin esto el navegador selecciona su texto
+  user-select: none;
+
   .td-celda {
     cursor: pointer;
   }
