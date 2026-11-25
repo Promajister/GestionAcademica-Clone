@@ -18,9 +18,14 @@ import {
   DIAS_HABILES,
   NoAsignada,
   generarPropuesta,
+  protegidoAfecta,
 } from './generador';
 import { Actividad, BloqueActividad, agruparActividades } from './actividades';
-import { crucesDeDocente, crucesDeSala } from './validador';
+import {
+  crucesConProtegidos,
+  crucesDeDocente,
+  crucesDeSala,
+} from './validador';
 import { MoverBloqueDto } from './dto/mover-bloque.dto';
 import { TOTAL_BLOQUES, mismaJornada, rangoBloques } from '../common/grilla';
 
@@ -171,6 +176,8 @@ export class PropuestaService {
             id_bloque: x.id_bloque,
             id_sala: x.id_sala,
             cohorte: cohorteDe(x.curso),
+            codigo: x.curso.codigo_asignatura,
+            grupo: x.curso.grupo,
           })),
         });
 
@@ -240,22 +247,25 @@ export class PropuestaService {
 
   // ---------- GET /horario/propuesta ----------
   async obtener(year: number, periodo: number) {
-    const [estado, salas, bloques, movimientos] = await Promise.all([
-      this.estado(year, periodo),
-      this.prisma.sala.findMany({
-        where: { activo: true },
-        orderBy: [{ tipo: 'asc' }, { nombre: 'asc' }],
-        select: { id_sala: true, nombre: true, tipo: true, capacidad: true },
-      }),
-      this.bloquesDelPeriodo(year, periodo),
-      this.prisma.movimientoHorario.count({ where: { year, periodo } }),
-    ]);
+    const [estado, salas, bloques, movimientos, protegidos] = await Promise.all(
+      [
+        this.estado(year, periodo),
+        this.prisma.sala.findMany({
+          where: { activo: true },
+          orderBy: [{ tipo: 'asc' }, { nombre: 'asc' }],
+          select: { id_sala: true, nombre: true, tipo: true, capacidad: true },
+        }),
+        this.bloquesDelPeriodo(year, periodo),
+        this.prisma.movimientoHorario.count({ where: { year, periodo } }),
+        this.protegidos(),
+      ],
+    );
     const actividades = agruparActividades(bloques);
     return {
       ...estado,
       salas,
       actividades,
-      validacion: this.validarActividades(actividades),
+      validacion: this.validarActividades(actividades, protegidos),
       movimientos,
     };
   }
@@ -374,6 +384,12 @@ export class PropuestaService {
     }
     const bloquesDesde = rangoBloques(desde.bloque, desde.bloque + largo - 1);
     const bloquesHacia = rangoBloques(hacia.bloque, fin);
+    await this.rechazarBloqueProtegido(
+      tx,
+      id_curso,
+      hacia.id_dia,
+      bloquesHacia,
+    );
 
     if (hacia.id_sala !== desde.id_sala) {
       if (hacia.id_sala == null || desde.id_sala == null) {
@@ -480,22 +496,74 @@ export class PropuestaService {
     });
   }
 
+  // No se asigna una clase en un bloque protegido que alcance a sus estudiantes o docentes
+  private async rechazarBloqueProtegido(
+    tx: Prisma.TransactionClient,
+    id_curso: number,
+    id_dia: number,
+    bloques: number[],
+  ) {
+    const curso = await tx.curso.findUnique({
+      where: { id_curso },
+      include: {
+        malla: { include: { plan: true } },
+        cargaDocentes: { include: { profesor: true } },
+      },
+    });
+    if (!curso) throw new NotFoundException('El curso no existe');
+    const clase = {
+      codigo_carrera: curso.malla?.plan.codigo_carrera ?? null,
+      nivel: curso.malla?.semestre ?? curso.semestre,
+      docentes: curso.cargaDocentes.map((cd) => ({
+        id_usuario: cd.id_usuario,
+        contrato: cd.profesor.contrato,
+      })),
+    };
+    const protegidos = await tx.bloqueProtegido.findMany({
+      where: { id_dia, id_bloque: { in: bloques } },
+      include: { dia: true },
+      orderBy: { id_bloque: 'asc' },
+    });
+    const p = protegidos.find((x) => protegidoAfecta(x, clase));
+    if (p) {
+      throw new BadRequestException(
+        `No se puede asignar la clase en un bloque protegido: «${p.nombre}» (${p.dia.nombre} bloque ${p.id_bloque})`,
+      );
+    }
+  }
+
+  // Bloques protegidos de lunes a viernes, uno por bloque
+  private protegidos(db: Db = this.prisma) {
+    return db.bloqueProtegido.findMany({
+      where: { id_dia: { in: DIAS_HABILES } },
+    });
+  }
+
   // ---------- GET /horario/propuesta/validacion ----------
   // Revalida el horario completo del periodo
   async validar(year: number, periodo: number, db: Db = this.prisma) {
-    const actividades = agruparActividades(
-      await this.bloquesDelPeriodo(year, periodo, db),
-    );
-    return this.validarActividades(actividades);
+    const [bloques, protegidos] = await Promise.all([
+      this.bloquesDelPeriodo(year, periodo, db),
+      this.protegidos(db),
+    ]);
+    return this.validarActividades(agruparActividades(bloques), protegidos);
   }
 
-  private validarActividades(actividades: Actividad[]) {
+  private validarActividades(
+    actividades: Actividad[],
+    protegidos: Awaited<ReturnType<PropuestaService['protegidos']>>,
+  ) {
     const cruces_sala = crucesDeSala(actividades);
     const cruces_docente = crucesDeDocente(actividades);
+    const cruces_protegido = crucesConProtegidos(actividades, protegidos);
     return {
       cruces_sala,
       cruces_docente,
-      puede_cerrar: cruces_sala.length === 0 && cruces_docente.length === 0,
+      cruces_protegido,
+      puede_cerrar:
+        cruces_sala.length === 0 &&
+        cruces_docente.length === 0 &&
+        cruces_protegido.length === 0,
     };
   }
 
@@ -520,6 +588,8 @@ export class PropuestaService {
           v.cruces_sala.length && `${v.cruces_sala.length} cruce(s) de sala`,
           v.cruces_docente.length &&
             `${v.cruces_docente.length} cruce(s) de docente`,
+          v.cruces_protegido.length &&
+            `${v.cruces_protegido.length} clase(s) en bloque protegido`,
         ].filter(Boolean);
         throw new ConflictException({
           message: `No se puede cerrar el horario: hay ${pendientes.join(' y ')} sin resolver`,
@@ -584,6 +654,7 @@ export class PropuestaService {
       const docente = {
         id_usuario: h.carga.id_usuario,
         nombre: h.carga.profesor.usuario.nombre,
+        contrato: h.carga.profesor.contrato,
       };
       const previo = porBloque.get(k);
       if (previo) {

@@ -1,3 +1,4 @@
+import { TipoContrato } from '@prisma/client';
 import { mismaJornada } from '../common/grilla';
 
 export type OrigenActividad = 'INTERNA' | 'EXTERNA';
@@ -5,6 +6,8 @@ export type OrigenActividad = 'INTERNA' | 'EXTERNA';
 export interface DocenteActividad {
   id_usuario: number;
   nombre: string;
+  // Para saber si un bloque protegido de académicos alcanza a la clase
+  contrato?: TipoContrato;
 }
 
 // Un bloque de 45 min ocupado por una clase (propia o externa)

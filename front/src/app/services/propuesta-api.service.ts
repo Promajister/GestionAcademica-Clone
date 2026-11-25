@@ -55,6 +55,7 @@ export interface SalaPropuestaDTO {
 export interface ActividadCruceDTO {
   id: string;
   codigo: string;
+  grupo: string;
   nombre: string;
   origen: OrigenActividad;
   sala: string | null;
@@ -82,9 +83,21 @@ export interface CruceDocenteDTO {
   mensaje: string;
 }
 
+// Clase que quedó dentro de un bloque protegido que alcanza a sus estudiantes o docentes
+export interface CruceProtegidoDTO {
+  protegido: string;
+  id_dia: number;
+  dia: string;
+  bloque_inicio: number;
+  bloque_fin: number;
+  actividades: ActividadCruceDTO[];
+  mensaje: string;
+}
+
 export interface ValidacionDTO {
   cruces_sala: CruceSalaDTO[];
   cruces_docente: CruceDocenteDTO[];
+  cruces_protegido: CruceProtegidoDTO[];
   puede_cerrar: boolean;
 }
 

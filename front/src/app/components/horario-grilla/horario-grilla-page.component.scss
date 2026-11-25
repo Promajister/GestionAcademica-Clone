@@ -529,6 +529,10 @@
     .naranjo {
       color: #ea580c;
     }
+
+    .gris {
+      color: #475569;
+    }
   }
 }
 
@@ -574,6 +578,16 @@
 
     &:hover {
       background: #ffedd5;
+    }
+  }
+
+  &--protegido {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+    color: #334155;
+
+    &:hover {
+      background: #f1f5f9;
     }
   }
 }

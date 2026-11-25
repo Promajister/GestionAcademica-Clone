@@ -1,10 +1,12 @@
 import { Actividad } from './actividades';
+import { ProtegidoEntrada, protegidoAfecta } from './generador';
 
 // GEN-F03 / GEN-F04: validadores de cruces sobre el horario completo (propias y externas)
 
 export interface ActividadCruce {
   id: string;
   codigo: string;
+  grupo: string;
   nombre: string;
   origen: Actividad['origen'];
   sala: string | null;
@@ -13,6 +15,17 @@ export interface ActividadCruce {
 export interface CruceSala {
   id_sala: number;
   sala: string;
+  id_dia: number;
+  dia: string;
+  bloque_inicio: number;
+  bloque_fin: number;
+  actividades: ActividadCruce[];
+  mensaje: string;
+}
+
+// Una clase dentro de un bloque protegido que alcanza a sus estudiantes o docentes
+export interface CruceProtegido {
+  protegido: string;
   id_dia: number;
   dia: string;
   bloque_inicio: number;
@@ -48,13 +61,20 @@ const rango = (inicio: number, fin: number) =>
 const resumen = (a: Actividad): ActividadCruce => ({
   id: a.id,
   codigo: a.codigo,
+  grupo: a.grupo,
   nombre: a.nombre,
   origen: a.origen,
   sala: a.sala ?? a.sala_externa,
 });
 
+// Con dos grupos de una misma asignatura se agrega el grupo para distinguirlos
+const nombreClase = (a: ActividadCruce, acts: ActividadCruce[]) =>
+  acts.filter((x) => x.codigo === a.codigo).length > 1
+    ? `${a.codigo} ${a.nombre} (grupo ${a.grupo})`
+    : `${a.codigo} ${a.nombre}`;
+
 const describir = (acts: ActividadCruce[]) =>
-  acts.map((a) => `${a.codigo} ${a.nombre}`).join(' y ');
+  acts.map((a) => nombreClase(a, acts)).join(' y ');
 
 interface Coincidencia<T> {
   clave: T;
@@ -170,7 +190,7 @@ export function crucesDeDocente(actividades: Actividad[]): CruceDocente[] {
     const docente = nombres.get(c.clave) ?? `Docente ${c.clave}`;
     const acts = c.actividades.map(resumen);
     const detalle = acts
-      .map((a) => `${a.codigo} ${a.nombre} (${a.sala ?? 'sin sala'})`)
+      .map((a) => `${nombreClase(a, acts)} (${a.sala ?? 'sin sala'})`)
       .join(' y ');
     return {
       id_usuario: c.clave,
@@ -183,4 +203,62 @@ export function crucesDeDocente(actividades: Actividad[]): CruceDocente[] {
       mensaje: `${docente}, ${DIAS[c.id_dia]} ${rango(c.bloque_inicio, c.bloque_fin)}: ${detalle}`,
     };
   });
+}
+
+// No se asignan clases en bloques protegidos: una clase dentro de uno que alcanza a sus
+// estudiantes o docentes se informa (y, como los cruces, impide cerrar el horario)
+export function crucesConProtegidos(
+  actividades: Actividad[],
+  protegidos: ProtegidoEntrada[],
+): CruceProtegido[] {
+  const resultado: CruceProtegido[] = [];
+  // Asignaturas con más de un grupo: en el mensaje se indica el grupo
+  const grupos = new Map<string, Set<string>>();
+  for (const a of actividades) {
+    grupos.set(a.codigo, (grupos.get(a.codigo) ?? new Set()).add(a.grupo));
+  }
+  for (const a of actividades) {
+    const clase = {
+      codigo_carrera: a.codigo_carrera,
+      nivel: a.nivel,
+      docentes: a.docentes
+        .filter((d) => d.contrato)
+        .map((d) => ({ id_usuario: d.id_usuario, contrato: d.contrato! })),
+    };
+    let abierto: CruceProtegido | null = null;
+    for (let b = a.bloque_inicio; b <= a.bloque_fin; b++) {
+      const p = protegidos.find(
+        (x) =>
+          x.id_dia === a.id_dia &&
+          x.id_bloque === b &&
+          protegidoAfecta(x, clase),
+      );
+      if (p && abierto && abierto.protegido === p.nombre) {
+        abierto.bloque_fin = b;
+        continue;
+      }
+      abierto = null;
+      if (p) {
+        abierto = {
+          protegido: p.nombre,
+          id_dia: a.id_dia,
+          dia: DIAS[a.id_dia] ?? String(a.id_dia),
+          bloque_inicio: b,
+          bloque_fin: b,
+          actividades: [resumen(a)],
+          mensaje: '',
+        };
+        resultado.push(abierto);
+      }
+    }
+  }
+  for (const c of resultado) {
+    const a = c.actividades[0];
+    const grupo =
+      (grupos.get(a.codigo)?.size ?? 0) > 1 ? ` (grupo ${a.grupo})` : '';
+    c.mensaje = `${a.codigo} ${a.nombre}${grupo}, ${c.dia} ${rango(c.bloque_inicio, c.bloque_fin)}: está en el bloque protegido «${c.protegido}»`;
+  }
+  return resultado.sort(
+    (x, y) => x.id_dia - y.id_dia || x.bloque_inicio - y.bloque_inicio,
+  );
 }

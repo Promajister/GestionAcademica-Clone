@@ -1,5 +1,11 @@
+import { AlcanceBloqueProtegido, TipoContrato } from '@prisma/client';
 import { Actividad, BloqueActividad, agruparActividades } from './actividades';
-import { crucesDeDocente, crucesDeSala } from './validador';
+import { ProtegidoEntrada } from './generador';
+import {
+  crucesConProtegidos,
+  crucesDeDocente,
+  crucesDeSala,
+} from './validador';
 
 // Arma las actividades a partir de rangos, como las entrega el servicio
 const clase = (
@@ -126,5 +132,85 @@ describe('crucesDeDocente (GEN-F04)', () => {
     expect(crucesDeDocente(actividades(clase(1, 1, 1, 2, coDocencia)))).toEqual(
       [],
     );
+  });
+});
+
+describe('grupos en los mensajes de cruce', () => {
+  it('dos grupos de la misma asignatura se distinguen por su grupo', () => {
+    const profe = { docentes: [{ id_usuario: 7, nombre: 'Ana Pérez' }] };
+    const a = actividades(
+      clase(1, 1, 1, 2, { ...profe, codigo: 'HIS', nombre: 'Historia' }),
+      clase(2, 1, 1, 2, {
+        ...profe,
+        codigo: 'HIS',
+        nombre: 'Historia',
+        grupo: 'B',
+        id_sala: 2,
+        sala: 'Sala 104',
+      }),
+    );
+    expect(crucesDeDocente(a)[0].mensaje).toBe(
+      'Ana Pérez, Lunes bloques 1-2: HIS Historia (grupo A) (Sala 121) y HIS Historia (grupo B) (Sala 104)',
+    );
+  });
+});
+
+describe('crucesConProtegidos', () => {
+  const protegido = (
+    id_dia: number,
+    id_bloque: number,
+    extra: Partial<ProtegidoEntrada> = {},
+  ): ProtegidoEntrada => ({
+    id_dia,
+    id_bloque,
+    nombre: 'Consejo',
+    alcance: AlcanceBloqueProtegido.UNIVERSIDAD,
+    codigo_carrera: null,
+    semestre: null,
+    contrato: null,
+    id_usuario: null,
+    ...extra,
+  });
+
+  it('informa la clase que quedó dentro de un bloque protegido', () => {
+    const a = actividades(clase(1, 1, 1, 2), clase(2, 1, 3, 4));
+    const c = crucesConProtegidos(a, [protegido(1, 2), protegido(1, 5)]);
+    expect(c).toHaveLength(1);
+    expect(c[0]).toMatchObject({
+      protegido: 'Consejo',
+      bloque_inicio: 2,
+      bloque_fin: 2,
+    });
+    expect(c[0].mensaje).toBe(
+      'C1 Curso 1, Lunes bloque 2: está en el bloque protegido «Consejo»',
+    );
+  });
+
+  it('solo cuenta los protegidos que alcanzan a la clase', () => {
+    const a = actividades(
+      clase(1, 1, 1, 2, {
+        docentes: [
+          { id_usuario: 7, nombre: 'Ana', contrato: TipoContrato.PLANTA },
+        ],
+      }),
+    );
+    // Estudiantes de otro semestre: no la alcanza
+    const otroNivel = protegido(1, 1, {
+      alcance: AlcanceBloqueProtegido.ESTUDIANTES,
+      codigo_carrera: '311',
+      semestre: 4,
+    });
+    // Académicos por horas: su docente es de planta
+    const porHoras = protegido(1, 2, {
+      alcance: AlcanceBloqueProtegido.ACADEMICOS,
+      contrato: TipoContrato.HORAS,
+    });
+    expect(crucesConProtegidos(a, [otroNivel, porHoras])).toEqual([]);
+    // Académicos de planta: sí
+    const planta = protegido(1, 2, {
+      alcance: AlcanceBloqueProtegido.ACADEMICOS,
+      contrato: TipoContrato.PLANTA,
+    });
+    expect(crucesConProtegidos(a, [planta])).toHaveLength(1);
   });
 });

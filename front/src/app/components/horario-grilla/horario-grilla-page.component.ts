@@ -23,6 +23,7 @@ import {
 import {
   ActividadDTO,
   CruceDocenteDTO,
+  CruceProtegidoDTO,
   CruceSalaDTO,
   MotivoNoAsignada,
   NoAsignadaDTO,
@@ -229,8 +230,13 @@ export class HorarioGrillaPageComponent implements OnInit {
     return this.propuesta?.validacion.cruces_docente ?? [];
   }
 
+  // Clases que quedaron dentro de un bloque protegido (por ejemplo, si se movió el protegido)
+  get crucesProtegido(): CruceProtegidoDTO[] {
+    return this.propuesta?.validacion.cruces_protegido ?? [];
+  }
+
   get totalCruces(): number {
-    return this.crucesSala.length + this.crucesDocente.length;
+    return this.crucesSala.length + this.crucesDocente.length + this.crucesProtegido.length;
   }
 
   get puedeCerrar(): boolean {
@@ -242,6 +248,8 @@ export class HorarioGrillaPageComponent implements OnInit {
     const pendientes = [
       this.crucesSala.length && `${this.crucesSala.length} cruce(s) de sala`,
       this.crucesDocente.length && `${this.crucesDocente.length} cruce(s) de docente`,
+      this.crucesProtegido.length &&
+        `${this.crucesProtegido.length} clase(s) en bloque protegido`,
     ].filter(Boolean);
     return pendientes.length ? `Hay ${pendientes.join(' y ')} sin resolver` : '';
   }
@@ -394,7 +402,18 @@ export class HorarioGrillaPageComponent implements OnInit {
 
   // ---------- Grillas ----------
 
+  // Asignaturas con más de un grupo en la propuesta: en sus clases se muestra el grupo
+  private codigosConGrupos = new Set<string>();
+
   private construirGrillas(): void {
+    const grupos = new Map<string, Set<string>>();
+    for (const a of this.propuesta?.actividades ?? []) {
+      grupos.set(a.codigo, (grupos.get(a.codigo) ?? new Set()).add(a.grupo));
+    }
+    this.codigosConGrupos = new Set(
+      [...grupos].filter(([, g]) => g.size > 1).map(([codigo]) => codigo),
+    );
+
     const sala = this.salaActual;
     if (sala) {
       const acts = (this.propuesta?.actividades ?? []).filter(
@@ -442,7 +461,22 @@ export class HorarioGrillaPageComponent implements OnInit {
     if (sala) return `Cruce de sala: ${sala.mensaje}`;
     const docente = v.cruces_docente.find(toca);
     if (docente) return `Cruce de docente: ${docente.mensaje}`;
+    const protegido = (v.cruces_protegido ?? []).find(toca);
+    if (protegido) return `En bloque protegido: «${protegido.protegido}»`;
     return null;
+  }
+
+  // Código con su grupo cuando la asignatura tiene más de uno (ej. 123H · Gr. B)
+  codigoConGrupo(a: ActividadDTO): string {
+    return this.codigosConGrupos.has(a.codigo) ? `${a.codigo} · Gr. ${a.grupo}` : a.codigo;
+  }
+
+  // Grupos distintos de una misma asignatura son estudiantes distintos: no chocan entre sí
+  private chocanEnNivel(acts: ActividadDTO[]): boolean {
+    if (acts.length < 2) return false;
+    const mismaAsignatura = acts.every((a) => a.codigo === acts[0].codigo);
+    const gruposDistintos = new Set(acts.map((a) => a.grupo)).size === acts.length;
+    return !(mismaAsignatura && gruposDistintos);
   }
 
   private celdasDe(
@@ -491,11 +525,14 @@ export class HorarioGrillaPageComponent implements OnInit {
         // Dos clases a la vez: en la vista por sala es un cruce de sala;
         // en la vista por nivel, un cruce para los estudiantes
         const cruce =
-          acts.length > 1
+          acts.length > 1 && (porSala || this.chocanEnNivel(acts))
             ? porSala
-              ? `Cruce de sala: ${acts.map((a) => `${a.codigo} (sem. ${a.nivel})`).join(' y ')} en la misma sala`
-              : `Cruce de nivel: ${acts.map((a) => a.codigo).join(' y ')} a la misma hora`
-            : acts.map((a) => this.cruceDe(a, b)).find((x) => !!x) ?? null;
+              ? `Cruce de sala: ${acts.map((a) => `${this.codigoConGrupo(a)} (sem. ${a.nivel})`).join(' y ')} en la misma sala`
+              : `Cruce de nivel: ${acts.map((a) => this.codigoConGrupo(a)).join(' y ')} a la misma hora`
+            : acts
+                .map((a) => this.cruceDe(a, b))
+                // Si la celda ya muestra el bloque protegido, no se repite el aviso
+                .find((x) => !!x && !(protegido && x.startsWith('En bloque protegido'))) ?? null;
         slots.push({
           bloque: b,
           acts,
@@ -546,7 +583,7 @@ export class HorarioGrillaPageComponent implements OnInit {
       ...base,
       tipo: externa ? 'CLASE_EXTERNA' : 'CLASE_PROPIA',
       etiqueta: acts.map((x) => x.nombre).join(' / '),
-      codigo: acts.map((x) => x.codigo).join(' / '),
+      codigo: acts.map((x) => this.codigoConGrupo(x)).join(' / '),
       // En la vista por sala la sala es la misma: se muestra a qué carrera y nivel pertenece
       sala: porSala
         ? undefined
@@ -633,7 +670,7 @@ export class HorarioGrillaPageComponent implements OnInit {
   }
 
   // Lleva la grilla a la sala de la primera clase del cruce que esté en una sala del departamento
-  irACruceDocente(c: CruceDocenteDTO): void {
+  irACruceDocente(c: CruceDocenteDTO | CruceProtegidoDTO): void {
     const ids = new Set(c.actividades.map((x) => x.id));
     const conSala = (this.propuesta?.actividades ?? []).find(
       (a) => ids.has(a.id) && a.id_sala != null,
@@ -756,9 +793,11 @@ export class HorarioGrillaPageComponent implements OnInit {
   }
 
   private resumenValidacion(v: ValidacionDTO): string {
-    const n = v.cruces_sala.length + v.cruces_docente.length;
+    const protegidos = v.cruces_protegido?.length ?? 0;
+    const n = v.cruces_sala.length + v.cruces_docente.length + protegidos;
     if (n === 0) return 'Horario revalidado: sin cruces.';
-    return `Horario revalidado: ${v.cruces_sala.length} cruce(s) de sala y ${v.cruces_docente.length} de docente.`;
+    const extra = protegidos ? `, ${protegidos} en bloque protegido` : '';
+    return `Horario revalidado: ${v.cruces_sala.length} cruce(s) de sala y ${v.cruces_docente.length} de docente${extra}.`;
   }
 
   private avisar(mensaje: string): void {
