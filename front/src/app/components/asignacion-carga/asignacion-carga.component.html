@@ -16,11 +16,11 @@
           <div class="hero__chips" style="margin-top: 10px;">
             <span class="chip">
               <mat-icon>calendar_today</mat-icon>
-              <span>Semestre 2 · Año 2026</span>
+              <span>{{ etiquetaNivel }} · Año {{ yearActual }}</span>
             </span>
             <span class="chip chip--propia">
               <mat-icon>article</mat-icon>
-              <span>Plan 2025 v1</span>
+              <span>{{ etiquetaPlan }}</span>
             </span>
           </div>
         </div>
@@ -33,6 +33,20 @@
     <!-- PANEL IZQUIERDO: Lista de Cursos -->
     <div style="flex: 1; border: 1px solid #ccc; padding: 15px; border-radius: 8px;">
       <h3>Cursos del Semestre</h3>
+
+      <!-- Filtros: nivel (o todos los pares/impares) y plan -->
+      <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+        <select [(ngModel)]="filtroNivel" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #ccc;" aria-label="Semestre (nivel)">
+          <option [ngValue]="'PARES'">Todos los pares (2do semestre)</option>
+          <option [ngValue]="'IMPARES'">Todos los impares (1er semestre)</option>
+          <option [ngValue]="'TODOS'">Todos los semestres</option>
+          <option *ngFor="let n of NIVELES" [ngValue]="n">Semestre {{ n }}</option>
+        </select>
+        <select [(ngModel)]="filtroPlan" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #ccc;" aria-label="Plan de estudios">
+          <option [ngValue]="'TODOS'">Todos los planes</option>
+          <option *ngFor="let p of planes" [ngValue]="p.id_plan">{{ p.nombre }}</option>
+        </select>
+      </div>
       
       <input type="text" [(ngModel)]="textoBusquedaCurso" placeholder="Buscar por código (ej. DU113) o nombre..."
              style="width: 100%; padding: 8px; margin-bottom: 15px; border-radius: 4px; border: 1px solid #ccc;">
@@ -43,7 +57,10 @@
             style="padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; justify-content: space-between; align-items: center;"
             [style.background-color]="cursoSeleccionado?.id_curso === curso.id_curso ? '#e3f2fd' : 'transparent'">
           
-          <span><strong>{{ curso.codigo_asignatura }}</strong> - {{ curso.asignatura?.nombre }} (Grupo {{ curso.grupo }})</span>
+          <span>
+            <strong>{{ curso.codigo_asignatura }}</strong> - {{ curso.asignatura?.nombre }} (Grupo {{ curso.grupo }})
+            <br><small style="color: #64748b;">Sem. {{ nivelDe(curso) }} · {{ planDe(curso) }} · {{ curso.inscritos }} inscritos</small>
+          </span>
           
           <span *ngIf="curso.es_pendiente" 
                 style="background-color: #ff4d4f; color: white; padding: 2px 6px; border-radius: 12px; font-size: 12px;">
