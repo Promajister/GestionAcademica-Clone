@@ -34,8 +34,12 @@ export class AsignacionCargaComponent implements OnInit {
   profesorControl = new FormControl('');
   profesoresFiltradosMaterial!: Observable<ProfesorAsignable[]>;
 
-  semestreActual = 2; 
   yearActual = 2026;
+
+  // Filtros de la lista: nivel (o todos los pares/impares) y plan
+  readonly NIVELES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+  filtroNivel: number | 'PARES' | 'IMPARES' | 'TODOS' = 'PARES';
+  filtroPlan: number | 'TODOS' = 'TODOS';
 
   cursoSeleccionado: any = null;
   profesoresAsignados: { profesor: ProfesorAsignable; cantidad_horas: number }[] = [];
@@ -67,7 +71,8 @@ export class AsignacionCargaComponent implements OnInit {
   }
 
   cargarDatos() {
-    this.cargaDocenteService.obtenerCursos(this.semestreActual, this.yearActual).subscribe(res => {
+    // Todos los niveles: los filtros se aplican en pantalla
+    this.cargaDocenteService.obtenerCursos(null, this.yearActual).subscribe(res => {
       this.cursos = res;
     });
     this.cargaDocenteService.obtenerProfesores().subscribe(res => {
@@ -75,13 +80,52 @@ export class AsignacionCargaComponent implements OnInit {
     });
   }
 
+  // Nivel de un curso: el semestre de su malla
+  nivelDe(c: any): number {
+    return c.malla?.semestre ?? c.semestre;
+  }
+
+  planDe(c: any): string {
+    const p = c.malla?.plan;
+    return p ? `${p.codigo_carrera} · Plan ${p.year} v${p.version}` : 'Sin plan';
+  }
+
+  // Planes presentes en los cursos, para el filtro
+  get planes(): { id_plan: number; nombre: string }[] {
+    const vistos = new Map<number, string>();
+    for (const c of this.cursos) {
+      if (c.malla?.plan) vistos.set(c.malla.plan.id_plan, this.planDe(c));
+    }
+    return [...vistos].map(([id_plan, nombre]) => ({ id_plan, nombre })).sort((a, b) => a.nombre.localeCompare(b.nombre));
+  }
+
+  get etiquetaNivel(): string {
+    const f = this.filtroNivel;
+    if (f === 'PARES') return 'Semestres pares (2do semestre)';
+    if (f === 'IMPARES') return 'Semestres impares (1er semestre)';
+    if (f === 'TODOS') return 'Todos los semestres';
+    return `Semestre ${f}`;
+  }
+
+  get etiquetaPlan(): string {
+    return this.filtroPlan === 'TODOS' ? 'Todos los planes' : (this.planes.find(p => p.id_plan === this.filtroPlan)?.nombre ?? '');
+  }
+
   get cursosFiltrados() {
-    if (!this.textoBusquedaCurso) return this.cursos;
+    const f = this.filtroNivel;
     const termino = this.textoBusquedaCurso.toLowerCase();
-    return this.cursos.filter(c => 
-      c.asignatura?.nombre.toLowerCase().includes(termino) ||
-      c.codigo_asignatura.toLowerCase().includes(termino)
-    );
+    return this.cursos
+      .filter(c => {
+        const n = this.nivelDe(c);
+        return f === 'TODOS' || (f === 'PARES' ? n % 2 === 0 : f === 'IMPARES' ? n % 2 === 1 : n === f);
+      })
+      .filter(c => this.filtroPlan === 'TODOS' || c.malla?.plan?.id_plan === this.filtroPlan)
+      .filter(c =>
+        !termino ||
+        c.asignatura?.nombre.toLowerCase().includes(termino) ||
+        c.codigo_asignatura.toLowerCase().includes(termino)
+      )
+      .sort((a, b) => this.nivelDe(a) - this.nivelDe(b) || a.codigo_asignatura.localeCompare(b.codigo_asignatura) || a.grupo.localeCompare(b.grupo));
   }
 
   seleccionarCurso(curso: any) {

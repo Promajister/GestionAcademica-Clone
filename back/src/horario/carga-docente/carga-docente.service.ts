@@ -36,18 +36,20 @@ export class CargaDocenteService {
   }
 
   // Resuelve CA2 (Identificar pendientes). Solo asignaturas propias.
+  // Sin semestre se listan todos los niveles; cada curso trae su malla y plan para filtrar en pantalla
   async obtenerCursosConEstadoPendiente(
-    semestreActual: number,
+    semestreActual: number | undefined,
     yearActual: number,
   ) {
     const cursos = await this.prisma.curso.findMany({
       where: {
-        semestre: semestreActual,
+        ...(semestreActual != null && { semestre: semestreActual }),
         year: yearActual,
         asignatura: { origen: TipoOrigen.INTERNA },
       },
       include: {
         asignatura: true,
+        malla: { include: { plan: true } },
         cargaDocentes: {
           include: { profesor: { include: { usuario: true } } },
         },

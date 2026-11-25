@@ -35,8 +35,10 @@ export class CargaDocenteService {
     return this.http.get<ProfesorAsignable[]>(`${this.apiUrl}/profesores`);
   }
 
-  obtenerCursos(semestre: number, year: number): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/cursos?semestre=${semestre}&year=${year}`);
+  // Sin semestre devuelve los cursos de todos los niveles (cada uno con su malla y plan)
+  obtenerCursos(semestre: number | null, year: number): Observable<any[]> {
+    const nivel = semestre != null ? `semestre=${semestre}&` : '';
+    return this.http.get<any[]>(`${this.apiUrl}/cursos?${nivel}year=${year}`);
   }
 
   asignarCarga(payload: AsignarCargaPayload): Observable<any> {
