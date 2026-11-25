@@ -1,5 +1,7 @@
 import { PrismaClient, TipoSala, TipoDia, TipoOrigen, TipoCurso, AlcanceBloqueProtegido, TipoContrato } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import * as fs from 'fs';
+import * as path from 'path';
 import e from 'express';
 
 const prisma = new PrismaClient();
@@ -445,6 +447,7 @@ async function main() {
   await seedCentrosEducativos();
   await seedHorario();
   await seedProfesoresDemo(hashed);
+  await seedCargaDocente2026(hashed);
 
   console.log('Seed OK: usuarios/roles/permisos/colaboradores/centros/horario.');
 }
@@ -483,6 +486,148 @@ async function seedProfesoresDemo(hashedPassword: string) {
       update: { contrato: d.contrato },
       create: { id_usuario: usuario.id, contrato: d.contrato },
     });
+  }
+}
+
+// ---------- GRUPOS Y CARGA DOCENTE 2026 (planillas de Recursos) ----------
+// Datos en prisma/datos/carga-docente-2026.json, generados desde "carga docente primer/segundo
+// semestre.xlsx". Crea los docentes (correo de prueba @docente.test), las asignaturas que faltaban
+// en las mallas y un curso por grupo con sus inscritos; asigna la carga solo a los grupos que aún
+// no tienen docente. Idempotente: no pisa contraseñas ni cargas ya asignadas.
+interface DatosCarga {
+  docentes: { email: string; nombre: string; contrato: 'PLANTA' | 'HORAS' }[];
+  asignaturas_nuevas: {
+    codigo: string;
+    nombre: string;
+    codigo_carrera: string;
+    year: number;
+    semestre: number;
+    catedraSemanal: number;
+    tallerSemanal: number;
+    labSemanal: number;
+  }[];
+  grupos: { codigo: string; grupo: string; inscritos: number; docentes: { email: string; horas: number }[] }[];
+}
+
+async function seedCargaDocente2026(hashedPassword: string) {
+  const archivo = path.join(__dirname, 'datos', 'carga-docente-2026.json');
+  if (!fs.existsSync(archivo)) return;
+  const datos = JSON.parse(fs.readFileSync(archivo, 'utf8')) as DatosCarga;
+
+  const rolProfesor = await prisma.rol.upsert({
+    where: { clave: 'profesor' },
+    update: {},
+    create: { clave: 'profesor', nombre: 'Profesor' },
+  });
+
+  // Docentes
+  const idPorCorreo = new Map<string, number>();
+  for (const d of datos.docentes) {
+    const usuario = await prisma.usuario.upsert({
+      where: { email: d.email },
+      update: { nombre: d.nombre, role: 'profesor', activo: true, rolId: rolProfesor.id },
+      create: {
+        email: d.email,
+        password: hashedPassword,
+        nombre: d.nombre,
+        role: 'profesor',
+        activo: true,
+        rolId: rolProfesor.id,
+      },
+    });
+    const contrato = d.contrato === 'PLANTA' ? TipoContrato.PLANTA : TipoContrato.HORAS;
+    await prisma.profesor.upsert({
+      where: { id_usuario: usuario.id },
+      update: { contrato },
+      create: { id_usuario: usuario.id, contrato },
+    });
+    idPorCorreo.set(d.email, usuario.id);
+  }
+
+  // Asignaturas que no estaban en las mallas (electivos y seminarios)
+  for (const a of datos.asignaturas_nuevas) {
+    const plan = await prisma.plan.findFirst({
+      where: { codigo_carrera: a.codigo_carrera, year: a.year },
+    });
+    if (!plan) continue;
+    await prisma.asignatura.upsert({
+      where: { codigo: a.codigo },
+      update: {},
+      create: {
+        codigo: a.codigo,
+        nombre: a.nombre,
+        catedraSemanal: a.catedraSemanal,
+        tallerSemanal: a.tallerSemanal,
+        labSemanal: a.labSemanal,
+        origen: TipoOrigen.INTERNA,
+      },
+    });
+    const malla = await prisma.malla.findFirst({
+      where: { codigo_asignatura: a.codigo, id_plan: plan.id_plan },
+    });
+    if (!malla) {
+      await prisma.malla.create({
+        data: { id_plan: plan.id_plan, semestre: a.semestre, codigo_asignatura: a.codigo },
+      });
+    }
+  }
+
+  // Un curso (cátedra) por grupo, con sus inscritos y su carga
+  const porAsignatura = new Map<string, DatosCarga['grupos']>();
+  for (const g of datos.grupos) {
+    porAsignatura.set(g.codigo, [...(porAsignatura.get(g.codigo) ?? []), g]);
+  }
+  for (const [codigo, grupos] of porAsignatura) {
+    const malla = await prisma.malla.findFirst({
+      where: { codigo_asignatura: codigo },
+      orderBy: { id_malla: 'asc' },
+    });
+    if (!malla) continue;
+    const cursos = await prisma.curso.findMany({
+      where: { codigo_asignatura: codigo, id_malla: malla.id_malla, tipo: TipoCurso.CATEDRA },
+      include: { cargaDocentes: true, horariosExternos: true },
+    });
+
+    for (const g of grupos) {
+      let curso = cursos.find((c) => c.grupo === g.grupo);
+      if (curso) {
+        await prisma.curso.update({
+          where: { id_curso: curso.id_curso },
+          data: { inscritos: g.inscritos },
+        });
+      } else {
+        curso = await prisma.curso.create({
+          data: {
+            tipo: TipoCurso.CATEDRA,
+            grupo: g.grupo,
+            inscritos: g.inscritos,
+            year: 2026,
+            semestre: malla.semestre,
+            codigo_asignatura: codigo,
+            id_malla: malla.id_malla,
+          },
+          include: { cargaDocentes: true, horariosExternos: true },
+        });
+      }
+      // La carga solo se asigna a un grupo que aún no tiene docente
+      if (curso.cargaDocentes.length === 0) {
+        const cargas = g.docentes
+          .filter((d) => idPorCorreo.has(d.email))
+          .map((d) => ({
+            id_curso: curso!.id_curso,
+            id_usuario: idPorCorreo.get(d.email)!,
+            cantidad_horas: d.horas,
+          }));
+        if (cargas.length) await prisma.cargaDocente.createMany({ data: cargas });
+      }
+    }
+
+    // El grupo A por defecto que no aparece en la planilla se quita si está vacío
+    for (const c of cursos) {
+      if (grupos.some((g) => g.grupo === c.grupo)) continue;
+      if (c.cargaDocentes.length || c.horariosExternos.length) continue;
+      await prisma.curso.delete({ where: { id_curso: c.id_curso } });
+    }
   }
 }
 
