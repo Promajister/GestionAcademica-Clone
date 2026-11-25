@@ -117,6 +117,8 @@ export class HorarioAsignaturasComponent implements OnInit {
       cupo: [22, [Validators.required, Validators.min(1), Validators.max(100)]],
       origen: ['INTERNA' as OrigenAsignatura, [Validators.required]],
       bloques_externos: this.fb.array([]),
+      // Grupos de una asignatura propia: cada uno es un curso con su cupo y su docente
+      grupos: this.fb.array([]),
     });
   }
 
@@ -126,6 +128,41 @@ export class HorarioAsignaturasComponent implements OnInit {
 
   get bloquesArray(): FormArray {
     return this.form.get('bloques_externos') as FormArray;
+  }
+
+  get gruposArray(): FormArray {
+    return this.form.get('grupos') as FormArray;
+  }
+
+  // con_carga: el grupo ya tiene docente; para quitarlo hay que liberar su carga primero
+  agregarGrupo(init?: { grupo?: string; cupo?: number; con_carga?: boolean }): void {
+    this.gruposArray.push(
+      this.fb.group({
+        grupo: [init?.grupo ?? this.siguienteGrupo()],
+        cupo: [init?.cupo ?? 22, [Validators.required, Validators.min(1), Validators.max(100)]],
+        con_carga: [!!init?.con_carga],
+      }),
+    );
+  }
+
+  eliminarGrupo(index: number): void {
+    if (this.gruposArray.length > 1) this.gruposArray.removeAt(index);
+  }
+
+  // Letra siguiente a la última usada (A, B, C...)
+  private siguienteGrupo(): string {
+    const letras = (this.gruposArray.value as { grupo: string }[]).map((g) => g.grupo);
+    const ultima = letras.filter((g) => /^[A-Z]$/.test(g)).sort().pop();
+    return ultima ? String.fromCharCode(Math.min(ultima.charCodeAt(0) + 1, 90)) : 'A';
+  }
+
+  detalleGrupos(a: AsignaturaDTO): string {
+    return (a.grupos ?? []).map((g) => `Grupo ${g.grupo}: ${g.cupo}`).join(' · ');
+  }
+
+  // Resumen para la tabla: "2 grupos · 55 est."
+  totalGrupos(a: AsignaturaDTO): number {
+    return (a.grupos ?? []).reduce((t, g) => t + g.cupo, 0);
   }
 
   esPropia(origen: string): boolean {
@@ -266,6 +303,8 @@ export class HorarioAsignaturasComponent implements OnInit {
     this.asignaturaEditando = null;
     this.errorBackend = null;
     this.bloquesArray.clear();
+    this.gruposArray.clear();
+    this.agregarGrupo({ grupo: 'A', cupo: 22 });
 
     const idCarDefecto =
       this.filtroCarrera !== 'all' ? this.filtroCarrera : this.carreras[0]?.codigo || null;
@@ -319,6 +358,10 @@ export class HorarioAsignaturasComponent implements OnInit {
       origen: this.esPropia(a.origen) ? 'INTERNA' : 'EXTERNA',
     });
 
+    this.gruposArray.clear();
+    const grupos = a.grupos?.length ? a.grupos : [{ grupo: 'A', cupo: a.cupo }];
+    for (const g of grupos) this.agregarGrupo(g);
+
     // Cargar bloques si es externa
     if (!this.esPropia(a.origen) && a.cursos && a.cursos.length > 0) {
       const bloques = a.cursos[0].bloques_horarios || [];
@@ -333,6 +376,7 @@ export class HorarioAsignaturasComponent implements OnInit {
     this.asignaturaEditando = null;
     this.errorBackend = null;
     this.bloquesArray.clear();
+    this.gruposArray.clear();
   }
 
   onOrigenChange(): void {
@@ -416,6 +460,16 @@ export class HorarioAsignaturasComponent implements OnInit {
 
     let bloquesExternosPayload: BloqueExternoPayload[] | undefined = undefined;
 
+    // Una asignatura propia envía sus grupos; el cupo informado es el del primero
+    const grupos =
+      origen === 'EXTERNA'
+        ? undefined
+        : (valor.grupos as { grupo: string; cupo: number }[]).map((g) => ({
+            grupo: g.grupo,
+            cupo: Number(g.cupo),
+          }));
+    const cupo = grupos?.length ? grupos[0].cupo : Number(valor.cupo);
+
     if (origen === 'EXTERNA') {
       const filas: BloqueFilaForm[] = valor.bloques_externos || [];
       if (filas.length === 0) {
@@ -450,7 +504,8 @@ export class HorarioAsignaturasComponent implements OnInit {
         tallerSemanal: taller,
         labSemanal: lab,
         bloques_semanales: bloquesTotales,
-        cupo: Number(valor.cupo),
+        cupo,
+        grupos,
         origen,
       };
 
@@ -485,7 +540,8 @@ export class HorarioAsignaturasComponent implements OnInit {
         tallerSemanal: taller,
         labSemanal: lab,
         bloques_semanales: bloquesTotales,
-        cupo: Number(valor.cupo),
+        cupo,
+        grupos,
         origen,
       };
 

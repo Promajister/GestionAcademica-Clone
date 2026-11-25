@@ -68,6 +68,14 @@ export interface CursoDTO {
   bloques_horarios: BloqueHorarioDTO[];
 }
 
+// Grupo (sección) de una asignatura propia: cada uno es un curso con su cupo y su docente
+export interface GrupoAsignaturaDTO {
+  id_curso?: number;
+  grupo: string;
+  cupo: number;
+  con_carga?: boolean;
+}
+
 export interface AsignaturaDTO {
   id_asignatura?: string | number;
   codigo: string;
@@ -82,6 +90,7 @@ export interface AsignaturaDTO {
   id_plan: number;
   plan?: PlanDTO;
   cursos?: CursoDTO[];
+  grupos?: GrupoAsignaturaDTO[];
 }
 
 export interface CreateAsignaturaPayload {
@@ -96,6 +105,7 @@ export interface CreateAsignaturaPayload {
   cupo: number;
   origen: string;
   bloques_externos?: BloqueExternoPayload[];
+  grupos?: { grupo: string; cupo: number }[];
 }
 
 export type UpdateAsignaturaPayload = Partial<CreateAsignaturaPayload>;

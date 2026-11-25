@@ -475,6 +475,60 @@
 }
 
 /* SECCIÓN BLOQUES EXTERNOS */
+/* GRUPOS DE UNA ASIGNATURA PROPIA */
+.grupos-section {
+  border: 1px solid #bae6fd;
+  background: #f8fcff;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+
+  .grupos-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 10px;
+
+    > div {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    strong {
+      font-size: 14px;
+      color: #0c4a6e;
+    }
+
+    .muted {
+      font-size: 12px;
+      color: #64748b;
+    }
+  }
+
+  .grupo-fila {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    .grupo-letra {
+      min-width: 72px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    mat-form-field {
+      width: 180px;
+      margin-bottom: -1.25em;
+    }
+
+    & + .grupo-fila {
+      margin-top: 14px;
+    }
+  }
+}
+
 .bloques-externos-section {
   border: 1px solid #fed7aa;
   background: #fffdfa;

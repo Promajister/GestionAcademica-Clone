@@ -7,7 +7,7 @@ import {
 import { Prisma, TipoCurso, TipoOrigen } from '@prisma/client';
 import { PrismaService } from 'prisma/prisma.service';
 
-import { CreateAsignaturaDto } from './dto/create-asignatura.dto';
+import { CreateAsignaturaDto, GrupoDto } from './dto/create-asignatura.dto';
 import { UpdateAsignaturaDto } from './dto/update-asignatura.dto';
 import { QueryAsignaturaDto } from './dto/query-asignatura.dto';
 import { BloquesService } from '../bloques/bloques.service';
@@ -27,6 +27,7 @@ const INCLUDE_ASIGNATURA = {
   },
   cursos: {
     include: {
+      _count: { select: { cargaDocentes: true } },
       horariosExternos: {
         include: {
           sala: true,
@@ -78,7 +79,7 @@ export class AsignaturasService {
     const catedra = dto.catedraSemanal ?? dto.bloques_semanales ?? 4;
     const taller = dto.tallerSemanal ?? 0;
     const lab = dto.labSemanal ?? 0;
-    const inscritos = dto.cupo ?? 22;
+    const grupos = this.gruposDe(dto, origen);
 
     const existente = await this.prisma.asignatura.findUnique({
       where: { codigo: dto.codigo },
@@ -118,16 +119,11 @@ export class AsignaturasService {
           },
         });
 
-        const curso = await tx.curso.create({
-          data: {
-            tipo: TipoCurso.CATEDRA,
-            grupo: 'A',
-            inscritos,
-            year: 2026,
-            semestre: dto.semestre,
-            codigo_asignatura: dto.codigo,
-            id_malla: nuevaMalla.id_malla,
-          },
+        // Un curso por grupo; los bloques fijos de una externa van en el primero
+        const curso = await this.crearGrupos(tx, grupos, {
+          codigo: dto.codigo,
+          semestre: dto.semestre,
+          id_malla: nuevaMalla.id_malla,
         });
 
         if (origen === TipoOrigen.EXTERNA && dto.bloques_externos?.length) {
@@ -172,16 +168,11 @@ export class AsignaturasService {
         },
       });
 
-      const curso = await tx.curso.create({
-        data: {
-          tipo: TipoCurso.CATEDRA,
-          grupo: 'A',
-          inscritos,
-          year: 2026,
-          semestre: dto.semestre,
-          codigo_asignatura: dto.codigo,
-          id_malla: malla.id_malla,
-        },
+      // Un curso por grupo; los bloques fijos de una externa van en el primero
+      const curso = await this.crearGrupos(tx, grupos, {
+        codigo: dto.codigo,
+        semestre: dto.semestre,
+        id_malla: malla.id_malla,
       });
 
       if (origen === TipoOrigen.EXTERNA && dto.bloques_externos?.length) {
@@ -308,23 +299,47 @@ export class AsignaturasService {
         });
       }
 
-      // 3. Actualizar Curso por defecto
-      let curso = await tx.curso.findFirst({
+      // 3. Actualizar los cursos de la malla: uno por grupo
+      const cursosMalla = await tx.curso.findMany({
+        where: {
+          codigo_asignatura: codigo,
+          tipo: TipoCurso.CATEDRA,
+          ...(malla && {
+            OR: [{ id_malla: malla.id_malla }, { id_malla: null }],
+          }),
+        },
+        include: { _count: { select: { cargaDocentes: true } } },
+        orderBy: { id_curso: 'asc' },
+      });
+      if (dto.grupos !== undefined) {
+        await this.sincronizarGrupos(
+          tx,
+          cursosMalla,
+          this.gruposDe(dto, origen),
+          {
+            codigo,
+            semestre:
+              dto.semestre ?? actual.semestre ?? cursosMalla[0]?.semestre ?? 1,
+            id_malla: malla?.id_malla ?? null,
+          },
+        );
+      } else if (dto.cupo !== undefined && cursosMalla[0]) {
+        await tx.curso.update({
+          where: { id_curso: cursosMalla[0].id_curso },
+          data: { inscritos: dto.cupo },
+        });
+      }
+      // El semestre se actualiza en todos los grupos, no solo en el primero
+      if (dto.semestre !== undefined && cursosMalla.length) {
+        await tx.curso.updateMany({
+          where: { id_curso: { in: cursosMalla.map((c) => c.id_curso) } },
+          data: { semestre: dto.semestre },
+        });
+      }
+      const curso = await tx.curso.findFirst({
         where: { codigo_asignatura: codigo },
         orderBy: { id_curso: 'asc' },
       });
-
-      if (curso) {
-        if (dto.cupo !== undefined || dto.semestre !== undefined) {
-          curso = await tx.curso.update({
-            where: { id_curso: curso.id_curso },
-            data: {
-              ...(dto.cupo !== undefined && { inscritos: dto.cupo }),
-              ...(dto.semestre !== undefined && { semestre: dto.semestre }),
-            },
-          });
-        }
-      }
 
       // 4. Actualizar Bloques Externos
       if (dto.bloques_externos !== undefined && curso) {
@@ -387,6 +402,96 @@ export class AsignaturasService {
     return { mensaje: 'Asignatura eliminada correctamente.' };
   }
 
+  // Grupos pedidos, o un solo grupo A con el cupo indicado
+  private gruposDe(
+    dto: { grupos?: GrupoDto[]; cupo?: number },
+    origen: TipoOrigen,
+  ): GrupoDto[] {
+    const grupos = dto.grupos?.length
+      ? dto.grupos
+      : [{ grupo: 'A', cupo: dto.cupo ?? 22 }];
+    if (new Set(grupos.map((g) => g.grupo)).size !== grupos.length) {
+      throw new BadRequestException('Hay grupos repetidos');
+    }
+    if (origen === TipoOrigen.EXTERNA && grupos.length > 1) {
+      throw new BadRequestException(
+        'Las asignaturas externas tienen un solo grupo: sus bloques son fijos',
+      );
+    }
+    return [...grupos].sort((a, b) => a.grupo.localeCompare(b.grupo));
+  }
+
+  private async crearGrupos(
+    tx: Prisma.TransactionClient,
+    grupos: GrupoDto[],
+    datos: { codigo: string; semestre: number; id_malla: number },
+  ) {
+    const cursos: Prisma.CursoGetPayload<object>[] = [];
+    for (const g of grupos) {
+      cursos.push(
+        await tx.curso.create({
+          data: {
+            tipo: TipoCurso.CATEDRA,
+            grupo: g.grupo,
+            inscritos: g.cupo,
+            year: 2026,
+            semestre: datos.semestre,
+            codigo_asignatura: datos.codigo,
+            id_malla: datos.id_malla,
+          },
+        }),
+      );
+    }
+    return cursos[0];
+  }
+
+  // Deja los cursos de la malla iguales a los grupos pedidos. Un grupo con docente asignado
+  // no se elimina: primero se quita su carga en Carga docente
+  private async sincronizarGrupos(
+    tx: Prisma.TransactionClient,
+    cursos: {
+      id_curso: number;
+      grupo: string;
+      inscritos: number;
+      _count: { cargaDocentes: number };
+    }[],
+    grupos: GrupoDto[],
+    datos: { codigo: string; semestre: number; id_malla: number | null },
+  ) {
+    for (const c of cursos) {
+      if (grupos.some((g) => g.grupo === c.grupo)) continue;
+      if (c._count.cargaDocentes > 0) {
+        throw new ConflictException(
+          `El grupo ${c.grupo} tiene docente asignado en Carga docente; quítalo allí antes de eliminar el grupo`,
+        );
+      }
+      await tx.curso.delete({ where: { id_curso: c.id_curso } });
+    }
+    for (const g of grupos) {
+      const c = cursos.find((x) => x.grupo === g.grupo);
+      if (c) {
+        if (c.inscritos !== g.cupo) {
+          await tx.curso.update({
+            where: { id_curso: c.id_curso },
+            data: { inscritos: g.cupo },
+          });
+        }
+        continue;
+      }
+      await tx.curso.create({
+        data: {
+          tipo: TipoCurso.CATEDRA,
+          grupo: g.grupo,
+          inscritos: g.cupo,
+          year: 2026,
+          semestre: datos.semestre,
+          codigo_asignatura: datos.codigo,
+          id_malla: datos.id_malla,
+        },
+      });
+    }
+  }
+
   private formatearAsignatura(
     a: AsignaturaConRelaciones,
     filtroPlanId?: number,
@@ -421,6 +526,20 @@ export class AsignaturasService {
       bloques_semanales: a.catedraSemanal + a.tallerSemanal + a.labSemanal,
       origen: a.origen,
       cupo: curso?.inscritos ?? 22,
+      // Grupos (cursos de cátedra) de la malla mostrada
+      grupos: a.cursos
+        .filter(
+          (c) =>
+            c.tipo === TipoCurso.CATEDRA &&
+            (!malla || c.id_malla == null || c.id_malla === malla.id_malla),
+        )
+        .sort((x, y) => x.grupo.localeCompare(y.grupo))
+        .map((c) => ({
+          id_curso: c.id_curso,
+          grupo: c.grupo,
+          cupo: c.inscritos,
+          con_carga: c._count.cargaDocentes > 0,
+        })),
       id_plan: malla?.id_plan ?? null,
       semestre: malla?.semestre ?? null,
       plan: malla?.plan
