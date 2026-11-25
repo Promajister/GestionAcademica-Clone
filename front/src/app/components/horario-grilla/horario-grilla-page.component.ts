@@ -190,6 +190,15 @@ export class HorarioGrillaPageComponent implements OnInit {
     return this.salas.find((s) => s.id_sala === this.salaSeleccionada);
   }
 
+  // Uso de la sala en la propuesta del semestre (ej. "34 bloques" o "sin clases")
+  usoSala(id_sala: number): string {
+    const bloques = (this.propuesta?.actividades ?? [])
+      .filter((a) => a.id_sala === id_sala)
+      .reduce((t, a) => t + a.bloque_fin - a.bloque_inicio + 1, 0);
+    if (!bloques) return 'sin clases';
+    return `${bloques} bloque${bloques === 1 ? '' : 's'}`;
+  }
+
   // Clases de la propuesta (propias y externas) del plan elegido
   private get actividadesPlan(): ActividadDTO[] {
     return (this.propuesta?.actividades ?? []).filter(

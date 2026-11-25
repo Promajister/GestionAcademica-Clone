@@ -84,7 +84,7 @@
           <mat-select [(ngModel)]="salaSeleccionada" (selectionChange)="onSalaChange()">
             <mat-option [value]="0">Todas las salas</mat-option>
             @for (s of salas; track s.id_sala) {
-              <mat-option [value]="s.id_sala">{{ s.nombre }} ({{ s.capacidad }})</mat-option>
+              <mat-option [value]="s.id_sala">{{ s.nombre }} · cap. {{ s.capacidad }} · {{ usoSala(s.id_sala) }}</mat-option>
             }
           </mat-select>
         </mat-form-field>
@@ -355,7 +355,7 @@
                     <mat-label>Sala</mat-label>
                     <mat-select [(ngModel)]="destinos[a.id].id_sala">
                       @for (s of salas; track s.id_sala) {
-                        <mat-option [value]="s.id_sala">{{ s.nombre }} ({{ s.capacidad }})</mat-option>
+                        <mat-option [value]="s.id_sala">{{ s.nombre }} · cap. {{ s.capacidad }}</mat-option>
                       }
                     </mat-select>
                   </mat-form-field>
