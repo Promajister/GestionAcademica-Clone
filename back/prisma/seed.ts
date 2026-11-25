@@ -491,11 +491,19 @@ async function seedProfesoresDemo(hashedPassword: string) {
 
 // ---------- GRUPOS Y CARGA DOCENTE 2026 (planillas de Recursos) ----------
 // Datos en prisma/datos/carga-docente-2026.json, generados desde "carga docente primer/segundo
-// semestre.xlsx". Crea los docentes (correo de prueba @docente.test), las asignaturas que faltaban
-// en las mallas y un curso por grupo con sus inscritos; asigna la carga solo a los grupos que aún
-// no tienen docente. Idempotente: no pisa contraseñas ni cargas ya asignadas.
+// semestre.xlsx" y los horarios "HORARIO *.docx". Crea los docentes (correo de prueba @docente.test,
+// más suplentes "Profesor N" para grupos sin docente conocido), su disponibilidad (los bloques donde
+// hacen clases en los horarios reales), las asignaturas que faltaban en las mallas y un curso por grupo
+// con sus inscritos; asigna la carga solo a los grupos que aún no tienen docente.
+// Idempotente: no pisa contraseñas, cargas ni disponibilidad ya declaradas.
 interface DatosCarga {
-  docentes: { email: string; nombre: string; contrato: 'PLANTA' | 'HORAS' }[];
+  docentes: {
+    email: string;
+    nombre: string;
+    contrato: 'PLANTA' | 'HORAS';
+    // Bloques "día-bloque" (ej. "2-7": martes, bloque 7)
+    disponibilidad?: string[];
+  }[];
   asignaturas_nuevas: {
     codigo: string;
     nombre: string;
@@ -542,6 +550,20 @@ async function seedCargaDocente2026(hashedPassword: string) {
       create: { id_usuario: usuario.id, contrato },
     });
     idPorCorreo.set(d.email, usuario.id);
+
+    // Disponibilidad: solo si el docente aún no ha declarado la suya
+    if (d.disponibilidad?.length) {
+      const declarada = await prisma.disponibilidad.count({ where: { id_usuario: usuario.id } });
+      if (declarada === 0) {
+        await prisma.disponibilidad.createMany({
+          data: d.disponibilidad.map((k) => {
+            const [id_dia, id_bloque] = k.split('-').map(Number);
+            return { id_usuario: usuario.id, id_dia, id_bloque };
+          }),
+          skipDuplicates: true,
+        });
+      }
+    }
   }
 
   // Asignaturas que no estaban en las mallas (electivos y seminarios)
