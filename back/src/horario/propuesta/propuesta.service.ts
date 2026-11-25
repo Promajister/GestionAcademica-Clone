@@ -27,6 +27,7 @@ import {
   crucesDeSala,
 } from './validador';
 import { MoverBloqueDto } from './dto/mover-bloque.dto';
+import { choqueAlMover } from './reglas-mover';
 import { TOTAL_BLOQUES, mismaJornada, rangoBloques } from '../common/grilla';
 
 type Db = Prisma.TransactionClient | PrismaService;
@@ -300,7 +301,15 @@ export class PropuestaService {
         throw new BadRequestException('La clase ya está en ese lugar');
       }
 
-      await this.trasladar(tx, dto.origen, dto.id_curso, largo, desde, hacia);
+      await this.trasladar(
+        tx,
+        { year: dto.year, periodo: dto.periodo },
+        dto.origen,
+        dto.id_curso,
+        largo,
+        desde,
+        hacia,
+      );
       await tx.movimientoHorario.create({
         data: {
           year: dto.year,
@@ -341,6 +350,7 @@ export class PropuestaService {
       }
       await this.trasladar(
         tx,
+        { year, periodo },
         ultimo.origen,
         ultimo.id_curso,
         ultimo.largo,
@@ -370,6 +380,7 @@ export class PropuestaService {
   // Cambia de lugar los bloques de una clase (todas las cargas del curso si es propia)
   private async trasladar(
     tx: Prisma.TransactionClient,
+    p: { year: number; periodo: number },
     origen: 'INTERNA' | 'EXTERNA',
     id_curso: number,
     largo: number,
@@ -390,6 +401,14 @@ export class PropuestaService {
       hacia.id_dia,
       bloquesHacia,
     );
+    // Sala ocupada o clase del mismo semestre en esos bloques: no se mueve
+    const choque = choqueAlMover(
+      await this.bloquesDelPeriodo(p.year, p.periodo, tx),
+      origen,
+      id_curso,
+      { id_dia: hacia.id_dia, id_sala: hacia.id_sala, bloques: bloquesHacia },
+    );
+    if (choque) throw new ConflictException(choque);
 
     if (hacia.id_sala !== desde.id_sala) {
       if (hacia.id_sala == null || desde.id_sala == null) {

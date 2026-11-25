@@ -402,18 +402,7 @@ export class HorarioGrillaPageComponent implements OnInit {
 
   // ---------- Grillas ----------
 
-  // Asignaturas con más de un grupo en la propuesta: en sus clases se muestra el grupo
-  private codigosConGrupos = new Set<string>();
-
   private construirGrillas(): void {
-    const grupos = new Map<string, Set<string>>();
-    for (const a of this.propuesta?.actividades ?? []) {
-      grupos.set(a.codigo, (grupos.get(a.codigo) ?? new Set()).add(a.grupo));
-    }
-    this.codigosConGrupos = new Set(
-      [...grupos].filter(([, g]) => g.size > 1).map(([codigo]) => codigo),
-    );
-
     const sala = this.salaActual;
     if (sala) {
       const acts = (this.propuesta?.actividades ?? []).filter(
@@ -466,9 +455,9 @@ export class HorarioGrillaPageComponent implements OnInit {
     return null;
   }
 
-  // Código con su grupo cuando la asignatura tiene más de uno (ej. 123H · Gr. B)
+  // Código con su grupo (ej. 123H · Gr. A): así se distinguen las clases de cada grupo
   codigoConGrupo(a: ActividadDTO): string {
-    return this.codigosConGrupos.has(a.codigo) ? `${a.codigo} · Gr. ${a.grupo}` : a.codigo;
+    return `${a.codigo} · Gr. ${a.grupo}`;
   }
 
   // Grupos distintos de una misma asignatura son estudiantes distintos: no chocan entre sí
