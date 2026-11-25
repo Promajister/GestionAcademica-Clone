@@ -444,45 +444,233 @@ async function main() {
   await seedColaboradores();
   await seedCentrosEducativos();
   await seedHorario();
-  await seedProfesoresDemo(hashed);
+  await eliminarProfesoresDemo();
+  await seedDocentes(hashed);
+  await seedCursos2026();
 
-  console.log('Seed OK: usuarios/roles/permisos/colaboradores/centros/horario.');
 }
 
-// ---------- PROFESORES DEMO (DIS-F02) ----------
-// Perfil "profesor" + un docente por horas y uno de planta para probar
-// la pantalla "Mi disponibilidad". Idempotente: no pisa contraseñas existentes.
-async function seedProfesoresDemo(hashedPassword: string) {
+// ---------- DOCENTES Y CURSOS 2026 ----------
+// Datos ingresados desde "carga docente primer/segundo semestre.xlsx".
+
+const YEAR_CURSOS = 2026;
+
+// Profesores de prueba (DIS-F02) que se eliminan
+const EMAILS_PROFESORES_DEMO = [
+  'profesor.horas@gestion.uta.cl',
+  'profesor.horas2@gestion.uta.cl',
+  'profesor.planta@gestion.uta.cl',
+];
+
+type CursoSeed = {
+  codigo: string;
+  tipo: TipoCurso;
+  grupo: string;
+  semestre: number; // período: 1 o 2
+  inscritos: number;
+  id_plan: number;
+  docente: string | null; // email del docente
+  horas: number | null; // horas de la carga docente
+};
+
+// Los marcados "existente" ya tienen usuario: solo se les agrega el perfil Profesor
+const DOCENTES: { email: string; nombre: string; contrato: TipoContrato; existente?: boolean }[] = [
+  { email: 'alan.rodriguez@academicos.uta.cl', nombre: 'Alan Erick Rodriguez Valdivia', contrato: TipoContrato.HORAS },
+  { email: 'alberto.diaz@academicos.uta.cl', nombre: 'Alberto Eugenio Díaz Araya', contrato: TipoContrato.PLANTA },
+  { email: 'alfonso.diaz@academicos.uta.cl', nombre: 'Alfonso Alejandro Díaz Aguad', contrato: TipoContrato.PLANTA },
+  { email: 'amalia.rojas@academicos.uta.cl', nombre: 'Amalia Paz Rojas Varela', contrato: TipoContrato.HORAS },
+  { email: 'carlos.donoso@academicos.uta.cl', nombre: 'Carlos David Donoso Rojas', contrato: TipoContrato.PLANTA },
+  { email: 'carlos.choque@academicos.uta.cl', nombre: 'Carlos Omar Choque Mariño', contrato: TipoContrato.PLANTA },
+  { email: 'practicas.hg@gestion.uta.cl', nombre: 'Carolina Andrea Del Carmen Quintana Talvac', contrato: TipoContrato.HORAS, existente: true },
+  { email: 'christian.jamett@academicos.uta.cl', nombre: 'Christian Rodrigo Jamett Ibarra', contrato: TipoContrato.HORAS },
+  { email: 'elias.pizarro@academicos.uta.cl', nombre: 'Elias Pizarro Pizarro', contrato: TipoContrato.PLANTA },
+  { email: 'guillem.serra@academicos.uta.cl', nombre: 'Guillem Serra Bou', contrato: TipoContrato.HORAS },
+  { email: 'jc_pedhg@gestion.uta.cl', nombre: 'Ignacio Alonso Jara Parra', contrato: TipoContrato.PLANTA, existente: true },
+  { email: 'ivanna.margarucci@academicos.uta.cl', nombre: 'Ivanna Margarucci', contrato: TipoContrato.PLANTA },
+  { email: 'jeans.gonzalez@academicos.uta.cl', nombre: 'Jeans Manuel González Sperrhake', contrato: TipoContrato.HORAS },
+  { email: 'jose.soto@academicos.uta.cl', nombre: 'José Julián Soto Lara', contrato: TipoContrato.HORAS },
+  { email: 'juan.leon@academicos.uta.cl', nombre: 'Juan Pablo Leon Ancasi', contrato: TipoContrato.HORAS },
+  { email: 'luis.castro@academicos.uta.cl', nombre: 'Luis Eduardo Castro Castro', contrato: TipoContrato.PLANTA },
+  { email: 'marisol.palma@academicos.uta.cl', nombre: 'Marisol Haydee Palma Behnke', contrato: TipoContrato.PLANTA },
+  { email: 'misael.camus@academicos.uta.cl', nombre: 'Misael Heriberto Camus Ibacache', contrato: TipoContrato.PLANTA },
+  { email: 'monica.meza@academicos.uta.cl', nombre: 'Monica Soledad Meza Aliaga', contrato: TipoContrato.PLANTA },
+  { email: 'oliver.meseguer@academicos.uta.cl', nombre: 'Oliver Meseguer Ruiz', contrato: TipoContrato.PLANTA },
+  { email: 'oscar.corvacho@academicos.uta.cl', nombre: 'Oscar Alexander Corvacho Ganahin', contrato: TipoContrato.HORAS },
+  { email: 'patricia.palma@academicos.uta.cl', nombre: 'Patricia Nataly Palma Maturana', contrato: TipoContrato.PLANTA },
+  { email: 'raul.bustos@academicos.uta.cl', nombre: 'Raul Antonio Bustos Gonzalez', contrato: TipoContrato.HORAS },
+];
+
+const CURSOS_2026: CursoSeed[] = [
+  // ---------- PRIMER SEMESTRE ----------
+  { codigo: 'HG068', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 1, inscritos: 22, id_plan: 2, docente: 'christian.jamett@academicos.uta.cl', horas: 4 },
+  { codigo: 'HG068', tipo: TipoCurso.TALLER, grupo: 'A', semestre: 1, inscritos: 22, id_plan: 2, docente: 'christian.jamett@academicos.uta.cl', horas: 2 },
+  { codigo: 'HG069', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 1, inscritos: 23, id_plan: 2, docente: 'luis.castro@academicos.uta.cl', horas: 4 },
+  { codigo: 'HG069', tipo: TipoCurso.TALLER, grupo: 'A', semestre: 1, inscritos: 23, id_plan: 2, docente: 'luis.castro@academicos.uta.cl', horas: 2 },
+  { codigo: 'HG070', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 1, inscritos: 23, id_plan: 2, docente: 'monica.meza@academicos.uta.cl', horas: 4 },
+  { codigo: 'HG070', tipo: TipoCurso.TALLER, grupo: 'A', semestre: 1, inscritos: 23, id_plan: 2, docente: 'monica.meza@academicos.uta.cl', horas: 2 },
+  { codigo: 'HG075', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 1, inscritos: 22, id_plan: 2, docente: 'ivanna.margarucci@academicos.uta.cl', horas: 2 },
+  { codigo: 'HG075', tipo: TipoCurso.TALLER, grupo: 'A', semestre: 1, inscritos: 22, id_plan: 2, docente: 'ivanna.margarucci@academicos.uta.cl', horas: 2 },
+  { codigo: 'HG095', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 1, inscritos: 10, id_plan: 1, docente: 'raul.bustos@academicos.uta.cl', horas: 2 },
+  { codigo: 'HG095', tipo: TipoCurso.TALLER, grupo: 'A', semestre: 1, inscritos: 10, id_plan: 1, docente: 'raul.bustos@academicos.uta.cl', horas: 2 },
+  { codigo: 'HG096', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 1, inscritos: 11, id_plan: 1, docente: 'amalia.rojas@academicos.uta.cl', horas: 2 },
+  { codigo: 'HG096', tipo: TipoCurso.TALLER, grupo: 'A', semestre: 1, inscritos: 11, id_plan: 1, docente: 'amalia.rojas@academicos.uta.cl', horas: 2 },
+  { codigo: 'HG272', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 1, inscritos: 1, id_plan: 3, docente: 'elias.pizarro@academicos.uta.cl', horas: 6 },
+  { codigo: 'HG274', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 1, inscritos: 0, id_plan: 3, docente: null, horas: null },
+  { codigo: 'HG402', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 1, inscritos: 2, id_plan: 3, docente: 'misael.camus@academicos.uta.cl', horas: 4 },
+  { codigo: 'HG407', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 1, inscritos: 2, id_plan: 3, docente: 'jeans.gonzalez@academicos.uta.cl', horas: 4 },
+  { codigo: 'HG408', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 1, inscritos: 1, id_plan: 3, docente: 'oscar.corvacho@academicos.uta.cl', horas: 8 },
+  { codigo: 'HG411', tipo: TipoCurso.CATEDRA, grupo: '', semestre: 1, inscritos: 2, id_plan: 3, docente: null, horas: null },
+  { codigo: 'HG422', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 1, inscritos: 18, id_plan: 1, docente: 'alberto.diaz@academicos.uta.cl', horas: 4 },
+  { codigo: 'HG423', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 1, inscritos: 19, id_plan: 1, docente: 'jc_pedhg@gestion.uta.cl', horas: 4 },
+  { codigo: 'HG424', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 1, inscritos: 18, id_plan: 1, docente: 'oscar.corvacho@academicos.uta.cl', horas: 4 },
+  { codigo: 'HG430', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 1, inscritos: 12, id_plan: 1, docente: 'carlos.choque@academicos.uta.cl', horas: 4 },
+  { codigo: 'HG431', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 1, inscritos: 11, id_plan: 1, docente: 'misael.camus@academicos.uta.cl', horas: 4 },
+  { codigo: 'HG432', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 1, inscritos: 12, id_plan: 1, docente: 'elias.pizarro@academicos.uta.cl', horas: 4 },
+  { codigo: 'HG433', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 1, inscritos: 12, id_plan: 1, docente: 'guillem.serra@academicos.uta.cl', horas: 4 },
+  { codigo: 'HG434', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 1, inscritos: 11, id_plan: 1, docente: 'guillem.serra@academicos.uta.cl', horas: 4 },
+  { codigo: 'HG441', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 1, inscritos: 13, id_plan: 1, docente: 'patricia.palma@academicos.uta.cl', horas: 4 },
+  { codigo: 'HG442', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 1, inscritos: 15, id_plan: 1, docente: 'alfonso.diaz@academicos.uta.cl', horas: 4 },
+  { codigo: 'HG443', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 1, inscritos: 15, id_plan: 1, docente: 'juan.leon@academicos.uta.cl', horas: 4 },
+  { codigo: 'HG443', tipo: TipoCurso.TALLER, grupo: 'A', semestre: 1, inscritos: 15, id_plan: 1, docente: 'juan.leon@academicos.uta.cl', horas: 2 },
+  { codigo: 'HG444', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 1, inscritos: 11, id_plan: 1, docente: 'guillem.serra@academicos.uta.cl', horas: 4 },
+  { codigo: 'HG445', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 1, inscritos: 14, id_plan: 1, docente: 'guillem.serra@academicos.uta.cl', horas: 2 },
+  { codigo: 'HG445', tipo: TipoCurso.TALLER, grupo: 'A', semestre: 1, inscritos: 14, id_plan: 1, docente: 'guillem.serra@academicos.uta.cl', horas: 2 },
+  { codigo: 'HG450', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 1, inscritos: 9, id_plan: 1, docente: 'alan.rodriguez@academicos.uta.cl', horas: 4 },
+  { codigo: 'HG454', tipo: TipoCurso.TALLER, grupo: '', semestre: 1, inscritos: 1, id_plan: 1, docente: 'practicas.hg@gestion.uta.cl', horas: 2 },
+  // ---------- SEGUNDO SEMESTRE ----------
+  { codigo: 'HG057', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 2, inscritos: 3, id_plan: 3, docente: 'marisol.palma@academicos.uta.cl', horas: 6 },
+  { codigo: 'HG076', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 2, inscritos: 21, id_plan: 2, docente: 'jose.soto@academicos.uta.cl', horas: 4 },
+  { codigo: 'HG076', tipo: TipoCurso.TALLER, grupo: 'A', semestre: 2, inscritos: 21, id_plan: 2, docente: 'jose.soto@academicos.uta.cl', horas: 2 },
+  { codigo: 'HG077', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 2, inscritos: 21, id_plan: 2, docente: 'misael.camus@academicos.uta.cl', horas: 4 },
+  { codigo: 'HG078', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 2, inscritos: 17, id_plan: 2, docente: 'jc_pedhg@gestion.uta.cl', horas: 2 },
+  { codigo: 'HG078', tipo: TipoCurso.TALLER, grupo: 'A', semestre: 2, inscritos: 17, id_plan: 2, docente: 'jc_pedhg@gestion.uta.cl', horas: 2 },
+  { codigo: 'HG079', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 2, inscritos: 18, id_plan: 2, docente: 'ivanna.margarucci@academicos.uta.cl', horas: 4 },
+  { codigo: 'HG079', tipo: TipoCurso.TALLER, grupo: 'A', semestre: 2, inscritos: 18, id_plan: 2, docente: 'ivanna.margarucci@academicos.uta.cl', horas: 2 },
+  { codigo: 'HG094', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 2, inscritos: 15, id_plan: 1, docente: 'juan.leon@academicos.uta.cl', horas: 2 },
+  { codigo: 'HG094', tipo: TipoCurso.TALLER, grupo: 'A', semestre: 2, inscritos: 15, id_plan: 1, docente: 'juan.leon@academicos.uta.cl', horas: 2 },
+  { codigo: 'HG139', tipo: TipoCurso.TALLER, grupo: 'A', semestre: 2, inscritos: 11, id_plan: 1, docente: 'christian.jamett@academicos.uta.cl', horas: 6 },
+  { codigo: 'HG275', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 2, inscritos: 2, id_plan: 3, docente: 'marisol.palma@academicos.uta.cl', horas: 4 },
+  { codigo: 'HG276', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 2, inscritos: 2, id_plan: 3, docente: 'carlos.donoso@academicos.uta.cl', horas: 6 },
+  { codigo: 'HG278', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 2, inscritos: 2, id_plan: 3, docente: 'alan.rodriguez@academicos.uta.cl', horas: 4 },
+  { codigo: 'HG411', tipo: TipoCurso.CATEDRA, grupo: '', semestre: 2, inscritos: 1, id_plan: 3, docente: null, horas: null },
+  { codigo: 'HG412', tipo: TipoCurso.CATEDRA, grupo: '', semestre: 2, inscritos: 1, id_plan: 3, docente: null, horas: null },
+  { codigo: 'HG418', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 2, inscritos: 2, id_plan: 1, docente: null, horas: null }, // equivalente a HG079-C-A: sin carga
+  { codigo: 'HG419', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 2, inscritos: 0, id_plan: 1, docente: null, horas: null },
+  { codigo: 'HG420', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 2, inscritos: 0, id_plan: 1, docente: null, horas: null },
+  { codigo: 'HG421', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 2, inscritos: 0, id_plan: 1, docente: null, horas: null },
+  { codigo: 'HG426', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 2, inscritos: 15, id_plan: 1, docente: 'misael.camus@academicos.uta.cl', horas: 4 },
+  { codigo: 'HG427', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 2, inscritos: 16, id_plan: 1, docente: 'carlos.choque@academicos.uta.cl', horas: 4 },
+  { codigo: 'HG428', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 2, inscritos: 16, id_plan: 1, docente: 'oliver.meseguer@academicos.uta.cl', horas: 4 },
+  { codigo: 'HG429', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 2, inscritos: 15, id_plan: 1, docente: 'christian.jamett@academicos.uta.cl', horas: 4 },
+  { codigo: 'HG435', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 2, inscritos: 12, id_plan: 1, docente: 'luis.castro@academicos.uta.cl', horas: 4 },
+  { codigo: 'HG436', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 2, inscritos: 12, id_plan: 1, docente: 'alfonso.diaz@academicos.uta.cl', horas: 4 },
+  { codigo: 'HG437', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 2, inscritos: 13, id_plan: 1, docente: 'elias.pizarro@academicos.uta.cl', horas: 6 },
+  { codigo: 'HG438', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 2, inscritos: 17, id_plan: 1, docente: 'guillem.serra@academicos.uta.cl', horas: 4 },
+  { codigo: 'HG439', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 2, inscritos: 14, id_plan: 1, docente: 'jc_pedhg@gestion.uta.cl', horas: 4 },
+  { codigo: 'HG454', tipo: TipoCurso.TALLER, grupo: '', semestre: 2, inscritos: 9, id_plan: 1, docente: null, horas: null },
+];
+
+
+async function eliminarProfesoresDemo() {
+  const demos = await prisma.usuario.findMany({
+    where: { email: { in: EMAILS_PROFESORES_DEMO } },
+    select: { id: true },
+  });
+  if (!demos.length) return;
+  const ids = demos.map((u) => u.id);
+  // Los tokens no tienen borrado en cascada; profesor, disponibilidad y cargas sí
+  await prisma.refreshToken.deleteMany({ where: { userId: { in: ids } } });
+  await prisma.passwordResetToken.deleteMany({ where: { userId: { in: ids } } });
+  await prisma.usuario.deleteMany({ where: { id: { in: ids } } });
+}
+
+async function seedDocentes(hashedPassword: string) {
   const rolProfesor = await prisma.rol.upsert({
     where: { clave: 'profesor' },
     update: { nombre: 'Profesor' },
     create: { clave: 'profesor', nombre: 'Profesor' },
   });
 
-  const docentes: { email: string; nombre: string; contrato: TipoContrato }[] = [
-    { email: 'profesor.horas@gestion.uta.cl', nombre: 'Docente Por Horas', contrato: TipoContrato.HORAS },
-    { email: 'profesor.horas2@gestion.uta.cl', nombre: 'Docente Por Horas 2', contrato: TipoContrato.HORAS },
-    { email: 'profesor.planta@gestion.uta.cl', nombre: 'Docente De Planta', contrato: TipoContrato.PLANTA },
-  ];
-
-  for (const d of docentes) {
-    const usuario = await prisma.usuario.upsert({
-      where: { email: d.email },
-      update: { nombre: d.nombre, role: 'profesor', activo: true, rolId: rolProfesor.id },
-      create: {
-        email: d.email,
-        password: hashedPassword,
-        nombre: d.nombre,
-        role: 'profesor',
-        activo: true,
-        rolId: rolProfesor.id,
-      },
-    });
+  for (const d of DOCENTES) {
+    let usuario = await prisma.usuario.findUnique({ where: { email: d.email } });
+    if (!usuario) {
+      if (d.existente) {
+        console.warn(`seedDocentes: no existe el usuario ${d.email}, se omite`);
+        continue;
+      }
+      usuario = await prisma.usuario.create({
+        data: {
+          email: d.email,
+          password: hashedPassword,
+          nombre: d.nombre,
+          role: 'profesor',
+          activo: true,
+          rolId: rolProfesor.id,
+        },
+      });
+    }
     await prisma.profesor.upsert({
       where: { id_usuario: usuario.id },
       update: { contrato: d.contrato },
       create: { id_usuario: usuario.id, contrato: d.contrato },
     });
+  }
+}
+
+async function seedCursos2026() {
+  const idPorEmail = new Map<string, number>();
+  const usuarios = await prisma.usuario.findMany({
+    where: { email: { in: DOCENTES.map((d) => d.email) } },
+    select: { id: true, email: true },
+  });
+  for (const u of usuarios) idPorEmail.set(u.email, u.id);
+
+  for (const c of CURSOS_2026) {
+    const malla = await prisma.malla.findFirst({
+      where: { codigo_asignatura: c.codigo, id_plan: c.id_plan },
+    });
+    if (!malla) {
+      console.warn(`seedCursos2026: ${c.codigo} no está en la malla del plan ${c.id_plan}, se omite`);
+      continue;
+    }
+
+    const where = {
+      codigo_asignatura: c.codigo,
+      tipo: c.tipo,
+      grupo: c.grupo,
+      year: YEAR_CURSOS,
+      semestre: c.semestre,
+    };
+    const existente = await prisma.curso.findFirst({ where });
+    const curso = existente
+      ? await prisma.curso.update({
+          where: { id_curso: existente.id_curso },
+          data: { inscritos: c.inscritos, id_malla: malla.id_malla },
+        })
+      : await prisma.curso.create({
+          data: { ...where, inscritos: c.inscritos, id_malla: malla.id_malla },
+        });
+
+    if (!c.docente || !c.horas) continue;
+    const idUsuario = idPorEmail.get(c.docente);
+    if (!idUsuario) {
+      console.warn(`seedCursos2026: no existe el docente ${c.docente}, ${c.codigo} queda sin carga`);
+      continue;
+    }
+
+    const carga = await prisma.cargaDocente.findFirst({
+      where: { id_curso: curso.id_curso, id_usuario: idUsuario },
+    });
+    if (carga) {
+      await prisma.cargaDocente.update({
+        where: { id_carga: carga.id_carga },
+        data: { cantidad_horas: c.horas },
+      });
+    } else {
+      await prisma.cargaDocente.create({
+        data: { id_curso: curso.id_curso, id_usuario: idUsuario, cantidad_horas: c.horas },
+      });
+    }
   }
 }
 
@@ -1067,26 +1255,7 @@ async function seedHorario() {
       });
     }
   }
-
-  // ADM-F03: un curso (cátedra, grupo A) por cada asignatura propia de la malla,
-  // con los mismos valores que crea AsignaturasService. Sin cursos no hay a quién asignar carga docente.
-  // Idempotente: no toca las mallas que ya tienen curso.
-  const mallasPropias = await prisma.malla.findMany({
-    where: { asignatura: { origen: TipoOrigen.INTERNA }, cursos: { none: {} } },
-  });
-  if (mallasPropias.length) {
-    await prisma.curso.createMany({
-      data: mallasPropias.map((m) => ({
-        tipo: TipoCurso.CATEDRA,
-        grupo: 'A',
-        inscritos: 22,
-        year: 2026,
-        semestre: m.semestre,
-        codigo_asignatura: m.codigo_asignatura,
-        id_malla: m.id_malla,
-      })),
-    });
-  }
+  // Los cursos de las asignaturas propias se cargan en seedCursos2026() con los datos reales.
 }
 
 main()
