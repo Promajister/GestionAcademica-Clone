@@ -204,10 +204,23 @@
                       }
                     </div>
                   } @else {
-                    <span class="propia-pending-note" matTooltip="Se programará con el generador automático en el Sprint 2">
-                      <mat-icon>schedule</mat-icon>
-                      Pendiente (Sprint 2)
-                    </span>
+                    @let clases = clasesDe(a);
+                    @if (clases.length) {
+                      <div class="bloques-resumen">
+                        @for (c of clases; track c.id) {
+                          <span class="bloque-pill bloque-pill--propia" matTooltip="Clase de la propuesta de horario (Grilla semanal)">
+                            <mat-icon>schedule</mat-icon>
+                            @if ((a.grupos?.length ?? 0) > 1) { Gr. {{ c.grupo }} · }
+                            {{ c.dia }} B{{ c.bloque_inicio }}–{{ c.bloque_fin }} ({{ c.sala || 'Sin sala' }})
+                          </span>
+                        }
+                      </div>
+                    } @else {
+                      <span class="propia-pending-note" matTooltip="Se programa al generar la propuesta en Grilla semanal (necesita docente en Carga docente)">
+                        <mat-icon>schedule</mat-icon>
+                        Sin horario
+                      </span>
+                    }
                   }
                 </td>
                 <td class="td-actions">
