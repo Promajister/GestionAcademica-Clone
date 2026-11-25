@@ -1,135 +1,431 @@
 {
-  "descripcion": "Grupos y carga docente 2026 según las planillas \"carga docente primer/segundo semestre.xlsx\". Generado con claude space/scripts/generar-datos-carga.js",
+  "descripcion": "Grupos, carga docente y disponibilidad 2026 según las planillas \"carga docente primer/segundo semestre.xlsx\" y los horarios \"HORARIO *.docx\". Generado con claude space/scripts/generar-datos-carga.js",
   "docentes": [
     {
       "email": "alan.jofre@docente.test",
       "nombre": "Alan Sebastián Jofré Quispe",
-      "contrato": "HORAS"
+      "contrato": "HORAS",
+      "disponibilidad": [
+        "2-1",
+        "2-2",
+        "3-9",
+        "3-10"
+      ]
     },
     {
       "email": "alan.rodriguez@docente.test",
       "nombre": "Alan Erick Rodriguez Valdivia",
-      "contrato": "HORAS"
+      "contrato": "HORAS",
+      "disponibilidad": [
+        "1-3",
+        "1-4",
+        "4-3",
+        "4-4"
+      ]
     },
     {
       "email": "alberto.diaz@docente.test",
       "nombre": "Alberto Eugenio Díaz Araya",
-      "contrato": "PLANTA"
+      "contrato": "PLANTA",
+      "disponibilidad": [
+        "2-9",
+        "2-10",
+        "3-9",
+        "3-10"
+      ]
     },
     {
       "email": "alfonso.diaz@docente.test",
       "nombre": "Alfonso Alejandro Díaz Aguad",
-      "contrato": "PLANTA"
+      "contrato": "PLANTA",
+      "disponibilidad": [
+        "1-5",
+        "1-6",
+        "2-9",
+        "2-10",
+        "3-1",
+        "3-2",
+        "4-3",
+        "4-4"
+      ]
     },
     {
       "email": "amalia.rojas@docente.test",
       "nombre": "Amalia Paz Rojas Varela",
-      "contrato": "HORAS"
+      "contrato": "HORAS",
+      "disponibilidad": [
+        "1-5",
+        "1-6",
+        "1-9",
+        "1-10",
+        "3-3",
+        "3-4",
+        "3-9",
+        "3-10",
+        "4-3",
+        "4-4",
+        "4-5",
+        "4-6",
+        "4-7",
+        "4-8",
+        "5-9",
+        "5-10"
+      ]
     },
     {
       "email": "arantzazu.ardiles@docente.test",
       "nombre": "Arantzazu Caterina Ardiles Villalobos",
-      "contrato": "HORAS"
+      "contrato": "HORAS",
+      "disponibilidad": [
+        "1-11",
+        "1-12"
+      ]
     },
     {
       "email": "carlos.choque@docente.test",
       "nombre": "Carlos Omar Choque Mariño",
-      "contrato": "PLANTA"
+      "contrato": "PLANTA",
+      "disponibilidad": [
+        "2-1",
+        "2-2",
+        "2-3",
+        "2-4",
+        "3-3",
+        "3-4",
+        "4-1",
+        "4-2",
+        "4-3",
+        "4-4",
+        "4-7",
+        "4-8"
+      ]
     },
     {
       "email": "carlos.donoso@docente.test",
       "nombre": "Carlos David Donoso Rojas",
-      "contrato": "PLANTA"
+      "contrato": "PLANTA",
+      "disponibilidad": [
+        "3-1",
+        "3-2",
+        "3-3",
+        "3-4",
+        "5-3",
+        "5-4",
+        "5-5",
+        "5-6"
+      ]
+    },
+    {
+      "email": "carolina.quintana@docente.test",
+      "nombre": "Carolina Andrea Del Carmen Quintana Talvac",
+      "contrato": "HORAS",
+      "disponibilidad": [
+        "3-3",
+        "3-4",
+        "5-7",
+        "5-8"
+      ]
     },
     {
       "email": "christian.jamett@docente.test",
       "nombre": "Christian Rodrigo Jamett Ibarra",
-      "contrato": "HORAS"
+      "contrato": "HORAS",
+      "disponibilidad": [
+        "1-7",
+        "1-8",
+        "1-9",
+        "1-10",
+        "2-3",
+        "2-4",
+        "2-7",
+        "2-8",
+        "2-9",
+        "2-10",
+        "4-3",
+        "4-4",
+        "5-1",
+        "5-2",
+        "5-3",
+        "5-4",
+        "5-5",
+        "5-6"
+      ]
     },
     {
       "email": "elias.pizarro@docente.test",
       "nombre": "Elias Pizarro Pizarro",
-      "contrato": "PLANTA"
+      "contrato": "PLANTA",
+      "disponibilidad": [
+        "1-11",
+        "1-12",
+        "2-9",
+        "2-10",
+        "2-11",
+        "2-12",
+        "3-11",
+        "3-12",
+        "4-11",
+        "4-12",
+        "5-9",
+        "5-10"
+      ]
     },
     {
       "email": "guillem.serra@docente.test",
       "nombre": "Guillem Serra Bou",
-      "contrato": "HORAS"
+      "contrato": "HORAS",
+      "disponibilidad": [
+        "1-3",
+        "1-4",
+        "1-7",
+        "1-8",
+        "1-9",
+        "1-10",
+        "2-7",
+        "2-8",
+        "2-9",
+        "2-10",
+        "3-7",
+        "3-8",
+        "3-9",
+        "3-10",
+        "4-5",
+        "4-6",
+        "5-7",
+        "5-8",
+        "5-9",
+        "5-10"
+      ]
     },
     {
       "email": "ignacio.jara@docente.test",
       "nombre": "Ignacio Alonso Jara Parra",
-      "contrato": "PLANTA"
+      "contrato": "PLANTA",
+      "disponibilidad": [
+        "1-9",
+        "1-10",
+        "2-7",
+        "2-8",
+        "3-9",
+        "3-10",
+        "3-11",
+        "3-12",
+        "4-3",
+        "4-4",
+        "4-7",
+        "4-8"
+      ]
     },
     {
       "email": "ivanna.margarucci@docente.test",
       "nombre": "Ivanna Margarucci",
-      "contrato": "PLANTA"
+      "contrato": "PLANTA",
+      "disponibilidad": [
+        "1-7",
+        "1-8",
+        "2-7",
+        "2-8",
+        "3-1",
+        "3-2",
+        "3-7",
+        "3-8",
+        "4-5",
+        "4-6"
+      ]
     },
     {
       "email": "jeans.gonzalez@docente.test",
       "nombre": "Jeans Manuel González Sperrhake",
-      "contrato": "HORAS"
+      "contrato": "HORAS",
+      "disponibilidad": [
+        "2-12",
+        "3-12",
+        "4-12",
+        "5-9",
+        "5-10",
+        "5-11",
+        "5-12"
+      ]
     },
     {
       "email": "jose.soto@docente.test",
       "nombre": "José Julián Soto Lara",
-      "contrato": "HORAS"
+      "contrato": "HORAS",
+      "disponibilidad": [
+        "2-11",
+        "2-12",
+        "4-7",
+        "4-8",
+        "5-3",
+        "5-4"
+      ]
     },
     {
       "email": "juan.leon@docente.test",
       "nombre": "Juan Pablo Leon Ancasi",
-      "contrato": "HORAS"
+      "contrato": "HORAS",
+      "disponibilidad": [
+        "1-11",
+        "1-12",
+        "2-9",
+        "2-10",
+        "2-11",
+        "2-12",
+        "5-11",
+        "5-12"
+      ]
     },
     {
       "email": "luis.castro@docente.test",
       "nombre": "Luis Eduardo Castro Castro",
-      "contrato": "PLANTA"
+      "contrato": "PLANTA",
+      "disponibilidad": [
+        "1-5",
+        "1-6",
+        "2-1",
+        "2-2",
+        "2-7",
+        "2-8",
+        "3-7",
+        "3-8",
+        "4-7",
+        "4-8",
+        "5-7",
+        "5-8"
+      ]
     },
     {
       "email": "manuel.prieto@docente.test",
       "nombre": "Manuel José Prieto Montt",
-      "contrato": "PLANTA"
+      "contrato": "PLANTA",
+      "disponibilidad": [
+        "2-7",
+        "2-8",
+        "3-7",
+        "3-8"
+      ]
     },
     {
       "email": "marisol.palma@docente.test",
       "nombre": "Marisol Haydee Palma Behnke",
-      "contrato": "PLANTA"
+      "contrato": "PLANTA",
+      "disponibilidad": []
     },
     {
       "email": "misael.camus@docente.test",
       "nombre": "Misael Heriberto Camus Ibacache",
-      "contrato": "PLANTA"
+      "contrato": "PLANTA",
+      "disponibilidad": [
+        "1-3",
+        "1-4",
+        "1-5",
+        "1-6",
+        "2-9",
+        "2-10",
+        "4-5",
+        "4-6",
+        "5-3",
+        "5-4",
+        "5-5",
+        "5-6"
+      ]
     },
     {
       "email": "monica.meza@docente.test",
       "nombre": "Monica Soledad Meza Aliaga",
-      "contrato": "PLANTA"
+      "contrato": "PLANTA",
+      "disponibilidad": [
+        "1-3",
+        "1-4",
+        "3-3",
+        "3-4",
+        "5-3",
+        "5-4"
+      ]
     },
     {
       "email": "oliver.meseguer@docente.test",
       "nombre": "Oliver Meseguer Ruiz",
-      "contrato": "PLANTA"
+      "contrato": "PLANTA",
+      "disponibilidad": [
+        "2-3",
+        "2-4",
+        "3-3",
+        "3-4",
+        "4-5",
+        "4-6",
+        "5-3",
+        "5-4"
+      ]
     },
     {
       "email": "oscar.corvacho@docente.test",
       "nombre": "Oscar Alexander Corvacho Ganahin",
-      "contrato": "HORAS"
+      "contrato": "HORAS",
+      "disponibilidad": [
+        "2-11",
+        "2-12",
+        "3-11",
+        "3-12",
+        "4-11",
+        "4-12"
+      ]
     },
     {
       "email": "patricia.palma@docente.test",
       "nombre": "Patricia Nataly Palma Maturana",
-      "contrato": "PLANTA"
+      "contrato": "PLANTA",
+      "disponibilidad": [
+        "1-5",
+        "1-6",
+        "1-7",
+        "1-8",
+        "3-7",
+        "3-8",
+        "3-9",
+        "3-10"
+      ]
     },
     {
       "email": "raul.bustos@docente.test",
       "nombre": "Raul Antonio Bustos Gonzalez",
-      "contrato": "HORAS"
+      "contrato": "HORAS",
+      "disponibilidad": [
+        "2-3",
+        "2-4",
+        "2-7",
+        "2-8",
+        "4-3",
+        "4-4",
+        "4-7",
+        "4-8",
+        "5-7",
+        "5-8"
+      ]
     },
     {
       "email": "rodrigo.ruz@docente.test",
       "nombre": "Rodrigo Daniel Ruz Zagal",
-      "contrato": "PLANTA"
+      "contrato": "PLANTA",
+      "disponibilidad": []
+    },
+    {
+      "email": "profesor1@docente.test",
+      "nombre": "Profesor 1",
+      "contrato": "PLANTA",
+      "suplente": true
+    },
+    {
+      "email": "profesor2@docente.test",
+      "nombre": "Profesor 2",
+      "contrato": "PLANTA",
+      "suplente": true
+    },
+    {
+      "email": "profesor3@docente.test",
+      "nombre": "Profesor 3",
+      "contrato": "PLANTA",
+      "suplente": true
     }
   ],
   "asignaturas_nuevas": [
@@ -578,13 +874,25 @@
       "codigo": "HG411",
       "grupo": "D",
       "inscritos": 1,
-      "docentes": []
+      "docentes": [
+        {
+          "email": "profesor1@docente.test",
+          "horas": 12
+        }
+      ],
+      "nota": "Sin docente en las planillas ni en los horarios: suplente"
     },
     {
       "codigo": "HG412",
       "grupo": "A",
       "inscritos": 1,
-      "docentes": []
+      "docentes": [
+        {
+          "email": "profesor2@docente.test",
+          "horas": 12
+        }
+      ],
+      "nota": "Sin docente en las planillas ni en los horarios: suplente"
     },
     {
       "codigo": "HG418",
@@ -850,13 +1158,25 @@
       "codigo": "HG454",
       "grupo": "C",
       "inscritos": 6,
-      "docentes": []
+      "docentes": [
+        {
+          "email": "carolina.quintana@docente.test",
+          "horas": 4
+        }
+      ],
+      "nota": "Docente tomado de la planilla del otro semestre (HG454-T-C)"
     },
     {
       "codigo": "HG454",
       "grupo": "D",
       "inscritos": 3,
-      "docentes": []
+      "docentes": [
+        {
+          "email": "profesor3@docente.test",
+          "horas": 4
+        }
+      ],
+      "nota": "Sin docente en las planillas ni en los horarios: suplente"
     },
     {
       "codigo": "HG943",
