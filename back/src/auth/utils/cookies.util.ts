@@ -29,12 +29,14 @@ export const setAuthCookies = (
     maxAge: cfg.refreshTtl * 1000,
   });
 
+  // Dura lo mismo que el refresh token: /auth/refresh exige esta cookie, y si venciera con el
+  // access token (15 min) la sesión ya no se podría renovar
   res.cookie('csrf_token', tokens.csrfToken, {
     sameSite: cfg.sameSite,
     secure: cfg.secure,
     httpOnly: false,
     path: '/',
-    maxAge: cfg.accessTtl * 1000,
+    maxAge: cfg.refreshTtl * 1000,
   });
 };
 
