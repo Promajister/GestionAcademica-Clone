@@ -1,0 +1,164 @@
+<div style="padding: 16px; font-family: sans-serif;">
+  <!-- Encabezado y controles -->
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; background: #0f172a; color: white; padding: 16px 20px; border-radius: 12px; margin-bottom: 12px;">
+    <div>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <mat-icon style="color: #38bdf8;">calendar_view_week</mat-icon>
+        <h2 style="margin: 0; font-size: 20px;">Calendario Semanal del Departamento</h2>
+        <span style="font-size: 11px; padding: 3px 8px; border-radius: 12px; font-weight: bold;"
+              [style.background]="estadoHorario === 'CERRADO' ? '#16a34a' : '#d97706'">
+          {{ estadoHorario }}
+        </span>
+      </div>
+      <p style="margin: 4px 0 0 34px; font-size: 13px; color: #94a3b8;">
+        Mostrando {{ salasFiltradas.length }} de {{ salas.length }} salas · Lunes a Viernes
+      </p>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+      <label style="font-size: 13px;">
+        Año:
+        <input type="number" [(ngModel)]="yearActual" (change)="cargarOcupacion()"
+               style="width: 75px; padding: 5px; border-radius: 6px; border: none; margin-left: 4px;">
+      </label>
+
+      <label style="font-size: 13px;">
+        Semestre:
+        <select [(ngModel)]="semestreActual" (change)="cargarOcupacion()"
+                style="padding: 5px 8px; border-radius: 6px; border: none; margin-left: 4px;">
+          <option [ngValue]="1">1° Semestre</option>
+          <option [ngValue]="2">2° Semestre</option>
+        </select>
+      </label>
+
+      <label style="display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.12); padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 13px;">
+        <input type="checkbox" [(ngModel)]="soloResaltarLibres">
+        <span>Destacar salas libres</span>
+      </label>
+    </div>
+  </div>
+
+  <!-- Barra de filtros rápidos: Por Sala (CAL-F02) y Por Docente (CAL-F03) -->
+  <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap; background: #f8fafc; border: 1px solid #cbd5e1; padding: 10px 16px; border-radius: 10px; margin-bottom: 14px; font-size: 13px;">
+    <!-- CAL-F02: Filtro por Sala -->
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <mat-icon style="font-size: 18px; width: 18px; height: 18px; color: #0284c7;">meeting_room</mat-icon>
+      <label style="font-weight: 600; color: #334155;">Sala:</label>
+      <select [(ngModel)]="salaSeleccionadaId"
+              style="padding: 8px 10px; border-radius: 6px; border: 1px solid #cbd5e1; background: white; min-width: 175px;">
+        <option [ngValue]="null">Todas las salas ({{ salas.length }})</option>
+        <option *ngFor="let sala of salas" [ngValue]="sala.id_sala">
+          {{ sala.nombre }} (Cap. {{ sala.capacidad }})
+        </option>
+      </select>
+    </div>
+
+    <!-- CAL-F03: Selector único de Docente con MatAutocomplete -->
+    <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 280px; max-width: 440px;">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" style="width: 100%; background: white; border-radius: 6px;">
+        <mat-label>Buscar y seleccionar docente</mat-label>
+        <input type="text"
+               matInput
+               [ngModel]="textoBusquedaDocente"
+               (ngModelChange)="alEscribirDocente($event)"
+               [matAutocomplete]="autoDocente"
+               placeholder="Ej. Docente De Planta...">
+        <button *ngIf="textoBusquedaDocente"
+                type="button"
+                mat-icon-button
+                matSuffix
+                (click)="limpiarDocente()"
+                style="border: none; background: transparent; cursor: pointer; color: #64748b;">
+          <mat-icon style="font-size: 18px;">close</mat-icon>
+        </button>
+        <mat-autocomplete #autoDocente="matAutocomplete"
+                          (optionSelected)="seleccionarDocente($event.option.value)">
+          <mat-option *ngFor="let doc of docentesFiltradosAutocomplete" [value]="doc">
+            {{ doc.nombre }} <span style="color: #64748b; font-size: 12px;">({{ doc.contrato }})</span>
+          </mat-option>
+          <mat-option *ngIf="docentesFiltradosAutocomplete.length === 0" disabled>
+            No se encontraron docentes
+          </mat-option>
+        </mat-autocomplete>
+      </mat-form-field>
+    </div>
+
+    <!-- Botón para restaurar vista completa -->
+    <button *ngIf="salaSeleccionadaId !== null || docenteSeleccionado !== null || soloResaltarLibres"
+            (click)="limpiarFiltros()"
+            style="margin-left: auto; background: #e2e8f0; border: none; color: #0f172a; padding: 8px 14px; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+      <mat-icon style="font-size: 16px; width: 16px; height: 16px;">filter_alt_off</mat-icon>
+      Ver todo el departamento
+    </button>
+  </div>
+
+  <!-- Grilla única en pantalla -->
+  <div style="overflow: auto; max-height: 72vh; border: 1px solid #cbd5e1; border-radius: 10px; background: white;">
+    <table style="border-collapse: collapse; width: 100%; font-size: 12px;">
+      <thead style="position: sticky; top: 0; z-index: 10; background: #1e293b; color: white;">
+        <tr>
+          <th style="padding: 10px; width: 90px; border-bottom: 2px solid #334155;">Día</th>
+          <th style="padding: 10px; width: 105px; border-bottom: 2px solid #334155;">Bloque</th>
+          <th *ngFor="let sala of salasFiltradas"
+              style="padding: 10px; text-align: center; color: #38bdf8; border-left: 1px solid #334155; border-bottom: 2px solid #334155;">
+            <div>{{ sala.nombre }}</div>
+            <div style="font-size: 10px; font-weight: normal; color: #94a3b8;">Cap. {{ sala.capacidad }}</div>
+          </th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <ng-container *ngFor="let dia of dias">
+          <tr *ngFor="let bloque of bloques; let first = first"
+              [style.border-top]="first ? '2px solid #64748b' : '1px solid #e2e8f0'">
+            
+            <!-- Columna Día -->
+            <td *ngIf="first" [attr.rowspan]="bloques.length"
+                style="font-weight: 800; text-align: center; background: #f1f5f9; color: #0f172a; border-right: 1px solid #cbd5e1; padding: 8px;">
+              {{ dia.nombre }}
+            </td>
+
+            <!-- Columna Bloque -->
+            <td style="padding: 6px 8px; font-weight: 600; color: #334155; background: #f8fafc; border-right: 1px solid #e2e8f0; white-space: nowrap; text-align: center;">
+              {{ bloque.horaInicio }} - {{ bloque.horaFin }}
+            </td>
+
+            <!-- Celdas de las salas filtradas -->
+            <td *ngFor="let sala of salasFiltradas"
+                style="padding: 4px; border-left: 1px solid #e2e8f0; min-width: 140px; vertical-align: middle;">
+              
+              <ng-container *ngIf="getOcupacion(dia.id_dia, bloque.id_bloque, sala.id_sala) as oc; else bloqueLibre">
+                <div [style.opacity]="soloResaltarLibres ? '0.2' : '1'"
+                     [style.background]="oc.tipo === 'EXTERNA' ? '#fef3c7' : '#dbeafe'"
+                     [style.border]="oc.tipo === 'EXTERNA' ? '1px solid #f59e0b' : '1px solid #3b82f6'"
+                     style="border-radius: 6px; padding: 4px 6px; transition: opacity 0.2s;">
+                  <div style="font-weight: 800; font-size: 11px; color: #0f172a;">
+                    {{ oc.codigo }} (G{{ oc.grupo }})
+                  </div>
+                  <div style="font-size: 10px; color: #334155; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;"
+                       [title]="oc.actividad">
+                    {{ oc.actividad }}
+                  </div>
+                  <div style="font-size: 9px; color: #475569; margin-top: 2px; font-weight: 600;">
+                    {{ oc.docente }}
+                  </div>
+                </div>
+              </ng-container>
+
+              <ng-template #bloqueLibre>
+                <div *ngIf="!docenteSeleccionado; else sinClaseDocente"
+                     style="background: #dcfce7; border: 1px dashed #22c55e; color: #15803d; border-radius: 6px; padding: 6px; text-align: center; font-weight: 700; font-size: 11px;">
+                  LIBRE
+                </div>
+                <ng-template #sinClaseDocente>
+                  <div style="text-align: center; color: #cbd5e1; font-size: 11px; padding: 6px;">—</div>
+                </ng-template>
+              </ng-template>
+
+            </td>
+          </tr>
+        </ng-container>
+      </tbody>
+    </table>
+  </div>
+</div>

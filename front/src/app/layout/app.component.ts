@@ -282,6 +282,7 @@ export class AppComponent implements OnInit, AfterViewInit, OnDestroy {
           { label: 'Grilla semanal', icon: 'grid_on', route: '/horario/grilla' },
           { label: 'Docentes', icon: 'person_add', route: '/horario/profesores' },
           { label: 'Carga docente', icon: 'assignment_ind', route: '/horario/carga-docente' },
+          { label: 'Calendario departamento', icon: 'calendar_view_week', route: '/horario/calendario' },
         ],
       },
       {

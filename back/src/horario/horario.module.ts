@@ -10,6 +10,8 @@ import { BloquesProtegidosModule } from './bloques-protegidos/bloques-protegidos
 import { ProfesoresModule } from './profesores/profesores.module';
 import { DisponibilidadModule } from './disponibilidad/disponibilidad.module';
 import { PropuestaModule } from './propuesta/propuesta.module';
+import { CalendarioModule } from './calendario/calendario.module';
+
 
 // Agrupa los submódulos de Horario para registrarlos una sola vez en AppModule
 @Module({
@@ -25,6 +27,7 @@ import { PropuestaModule } from './propuesta/propuesta.module';
     ProfesoresModule,
     DisponibilidadModule,
     PropuestaModule,
+    CalendarioModule,
   ],
 })
 export class HorarioModule {}

@@ -302,6 +302,15 @@ export const routes: Routes = [
       import('./components/horario-profesores/horario-profesores.component')
         .then(m => m.HorarioProfesoresComponent),
   },
+  {
+    path: 'horario/calendario',
+    canActivate: [authGuard, roleGuard],
+    data: { allowedRoles: ['jefatura', 'secretaria'] },
+    loadComponent: () =>
+      import('./components/horario-calendario/horario-calendario.component').then(
+        (m) => m.HorarioCalendarioComponent,
+      ),
+  },
 
   {
     path: '**',
