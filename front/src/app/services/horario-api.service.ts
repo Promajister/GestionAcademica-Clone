@@ -118,7 +118,8 @@ export type AlcanceBloqueProtegidoUI =
   | 'ESTUDIANTES'
   | 'PRACTICA_PREPRACTICA'
   | 'ACADEMICOS'
-  | 'ACADEMICO_INDIVIDUAL';
+  | 'ACADEMICO_INDIVIDUAL'
+  | 'SALA';
 
 export interface BloqueProtegidoDTO {
   id_bloque_protegido: number;
@@ -136,6 +137,9 @@ export interface BloqueProtegidoDTO {
   semestre?: number | null;
   contrato?: string | null;
   id_usuario?: number | null;
+  // Alcance SALA: la sala reservada
+  id_sala?: number | null;
+  sala?: { id_sala: number; nombre: string } | null;
   carrera?: { codigo: string; nombre: string } | null;
   profesor?: {
     id_usuario: number;
@@ -155,6 +159,7 @@ export interface CreateBloqueProtegidoPayload {
   semestre?: number;
   contrato?: string;
   id_usuario?: number;
+  id_sala?: number;
 }
 
 export interface ProfesorItemDTO {
@@ -276,6 +281,7 @@ export class HorarioApiService {
     codigo_carrera?: string;
     semestre?: number;
     id_usuario?: number;
+    id_sala?: number;
   }): Observable<BloqueProtegidoDTO[]> {
     let p = new HttpParams();
     if (params?.alcance) p = p.set('alcance', params.alcance);
@@ -286,6 +292,7 @@ export class HorarioApiService {
       p = p.set('semestre', String(params.semestre));
     if (params?.id_usuario != null)
       p = p.set('id_usuario', String(params.id_usuario));
+    if (params?.id_sala != null) p = p.set('id_sala', String(params.id_sala));
 
     return this.http.get<BloqueProtegidoDTO[]>(
       `${this.baseUrl}/bloques-protegidos`,
@@ -320,8 +327,8 @@ export class HorarioApiService {
 
   createBloqueProtegido(
     payload: CreateBloqueProtegidoPayload,
-  ): Observable<{ mensaje: string; total_creados?: number }> {
-    return this.http.post<{ mensaje: string; total_creados?: number }>(
+  ): Observable<{ mensaje: string; total_creados?: number; advertencias?: string[] }> {
+    return this.http.post<{ mensaje: string; total_creados?: number; advertencias?: string[] }>(
       `${this.baseUrl}/bloques-protegidos`,
       payload,
     );

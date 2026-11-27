@@ -29,6 +29,7 @@ type BloqueProtegidoConRelaciones = Prisma.BloqueProtegidoGetPayload<{
     profesor: {
       include: { usuario: true };
     };
+    sala: true;
   };
 }>;
 
@@ -48,6 +49,8 @@ export interface BloqueProtegidoAgrupado {
   semestre: number | null;
   contrato: TipoContrato | null;
   id_usuario: number | null;
+  id_sala: number | null;
+  sala: { id_sala: number; nombre: string } | null;
   carrera: { codigo: string; nombre: string } | null;
   profesor: {
     id_usuario: number;
@@ -77,6 +80,9 @@ export class BloquesProtegidosService {
       const uA = a.id_usuario ?? 0;
       const uB = b.id_usuario ?? 0;
       if (uA !== uB) return uA - uB;
+      const salaA = a.id_sala ?? 0;
+      const salaB = b.id_sala ?? 0;
+      if (salaA !== salaB) return salaA - salaB;
       return a.id_bloque - b.id_bloque;
     });
 
@@ -93,7 +99,8 @@ export class BloquesProtegidosService {
       x.codigo_carrera === y.codigo_carrera &&
       x.semestre === y.semestre &&
       x.contrato === y.contrato &&
-      x.id_usuario === y.id_usuario;
+      x.id_usuario === y.id_usuario &&
+      x.id_sala === y.id_sala;
 
     for (const f of ordenadas) {
       if (actual.length === 0) {
@@ -140,6 +147,10 @@ export class BloquesProtegidosService {
       semestre: primero.semestre ?? null,
       contrato: primero.contrato ?? null,
       id_usuario: primero.id_usuario ?? null,
+      id_sala: primero.id_sala ?? null,
+      sala: primero.sala
+        ? { id_sala: primero.sala.id_sala, nombre: primero.sala.nombre }
+        : null,
       carrera: primero.carrera
         ? { codigo: primero.carrera.codigo, nombre: primero.carrera.nombre }
         : null,
@@ -170,6 +181,7 @@ export class BloquesProtegidosService {
     if (q.codigo_carrera) where.codigo_carrera = q.codigo_carrera;
     if (q.semestre !== undefined) where.semestre = q.semestre;
     if (q.id_usuario !== undefined) where.id_usuario = q.id_usuario;
+    if (q.id_sala !== undefined) where.id_sala = q.id_sala;
 
     const filas = await this.prisma.bloqueProtegido.findMany({
       where,
@@ -180,6 +192,7 @@ export class BloquesProtegidosService {
         profesor: {
           include: { usuario: true },
         },
+        sala: true,
       },
       orderBy: [{ id_dia: 'asc' }, { id_bloque: 'asc' }],
     });
@@ -242,6 +255,11 @@ export class BloquesProtegidosService {
       }
     }
 
+    // Reservas de una sala
+    if (q.id_sala) {
+      condicionesAlcance.push({ alcance: 'SALA', id_sala: q.id_sala });
+    }
+
     if (condicionesAlcance.length === 0) {
       return [];
     }
@@ -255,6 +273,7 @@ export class BloquesProtegidosService {
         profesor: {
           include: { usuario: true },
         },
+        sala: true,
       },
       orderBy: [{ id_dia: 'asc' }, { id_bloque: 'asc' }],
     });
@@ -285,6 +304,7 @@ export class BloquesProtegidosService {
         profesor: {
           include: { usuario: true },
         },
+        sala: true,
       },
     });
     if (!bloque) {
@@ -368,6 +388,7 @@ export class BloquesProtegidosService {
               semestre: dto.semestre ?? null,
               contrato: dto.contrato ?? null,
               id_usuario: dto.id_usuario ?? null,
+              id_sala: dto.id_sala ?? null,
             },
           });
           if (duplicado) {
@@ -391,6 +412,7 @@ export class BloquesProtegidosService {
             semestre: dto.semestre ?? null,
             contrato: dto.contrato ?? null,
             id_usuario: dto.id_usuario ?? null,
+            id_sala: dto.id_sala ?? null,
           });
         }
       }
@@ -399,8 +421,19 @@ export class BloquesProtegidosService {
         data: registrosAInsertar,
       });
 
+      const advertencias =
+        dto.alcance === AlcanceBloqueProtegido.SALA && dto.id_sala
+          ? await this.clasesEnReserva(
+              tx,
+              dto.id_sala,
+              diasEncontrados.map((d) => d.id_dia),
+              bloquesNums,
+            )
+          : [];
+
       return {
         mensaje: 'Bloques protegidos creados correctamente',
+        advertencias,
         total_creados: registrosAInsertar.length,
         nombre: dto.nombre,
         alcance: dto.alcance,
@@ -430,6 +463,7 @@ export class BloquesProtegidosService {
     if (dto.semestre !== undefined) data.semestre = dto.semestre;
     if (dto.contrato !== undefined) data.contrato = dto.contrato;
     if (dto.id_usuario !== undefined) data.id_usuario = dto.id_usuario;
+    if (dto.id_sala !== undefined) data.id_sala = dto.id_sala;
 
     return this.prisma.bloqueProtegido.update({
       where: { id_bloque_protegido: id },
@@ -441,6 +475,7 @@ export class BloquesProtegidosService {
         profesor: {
           include: { usuario: true },
         },
+        sala: true,
       },
     });
   }
@@ -472,6 +507,7 @@ export class BloquesProtegidosService {
           f.semestre === p.semestre &&
           f.contrato === p.contrato &&
           f.id_usuario === p.id_usuario &&
+          f.id_sala === p.id_sala &&
           f.id_bloque === p.id_bloque + i,
       );
       if (!mismoGrupo) {
@@ -509,6 +545,7 @@ export class BloquesProtegidosService {
           semestre: p.semestre,
           contrato: p.contrato,
           id_usuario: p.id_usuario,
+          id_sala: p.id_sala,
         },
       });
       if (duplicado) {
@@ -552,6 +589,7 @@ export class BloquesProtegidosService {
           semestre: bloque.semestre,
           contrato: bloque.contrato,
           id_usuario: bloque.id_usuario,
+          id_sala: bloque.id_sala,
         },
       });
       return {
@@ -569,7 +607,53 @@ export class BloquesProtegidosService {
     };
   }
 
+  // Clases de la propuesta que ya están en la sala en los bloques reservados
+  private async clasesEnReserva(
+    tx: Tx,
+    id_sala: number,
+    dias: number[],
+    bloques: number[],
+  ): Promise<string[]> {
+    const filtro = {
+      id_sala,
+      id_dia: { in: dias },
+      id_bloque: { in: bloques },
+    };
+    const [propias, externas] = await Promise.all([
+      tx.horario.findMany({
+        where: filtro,
+        include: { dia: true, carga: { include: { curso: true } } },
+      }),
+      tx.horarioExterno.findMany({
+        where: filtro,
+        include: { dia: true, curso: true },
+      }),
+    ]);
+    // Una línea por clase y día, con su rango de bloques (ej. "HG057 (grupo A) el LUNES bloques 1-2")
+    const porClase = new Map<string, number[]>();
+    for (const h of [
+      ...propias.map((x) => ({ curso: x.carga.curso, dia: x.dia.nombre, b: x.id_bloque })),
+      ...externas.map((x) => ({ curso: x.curso, dia: x.dia.nombre, b: x.id_bloque })),
+    ]) {
+      const k = `${h.curso.codigo_asignatura} (grupo ${h.curso.grupo}) el ${h.dia}`;
+      porClase.set(k, [...(porClase.get(k) ?? []), h.b]);
+    }
+    return [...porClase].map(([k, bs]) => {
+      const u = [...new Set(bs)].sort((a, b) => a - b);
+      const rango = u.length > 1 ? `bloques ${u[0]}-${u[u.length - 1]}` : `bloque ${u[0]}`;
+      return `${k} ${rango} ya está en la sala: muévela o vuelve a generar la propuesta`;
+    });
+  }
+
   private async validarDestinatario(tx: Tx, dto: CreateBloqueProtegidoDto) {
+    if (
+      dto.alcance !== AlcanceBloqueProtegido.SALA &&
+      dto.id_sala !== undefined
+    ) {
+      throw new BadRequestException(
+        `El alcance ${dto.alcance} no admite sala`,
+      );
+    }
     switch (dto.alcance) {
       case AlcanceBloqueProtegido.UNIVERSIDAD:
       case AlcanceBloqueProtegido.FACULTAD: {
@@ -676,6 +760,33 @@ export class BloquesProtegidosService {
         if (!prof) {
           throw new BadRequestException(
             `El docente con id_usuario ${dto.id_usuario} no existe en Profesor`,
+          );
+        }
+        break;
+      }
+
+      case AlcanceBloqueProtegido.SALA: {
+        if (dto.id_sala === undefined) {
+          throw new BadRequestException(
+            'El alcance SALA requiere especificar la sala (id_sala)',
+          );
+        }
+        if (
+          dto.codigo_carrera ||
+          dto.semestre !== undefined ||
+          dto.contrato ||
+          dto.id_usuario !== undefined
+        ) {
+          throw new BadRequestException(
+            'El alcance SALA no admite carrera, semestre, contrato ni docente',
+          );
+        }
+        const sala = await tx.sala.findUnique({
+          where: { id_sala: dto.id_sala },
+        });
+        if (!sala || !sala.activo) {
+          throw new BadRequestException(
+            `La sala ${dto.id_sala} no existe o no está activa`,
           );
         }
         break;

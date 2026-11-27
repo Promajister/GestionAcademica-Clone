@@ -8,7 +8,7 @@
       <div>
         <h1>Bloques Protegidos</h1>
         <p class="bp-subtitle">
-          Configuración de horarios reservados que no admiten asignación de clases (institucionales, por grupo y docentes).
+          Configuración de horarios reservados que no admiten asignación de clases (institucionales, por grupo, docentes y reservas de sala).
         </p>
       </div>
     </div>
@@ -210,6 +210,21 @@
             @if (profesores.length === 0 && !cargandoProfesores) {
               <mat-hint class="hint-warn">Aún no hay docentes registrados en el sistema</mat-hint>
             }
+          </mat-form-field>
+        }
+
+        <!-- Sala (Para SALA): reserva semanal, ninguna clase la ocupa en ese horario -->
+        @if (alcance === 'SALA') {
+          <mat-form-field appearance="outline" class="w-100 campo-sala">
+            <mat-label>Sala reservada</mat-label>
+            <mat-select [(ngModel)]="idSala">
+              @for (s of salas; track s.id_sala) {
+                <mat-option [value]="s.id_sala">
+                  {{ s.nombre }} ({{ s.tipo === 'CLASES' ? 'clases' : 'reuniones' }})
+                </mat-option>
+              }
+            </mat-select>
+            <mat-hint>Se repite cada semana: no se ponen clases en esa sala y horario</mat-hint>
           </mat-form-field>
         }
 

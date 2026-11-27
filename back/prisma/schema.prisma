@@ -986,6 +986,7 @@ model Sala {
   ocupacionesPuntuales OcupacionPuntual[]
   horarios             Horario[]
   horariosExternos     HorarioExterno[]
+  bloquesProtegidos    BloqueProtegido[]
 
   @@map("salas")
 }
@@ -1024,6 +1025,8 @@ enum AlcanceBloqueProtegido {
   PRACTICA_PREPRACTICA
   ACADEMICOS
   ACADEMICO_INDIVIDUAL
+  // Reserva semanal de una sala (ej. reunión fija): ninguna clase la ocupa en ese día y bloque
+  SALA
 }
 
 model BloqueProtegido {
@@ -1036,11 +1039,13 @@ model BloqueProtegido {
   semestre            Int?
   contrato            TipoContrato?
   id_usuario          Int?
+  id_sala             Int?
 
   dia      Dia           @relation(fields: [id_dia], references: [id_dia], onDelete: Cascade)
   bloque   BloqueHorario @relation(fields: [id_bloque], references: [id_bloque], onDelete: Cascade)
   carrera  Carrera?      @relation(fields: [codigo_carrera], references: [codigo], onDelete: Cascade)
   profesor Profesor?     @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+  sala     Sala?         @relation(fields: [id_sala], references: [id_sala], onDelete: Cascade)
 
   @@index([id_dia, id_bloque])
   @@map("bloques_protegidos")

@@ -24,7 +24,7 @@ export class CreateBloqueProtegidoDto {
 
   @IsEnum(AlcanceBloqueProtegido, {
     message:
-      'El alcance debe ser UNIVERSIDAD, FACULTAD, CARRERA, ESTUDIANTES, PRACTICA_PREPRACTICA, ACADEMICOS o ACADEMICO_INDIVIDUAL',
+      'El alcance debe ser UNIVERSIDAD, FACULTAD, CARRERA, ESTUDIANTES, PRACTICA_PREPRACTICA, ACADEMICOS, ACADEMICO_INDIVIDUAL o SALA',
   })
   alcance!: AlcanceBloqueProtegido;
 
@@ -64,4 +64,9 @@ export class CreateBloqueProtegidoDto {
   @IsOptional()
   @IsInt({ message: 'id_usuario debe ser un número entero' })
   id_usuario?: number;
+
+  // Alcance SALA: sala que se reserva
+  @IsOptional()
+  @IsInt({ message: 'id_sala debe ser un número entero' })
+  id_sala?: number;
 }

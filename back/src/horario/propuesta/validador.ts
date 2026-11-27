@@ -221,6 +221,7 @@ export function crucesConProtegidos(
     const clase = {
       codigo_carrera: a.codigo_carrera,
       nivel: a.nivel,
+      id_sala: a.id_sala,
       docentes: a.docentes
         .filter((d) => d.contrato)
         .map((d) => ({ id_usuario: d.id_usuario, contrato: d.contrato! })),

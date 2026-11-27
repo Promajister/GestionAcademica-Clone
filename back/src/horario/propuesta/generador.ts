@@ -45,6 +45,8 @@ export interface ProtegidoEntrada {
   semestre: number | null;
   contrato: TipoContrato | null;
   id_usuario: number | null;
+  // Alcance SALA: la sala reservada
+  id_sala?: number | null;
 }
 
 // Bloque ocupado por una asignatura externa (fijo, no lo mueve el generador)
@@ -62,6 +64,8 @@ export interface AfectadoPorProtegido {
   codigo_carrera: string | null;
   nivel: number;
   docentes: { id_usuario: number; contrato: TipoContrato }[];
+  // Sala de la clase (para las reservas de sala); sin sala, una reserva no la alcanza
+  id_sala?: number | null;
 }
 
 export interface Sesion {
@@ -108,7 +112,12 @@ const clave = (id_dia: number, bloque: number) => `${id_dia}-${bloque}`;
 export function protegidoAfecta(
   p: Pick<
     ProtegidoEntrada,
-    'alcance' | 'codigo_carrera' | 'semestre' | 'contrato' | 'id_usuario'
+    | 'alcance'
+    | 'codigo_carrera'
+    | 'semestre'
+    | 'contrato'
+    | 'id_usuario'
+    | 'id_sala'
   >,
   c: AfectadoPorProtegido,
 ): boolean {
@@ -125,6 +134,9 @@ export function protegidoAfecta(
       return c.docentes.some((d) => !p.contrato || p.contrato === d.contrato);
     case AlcanceBloqueProtegido.ACADEMICO_INDIVIDUAL:
       return c.docentes.some((d) => d.id_usuario === p.id_usuario);
+    // Reserva de sala: alcanza a la clase que está en esa sala
+    case AlcanceBloqueProtegido.SALA:
+      return p.id_sala != null && p.id_sala === c.id_sala;
     default:
       return false;
   }
@@ -167,6 +179,13 @@ export function generarPropuesta(e: EntradaGenerador): ResultadoGenerador {
     ]);
   const cargaCohorte = new Map<string, number>(); // `${cohorte}-${dia}` -> bloques
   const usoSala = new Map<number, number>();
+
+  // Las salas reservadas (bloque protegido de alcance SALA) no se usan en esos bloques
+  for (const p of e.protegidos) {
+    if (p.alcance === AlcanceBloqueProtegido.SALA && p.id_sala != null) {
+      salaOcupada.add(`${p.id_sala}-${p.id_dia}-${p.id_bloque}`);
+    }
+  }
 
   for (const x of e.externos) {
     if (x.id_sala != null) {

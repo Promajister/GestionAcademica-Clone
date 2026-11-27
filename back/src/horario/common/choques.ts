@@ -77,7 +77,26 @@ export async function choqueConOcupaciones(
     }
   }
 
-  // 3. Choque con OcupacionPuntual
+  // 3. Reserva semanal de la sala (bloque protegido de alcance SALA)
+  const idDiaReserva =
+    p.id_dia ??
+    (p.fecha ? ((p.fecha.getUTCDay() + 6) % 7) + 1 : undefined); // lunes = 1
+  if (idDiaReserva && idDiaReserva <= 5) {
+    const reserva = await db.bloqueProtegido.findFirst({
+      where: {
+        alcance: 'SALA',
+        id_sala: p.id_sala,
+        id_dia: idDiaReserva,
+        id_bloque: p.bloque_numero,
+      },
+      include: { dia: true },
+    });
+    if (reserva) {
+      return `La ${nombreSala} está reservada («${reserva.nombre}») el ${reserva.dia.nombre} bloque ${p.bloque_numero}`;
+    }
+  }
+
+  // 4. Choque con OcupacionPuntual
   const puntual = await db.ocupacionPuntual.findFirst({
     where: {
       id_sala: p.id_sala,

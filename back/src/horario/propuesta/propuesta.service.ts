@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  AlcanceBloqueProtegido,
   EstadoHorario,
   Prisma,
   TipoCurso,
@@ -400,6 +401,7 @@ export class PropuestaService {
       id_curso,
       hacia.id_dia,
       bloquesHacia,
+      hacia.id_sala,
     );
     // Sala ocupada o clase del mismo semestre en esos bloques: no se mueve
     const choque = choqueAlMover(
@@ -521,6 +523,7 @@ export class PropuestaService {
     id_curso: number,
     id_dia: number,
     bloques: number[],
+    id_sala: number | null,
   ) {
     const curso = await tx.curso.findUnique({
       where: { id_curso },
@@ -533,6 +536,7 @@ export class PropuestaService {
     const clase = {
       codigo_carrera: curso.malla?.plan.codigo_carrera ?? null,
       nivel: curso.malla?.semestre ?? curso.semestre,
+      id_sala,
       docentes: curso.cargaDocentes.map((cd) => ({
         id_usuario: cd.id_usuario,
         contrato: cd.profesor.contrato,
@@ -546,7 +550,9 @@ export class PropuestaService {
     const p = protegidos.find((x) => protegidoAfecta(x, clase));
     if (p) {
       throw new BadRequestException(
-        `No se puede asignar la clase en un bloque protegido: «${p.nombre}» (${p.dia.nombre} bloque ${p.id_bloque})`,
+        p.alcance === AlcanceBloqueProtegido.SALA
+          ? `La sala está reservada: «${p.nombre}» (${p.dia.nombre} bloque ${p.id_bloque})`
+          : `No se puede asignar la clase en un bloque protegido: «${p.nombre}» (${p.dia.nombre} bloque ${p.id_bloque})`,
       );
     }
   }
