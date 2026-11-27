@@ -137,3 +137,13 @@ body.student-modal-open .mat-drawer-content {
   background-color: #9ca3af;
   border-radius: 999px;
 }
+
+/* Tooltip con saltos de línea (detalle de cruces en la grilla de horario) */
+.tooltip-multilinea .mdc-tooltip__surface {
+  white-space: pre-wrap;
+  background-color: #1f2937 !important;
+  color: #fff !important;
+  opacity: 1 !important;
+  max-width: 440px !important;
+  text-align: left !important;
+}
