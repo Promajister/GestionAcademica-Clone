@@ -408,24 +408,6 @@
       "nombre": "Rodrigo Daniel Ruz Zagal",
       "contrato": "PLANTA",
       "disponibilidad": []
-    },
-    {
-      "email": "profesor1@docente.test",
-      "nombre": "Profesor 1",
-      "contrato": "PLANTA",
-      "suplente": true
-    },
-    {
-      "email": "profesor2@docente.test",
-      "nombre": "Profesor 2",
-      "contrato": "PLANTA",
-      "suplente": true
-    },
-    {
-      "email": "profesor3@docente.test",
-      "nombre": "Profesor 3",
-      "contrato": "PLANTA",
-      "suplente": true
     }
   ],
   "asignaturas_nuevas": [
@@ -874,25 +856,15 @@
       "codigo": "HG411",
       "grupo": "D",
       "inscritos": 1,
-      "docentes": [
-        {
-          "email": "profesor1@docente.test",
-          "horas": 12
-        }
-      ],
-      "nota": "Sin docente en las planillas ni en los horarios: suplente"
+      "docentes": [],
+      "nota": "Sin docente en las planillas ni en los horarios: queda sin carga docente"
     },
     {
       "codigo": "HG412",
       "grupo": "A",
       "inscritos": 1,
-      "docentes": [
-        {
-          "email": "profesor2@docente.test",
-          "horas": 12
-        }
-      ],
-      "nota": "Sin docente en las planillas ni en los horarios: suplente"
+      "docentes": [],
+      "nota": "Sin docente en las planillas ni en los horarios: queda sin carga docente"
     },
     {
       "codigo": "HG418",
@@ -1170,13 +1142,8 @@
       "codigo": "HG454",
       "grupo": "D",
       "inscritos": 3,
-      "docentes": [
-        {
-          "email": "profesor3@docente.test",
-          "horas": 4
-        }
-      ],
-      "nota": "Sin docente en las planillas ni en los horarios: suplente"
+      "docentes": [],
+      "nota": "Sin docente en las planillas ni en los horarios: queda sin carga docente"
     },
     {
       "codigo": "HG943",

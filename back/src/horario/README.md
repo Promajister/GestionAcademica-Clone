@@ -119,4 +119,4 @@ Solo para el docente autenticado: el `id_usuario` se toma del JWT, nunca del bod
 | GET | `/horario/disponibilidad/mia` | `{ profesor, habilitado, contratos_habilitados, bloques: [{ dia, bloque }] }`. 403 si el usuario no es docente. Contrato no habilitado → `habilitado: false` |
 | PUT | `/horario/disponibilidad/mia` | `{ bloques: [{ dia: 'LUNES'..'VIERNES', bloque: 1..12 }] }`. Reemplaza toda la disponibilidad en una transacción. 403 si el contrato no está habilitado. Los bloques protegidos no se consideran en la disponibilidad |
 
-Front: `/horario/mi-disponibilidad` (perfil `profesor`), reutiliza `app-horario-grilla` en modo selección. Usuarios demo del seed: `profesor.horas@`, `profesor.horas2@` y `profesor.planta@gestion.uta.cl` (clave `123456`).
+Front: `/horario/mi-disponibilidad` (perfil `profesor`), reutiliza `app-horario-grilla` en modo selección. Para probarla, entrar con un docente por horas del seed (los de las planillas, correo `@docente.test`, clave `123456`), por ejemplo `alan.jofre@docente.test`; uno de planta (ej. `misael.camus@docente.test`) ve la pantalla como no habilitada.
