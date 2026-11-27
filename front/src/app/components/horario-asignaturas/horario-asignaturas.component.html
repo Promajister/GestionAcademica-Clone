@@ -422,6 +422,11 @@
                   <p class="muted">
                     Configura cada clase de la asignatura con su día, horario y sala asignada.
                   </p>
+                  <p
+                    class="bloques-contador"
+                    [class.bloques-contador--ok]="bloquesFijosContados === bloquesSemanalesForm">
+                    Bloques fijos: {{ bloquesFijosContados }} / {{ bloquesSemanalesForm }}
+                  </p>
                 </div>
 
                 <button

@@ -186,6 +186,25 @@ export class HorarioAsignaturasComponent implements OnInit {
     return origen === 'PROPIA' || origen === 'INTERNA';
   }
 
+  // Bloques semanales de la asignatura (cátedra + taller + laboratorio)
+  get bloquesSemanalesForm(): number {
+    const c = Number(this.form.get('catedraSemanal')?.value) || 0;
+    const t = Number(this.form.get('tallerSemanal')?.value) || 0;
+    const l = Number(this.form.get('labSemanal')?.value) || 0;
+    return c + t + l;
+  }
+
+  // Bloques que suman las clases fijas: cada fila cuenta bloque_fin - bloque_inicio + 1
+  get bloquesFijosContados(): number {
+    const filas = this.bloquesArray.getRawValue() as Partial<BloqueFilaForm>[];
+    return filas.reduce((total, f) => {
+      const inicio = Number(f.bloque_inicio);
+      const fin = Number(f.bloque_fin);
+      if (!inicio || !fin || fin < inicio) return total;
+      return total + (fin - inicio + 1);
+    }, 0);
+  }
+
   recalcularBloques(): void {
     const c = Number(this.form.get('catedraSemanal')?.value) || 0;
     const t = Number(this.form.get('tallerSemanal')?.value) || 0;
@@ -500,6 +519,12 @@ export class HorarioAsignaturasComponent implements OnInit {
       const filas: BloqueFilaForm[] = valor.bloques_externos || [];
       if (filas.length === 0) {
         this.errorBackend = 'Las asignaturas externas deben tener al menos un bloque fijo configurado.';
+        return;
+      }
+
+      const fijos = this.bloquesFijosContados;
+      if (fijos !== bloquesTotales) {
+        this.errorBackend = `Los bloques fijos (${fijos}) no coinciden con los bloques semanales de la asignatura (${bloquesTotales})`;
         return;
       }
 

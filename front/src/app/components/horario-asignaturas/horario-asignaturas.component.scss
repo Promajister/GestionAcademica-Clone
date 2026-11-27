@@ -570,6 +570,17 @@
       font-size: 12px;
       color: #7c2d12;
     }
+
+    // Deben coincidir con los bloques semanales de la asignatura
+    p.bloques-contador {
+      margin-top: 6px;
+      font-weight: 700;
+      color: #b91c1c;
+
+      &.bloques-contador--ok {
+        color: #15803d;
+      }
+    }
   }
 
   .bloques-empty-alert {
