@@ -446,53 +446,15 @@ async function main() {
   await seedColaboradores();
   await seedCentrosEducativos();
   await seedHorario();
-  await seedProfesoresDemo(hashed);
   await seedCargaDocente2026(hashed);
 
   console.log('Seed OK: usuarios/roles/permisos/colaboradores/centros/horario.');
 }
 
-// ---------- PROFESORES DEMO (DIS-F02) ----------
-// Perfil "profesor" + un docente por horas y uno de planta para probar
-// la pantalla "Mi disponibilidad". Idempotente: no pisa contraseñas existentes.
-async function seedProfesoresDemo(hashedPassword: string) {
-  const rolProfesor = await prisma.rol.upsert({
-    where: { clave: 'profesor' },
-    update: { nombre: 'Profesor' },
-    create: { clave: 'profesor', nombre: 'Profesor' },
-  });
-
-  const docentes: { email: string; nombre: string; contrato: TipoContrato }[] = [
-    { email: 'profesor.horas@gestion.uta.cl', nombre: 'Docente Por Horas', contrato: TipoContrato.HORAS },
-    { email: 'profesor.horas2@gestion.uta.cl', nombre: 'Docente Por Horas 2', contrato: TipoContrato.HORAS },
-    { email: 'profesor.planta@gestion.uta.cl', nombre: 'Docente De Planta', contrato: TipoContrato.PLANTA },
-  ];
-
-  for (const d of docentes) {
-    const usuario = await prisma.usuario.upsert({
-      where: { email: d.email },
-      update: { nombre: d.nombre, role: 'profesor', activo: true, rolId: rolProfesor.id },
-      create: {
-        email: d.email,
-        password: hashedPassword,
-        nombre: d.nombre,
-        role: 'profesor',
-        activo: true,
-        rolId: rolProfesor.id,
-      },
-    });
-    await prisma.profesor.upsert({
-      where: { id_usuario: usuario.id },
-      update: { contrato: d.contrato },
-      create: { id_usuario: usuario.id, contrato: d.contrato },
-    });
-  }
-}
-
 // ---------- GRUPOS Y CARGA DOCENTE 2026 (planillas de Recursos) ----------
 // Datos en prisma/datos/carga-docente-2026.json, generados desde "carga docente primer/segundo
-// semestre.xlsx" y los horarios "HORARIO *.docx". Crea los docentes (correo de prueba @docente.test,
-// más suplentes "Profesor N" para grupos sin docente conocido), su disponibilidad (los bloques donde
+// semestre.xlsx" y los horarios "HORARIO *.docx". Crea solo los docentes de las planillas (correo de
+// prueba @docente.test; un grupo sin docente conocido queda sin carga), su disponibilidad (los bloques donde
 // hacen clases en los horarios reales), las asignaturas que faltaban en las mallas y un curso por grupo
 // con sus inscritos; asigna la carga solo a los grupos que aún no tienen docente.
 // Idempotente: no pisa contraseñas, cargas ni disponibilidad ya declaradas.
