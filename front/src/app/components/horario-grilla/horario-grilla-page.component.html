@@ -42,7 +42,7 @@
           <mat-label>Carrera</mat-label>
           <mat-select
             [(ngModel)]="idCarreraSeleccionada"
-            [disabled]="!!salaActual"
+            [disabled]="filtrosDePlanBloqueados"
             (selectionChange)="onCarreraChange()">
             @for (c of carreras; track c.codigo) {
               <mat-option [value]="c.codigo">
@@ -56,7 +56,7 @@
           <mat-label>Plan de estudios</mat-label>
           <mat-select
             [(ngModel)]="idPlanSeleccionado"
-            [disabled]="!!salaActual"
+            [disabled]="filtrosDePlanBloqueados"
             (selectionChange)="onPlanOSemestreChange()">
             @for (p of planesDisponibles; track p.id_plan) {
               <mat-option [value]="p.id_plan">
@@ -83,16 +83,54 @@
 
         <mat-form-field appearance="outline">
           <mat-label>Sala</mat-label>
-          <mat-select [(ngModel)]="salaSeleccionada" (selectionChange)="onSalaChange()">
+          <mat-select [(ngModel)]="salaSeleccionada" [disabled]="vista === 'salas'" (selectionChange)="onSalaChange()">
             <mat-option [value]="0">Todas las salas</mat-option>
             @for (s of salas; track s.id_sala) {
               <mat-option [value]="s.id_sala">{{ s.nombre }} · cap. {{ s.capacidad }} · {{ usoSala(s.id_sala) }}</mat-option>
             }
           </mat-select>
         </mat-form-field>
+
+        <!-- CAL-F03: horario de un docente, buscándolo por nombre -->
+        <mat-form-field appearance="outline">
+          <mat-label>Docente</mat-label>
+          <input
+            matInput
+            placeholder="Buscar por nombre"
+            [disabled]="vista === 'salas'"
+            [ngModel]="textoDocente"
+            (ngModelChange)="alEscribirDocente($event)"
+            [matAutocomplete]="autoDocente" />
+          @if (textoDocente) {
+            <button matSuffix mat-icon-button (click)="quitarDocente()" matTooltip="Quitar docente">
+              <mat-icon>close</mat-icon>
+            </button>
+          }
+          <mat-autocomplete #autoDocente="matAutocomplete" (optionSelected)="seleccionarDocente($event.option.value)">
+            @for (d of docentesFiltrados; track d.id_usuario) {
+              <mat-option [value]="d">{{ d.nombre }}</mat-option>
+            } @empty {
+              <mat-option disabled>Sin docentes con ese nombre</mat-option>
+            }
+          </mat-autocomplete>
+        </mat-form-field>
       </div>
 
       <div class="selectors-summary muted">
+        <mat-button-toggle-group
+          [(ngModel)]="vista"
+          (change)="cambiarVista()"
+          aria-label="Vista"
+          class="vista-toggle">
+          <mat-button-toggle value="horario">
+            <mat-icon>grid_on</mat-icon>
+            Horario
+          </mat-button-toggle>
+          <mat-button-toggle value="salas">
+            <mat-icon>meeting_room</mat-icon>
+            Salas libres
+          </mat-button-toggle>
+        </mat-button-toggle-group>
         <span>{{ asignaturas.length }} asignaturas registradas</span>
       </div>
     </mat-card-content>
@@ -373,8 +411,83 @@
       </mat-card>
     }
 
-    <!-- GRILLAS: una por nivel, o una sola con todas las clases de la sala elegida -->
-    @if (salaActual) {
+    <!-- CAL-F01: salas libres por bloque (todas las carreras, planes y niveles del semestre) -->
+    @if (vista === 'salas') {
+      <mat-card class="elev grilla-main-card salas-libres-card">
+        <div class="salas-libres-head">
+          <div>
+            <h3>Salas libres por bloque · {{ nombrePeriodo }}</h3>
+            <p class="muted">
+              Cada celda lista las salas libres en ese día y bloque. Las ocupadas aparecen tachadas;
+              al pasar el mouse se ve qué clase la ocupa. Haz clic en una sala para ver su horario.
+            </p>
+          </div>
+        </div>
+        <div class="salas-libres-wrap">
+          <table class="salas-libres">
+            <thead>
+              <tr>
+                <th class="th-bloque">Bloque</th>
+                @for (d of DIAS_OPCIONES; track d.id) {
+                  <th>{{ d.label }}</th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (fila of ocupacionSalas; track fila.bloque.numero) {
+                @if (fila.bloque.numero === 7) {
+                  <tr class="colacion">
+                    <td class="td-bloque"><strong>Colación</strong></td>
+                    <td colspan="5">Receso de mediodía</td>
+                  </tr>
+                }
+                <tr>
+                  <td class="td-bloque">
+                    <strong>B{{ fila.bloque.numero }}</strong>
+                    <span>{{ fila.bloque.hora_inicio }} – {{ fila.bloque.hora_fin }}</span>
+                  </td>
+                  @for (c of fila.dias; track c.id_dia) {
+                    <td>
+                      <div class="sala-chips">
+                        @for (s of c.libres; track s.id_sala) {
+                          <button type="button" class="sala-chip sala-chip--libre" (click)="abrirSala(s.id_sala)" [matTooltip]="s.nombre + ': libre'">
+                            {{ s.nombre }}
+                          </button>
+                        }
+                        @for (s of c.ocupadas; track s.id_sala) {
+                          <button type="button" class="sala-chip sala-chip--ocupada" (click)="abrirSala(s.id_sala)" [matTooltip]="s.nombre + ': ' + s.detalle">
+                            {{ s.nombre }}
+                          </button>
+                        }
+                      </div>
+                      @if (!c.libres.length) {
+                        <div class="sin-libres">Sin salas libres</div>
+                      }
+                    </td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </mat-card>
+    }
+
+    <!-- GRILLAS: una por nivel, o una sola con todas las clases de la sala o del docente elegido -->
+    @if (vista === 'horario' && docenteActual) {
+      <div class="vista-sala muted">
+        <mat-icon>person</mat-icon>
+        <span>
+          Viendo todas las clases de <strong>{{ docenteActual.nombre }}</strong> ({{ etiquetaSemestre | lowercase }}, {{ nombrePeriodo }}),
+          con su sala y bloque, de todas las carreras y planes. Carrera y Plan no aplican mientras haya un docente elegido.
+        </span>
+        <button mat-button (click)="quitarDocente()">
+          <mat-icon>close</mat-icon>
+          Quitar filtro
+        </button>
+      </div>
+    }
+    @if (vista === 'horario' && salaActual) {
       <div class="vista-sala muted">
         <mat-icon>meeting_room</mat-icon>
         <span>
@@ -389,7 +502,7 @@
       </div>
     }
 
-    @for (g of grillas; track g.clave) {
+    @for (g of vista === 'horario' ? grillas : []; track g.clave) {
       <mat-card class="elev grilla-main-card">
         <app-horario-grilla
           [celdas]="g.celdas"
@@ -401,13 +514,15 @@
         </app-horario-grilla>
       </mat-card>
     } @empty {
-      <mat-card class="elev grilla-main-card">
-        <p class="muted">El plan no tiene asignaturas en los semestres elegidos.</p>
-      </mat-card>
+      @if (vista === 'horario') {
+        <mat-card class="elev grilla-main-card">
+          <p class="muted">El plan no tiene asignaturas en los semestres elegidos.</p>
+        </mat-card>
+      }
     }
 
     <!-- LISTA DE ASIGNATURAS PROPIAS DE LOS NIVELES ELEGIDOS -->
-    @if (!salaActual) {
+    @if (vista === 'horario' && !salaActual && !docenteActual) {
       <mat-card class="elev propias-card">
         <div class="propias-header">
           <div class="propias-title-wrap">
