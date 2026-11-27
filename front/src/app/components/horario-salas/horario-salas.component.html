@@ -194,7 +194,7 @@
 
           <div class="form-grid full-width-grid">
             <mat-form-field appearance="outline">
-              <mat-label>Nombre oficial *</mat-label>
+              <mat-label>Nombre oficial</mat-label>
               <input matInput formControlName="nombre" placeholder="Ej: Sala 121, Sala Núcleo" />
               @if (form.get('nombre')?.hasError('required') && form.get('nombre')?.touched) {
                 <mat-error>El nombre es obligatorio</mat-error>
@@ -204,7 +204,7 @@
 
           <div class="form-grid">
             <mat-form-field appearance="outline">
-              <mat-label>Tipo de sala *</mat-label>
+              <mat-label>Tipo de sala</mat-label>
               <mat-select formControlName="tipo">
                 @for (t of TIPOS; track t.valor) {
                   <mat-option [value]="t.valor">{{ t.label }}</mat-option>
@@ -213,7 +213,7 @@
             </mat-form-field>
 
             <mat-form-field appearance="outline">
-              <mat-label>Capacidad (personas) *</mat-label>
+              <mat-label>Capacidad (personas)</mat-label>
               <input matInput type="number" formControlName="capacidad" min="1" />
               @if (form.get('capacidad')?.hasError('min')) {
                 <mat-error>Debe ser al menos 1</mat-error>
