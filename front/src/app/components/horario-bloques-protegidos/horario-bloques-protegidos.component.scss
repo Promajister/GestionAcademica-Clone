@@ -308,6 +308,11 @@
     background: #fae8ff;
     color: #86198f;
   }
+
+  &[data-alcance='SALA'] {
+    background: #ffedd5;
+    color: #c2410c;
+  }
 }
 
 .loading-state,
@@ -421,4 +426,9 @@
   margin: 0 0 10px;
   font-size: 12px;
   color: #64748b;
+}
+
+// Reserva de sala: deja espacio para el texto de ayuda antes de los días
+.campo-sala {
+  margin-bottom: 16px;
 }

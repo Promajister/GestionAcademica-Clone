@@ -60,6 +60,8 @@ function formatoAlcanceLegible(bp: BloqueProtegidoDTO): string {
       return bp.profesor?.usuario?.nombre
         ? `Docente: ${bp.profesor.usuario.nombre}`
         : 'Académico individual';
+    case 'SALA':
+      return 'Reserva de sala';
     default:
       return bp.alcance;
   }
@@ -89,7 +91,7 @@ type ModoGrilla = 'nivel' | 'sala' | 'docente';
 interface CeldaOcupacion {
   id_dia: number;
   // Todas las salas, siempre en el mismo orden, para que cada una quede en el mismo lugar en todas las celdas
-  salas: { id_sala: number; nombre: string; libre: boolean; detalle: string }[];
+  salas: { id_sala: number; nombre: string; libre: boolean; reservada: boolean; detalle: string }[];
   libres: number;
 }
 
@@ -153,6 +155,8 @@ export class HorarioGrillaPageComponent implements OnInit {
   periodoTodos: 1 | 2 = 2;
   propuestaOtra: PropuestaDTO | null = null;
   bloquesGrilla: BloqueGrillaDTO[] = [];
+  // Reservas semanales de sala (bloques protegidos de alcance SALA)
+  reservasSala: BloqueProtegidoDTO[] = [];
 
   readonly SEMESTRES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
   readonly YEAR = YEAR_PROPUESTA;
@@ -185,6 +189,28 @@ export class HorarioGrillaPageComponent implements OnInit {
   ngOnInit(): void {
     this.cargarCarreras();
     this.horarioApi.getGrilla().subscribe({ next: (b) => (this.bloquesGrilla = b) });
+    this.cargarReservasSala();
+  }
+
+  private cargarReservasSala(): void {
+    this.horarioApi.getBloquesProtegidos({ alcance: 'SALA' }).subscribe({
+      next: (r) => {
+        this.reservasSala = r;
+        this.construirGrillas();
+      },
+      error: () => {},
+    });
+  }
+
+  // Reserva de una sala en un día y bloque, si la hay
+  private reservaEn(id_sala: number, id_dia: number | undefined, bloque: number) {
+    return this.reservasSala.find(
+      (r) =>
+        r.id_sala === id_sala &&
+        r.id_dia === id_dia &&
+        bloque >= r.bloque_inicio &&
+        bloque <= r.bloque_fin,
+    );
   }
 
   // 1er semestre del año: niveles impares; 2do semestre: niveles pares
@@ -321,15 +347,18 @@ export class HorarioGrillaPageComponent implements OnInit {
               bloque.numero >= a.bloque_inicio &&
               bloque.numero <= a.bloque_fin,
           );
+          const reserva = this.reservaEn(s.id_sala, id, bloque.numero);
+          const clases = aqui.map(
+            (a) => `${a.codigo} ${a.nombre} (Gr. ${a.grupo} · ${a.codigo_carrera ?? ''} Sem. ${a.nivel})`,
+          );
           celda.salas.push({
             id_sala: s.id_sala,
             nombre: s.nombre,
-            libre: !aqui.length,
-            detalle: aqui
-              .map((a) => `${a.codigo} ${a.nombre} (Gr. ${a.grupo} · ${a.codigo_carrera ?? ''} Sem. ${a.nivel})`)
-              .join('; '),
+            libre: !aqui.length && !reserva,
+            reservada: !!reserva,
+            detalle: [...(reserva ? [`reservada: ${reserva.nombre}`] : []), ...clases].join('; '),
           });
-          if (!aqui.length) celda.libres++;
+          if (!aqui.length && !reserva) celda.libres++;
         }
         return celda;
       }),
@@ -638,7 +667,11 @@ export class HorarioGrillaPageComponent implements OnInit {
           titulo: `${sala.nombre} · ${this.etiquetaSemestre} · ${this.nombrePeriodo}`,
           subtitulo: 'Todas las clases de la sala, de todas las carreras y planes',
           editable: this.editable,
-          celdas: this.celdasDe(acts, [], 'sala'),
+          celdas: this.celdasDe(
+            acts,
+            this.reservasSala.filter((r) => r.id_sala === sala.id_sala),
+            'sala',
+          ),
         },
       ];
     } else {

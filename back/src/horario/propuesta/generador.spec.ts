@@ -5,6 +5,7 @@ import {
   ProtegidoEntrada,
   dividirEnSesiones,
   generarPropuesta,
+  protegidoAfecta,
 } from './generador';
 
 const docente = (
@@ -166,6 +167,44 @@ describe('generarPropuesta (GEN-F01)', () => {
       base({ cursos: [curso(1)], protegidos: individual }),
     );
     expect(r3.no_asignadas[0].motivo).toBe('SIN_BLOQUE_LIBRE');
+  });
+
+  it('una sala reservada (alcance SALA) no recibe clases en esos bloques, pero sí otra sala', () => {
+    // Sala 1 reservada toda la semana: el curso va siempre a la sala 2, en cualquier bloque
+    const reservas = [1, 2, 3, 4, 5].flatMap((dia) =>
+      Array.from({ length: 12 }, (_, i) =>
+        protegido(dia, i + 1, {
+          nombre: 'Reunión',
+          alcance: AlcanceBloqueProtegido.SALA,
+          id_sala: 1,
+        }),
+      ),
+    );
+    const r = generarPropuesta(
+      base({ cursos: [curso(1), curso(2, { cohorte: '4-2', nivel: 4 })], protegidos: reservas }),
+    );
+    expect(r.no_asignadas).toEqual([]);
+    expect(r.sesiones.every((x) => x.id_sala === 2)).toBe(true);
+
+    // Con una sola sala y reservada, no hay dónde poner el curso
+    const sinSala = generarPropuesta(
+      base({
+        cursos: [curso(1)],
+        salas: [{ id_sala: 1, nombre: 'Sala 121', capacidad: 22 }],
+        protegidos: reservas,
+      }),
+    );
+    expect(sinSala.sesiones).toEqual([]);
+    expect(sinSala.no_asignadas).toHaveLength(1);
+  });
+
+  it('una reserva de sala solo alcanza a las clases de esa sala', () => {
+    const reserva = protegido(1, 1, { alcance: AlcanceBloqueProtegido.SALA, id_sala: 4 });
+    const clase = { codigo_carrera: '311', nivel: 2, docentes: [] };
+    expect(protegidoAfecta(reserva, { ...clase, id_sala: 4 })).toBe(true);
+    expect(protegidoAfecta(reserva, { ...clase, id_sala: 1 })).toBe(false);
+    // Sin sala (por ejemplo al decidir el horario de un nivel), la reserva no lo bloquea
+    expect(protegidoAfecta(reserva, clase)).toBe(false);
   });
 
   it('T3: usa una sala con capacidad suficiente e informa si no hay', () => {

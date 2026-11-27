@@ -57,7 +57,7 @@ Dia, BloqueHorario 1─N Horario / HorarioExterno / BloqueProtegido / Disponibil
 | `HorarioExterno` (`horarios_externos`) | `id` (PK), `id_curso`, `id_dia`, `id_bloque`, `id_sala` (opcional), `sala_externa` (opcional). Bloques fijos y bloqueados de asignaturas externas. |
 | `Horario` (`horarios`) | Clave compuesta (`id_carga`, `id_sala`, `id_dia`, `id_bloque`). Clases regulares con profesor asignado. |
 | `OcupacionPuntual` (`ocupaciones_puntuales`) | Clave compuesta (`id_bloque`, `id_sala`, `fecha`). Reservas de salas puntuales por fecha. |
-| `BloqueProtegido` (`bloques_protegidos`) | `id_bloque_protegido` (PK), `nombre`, `alcance` (UNIVERSIDAD, FACULTAD, CARRERA, ESTUDIANTES, PRACTICA_PREPRACTICA, ACADEMICOS, ACADEMICO_INDIVIDUAL), `id_dia`, `id_bloque`, destinatarios condicionales (`codigo_carrera`, `semestre`, `contrato`, `id_usuario`). |
+| `BloqueProtegido` (`bloques_protegidos`) | `id_bloque_protegido` (PK), `nombre`, `alcance` (UNIVERSIDAD, FACULTAD, CARRERA, ESTUDIANTES, PRACTICA_PREPRACTICA, ACADEMICOS, ACADEMICO_INDIVIDUAL, SALA), `id_dia`, `id_bloque`, destinatarios condicionales (`codigo_carrera`, `semestre`, `contrato`, `id_usuario`, `id_sala`). |
 
 ## API
 
@@ -97,13 +97,20 @@ Prefijo global: `/api`. Respuestas de error con `message` en español.
 ### Bloques protegidos (DIS-F01)
 | Método | Ruta | Notas |
 |---|---|---|
-| GET | `/horario/bloques-protegidos?alcance=&dia=&codigo_carrera=&semestre=&id_usuario=` | Lista agrupada por rangos continuos `{ dia, bloque_inicio, bloque_fin, hora_inicio, hora_fin }` con datos de carrera y profesor |
+| GET | `/horario/bloques-protegidos?alcance=&dia=&codigo_carrera=&semestre=&id_usuario=&id_sala=` | Lista agrupada por rangos continuos `{ dia, bloque_inicio, bloque_fin, hora_inicio, hora_fin }` con datos de carrera, profesor y sala |
 | GET | `/horario/bloques-protegidos/profesores` | Lista de docentes para el selector de destinatario individual |
-| GET | `/horario/bloques-protegidos/aplicables?codigo_carrera=&semestre=` o `?id_usuario=` | Bloques protegidos aplicables a un grupo de estudiantes o a un académico |
+| GET | `/horario/bloques-protegidos/aplicables?codigo_carrera=&semestre=`, `?id_usuario=` o `?id_sala=` | Bloques protegidos aplicables a un grupo de estudiantes, a un académico o a una sala (sus reservas) |
 | GET | `/horario/bloques-protegidos/:id` | Detalle de un bloque protegido individual |
-| POST | `/horario/bloques-protegidos` | `{ nombre, alcance, dias: ['MARTES', ...], bloque_inicio, bloque_fin, codigo_carrera?, semestre?, contrato?, id_usuario? }`. Expande días × bloques en transacción. 409 en duplicados |
+| POST | `/horario/bloques-protegidos` | `{ nombre, alcance, dias: ['MARTES', ...], bloque_inicio, bloque_fin, codigo_carrera?, semestre?, contrato?, id_usuario?, id_sala? }`. Expande días × bloques en transacción. 409 en duplicados. Con alcance `SALA` responde `advertencias` con las clases de la propuesta que ya están en la sala en esos bloques |
 | PATCH | `/horario/bloques-protegidos/:id` | Edición de un bloque protegido |
 | DELETE | `/horario/bloques-protegidos/:id?grupo=true` | Si `grupo=true`, elimina el rango completo (mismo nombre, alcance, día y destinatario). Sin `grupo`, elimina la fila individual |
+
+**Reserva semanal de sala (alcance `SALA`, requiere `id_sala`):** una reunión fija (ej. consejo de departamento en la Sala multifunción). No afecta a estudiantes ni docentes; solo a la sala:
+- el generador no pone clases en esa sala en esos bloques (las demás salas siguen disponibles);
+- mover una clase a la sala reservada responde 400;
+- una clase que ya está ahí se informa en `validacion.cruces_protegido` (impide cerrar el horario);
+- un bloque externo o una ocupación puntual en ese día y bloque responde 409;
+- en Grilla semanal, "Salas libres" la muestra en naranjo y la vista por sala la muestra como bloque protegido.
 
 ### Ocupaciones de sala
 | Método | Ruta | Notas |

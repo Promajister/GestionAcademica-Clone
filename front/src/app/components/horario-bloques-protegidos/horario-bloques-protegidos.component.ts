@@ -20,6 +20,7 @@ import {
   ProfesorItemDTO,
   BloqueGrillaDTO,
 } from '../../services/horario-api.service';
+import { SalaDTO } from '../../services/salas-api.service';
 import {
   HorarioGrillaComponent,
   CeldaGrilla,
@@ -34,6 +35,7 @@ export function formatoAlcanceTexto(bp: {
   profesor?: {
     usuario?: { nombre: string } | null;
   } | null;
+  sala?: { nombre: string } | null;
 }): string {
   switch (bp.alcance) {
     case 'UNIVERSIDAD':
@@ -52,6 +54,8 @@ export function formatoAlcanceTexto(bp: {
       return bp.profesor?.usuario?.nombre
         ? `Docente: ${bp.profesor.usuario.nombre}`
         : 'Académico individual';
+    case 'SALA':
+      return bp.sala?.nombre ? `Reserva: ${bp.sala.nombre}` : 'Reserva de sala';
     default:
       return bp.alcance;
   }
@@ -86,6 +90,7 @@ export class HorarioBloquesProtegidosComponent implements OnInit {
   carreras: CarreraDTO[] = [];
   profesores: ProfesorItemDTO[] = [];
   grillaHorarios: BloqueGrillaDTO[] = [];
+  salas: SalaDTO[] = [];
 
   cargando = false;
   guardando = false;
@@ -127,6 +132,8 @@ export class HorarioBloquesProtegidosComponent implements OnInit {
   semestre: number | null = 1;
   contrato: string = '';
   idUsuarioProfesor: number | null = null;
+  // Alcance SALA: sala que se reserva
+  idSala: number | null = null;
 
   // Modal confirmación eliminar
   bloquePorEliminar: BloqueProtegidoDTO | null = null;
@@ -139,6 +146,7 @@ export class HorarioBloquesProtegidosComponent implements OnInit {
     { valor: 'PRACTICA_PREPRACTICA', label: 'Práctica / Prepráctica' },
     { valor: 'ACADEMICOS', label: 'Todos los académicos' },
     { valor: 'ACADEMICO_INDIVIDUAL', label: 'Académico individual' },
+    { valor: 'SALA', label: 'Reserva de sala (reunión fija)' },
   ];
 
   readonly SEMESTRES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
@@ -162,6 +170,11 @@ export class HorarioBloquesProtegidosComponent implements OnInit {
           this.codigoCarrera = c[0].codigo;
         }
       },
+      error: () => {},
+    });
+
+    this.horarioApi.getSalas().subscribe({
+      next: (s) => (this.salas = s),
       error: () => {},
     });
 
@@ -289,6 +302,7 @@ export class HorarioBloquesProtegidosComponent implements OnInit {
       semestre: this.semestre,
       contrato: this.contrato,
       profesor: this.profesores.find((p) => p.id_usuario === this.idUsuarioProfesor),
+      sala: this.salas.find((s) => s.id_sala === this.idSala),
     });
 
     for (const dia of diasSeleccionados) {
@@ -374,6 +388,13 @@ export class HorarioBloquesProtegidosComponent implements OnInit {
       return;
     }
 
+    if (this.alcance === 'SALA' && !this.idSala) {
+      this.snack.open('Debes seleccionar la sala que se reserva', 'Cerrar', {
+        duration: 3500,
+      });
+      return;
+    }
+
     this.guardando = true;
 
     if (this.editandoId) {
@@ -402,6 +423,8 @@ export class HorarioBloquesProtegidosComponent implements OnInit {
             this.alcance === 'ACADEMICO_INDIVIDUAL' && this.idUsuarioProfesor
               ? this.idUsuarioProfesor
               : undefined,
+          id_sala:
+            this.alcance === 'SALA' && this.idSala ? this.idSala : undefined,
         })
         .subscribe({
           next: () => {
@@ -448,14 +471,20 @@ export class HorarioBloquesProtegidosComponent implements OnInit {
             this.alcance === 'ACADEMICO_INDIVIDUAL' && this.idUsuarioProfesor
               ? this.idUsuarioProfesor
               : undefined,
+          id_sala:
+            this.alcance === 'SALA' && this.idSala ? this.idSala : undefined,
         })
         .subscribe({
-          next: () => {
+          next: (r) => {
             this.guardando = false;
+            // Al reservar una sala, se avisa si ya hay clases de la propuesta en esos bloques
+            const avisos = r.advertencias ?? [];
             this.snack.open(
-              'Bloque protegido creado exitosamente',
+              avisos.length
+                ? `Reserva creada. Ojo: ${avisos.join('; ')}`
+                : 'Bloque protegido creado exitosamente',
               'Cerrar',
-              { duration: 3000 },
+              { duration: avisos.length ? 12000 : 3000 },
             );
             this.limpiarFormulario();
             this.cargarBloques();
@@ -486,6 +515,7 @@ export class HorarioBloquesProtegidosComponent implements OnInit {
     this.semestre = b.semestre ?? 1;
     this.contrato = b.contrato ?? '';
     this.idUsuarioProfesor = b.id_usuario ?? null;
+    this.idSala = b.id_sala ?? null;
 
     // Hacer scroll al formulario (queda bajo la lista de bloques registrados)
     document
@@ -514,6 +544,7 @@ export class HorarioBloquesProtegidosComponent implements OnInit {
     this.semestre = 1;
     this.contrato = '';
     this.idUsuarioProfesor = null;
+    this.idSala = null;
   }
 
   // Eliminar
@@ -566,6 +597,8 @@ export class HorarioBloquesProtegidosComponent implements OnInit {
         return b.contrato ? `Académicos contrato ${b.contrato}` : 'Todos los académicos';
       case 'ACADEMICO_INDIVIDUAL':
         return b.profesor?.usuario?.nombre || `Docente #${b.id_usuario}`;
+      case 'SALA':
+        return `${b.sala?.nombre || `Sala #${b.id_sala}`}: sin clases en ese horario`;
       default:
         return '—';
     }

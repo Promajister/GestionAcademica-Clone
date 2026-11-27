@@ -24,4 +24,9 @@ export class QueryBloqueProtegidoDto {
   @Type(() => Number)
   @IsInt()
   id_usuario?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  id_sala?: number;
 }

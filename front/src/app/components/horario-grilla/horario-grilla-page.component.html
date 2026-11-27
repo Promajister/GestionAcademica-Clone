@@ -451,8 +451,9 @@
           <div>
             <h3>Salas libres por bloque · {{ nombrePeriodo }}</h3>
             <p class="muted">
-              Cada celda muestra las salas en el mismo orden: las libres en verde y las ocupadas tachadas
-              (al pasar el mouse se ve qué clase la ocupa). Haz clic en una sala para ver su horario.
+              Cada celda muestra las salas en el mismo orden: las libres en verde, las ocupadas tachadas
+              y las reservadas (reunión fija) en naranjo; al pasar el mouse se ve qué la ocupa.
+              Haz clic en una sala para ver su horario.
             </p>
           </div>
           <mat-slide-toggle [(ngModel)]="soloLibres" color="primary">Solo libres</mat-slide-toggle>
@@ -489,7 +490,7 @@
                               {{ s.nombre }}
                             </button>
                           } @else if (!soloLibres) {
-                            <button type="button" class="sala-chip sala-chip--ocupada" (click)="abrirSala(s.id_sala)" [matTooltip]="s.nombre + ': ' + s.detalle">
+                            <button type="button" class="sala-chip sala-chip--ocupada" [class.sala-chip--reservada]="s.reservada" (click)="abrirSala(s.id_sala)" [matTooltip]="s.nombre + ': ' + s.detalle">
                               {{ s.nombre }}
                             </button>
                           }
