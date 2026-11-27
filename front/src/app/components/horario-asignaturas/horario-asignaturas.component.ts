@@ -7,6 +7,7 @@ import {
   FormGroup,
   FormArray,
   Validators,
+  ValidatorFn,
 } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -46,6 +47,14 @@ interface BloqueFilaForm {
   id_sala: number | null;
   sala_externa: string;
 }
+
+// El bloque fin de una clase no puede ser anterior a su bloque inicio
+const rangoBloquesValido: ValidatorFn = (fila) => {
+  const inicio = fila.get('bloque_inicio')?.value;
+  const fin = fila.get('bloque_fin')?.value;
+  if (inicio == null || fin == null) return null;
+  return Number(fin) < Number(inicio) ? { rangoInvalido: true } : null;
+};
 
 @Component({
   standalone: true,
@@ -375,6 +384,7 @@ export class HorarioAsignaturasComponent implements OnInit {
       cupo: 22,
       origen: 'INTERNA',
     });
+    this.sincronizarBloquesConOrigen();
 
     this.mostrarModal = true;
   }
@@ -402,6 +412,7 @@ export class HorarioAsignaturasComponent implements OnInit {
       cupo: a.cupo,
       origen: this.esPropia(a.origen) ? 'INTERNA' : 'EXTERNA',
     });
+    this.sincronizarBloquesConOrigen();
 
     this.gruposArray.clear();
     const grupos = a.grupos?.length ? a.grupos : [{ grupo: 'A', cupo: a.cupo }];
@@ -426,20 +437,54 @@ export class HorarioAsignaturasComponent implements OnInit {
 
   onOrigenChange(): void {
     const origen = this.form.get('origen')?.value;
+    this.sincronizarBloquesConOrigen();
     if (origen === 'EXTERNA' && this.bloquesArray.length === 0) {
       this.agregarFilaBloque();
     }
   }
 
+  // Las clases fijas solo cuentan para una externa: en una propia se deshabilitan para
+  // que una clase incompleta no impida guardar
+  private sincronizarBloquesConOrigen(): void {
+    if (this.form.get('origen')?.value === 'EXTERNA') {
+      this.bloquesArray.enable();
+    } else {
+      this.bloquesArray.disable();
+    }
+  }
+
+  // Una clase nueva parte vacía: debe completarse (o eliminarse) antes de guardar, para
+  // no registrar una clase agregada de más con valores por defecto. Al reconstruir las
+  // clases guardadas se reciben sus valores en init
   agregarFilaBloque(init?: Partial<BloqueFilaForm>): void {
-    const fila = this.fb.group({
-      dia: [init?.dia || 'LUNES', [Validators.required]],
-      bloque_inicio: [init?.bloque_inicio || 1, [Validators.required]],
-      bloque_fin: [init?.bloque_fin || 2, [Validators.required]],
-      tipo_ubicacion: [init?.tipo_ubicacion || 'DEPTO', [Validators.required]],
-      id_sala: [init?.id_sala || (this.salasActivas[0]?.id_sala ?? null)],
-      sala_externa: [init?.sala_externa || ''],
-    });
+    const fila = this.fb.group(
+      {
+        dia: [init?.dia ?? null, [Validators.required]],
+        bloque_inicio: [init?.bloque_inicio ?? null, [Validators.required]],
+        bloque_fin: [init?.bloque_fin ?? null, [Validators.required]],
+        tipo_ubicacion: [init?.tipo_ubicacion ?? 'DEPTO', [Validators.required]],
+        id_sala: [init?.id_sala ?? null],
+        sala_externa: [init?.sala_externa ?? ''],
+      },
+      { validators: rangoBloquesValido },
+    );
+
+    // La sala obligatoria depende de la ubicación: del departamento o externa
+    const aplicarValidadoresSala = (tipo: string | null) => {
+      const idSala = fila.controls.id_sala;
+      const salaExterna = fila.controls.sala_externa;
+      if (tipo === 'EXTERNA') {
+        idSala.clearValidators();
+        salaExterna.setValidators([Validators.required, Validators.pattern(/\S/)]);
+      } else {
+        idSala.setValidators([Validators.required]);
+        salaExterna.clearValidators();
+      }
+      idSala.updateValueAndValidity({ emitEvent: false });
+      salaExterna.updateValueAndValidity({ emitEvent: false });
+    };
+    aplicarValidadoresSala(fila.controls.tipo_ubicacion.value);
+    fila.controls.tipo_ubicacion.valueChanges.subscribe(aplicarValidadoresSala);
 
     this.bloquesArray.push(fila);
   }

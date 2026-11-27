@@ -463,18 +463,21 @@
 
                     <div class="bloque-fila-inputs">
                       <!-- DÍA -->
-                      <mat-form-field appearance="outline" class="col-dia">
-                        <mat-label>Día</mat-label>
-                        <mat-select formControlName="dia">
+                      <mat-form-field appearance="outline" class="col-dia" subscriptSizing="dynamic">
+                        <mat-label>Día *</mat-label>
+                        <mat-select formControlName="dia" placeholder="Selecciona el día">
                           @for (d of DIAS; track d.dia) {
                             <mat-option [value]="d.dia">{{ d.label }}</mat-option>
                           }
                         </mat-select>
+                        @if (fila.get('dia')?.hasError('required')) {
+                          <mat-error>El día es obligatorio</mat-error>
+                        }
                       </mat-form-field>
 
                       <!-- BLOQUE INICIO -->
-                      <mat-form-field appearance="outline" class="col-bloque">
-                        <mat-label>Bloque inicio</mat-label>
+                      <mat-form-field appearance="outline" class="col-bloque" subscriptSizing="dynamic">
+                        <mat-label>Bloque inicio *</mat-label>
                         <mat-select formControlName="bloque_inicio">
                           @for (g of grilla; track g.numero) {
                             <mat-option [value]="g.numero">
@@ -482,11 +485,14 @@
                             </mat-option>
                           }
                         </mat-select>
+                        @if (fila.get('bloque_inicio')?.hasError('required')) {
+                          <mat-error>El bloque inicio es obligatorio</mat-error>
+                        }
                       </mat-form-field>
 
                       <!-- BLOQUE FIN -->
-                      <mat-form-field appearance="outline" class="col-bloque">
-                        <mat-label>Bloque fin</mat-label>
+                      <mat-form-field appearance="outline" class="col-bloque" subscriptSizing="dynamic">
+                        <mat-label>Bloque fin *</mat-label>
                         <mat-select formControlName="bloque_fin">
                           @for (g of grilla; track g.numero) {
                             <mat-option [value]="g.numero">
@@ -494,8 +500,18 @@
                             </mat-option>
                           }
                         </mat-select>
+                        @if (fila.get('bloque_fin')?.hasError('required')) {
+                          <mat-error>El bloque fin es obligatorio</mat-error>
+                        }
                       </mat-form-field>
                     </div>
+
+                    @if (fila.hasError('rangoInvalido')) {
+                      <div class="bloque-fila-alerta">
+                        <mat-icon>error_outline</mat-icon>
+                        <span>El bloque fin no puede ser anterior al bloque inicio.</span>
+                      </div>
+                    }
 
                     <!-- UBICACIÓN / SALA -->
                     <div class="bloque-fila-ubicacion">
@@ -505,7 +521,7 @@
                       </mat-radio-group>
 
                       @if (fila.get('tipo_ubicacion')?.value === 'DEPTO') {
-                        <mat-form-field appearance="outline" class="sala-field">
+                        <mat-form-field appearance="outline" class="sala-field" subscriptSizing="dynamic">
                           <mat-label>Sala asignada *</mat-label>
                           <mat-select formControlName="id_sala">
                             @for (s of salasActivas; track s.id_sala) {
@@ -514,14 +530,27 @@
                               </mat-option>
                             }
                           </mat-select>
+                          @if (fila.get('id_sala')?.hasError('required')) {
+                            <mat-error>La sala es obligatoria</mat-error>
+                          }
                         </mat-form-field>
                       } @else {
-                        <mat-form-field appearance="outline" class="sala-field">
+                        <mat-form-field appearance="outline" class="sala-field" subscriptSizing="dynamic">
                           <mat-label>Nombre de sala externa *</mat-label>
                           <input matInput formControlName="sala_externa" placeholder="Ej: Sala Educación, Pabellón R" />
+                          @if (fila.get('sala_externa')?.invalid) {
+                            <mat-error>El nombre de la sala externa es obligatorio</mat-error>
+                          }
                         </mat-form-field>
                       }
                     </div>
+
+                    @if (fila.invalid && !fila.hasError('rangoInvalido')) {
+                      <div class="bloque-fila-alerta">
+                        <mat-icon>error_outline</mat-icon>
+                        <span>Completa el día, los bloques y la sala de esta clase, o elimínala para poder guardar.</span>
+                      </div>
+                    }
                   </div>
                 }
               </div>
