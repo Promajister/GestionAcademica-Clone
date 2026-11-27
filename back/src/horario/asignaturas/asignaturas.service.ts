@@ -64,6 +64,29 @@ export class AsignaturasService {
     }
   }
 
+  // Los bloques fijos de una externa deben sumar sus bloques semanales
+  // (cátedra + taller + laboratorio). Cada fila cuenta bloque_fin - bloque_inicio + 1
+  private assertBloquesFijosCoinciden(
+    bloques: { bloque_inicio: number; bloque_fin: number }[],
+    semanales: number,
+  ) {
+    // Un rango invertido lo rechaza crearExternos con su propio mensaje
+    if (bloques.some((b) => b.bloque_fin < b.bloque_inicio)) return;
+    const fijos = bloques.reduce(
+      (total, b) => total + (b.bloque_fin - b.bloque_inicio + 1),
+      0,
+    );
+    this.assertTotalFijos(fijos, semanales);
+  }
+
+  private assertTotalFijos(fijos: number, semanales: number) {
+    if (fijos !== semanales) {
+      throw new BadRequestException(
+        `Los bloques fijos (${fijos}) no coinciden con los bloques semanales de la asignatura (${semanales})`,
+      );
+    }
+  }
+
   // ---------- CREATE ----------
   async create(dto: CreateAsignaturaDto) {
     const origen = normalizarOrigen(dto.origen);
@@ -80,6 +103,12 @@ export class AsignaturasService {
     const taller = dto.tallerSemanal ?? 0;
     const lab = dto.labSemanal ?? 0;
     const grupos = this.gruposDe(dto, origen);
+    if (origen === TipoOrigen.EXTERNA && dto.bloques_externos?.length) {
+      this.assertBloquesFijosCoinciden(
+        dto.bloques_externos,
+        catedra + taller + lab,
+      );
+    }
 
     const existente = await this.prisma.asignatura.findUnique({
       where: { codigo: dto.codigo },
@@ -261,6 +290,10 @@ export class AsignaturasService {
         throw new NotFoundException(`El plan ${dto.id_plan} no existe`);
     }
 
+    if (origen === TipoOrigen.EXTERNA) {
+      await this.validarBloquesFijosAlActualizar(codigo, dto, actual);
+    }
+
     await this.prisma.$transaction(async (tx) => {
       // 1. Actualizar Asignatura
       const dataAsig: Prisma.AsignaturaUpdateInput = {};
@@ -355,6 +388,43 @@ export class AsignaturasService {
     });
 
     return this.findOne(codigo);
+  }
+
+  // Bloques semanales nuevos (si se envían) o los guardados. Se valida al enviar bloques
+  // fijos, o al cambiar las horas de una externa que ya tiene bloques fijos
+  private async validarBloquesFijosAlActualizar(
+    codigo: string,
+    dto: UpdateAsignaturaDto,
+    actual: {
+      catedraSemanal: number;
+      tallerSemanal: number;
+      labSemanal: number;
+    },
+  ) {
+    const catedra =
+      dto.catedraSemanal ?? dto.bloques_semanales ?? actual.catedraSemanal;
+    const taller = dto.tallerSemanal ?? actual.tallerSemanal;
+    const lab = dto.labSemanal ?? actual.labSemanal;
+    const semanales = catedra + taller + lab;
+
+    if (dto.bloques_externos?.length) {
+      this.assertBloquesFijosCoinciden(dto.bloques_externos, semanales);
+      return;
+    }
+    if (dto.bloques_externos !== undefined) return;
+
+    const semanalesActuales =
+      actual.catedraSemanal + actual.tallerSemanal + actual.labSemanal;
+    if (semanales === semanalesActuales) return;
+
+    // Los bloques fijos se guardan en el primer curso (ver update, paso 4)
+    const curso = await this.prisma.curso.findFirst({
+      where: { codigo_asignatura: codigo },
+      orderBy: { id_curso: 'asc' },
+      select: { _count: { select: { horariosExternos: true } } },
+    });
+    const fijos = curso?._count.horariosExternos ?? 0;
+    if (fijos > 0) this.assertTotalFijos(fijos, semanales);
   }
 
   // ---------- DELETE ----------
