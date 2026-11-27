@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, TipoDia, TipoOrigen } from '@prisma/client';
+import { EstadoHorario, Prisma, TipoDia, TipoOrigen } from '@prisma/client';
 import { PrismaService } from 'prisma/prisma.service';
 
 import { BloqueExternoDto } from './dto/bloque-externo.dto';
@@ -68,23 +68,20 @@ export class BloquesService {
       orderBy: [{ id_dia: 'asc' }, { id_bloque: 'asc' }],
     });
 
-    // 2. Bloques de asignaturas internas
+    // 2. Bloques de asignaturas internas (solo el horario vigente)
     const internos = await this.prisma.horario.findMany({
       where: {
         ...diaWhere,
         ...salaWhere,
+        estado: EstadoHorario.ACTIVO,
       },
       include: {
         sala: true,
         dia: true,
         bloque: true,
-        carga: {
+        curso: {
           include: {
-            curso: {
-              include: {
-                asignatura: true,
-              },
-            },
+            asignatura: true,
           },
         },
       },
@@ -130,15 +127,15 @@ export class BloquesService {
       bloqueado: false,
       origen: 'INTERNA',
       curso: {
-        id_curso: b.carga.curso.id_curso,
-        nombre: b.carga.curso.asignatura.nombre,
-        grupo: b.carga.curso.grupo,
-        semestre: b.carga.curso.semestre,
+        id_curso: b.curso.id_curso,
+        nombre: b.curso.asignatura.nombre,
+        grupo: b.curso.grupo,
+        semestre: b.curso.semestre,
         asignatura: {
-          codigo: b.carga.curso.asignatura.codigo,
-          nombre: b.carga.curso.asignatura.nombre,
-          semestre: b.carga.curso.semestre,
-          origen: b.carga.curso.asignatura.origen,
+          codigo: b.curso.asignatura.codigo,
+          nombre: b.curso.asignatura.nombre,
+          semestre: b.curso.semestre,
+          origen: b.curso.asignatura.origen,
         },
       },
     }));

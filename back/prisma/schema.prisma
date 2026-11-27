@@ -895,6 +895,12 @@ enum TipoDia {
   DOMINGO
 }
 
+enum EstadoHorario {
+  ACTIVO
+  PROPUESTA
+  BORRADOR
+}
+
 model Profesor {
   id_usuario Int      @id
   contrato   TipoContrato
@@ -956,6 +962,7 @@ model Curso {
 
   cargaDocentes  CargaDocente[]
   horariosExternos HorarioExterno[]
+  horarios       Horario[]
 
   asignatura        Asignatura @relation(fields: [codigo_asignatura], references: [codigo])
   malla             Malla?     @relation(fields: [id_malla], references: [id_malla])
@@ -1080,23 +1087,25 @@ model CargaDocente {
   profesor       Profesor @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
   curso          Curso    @relation(fields: [id_curso], references: [id_curso], onDelete: Cascade)
 
-  horarios       Horario[]
-
   @@map("cargas_docentes")
 }
 
 model Horario {
-  id_dia        Int   
-  id_bloque     Int 
-  id_sala       Int   
-  id_carga      Int        
+  id_curso      Int
+  id_sala       Int
+  id_dia        Int
+  id_bloque     Int
+  estado        EstadoHorario  @default(ACTIVO)
 
+  curso         Curso          @relation(fields: [id_curso], references: [id_curso], onDelete: Cascade)
   dia           Dia            @relation(fields: [id_dia], references: [id_dia], onDelete: Cascade)
   bloque        BloqueHorario  @relation(fields: [id_bloque], references: [id_bloque], onDelete: Cascade)
   sala          Sala           @relation(fields: [id_sala], references: [id_sala], onDelete: Cascade)
-  carga         CargaDocente   @relation(fields: [id_carga], references: [id_carga], onDelete: Cascade)
 
-  @@id([id_carga, id_sala, id_dia, id_bloque])
+  // Dentro de un mismo estado: una sala tiene un solo curso por bloque...
+  @@id([id_sala, id_dia, id_bloque, estado])
+  // ...y un curso no está en dos salas en el mismo bloque
+  @@unique([id_curso, id_dia, id_bloque, estado])
   @@map("horarios")
 }
 

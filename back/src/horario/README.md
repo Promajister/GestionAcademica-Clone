@@ -41,7 +41,8 @@ Definida en `common/grilla.ts` y expuesta en `GET /api/horario/grilla`.
 ```
 Carrera 1─N Plan 1─N Malla N─1 Asignatura 1─N Curso
                                                 ├─ 1─N HorarioExterno (externas bloqueadas)
-                                                └─ 1─N CargaDocente 1─N Horario (clases)
+                                                ├─ 1─N CargaDocente (docentes del curso)
+                                                └─ 1─N Horario (clases, por estado)
 Sala 1─N Horario / HorarioExterno / OcupacionPuntual
 Dia, BloqueHorario 1─N Horario / HorarioExterno / BloqueProtegido / Disponibilidad
 ```
@@ -53,9 +54,9 @@ Dia, BloqueHorario 1─N Horario / HorarioExterno / BloqueProtegido / Disponibil
 | `Plan` (`planes`) | `id_plan` (PK), `year`, `version`, `codigo_carrera`. |
 | `Asignatura` (`asignaturas`) | `codigo` string (PK), `nombre`, `catedraSemanal`, `tallerSemanal`, `labSemanal`, `origen` (`INTERNA`/`EXTERNA`). |
 | `Malla` (`mallas`) | `id_malla` (PK), `id_plan`, `codigo_asignatura`, `semestre`. Permite que una misma asignatura pertenezca a múltiples planes. |
-| `Curso` (`cursos`) | `id_curso` (PK), `tipo` (`CATEDRA`/`TALLER`/`LABORATORIO`), `grupo`, `inscritos` (cupo), `year`, `semestre`, `codigo_asignatura`, `id_malla`. |
+| `Curso` (`cursos`) | `id_curso` (PK), `tipo` (`CATEDRA`/`TALLER`/`LABORATORIO`), `grupo`, `inscritos` (cupo), `year`, `semestre` (**período**: 1 = primer semestre, 2 = segundo), `codigo_asignatura`, `id_malla` (el nivel es `malla.semestre`). |
 | `HorarioExterno` (`horarios_externos`) | `id` (PK), `id_curso`, `id_dia`, `id_bloque`, `id_sala` (opcional), `sala_externa` (opcional). Bloques fijos y bloqueados de asignaturas externas. |
-| `Horario` (`horarios`) | Clave compuesta (`id_carga`, `id_sala`, `id_dia`, `id_bloque`). Clases regulares con profesor asignado. |
+| `Horario` (`horarios`) | `id_curso`, `id_sala`, `id_dia`, `id_bloque`, `estado` (`ACTIVO`/`PROPUESTA`/`BORRADOR`). PK (`id_sala`, `id_dia`, `id_bloque`, `estado`): dentro de un estado, una sala tiene un solo curso por bloque. `@@unique` (`id_curso`, `id_dia`, `id_bloque`, `estado`). El docente se obtiene por `curso → CargaDocente`; el nivel y el plan por `curso → malla`. |
 | `OcupacionPuntual` (`ocupaciones_puntuales`) | Clave compuesta (`id_bloque`, `id_sala`, `fecha`). Reservas de salas puntuales por fecha. |
 | `BloqueProtegido` (`bloques_protegidos`) | `id_bloque_protegido` (PK), `nombre`, `alcance` (UNIVERSIDAD, FACULTAD, CARRERA, ESTUDIANTES, PRACTICA_PREPRACTICA, ACADEMICOS, ACADEMICO_INDIVIDUAL), `id_dia`, `id_bloque`, destinatarios condicionales (`codigo_carrera`, `semestre`, `contrato`, `id_usuario`). |
 
@@ -120,3 +121,15 @@ Solo para el docente autenticado: el `id_usuario` se toma del JWT, nunca del bod
 | PUT | `/horario/disponibilidad/mia` | `{ bloques: [{ dia: 'LUNES'..'VIERNES', bloque: 1..12 }] }`. Reemplaza toda la disponibilidad en una transacción. 403 si el contrato no está habilitado. Los bloques protegidos no se consideran en la disponibilidad |
 
 Front: `/horario/mi-disponibilidad` (perfil `profesor`), reutiliza `app-horario-grilla` en modo selección. Usuarios demo del seed: `profesor.horas@`, `profesor.horas2@` y `profesor.planta@gestion.uta.cl` (clave `123456`).
+
+### Propuesta de horario (HU "Generar propuesta de horario")
+Por **plan y período** (1 = primer semestre → niveles impares; 2 = segundo → niveles pares), sobre los cursos propios del año en curso. El algoritmo está documentado paso a paso en `propuestas/generador.ts` (función pura, pruebas en `generador.spec.ts`).
+
+| Método | Ruta | Notas |
+|---|---|---|
+| GET | `/horario/propuestas?id_plan=&periodo=` | Borrador del plan si existe; si no, la propuesta guardada (`estado: null` si no hay nada). Los motivos de cursos no asignados solo vienen al generar |
+| POST | `/horario/propuestas/generar` | `{ id_plan, periodo }`. Reemplaza el `BORRADOR` del plan con el resultado. Incluye `asignaturas_sin_cursos` |
+| POST | `/horario/propuestas/guardar` | `{ id_plan, periodo }`. Elimina la `PROPUESTA` anterior del plan y pasa el `BORRADOR` a `PROPUESTA`. 400 si no hay borrador |
+| DELETE | `/horario/propuestas?id_plan=&periodo=` | Elimina el `BORRADOR` del plan; la `PROPUESTA` guardada no se toca |
+
+Al generar, las salas y docentes usados por **otros planes** (cualquier estado, mismo año y período) se consideran ocupados. `ACTIVO` lo deja vigente jefatura de carrera (fuera de esta HU).

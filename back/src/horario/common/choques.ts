@@ -1,4 +1,9 @@
-import { Prisma, TipoContrato, TipoDia } from '@prisma/client';
+import {
+  EstadoHorario,
+  Prisma,
+  TipoContrato,
+  TipoDia,
+} from '@prisma/client';
 
 type Db = Prisma.TransactionClient;
 
@@ -25,29 +30,26 @@ export async function choqueConOcupaciones(
   const sala = await db.sala.findUnique({ where: { id_sala: p.id_sala } });
   const nombreSala = sala?.nombre ?? `Sala ${p.id_sala}`;
 
-  // 1. Choque con Horario (clases internas con carga docente)
+  // 1. Choque con Horario (clases de cursos propios en el horario vigente)
   if (p.id_dia) {
     const horario = await db.horario.findFirst({
       where: {
         id_sala: p.id_sala,
         id_dia: p.id_dia,
         id_bloque: p.bloque_numero,
+        estado: EstadoHorario.ACTIVO,
         ...(p.excluirCursoId && {
-          carga: { id_curso: { not: p.excluirCursoId } },
+          id_curso: { not: p.excluirCursoId },
         }),
       },
       include: {
-        carga: {
-          include: {
-            curso: { include: { asignatura: true } },
-          },
-        },
+        curso: { include: { asignatura: true } },
         dia: true,
       },
     });
 
     if (horario) {
-      const codigo = horario.carga.curso.asignatura.codigo;
+      const codigo = horario.curso.asignatura.codigo;
       const diaTexto = horario.dia.nombre;
       return `La ${nombreSala} ya está ocupada por ${codigo} el ${diaTexto} bloque ${p.bloque_numero}`;
     }

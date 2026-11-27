@@ -481,7 +481,6 @@ const DOCENTES: { email: string; nombre: string; contrato: TipoContrato; existen
   { email: 'amalia.rojas@academicos.uta.cl', nombre: 'Amalia Paz Rojas Varela', contrato: TipoContrato.HORAS },
   { email: 'carlos.donoso@academicos.uta.cl', nombre: 'Carlos David Donoso Rojas', contrato: TipoContrato.PLANTA },
   { email: 'carlos.choque@academicos.uta.cl', nombre: 'Carlos Omar Choque Mariño', contrato: TipoContrato.PLANTA },
-  { email: 'practicas.hg@gestion.uta.cl', nombre: 'Carolina Andrea Del Carmen Quintana Talvac', contrato: TipoContrato.HORAS, existente: true },
   { email: 'christian.jamett@academicos.uta.cl', nombre: 'Christian Rodrigo Jamett Ibarra', contrato: TipoContrato.HORAS },
   { email: 'elias.pizarro@academicos.uta.cl', nombre: 'Elias Pizarro Pizarro', contrato: TipoContrato.PLANTA },
   { email: 'guillem.serra@academicos.uta.cl', nombre: 'Guillem Serra Bou', contrato: TipoContrato.HORAS },
@@ -519,7 +518,6 @@ const CURSOS_2026: CursoSeed[] = [
   { codigo: 'HG402', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 1, inscritos: 2, id_plan: 3, docente: 'misael.camus@academicos.uta.cl', horas: 4 },
   { codigo: 'HG407', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 1, inscritos: 2, id_plan: 3, docente: 'jeans.gonzalez@academicos.uta.cl', horas: 4 },
   { codigo: 'HG408', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 1, inscritos: 1, id_plan: 3, docente: 'oscar.corvacho@academicos.uta.cl', horas: 8 },
-  { codigo: 'HG411', tipo: TipoCurso.CATEDRA, grupo: '', semestre: 1, inscritos: 2, id_plan: 3, docente: null, horas: null },
   { codigo: 'HG422', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 1, inscritos: 18, id_plan: 1, docente: 'alberto.diaz@academicos.uta.cl', horas: 4 },
   { codigo: 'HG423', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 1, inscritos: 19, id_plan: 1, docente: 'jc_pedhg@gestion.uta.cl', horas: 4 },
   { codigo: 'HG424', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 1, inscritos: 18, id_plan: 1, docente: 'oscar.corvacho@academicos.uta.cl', horas: 4 },
@@ -536,7 +534,6 @@ const CURSOS_2026: CursoSeed[] = [
   { codigo: 'HG445', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 1, inscritos: 14, id_plan: 1, docente: 'guillem.serra@academicos.uta.cl', horas: 2 },
   { codigo: 'HG445', tipo: TipoCurso.TALLER, grupo: 'A', semestre: 1, inscritos: 14, id_plan: 1, docente: 'guillem.serra@academicos.uta.cl', horas: 2 },
   { codigo: 'HG450', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 1, inscritos: 9, id_plan: 1, docente: 'alan.rodriguez@academicos.uta.cl', horas: 4 },
-  { codigo: 'HG454', tipo: TipoCurso.TALLER, grupo: '', semestre: 1, inscritos: 1, id_plan: 1, docente: 'practicas.hg@gestion.uta.cl', horas: 2 },
   // ---------- SEGUNDO SEMESTRE ----------
   { codigo: 'HG057', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 2, inscritos: 3, id_plan: 3, docente: 'marisol.palma@academicos.uta.cl', horas: 6 },
   { codigo: 'HG076', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 2, inscritos: 21, id_plan: 2, docente: 'jose.soto@academicos.uta.cl', horas: 4 },
@@ -544,17 +541,12 @@ const CURSOS_2026: CursoSeed[] = [
   { codigo: 'HG077', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 2, inscritos: 21, id_plan: 2, docente: 'misael.camus@academicos.uta.cl', horas: 4 },
   { codigo: 'HG078', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 2, inscritos: 17, id_plan: 2, docente: 'jc_pedhg@gestion.uta.cl', horas: 2 },
   { codigo: 'HG078', tipo: TipoCurso.TALLER, grupo: 'A', semestre: 2, inscritos: 17, id_plan: 2, docente: 'jc_pedhg@gestion.uta.cl', horas: 2 },
-  { codigo: 'HG079', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 2, inscritos: 18, id_plan: 2, docente: 'ivanna.margarucci@academicos.uta.cl', horas: 4 },
-  { codigo: 'HG079', tipo: TipoCurso.TALLER, grupo: 'A', semestre: 2, inscritos: 18, id_plan: 2, docente: 'ivanna.margarucci@academicos.uta.cl', horas: 2 },
   { codigo: 'HG094', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 2, inscritos: 15, id_plan: 1, docente: 'juan.leon@academicos.uta.cl', horas: 2 },
   { codigo: 'HG094', tipo: TipoCurso.TALLER, grupo: 'A', semestre: 2, inscritos: 15, id_plan: 1, docente: 'juan.leon@academicos.uta.cl', horas: 2 },
   { codigo: 'HG139', tipo: TipoCurso.TALLER, grupo: 'A', semestre: 2, inscritos: 11, id_plan: 1, docente: 'christian.jamett@academicos.uta.cl', horas: 6 },
   { codigo: 'HG275', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 2, inscritos: 2, id_plan: 3, docente: 'marisol.palma@academicos.uta.cl', horas: 4 },
   { codigo: 'HG276', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 2, inscritos: 2, id_plan: 3, docente: 'carlos.donoso@academicos.uta.cl', horas: 6 },
   { codigo: 'HG278', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 2, inscritos: 2, id_plan: 3, docente: 'alan.rodriguez@academicos.uta.cl', horas: 4 },
-  { codigo: 'HG411', tipo: TipoCurso.CATEDRA, grupo: '', semestre: 2, inscritos: 1, id_plan: 3, docente: null, horas: null },
-  { codigo: 'HG412', tipo: TipoCurso.CATEDRA, grupo: '', semestre: 2, inscritos: 1, id_plan: 3, docente: null, horas: null },
-  { codigo: 'HG418', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 2, inscritos: 2, id_plan: 1, docente: null, horas: null }, // equivalente a HG079-C-A: sin carga
   { codigo: 'HG419', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 2, inscritos: 0, id_plan: 1, docente: null, horas: null },
   { codigo: 'HG420', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 2, inscritos: 0, id_plan: 1, docente: null, horas: null },
   { codigo: 'HG421', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 2, inscritos: 0, id_plan: 1, docente: null, horas: null },
@@ -567,7 +559,6 @@ const CURSOS_2026: CursoSeed[] = [
   { codigo: 'HG437', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 2, inscritos: 13, id_plan: 1, docente: 'elias.pizarro@academicos.uta.cl', horas: 6 },
   { codigo: 'HG438', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 2, inscritos: 17, id_plan: 1, docente: 'guillem.serra@academicos.uta.cl', horas: 4 },
   { codigo: 'HG439', tipo: TipoCurso.CATEDRA, grupo: 'A', semestre: 2, inscritos: 14, id_plan: 1, docente: 'jc_pedhg@gestion.uta.cl', horas: 4 },
-  { codigo: 'HG454', tipo: TipoCurso.TALLER, grupo: '', semestre: 2, inscritos: 9, id_plan: 1, docente: null, horas: null },
 ];
 
 

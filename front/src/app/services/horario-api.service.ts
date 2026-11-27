@@ -175,26 +175,27 @@ export interface MiDisponibilidadDTO {
   bloques: BloqueDisponibleDTO[];
 }
 
-// ---------- PROPUESTA DE HORARIO (HOR · Generar propuesta) ----------
-// Lo que se asigna son CURSOS (no asignaturas): cada asignatura propia genera
-// un curso por cada tipo con horas > 0 (catedraSemanal, tallerSemanal, labSemanal).
-// Contrato propuesto: se ajusta cuando se implemente el back.
+// ---------- PROPUESTA DE HORARIO (HU Generar propuesta) ----------
+// Lo que se asigna son CURSOS (no asignaturas). La propuesta es por plan y
+// período (1 = primer semestre: niveles impares; 2 = segundo: niveles pares).
+// Estados en el back: BORRADOR (generado, sin guardar) y PROPUESTA (guardada).
 export type TipoCurso = 'CATEDRA' | 'TALLER' | 'LABORATORIO';
 
 export type EstadoCursoPropuesta = 'ASIGNADO' | 'PARCIAL' | 'NO_ASIGNADO';
 
+export type EstadoPropuesta = 'BORRADOR' | 'PROPUESTA';
+
 // Motivos por los que el algoritmo no pudo ubicar (todos o parte de) los bloques de un curso
 export type MotivoNoAsignado =
   | 'SIN_BLOQUES_LIBRES' // no quedan pares de bloques libres en el nivel
-  | 'SIN_SALA_CON_CAPACIDAD' // hay bloques libres, pero ninguna sala libre con capacidad suficiente
-  | 'DOCENTE_SIN_DISPONIBILIDAD' // docente por horas sin disponibilidad compatible (o sin declarar = 0 bloques)
-  | 'DOCENTE_OCUPADO' // el docente ya tiene otros cursos en los bloques candidatos
-  | 'OTRO';
+  | 'DOCENTE_SIN_DISPONIBILIDAD' // docente por horas sin disponibilidad compatible (sin declarar = 0 bloques)
+  | 'DOCENTE_OCUPADO' // el docente ya tiene otros cursos en los bloques en que está disponible
+  | 'SIN_SALA_CON_CAPACIDAD'; // hay bloques posibles, pero ninguna sala libre con capacidad
 
 // Advertencias: no detienen ni alteran la generación, solo se informan
 export type AdvertenciaCursoPropuesta =
-  | 'SIN_DOCENTE' // curso sin docente preasignado: se asume siempre disponible
-  | 'SIN_INSCRITOS'; // no hay dato de inscritos: la capacidad de la sala no se validó
+  | 'SIN_DOCENTE' // curso sin docente asignado: se asume siempre disponible
+  | 'SIN_INSCRITOS'; // curso con 0 inscritos: no se valida la capacidad de la sala
 
 export interface DocentePropuestaDTO {
   id_usuario: number;
@@ -212,21 +213,19 @@ export interface SesionPropuestaDTO {
 }
 
 export interface CursoPropuestaDTO {
-  // TEMPORAL: mientras no exista la info de cursos, la generación los crea.
-  // No se muestra en la interfaz; se quitará cuando los cursos vengan cargados.
-  id_curso: number | null; // null si el curso no existe y se creará al aceptar
-  curso_nuevo: boolean;
+  id_curso: number;
   tipo: TipoCurso;
   grupo: string;
   codigo_asignatura: string;
   nombre_asignatura: string;
+  nivel: number;
   bloques_requeridos: number;
-  inscritos: number | null;
+  inscritos: number;
   docentes: DocentePropuestaDTO[];
   sesiones: SesionPropuestaDTO[];
   estado: EstadoCursoPropuesta;
-  motivo?: MotivoNoAsignado | null;
-  detalle_motivo?: string | null;
+  motivo: MotivoNoAsignado | null; // solo justo después de generar
+  detalle_motivo: string | null;
   advertencias: AdvertenciaCursoPropuesta[];
 }
 
@@ -235,24 +234,32 @@ export interface ResumenPropuestaDTO {
   asignados: number;
   parciales: number;
   no_asignados: number;
-  cursos_nuevos: number; // TEMPORAL: no se muestra en la interfaz
   sin_docente: number;
+  sin_inscritos: number;
+}
+
+export interface AsignaturaSinCursosDTO {
+  codigo: string;
+  nombre: string;
+  nivel: number;
 }
 
 export interface PropuestaHorarioDTO {
-  id_propuesta: number | null; // borrador guardado en el back
-  generada_en: string;
-  codigo_carrera: string;
   id_plan: number;
-  semestre: number;
+  codigo_carrera: string;
+  periodo: number;
+  year: number;
+  estado: EstadoPropuesta | null; // null: no hay borrador ni propuesta guardada
+  con_motivos: boolean; // los motivos no se guardan: solo vienen al generar
+  niveles: number[]; // niveles del plan que se dictan en el período
   cursos: CursoPropuestaDTO[];
   resumen: ResumenPropuestaDTO;
+  asignaturas_sin_cursos: AsignaturaSinCursosDTO[];
 }
 
-export interface GenerarPropuestaPayload {
-  codigo_carrera: string;
+export interface PlanPeriodoPayload {
   id_plan: number;
-  semestre: number;
+  periodo: number;
 }
 
 export const TIPO_CURSO_LABEL: Record<TipoCurso, string> = {
@@ -263,15 +270,14 @@ export const TIPO_CURSO_LABEL: Record<TipoCurso, string> = {
 
 export const MOTIVO_NO_ASIGNADO_LABEL: Record<MotivoNoAsignado, string> = {
   SIN_BLOQUES_LIBRES: 'Sin bloques libres',
-  SIN_SALA_CON_CAPACIDAD: 'Sin sala con capacidad',
   DOCENTE_SIN_DISPONIBILIDAD: 'Docente sin disponibilidad',
   DOCENTE_OCUPADO: 'Docente ocupado',
-  OTRO: 'Otro motivo',
+  SIN_SALA_CON_CAPACIDAD: 'Sin sala con capacidad',
 };
 
 export const ADVERTENCIA_LABEL: Record<AdvertenciaCursoPropuesta, string> = {
   SIN_DOCENTE: 'Sin docente',
-  SIN_INSCRITOS: 'Inscritos no informados',
+  SIN_INSCRITOS: 'Sin inscritos',
 };
 
 @Injectable({ providedIn: 'root' })
@@ -461,37 +467,48 @@ export class HorarioApiService {
   }
 
   // ---------- PROPUESTA DE HORARIO ----------
-  // Endpoints propuestos (aún no existen en el back)
   private csrfHeaders(): HttpHeaders {
     return new HttpHeaders({
       'X-CSRF-Token': localStorage.getItem('app.token') ?? '',
     });
   }
 
-  generarPropuesta(
-    payload: GenerarPropuestaPayload,
-  ): Observable<PropuestaHorarioDTO> {
+  private planPeriodoParams(p: PlanPeriodoPayload): HttpParams {
+    return new HttpParams()
+      .set('id_plan', String(p.id_plan))
+      .set('periodo', String(p.periodo));
+  }
+
+  // Borrador si existe; si no, la propuesta guardada (estado null si no hay nada)
+  getPropuesta(p: PlanPeriodoPayload): Observable<PropuestaHorarioDTO> {
+    return this.http.get<PropuestaHorarioDTO>(`${this.baseUrl}/propuestas`, {
+      params: this.planPeriodoParams(p),
+    });
+  }
+
+  // Genera y guarda el resultado como BORRADOR (reemplaza el anterior)
+  generarPropuesta(p: PlanPeriodoPayload): Observable<PropuestaHorarioDTO> {
     return this.http.post<PropuestaHorarioDTO>(
       `${this.baseUrl}/propuestas/generar`,
-      payload,
+      p,
       { headers: this.csrfHeaders() },
     );
   }
 
-  aceptarPropuesta(
-    idPropuesta: number,
-  ): Observable<{ mensaje: string; cursos_creados?: number }> {
-    return this.http.post<{ mensaje: string; cursos_creados?: number }>(
-      `${this.baseUrl}/propuestas/${idPropuesta}/aceptar`,
-      {},
+  // El borrador pasa a PROPUESTA (reemplaza la propuesta guardada anterior)
+  guardarPropuesta(p: PlanPeriodoPayload): Observable<PropuestaHorarioDTO> {
+    return this.http.post<PropuestaHorarioDTO>(
+      `${this.baseUrl}/propuestas/guardar`,
+      p,
       { headers: this.csrfHeaders() },
     );
   }
 
-  descartarPropuesta(idPropuesta: number): Observable<{ mensaje: string }> {
-    return this.http.delete<{ mensaje: string }>(
-      `${this.baseUrl}/propuestas/${idPropuesta}`,
-      { headers: this.csrfHeaders() },
-    );
+  // Elimina el borrador; la propuesta guardada no se toca
+  descartarBorrador(p: PlanPeriodoPayload): Observable<PropuestaHorarioDTO> {
+    return this.http.delete<PropuestaHorarioDTO>(`${this.baseUrl}/propuestas`, {
+      params: this.planPeriodoParams(p),
+      headers: this.csrfHeaders(),
+    });
   }
 }

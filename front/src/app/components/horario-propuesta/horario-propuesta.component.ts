@@ -1,4 +1,4 @@
-import { Component, HostListener, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -11,7 +11,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { forkJoin, of } from 'rxjs';
+import { forkJoin, of, Observable } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import {
   HorarioApiService,
@@ -27,8 +27,6 @@ import {
   MOTIVO_NO_ASIGNADO_LABEL,
   ADVERTENCIA_LABEL,
 } from '../../services/horario-api.service';
-import { SalaDTO } from '../../services/salas-api.service';
-import { generarPropuestaMock } from '../../services/horario-propuesta.mock';
 import {
   HorarioGrillaComponent,
   CeldaGrilla,
@@ -38,9 +36,6 @@ import {
   ConfirmDialogComponent,
   ConfirmDialogData,
 } from '../gestion/confirm-dialog.component';
-
-// TODO(HOR-69): poner en false cuando exista el endpoint de generación en el back
-const USAR_MOCK_SI_NO_HAY_BACK = true;
 
 const DIAS: DiaSemana[] = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES'];
 
@@ -55,6 +50,7 @@ const DIA_CORTO: Record<DiaSemana, string> = {
 interface GrupoAsignatura {
   codigo: string;
   nombre: string;
+  nivel: number;
   cursos: CursoPropuestaDTO[];
 }
 
@@ -94,40 +90,49 @@ export class HorarioPropuestaComponent implements OnInit {
   private snack = inject(MatSnackBar);
   private dialog = inject(MatDialog);
 
-  readonly SEMESTRES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+  readonly PERIODOS = [
+    { valor: 1, nombre: 'Primer semestre' },
+    { valor: 2, nombre: 'Segundo semestre' },
+  ];
   readonly TIPO_CURSO_LABEL = TIPO_CURSO_LABEL;
   readonly MOTIVO_LABEL = MOTIVO_NO_ASIGNADO_LABEL;
   readonly ADVERTENCIA_LABEL = ADVERTENCIA_LABEL;
 
+  // ---------- selección ----------
   carreras: CarreraDTO[] = [];
   planesDisponibles: PlanDTO[] = [];
   idCarreraSeleccionada: string | null = null;
   idPlanSeleccionado: number | null = null;
-  semestreSeleccionado: number | null = null;
+  periodoSeleccionado: 1 | 2 = 1;
 
-  cargandoContexto = false;
-  generando = false;
-  procesando = false; // aceptar / descartar
+  // Nivel que se ve en la grilla (pestaña) y filtro de las listas
+  nivelSeleccionado: number | null = null;
+  filtroNivelListas: number | 'TODOS' = 'TODOS';
 
-  // Contexto del nivel (lo que la generación NO modifica)
-  asignaturas: AsignaturaDTO[] = [];
-  protegidos: BloqueProtegidoDTO[] = [];
-  salas: SalaDTO[] = [];
+  // ---------- estado de carga ----------
+  cargandoPropuesta = false;
+  cargandoNivel = false;
+  procesando: 'generar' | 'guardar' | 'descartar' | null = null;
 
+  // ---------- datos ----------
   propuesta: PropuestaHorarioDTO | null = null;
-  usandoMock = false;
-
-  cursosPendientes: CursoPropuestaDTO[] = []; // NO_ASIGNADO + PARCIAL
-  gruposAsignados: GrupoAsignatura[] = [];
+  // Contexto fijo del nivel seleccionado (no lo modifica la generación)
+  asignaturasNivel: AsignaturaDTO[] = [];
+  protegidosNivel: BloqueProtegidoDTO[] = [];
   celdas: CeldaGrilla[] = [];
+  verAsignaturasSinCursos = false;
 
   ngOnInit(): void {
+    // Desde la Grilla Semanal llegan carrera, plan y semestre (nivel)
     const qp = this.route.snapshot.queryParamMap;
     const carrera = qp.get('carrera');
     const plan = Number(qp.get('plan'));
-    const semestre = Number(qp.get('semestre'));
+    const nivel = Number(qp.get('semestre'));
+    if (nivel > 0) {
+      this.periodoSeleccionado = nivel % 2 === 1 ? 1 : 2;
+      this.nivelSeleccionado = nivel;
+    }
 
-    this.cargandoContexto = true;
     this.horarioApi.getCarreras().subscribe({
       next: (carreras) => {
         this.carreras = carreras;
@@ -135,27 +140,21 @@ export class HorarioPropuestaComponent implements OnInit {
           carreras.find((c) => c.codigo === carrera) ??
           carreras.find((c) => c.codigo === '311') ??
           carreras[0];
-        if (!pref) {
-          this.cargandoContexto = false;
-          return;
-        }
+        if (!pref) return;
         this.idCarreraSeleccionada = pref.codigo;
         this.planesDisponibles = pref.planes ?? [];
         this.idPlanSeleccionado =
           this.planesDisponibles.find((p) => p.id_plan === plan)?.id_plan ??
           this.planesDisponibles[0]?.id_plan ??
           null;
-        this.semestreSeleccionado = this.SEMESTRES.includes(semestre) ? semestre : 1;
-        this.cargarContexto();
+        this.cargarPropuesta();
       },
-      error: () => {
-        this.cargandoContexto = false;
-        this.snack.open('No se pudieron cargar las carreras', 'Cerrar', { duration: 4000 });
-      },
+      error: () =>
+        this.snack.open('No se pudieron cargar las carreras', 'Cerrar', { duration: 4000 }),
     });
   }
 
-  // ---------- Selección de nivel ----------
+  // ---------- getters ----------
   get carreraSeleccionada(): CarreraDTO | undefined {
     return this.carreras.find((c) => c.codigo === this.idCarreraSeleccionada);
   }
@@ -164,266 +163,260 @@ export class HorarioPropuestaComponent implements OnInit {
     return this.planesDisponibles.find((p) => p.id_plan === this.idPlanSeleccionado);
   }
 
-  get puedeGenerar(): boolean {
-    return (
-      !!this.idCarreraSeleccionada &&
-      !!this.idPlanSeleccionado &&
-      !!this.semestreSeleccionado &&
-      !this.cargandoContexto &&
-      !this.generando &&
-      !this.procesando
-    );
+  get nombrePeriodo(): string {
+    return this.PERIODOS.find((p) => p.valor === this.periodoSeleccionado)?.nombre ?? '';
   }
 
+  get ocupado(): boolean {
+    return this.cargandoPropuesta || this.procesando !== null;
+  }
+
+  get puedeOperar(): boolean {
+    return !!this.idPlanSeleccionado && !this.ocupado;
+  }
+
+  get esBorrador(): boolean {
+    return this.propuesta?.estado === 'BORRADOR';
+  }
+
+  get niveles(): number[] {
+    return this.propuesta?.niveles ?? [];
+  }
+
+  private get payload() {
+    return { id_plan: this.idPlanSeleccionado as number, periodo: this.periodoSeleccionado };
+  }
+
+  // Cursos de las listas, según el filtro de nivel
+  get cursosFiltrados(): CursoPropuestaDTO[] {
+    const cursos = this.propuesta?.cursos ?? [];
+    return this.filtroNivelListas === 'TODOS'
+      ? cursos
+      : cursos.filter((c) => c.nivel === this.filtroNivelListas);
+  }
+
+  get cursosPendientes(): CursoPropuestaDTO[] {
+    return this.cursosFiltrados.filter((c) => c.estado !== 'ASIGNADO');
+  }
+
+  get gruposAsignados(): GrupoAsignatura[] {
+    const grupos = new Map<string, GrupoAsignatura>();
+    for (const c of this.cursosFiltrados.filter((x) => x.sesiones.length > 0)) {
+      const k = `${c.nivel}-${c.codigo_asignatura}`;
+      if (!grupos.has(k)) {
+        grupos.set(k, {
+          codigo: c.codigo_asignatura,
+          nombre: c.nombre_asignatura,
+          nivel: c.nivel,
+          cursos: [],
+        });
+      }
+      grupos.get(k)!.cursos.push(c);
+    }
+    return [...grupos.values()];
+  }
+
+  cursosDelNivel(nivel: number): number {
+    return (this.propuesta?.cursos ?? []).filter((c) => c.nivel === nivel).length;
+  }
+
+  // ---------- cambios de selección ----------
   onCarreraChange(): void {
     this.planesDisponibles = this.carreraSeleccionada?.planes ?? [];
     this.idPlanSeleccionado = this.planesDisponibles[0]?.id_plan ?? null;
-    this.cargarContexto();
+    this.nivelSeleccionado = null;
+    this.cargarPropuesta();
   }
 
-  onPlanOSemestreChange(): void {
-    this.cargarContexto();
+  onPlanOPeriodoChange(): void {
+    this.nivelSeleccionado = null;
+    this.cargarPropuesta();
   }
 
-  // Asignaturas externas, bloques protegidos y salas del nivel
-  cargarContexto(): void {
-    if (!this.idPlanSeleccionado || !this.semestreSeleccionado) {
-      this.asignaturas = [];
-      this.protegidos = [];
+  seleccionarNivel(nivel: number): void {
+    if (this.nivelSeleccionado === nivel) return;
+    this.nivelSeleccionado = nivel;
+    this.cargarNivel();
+  }
+
+  // ---------- carga ----------
+  // Trae el borrador (o la propuesta guardada) del plan y período
+  cargarPropuesta(): void {
+    if (!this.idPlanSeleccionado) {
+      this.aplicarPropuesta(null);
+      return;
+    }
+    this.cargandoPropuesta = true;
+    this.horarioApi.getPropuesta(this.payload).subscribe({
+      next: (p) => {
+        this.cargandoPropuesta = false;
+        this.aplicarPropuesta(p);
+      },
+      error: (err) => {
+        this.cargandoPropuesta = false;
+        this.aplicarPropuesta(null);
+        this.mostrarError(err, 'No se pudo cargar la propuesta');
+      },
+    });
+  }
+
+  // Externas y bloques protegidos del nivel que se ve en la grilla
+  private cargarNivel(): void {
+    const nivel = this.nivelSeleccionado;
+    if (!this.idPlanSeleccionado || !nivel) {
+      this.asignaturasNivel = [];
+      this.protegidosNivel = [];
       this.construirCeldas();
       return;
     }
-
-    this.cargandoContexto = true;
+    this.cargandoNivel = true;
     forkJoin({
-      asignaturas: this.horarioApi.getAsignaturas({
-        id_plan: this.idPlanSeleccionado,
-        semestre: this.semestreSeleccionado,
-      }),
+      asignaturas: this.horarioApi
+        .getAsignaturas({ id_plan: this.idPlanSeleccionado, semestre: nivel })
+        .pipe(catchError(() => of([] as AsignaturaDTO[]))),
       protegidos: this.horarioApi
         .getBloquesProtegidosAplicables({
           codigo_carrera: this.idCarreraSeleccionada ?? undefined,
-          semestre: this.semestreSeleccionado,
+          semestre: nivel,
         })
         .pipe(catchError(() => of([] as BloqueProtegidoDTO[]))),
-      salas: this.horarioApi.getSalas(true).pipe(catchError(() => of([] as SalaDTO[]))),
-    }).subscribe({
-      next: ({ asignaturas, protegidos, salas }) => {
-        this.asignaturas = asignaturas;
-        this.protegidos = protegidos;
-        this.salas = salas;
-        this.cargandoContexto = false;
-        this.construirCeldas();
-      },
-      error: () => {
-        this.cargandoContexto = false;
-        this.snack.open('No se pudo cargar la información del nivel', 'Cerrar', {
-          duration: 4000,
-        });
-      },
+    }).subscribe(({ asignaturas, protegidos }) => {
+      // Puede haber cambiado de nivel mientras cargaba
+      if (nivel !== this.nivelSeleccionado) return;
+      this.cargandoNivel = false;
+      this.asignaturasNivel = asignaturas;
+      this.protegidosNivel = protegidos;
+      this.construirCeldas();
     });
   }
 
-  get asignaturasPropias(): AsignaturaDTO[] {
-    return this.asignaturas.filter((a) => a.origen === 'PROPIA' || a.origen === 'INTERNA');
+  private aplicarPropuesta(p: PropuestaHorarioDTO | null): void {
+    this.propuesta = p;
+    this.verAsignaturasSinCursos = false;
+    const niveles = p?.niveles ?? [];
+    if (!this.nivelSeleccionado || !niveles.includes(this.nivelSeleccionado)) {
+      this.nivelSeleccionado = niveles[0] ?? null;
+    }
+    if (this.filtroNivelListas !== 'TODOS' && !niveles.includes(this.filtroNivelListas)) {
+      this.filtroNivelListas = 'TODOS';
+    }
+    this.cargarNivel();
   }
 
-  get asignaturasExternas(): AsignaturaDTO[] {
-    return this.asignaturas.filter((a) => a.origen === 'EXTERNA');
-  }
-
-  // ---------- Generar / descartar / aceptar ----------
-  generar(): void {
-    if (!this.puedeGenerar) return;
-    const payload = {
-      codigo_carrera: this.idCarreraSeleccionada as string,
-      id_plan: this.idPlanSeleccionado as number,
-      semestre: this.semestreSeleccionado as number,
-    };
-
-    this.generando = true;
-    this.horarioApi.generarPropuesta(payload).subscribe({
-      next: (p) => {
-        this.generando = false;
-        this.aplicarPropuesta(p, false);
-      },
-      error: (err) => {
-        // 404 = endpoint aún no implementado, 0 = back caído
-        if (USAR_MOCK_SI_NO_HAY_BACK && (err?.status === 404 || err?.status === 0)) {
-          const p = generarPropuestaMock({
-            ...payload,
-            asignaturas: this.asignaturas,
-            protegidos: this.protegidos,
-            salas: this.salas,
-          });
-          this.generando = false;
-          this.aplicarPropuesta(p, true);
-          return;
-        }
-        this.generando = false;
-        this.snack.open(
-          err?.error?.message || 'No se pudo generar la propuesta',
-          'Cerrar',
-          { duration: 5000 },
-        );
-      },
-    });
-  }
-
-  confirmarRegenerar(): void {
-    const data: ConfirmDialogData = {
-      title: 'Regenerar propuesta',
-      message: 'Se generará una nueva propuesta para este nivel.',
-      detail: 'La propuesta actual se reemplaza y no se guarda.',
-      confirmText: 'Regenerar',
-      cancelText: 'Cancelar',
-      tone: 'primary',
-    };
-    this.dialog
-      .open(ConfirmDialogComponent, { data, width: '420px' })
-      .afterClosed()
-      .subscribe((ok) => {
-        if (ok) this.generar();
-      });
-  }
-
-  confirmarDescartar(): void {
-    const data: ConfirmDialogData = {
-      title: 'Descartar propuesta',
-      message: '¿Descartar la propuesta generada?',
-      detail: 'El horario actual del nivel no cambia.',
-      confirmText: 'Descartar',
-      cancelText: 'Cancelar',
-      tone: 'danger',
-    };
-    this.dialog
-      .open(ConfirmDialogComponent, { data, width: '420px' })
-      .afterClosed()
-      .subscribe((ok) => {
-        if (ok) this.descartar();
-      });
-  }
-
-  private descartar(): void {
-    const id = this.propuesta?.id_propuesta;
-    if (this.usandoMock || id == null) {
-      this.limpiarPropuesta();
+  // ---------- acciones ----------
+  confirmarGenerar(): void {
+    if (!this.propuesta?.estado) {
+      this.generar();
       return;
     }
-    this.procesando = true;
-    this.horarioApi.descartarPropuesta(id).subscribe({
-      next: () => {
-        this.procesando = false;
-        this.limpiarPropuesta();
+    this.confirmar(
+      {
+        title: this.esBorrador ? 'Regenerar propuesta' : 'Generar nueva propuesta',
+        message: `Se generará una nueva propuesta para el ${this.nombrePeriodo.toLowerCase()}.`,
+        detail: this.esBorrador
+          ? 'El borrador actual (sin guardar) se reemplaza. La propuesta guardada no cambia hasta que guardes.'
+          : 'Quedará como borrador; la propuesta guardada no cambia hasta que guardes.',
+        confirmText: 'Generar',
+        cancelText: 'Cancelar',
+        tone: 'primary',
       },
-      error: (err) => {
-        this.procesando = false;
-        this.snack.open(
-          err?.error?.message || 'No se pudo descartar la propuesta',
-          'Cerrar',
-          { duration: 5000 },
-        );
-      },
+      () => this.generar(),
+    );
+  }
+
+  private generar(): void {
+    this.ejecutar('generar', this.horarioApi.generarPropuesta(this.payload), (p) => {
+      const r = p.resumen;
+      this.snack.open(
+        `Propuesta generada: ${r.asignados} de ${r.total_cursos} cursos asignados`,
+        'Cerrar',
+        { duration: 4000 },
+      );
     });
   }
 
-  confirmarAceptar(): void {
-    const p = this.propuesta;
-    if (!p) return;
-    const r = p.resumen;
-
+  confirmarGuardar(): void {
+    const r = this.propuesta?.resumen;
+    if (!r) return;
     const avisos: string[] = [];
     if (r.no_asignados + r.parciales > 0)
       avisos.push(`${r.no_asignados + r.parciales} curso(s) quedan sin horario completo.`);
     if (r.sin_docente > 0) avisos.push(`${r.sin_docente} curso(s) no tienen docente asignado.`);
-
-    const data: ConfirmDialogData = {
-      title: 'Aceptar propuesta',
-      message: `Se guardará el horario de ${r.asignados + r.parciales} de ${r.total_cursos} cursos del nivel.`,
-      detail: [...avisos, 'Reemplaza el horario actual de los cursos propios del nivel. Las asignaturas externas no se modifican.'].join(' '),
-      confirmText: 'Aceptar y guardar',
-      cancelText: 'Cancelar',
-      tone: 'primary',
-    };
-    this.dialog
-      .open(ConfirmDialogComponent, { data, width: '460px' })
-      .afterClosed()
-      .subscribe((ok) => {
-        if (ok) this.aceptar();
-      });
+    this.confirmar(
+      {
+        title: 'Guardar propuesta',
+        message: `Se guardará la propuesta del ${this.nombrePeriodo.toLowerCase()} (${r.asignados + r.parciales} de ${r.total_cursos} cursos con horario).`,
+        detail: [...avisos, 'Reemplaza la propuesta guardada anteriormente para este plan y período.'].join(' '),
+        confirmText: 'Guardar',
+        cancelText: 'Cancelar',
+        tone: 'primary',
+      },
+      () =>
+        this.ejecutar('guardar', this.horarioApi.guardarPropuesta(this.payload), () =>
+          this.snack.open('Propuesta guardada', 'Cerrar', { duration: 3000 }),
+        ),
+    );
   }
 
-  private aceptar(): void {
-    const id = this.propuesta?.id_propuesta;
-    // TODO(HOR-69): con el mock no existe borrador en el back, así que se simula
-    // una respuesta exitosa (no se guarda nada). Quitar junto con el mock.
-    const peticion$ =
-      this.usandoMock || id == null
-        ? of({ mensaje: 'Horario guardado' })
-        : this.horarioApi.aceptarPropuesta(id);
-
-    this.procesando = true;
-    peticion$.subscribe({
-      next: (res) => {
-        this.procesando = false;
-        this.propuesta = null; // evita el aviso de salida
-        this.snack.open(res?.mensaje || 'Horario guardado', 'Cerrar', { duration: 4000 });
-        this.volverAGrilla();
+  confirmarDescartar(): void {
+    this.confirmar(
+      {
+        title: 'Descartar borrador',
+        message: '¿Descartar el borrador generado?',
+        detail: 'La propuesta guardada, si existe, no se elimina.',
+        confirmText: 'Descartar',
+        cancelText: 'Cancelar',
+        tone: 'danger',
       },
-      error: (err) => {
-        this.procesando = false;
-        this.snack.open(
-          err?.error?.message || 'No se pudo guardar la propuesta',
-          'Cerrar',
-          { duration: 5000 },
-        );
-      },
-    });
+      () =>
+        this.ejecutar('descartar', this.horarioApi.descartarBorrador(this.payload), () =>
+          this.snack.open('Borrador descartado', 'Cerrar', { duration: 3000 }),
+        ),
+    );
   }
 
   volverAGrilla(): void {
     this.router.navigate(['/horario/grilla']);
   }
 
-  @HostListener('window:beforeunload', ['$event'])
-  onBeforeUnload(e: BeforeUnloadEvent): void {
-    if (this.propuesta) {
-      e.preventDefault();
-      e.returnValue = '';
-    }
+  private confirmar(data: ConfirmDialogData, accion: () => void): void {
+    this.dialog
+      .open(ConfirmDialogComponent, { data, width: '460px' })
+      .afterClosed()
+      .subscribe((ok) => {
+        if (ok) accion();
+      });
   }
 
-  // ---------- Presentación ----------
-  private aplicarPropuesta(p: PropuestaHorarioDTO, mock: boolean): void {
-    this.propuesta = p;
-    this.usandoMock = mock;
-
-    this.cursosPendientes = p.cursos.filter((c) => c.estado !== 'ASIGNADO');
-
-    const grupos = new Map<string, GrupoAsignatura>();
-    for (const c of p.cursos.filter((x) => x.sesiones.length > 0)) {
-      if (!grupos.has(c.codigo_asignatura)) {
-        grupos.set(c.codigo_asignatura, {
-          codigo: c.codigo_asignatura,
-          nombre: c.nombre_asignatura,
-          cursos: [],
-        });
-      }
-      grupos.get(c.codigo_asignatura)!.cursos.push(c);
-    }
-    this.gruposAsignados = [...grupos.values()];
-
-    this.construirCeldas();
+  // Todas las acciones devuelven la propuesta actualizada
+  private ejecutar(
+    accion: 'generar' | 'guardar' | 'descartar',
+    peticion$: Observable<PropuestaHorarioDTO>,
+    alTerminar: (p: PropuestaHorarioDTO) => void,
+  ): void {
+    if (!this.puedeOperar) return;
+    this.procesando = accion;
+    peticion$.subscribe({
+      next: (p) => {
+        this.procesando = null;
+        this.aplicarPropuesta(p);
+        alTerminar(p);
+      },
+      error: (err) => {
+        this.procesando = null;
+        this.mostrarError(err, 'No se pudo completar la acción');
+      },
+    });
   }
 
-  private limpiarPropuesta(): void {
-    this.propuesta = null;
-    this.usandoMock = false;
-    this.cursosPendientes = [];
-    this.gruposAsignados = [];
-    this.construirCeldas();
+  private mostrarError(err: any, porDefecto: string): void {
+    const msg = err?.error?.message;
+    this.snack.open(Array.isArray(msg) ? msg.join('. ') : msg || porDefecto, 'Cerrar', {
+      duration: 5000,
+    });
   }
 
+  // ---------- presentación ----------
   bloquesAsignados(c: CursoPropuestaDTO): number {
     return c.sesiones.reduce((acc, s) => acc + (s.bloque_fin - s.bloque_inicio + 1), 0);
   }
@@ -440,13 +433,19 @@ export class HorarioPropuestaComponent implements OnInit {
     return c.docentes.map((d) => d.nombre).join(', ');
   }
 
-  // Grilla: protegidos + externas (fijas) + cursos propuestos
+  tooltipAdvertencia(a: string): string {
+    return a === 'SIN_DOCENTE'
+      ? 'Se programó como si el docente estuviera siempre disponible'
+      : 'No se validó la capacidad de la sala';
+  }
+
+  // Grilla del nivel seleccionado: protegidos + externas (fijas) + cursos propuestos
   private construirCeldas(): void {
     const slots = new Map<string, Slot>();
     const key = (dia: DiaSemana, b: number) => `${dia}-${b}`;
 
     // 1. Bloques protegidos
-    for (const bp of this.protegidos) {
+    for (const bp of this.protegidosNivel) {
       const bloques =
         bp.bloques && bp.bloques.length > 0
           ? bp.bloques
@@ -478,7 +477,7 @@ export class HorarioPropuestaComponent implements OnInit {
     };
 
     // 2. Asignaturas externas: se muestran tal cual, nunca se modifican
-    for (const a of this.asignaturasExternas) {
+    for (const a of this.asignaturasNivel.filter((x) => x.origen === 'EXTERNA')) {
       for (const c of a.cursos ?? []) {
         for (const bh of c.bloques_horarios ?? []) {
           const sala = bh.sala?.nombre || bh.sala_externa || 'Sin sala';
@@ -496,9 +495,10 @@ export class HorarioPropuestaComponent implements OnInit {
       }
     }
 
-    // 3. Cursos propuestos
-    if (this.propuesta) {
-      this.propuesta.cursos.forEach((c, ci) => {
+    // 3. Cursos propuestos del nivel
+    (this.propuesta?.cursos ?? [])
+      .filter((c) => c.nivel === this.nivelSeleccionado)
+      .forEach((c) => {
         c.sesiones.forEach((s, si) => {
           for (let b = s.bloque_inicio; b <= s.bloque_fin; b++) {
             ponerClase({
@@ -510,12 +510,11 @@ export class HorarioPropuestaComponent implements OnInit {
               sala: s.sala_nombre,
               docente: c.docentes.length ? this.nombresDocentes(c) : undefined,
               sin_docente: c.advertencias.includes('SIN_DOCENTE'),
-              grupoKey: `PP-${ci}-${si}`,
+              grupoKey: `PP-${c.id_curso}-${si}`,
             });
           }
         });
       });
-    }
 
     // 4. Fusionar bloques consecutivos del mismo elemento (sin cruzar la colación)
     const mismaJornada = (b1: number, b2: number) => (b1 <= 6) === (b2 <= 6);
