@@ -80,7 +80,7 @@ const MOTIVOS: Record<MotivoNoAsignada, string> = {
 };
 
 // Un nivel, o todos los niveles pares o impares (un semestre del año)
-type FiltroSemestre = number | 'PARES' | 'IMPARES';
+type FiltroSemestre = number | 'PARES' | 'IMPARES' | 'TODOS';
 
 // Cómo se arma una grilla: por nivel (carrera y plan), por sala o por docente
 type ModoGrilla = 'nivel' | 'sala' | 'docente';
@@ -96,6 +96,8 @@ interface CeldaOcupacion {
 // Grilla que se dibuja: una por nivel, o una sola con todas las clases de una sala o de un docente
 interface GrillaVista {
   clave: string;
+  // Con "Todos los semestres" cada nivel usa la propuesta de su semestre: se arrastra si esa está en borrador
+  editable: boolean;
   titulo: string;
   subtitulo: string;
   celdas: CeldaGrilla[];
@@ -144,6 +146,12 @@ export class HorarioGrillaPageComponent implements OnInit {
   vista: 'horario' | 'salas' = 'horario';
   // En la vista de salas libres, ocultar las ocupadas
   soloLibres = false;
+  // La tarjeta de la propuesta se abre con "Generar horario" y se cierra al cerrar el horario
+  mostrarPropuesta = false;
+  confirmandoGeneracion = false;
+  // Con "Todos los semestres": semestre del año que se gestiona en la tarjeta, y la propuesta del otro
+  periodoTodos: 1 | 2 = 2;
+  propuestaOtra: PropuestaDTO | null = null;
   bloquesGrilla: BloqueGrillaDTO[] = [];
 
   readonly SEMESTRES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
@@ -182,6 +190,7 @@ export class HorarioGrillaPageComponent implements OnInit {
   // 1er semestre del año: niveles impares; 2do semestre: niveles pares
   get periodo(): number {
     const s = this.semestreSeleccionado;
+    if (s === 'TODOS') return this.periodoTodos;
     if (s === 'PARES') return 2;
     if (s === 'IMPARES') return 1;
     return s % 2 === 0 ? 2 : 1;
@@ -193,6 +202,7 @@ export class HorarioGrillaPageComponent implements OnInit {
 
   get etiquetaSemestre(): string {
     const s = this.semestreSeleccionado;
+    if (s === 'TODOS') return 'Todos los semestres';
     if (s === 'PARES') return 'Semestres pares';
     if (s === 'IMPARES') return 'Semestres impares';
     return `Semestre ${s}`;
@@ -284,6 +294,11 @@ export class HorarioGrillaPageComponent implements OnInit {
   }
 
   // Carrera y Plan no aplican en las vistas por sala, por docente o de salas libres
+  // La vista por sala, por docente y de salas libres son de un solo semestre del año
+  get vistasDeUnSemestreBloqueadas(): boolean {
+    return this.todosLosSemestres;
+  }
+
   get filtrosDePlanBloqueados(): boolean {
     return !!this.salaActual || !!this.docenteActual || this.vista === 'salas';
   }
@@ -339,23 +354,48 @@ export class HorarioGrillaPageComponent implements OnInit {
     return `${bloques} bloque${bloques === 1 ? '' : 's'}`;
   }
 
-  // Clases de la propuesta (propias y externas) del plan elegido
+  get todosLosSemestres(): boolean {
+    return this.semestreSeleccionado === 'TODOS';
+  }
+
+  // Propuesta del semestre del año al que pertenece un nivel (impar: 1er semestre, par: 2do)
+  private propuestaDe(nivel: number): PropuestaDTO | null {
+    const periodo = nivel % 2 === 0 ? 2 : 1;
+    if (periodo === this.periodo) return this.propuesta;
+    return this.todosLosSemestres ? this.propuestaOtra : null;
+  }
+
+  private editableNivel(nivel: number): boolean {
+    const p = this.propuestaDe(nivel);
+    return !!p?.generado_en && p.estado !== 'CERRADO' && !this.guardando;
+  }
+
+  // Se puede mover una clase si la propuesta de su semestre está generada y en borrador
+  editableDe(a: ActividadDTO): boolean {
+    return this.editableNivel(a.nivel);
+  }
+
+  // Clases de la propuesta (propias y externas) del plan elegido; con "Todos", de ambos semestres
   private get actividadesPlan(): ActividadDTO[] {
-    return (this.propuesta?.actividades ?? []).filter(
-      (a) => a.id_plan === this.idPlanSeleccionado,
-    );
+    const todas = [
+      ...(this.propuesta?.actividades ?? []),
+      ...(this.todosLosSemestres ? (this.propuestaOtra?.actividades ?? []) : []),
+    ];
+    return todas.filter((a) => a.id_plan === this.idPlanSeleccionado);
   }
 
   // Niveles que se muestran: el elegido, o los pares o impares que tiene el plan
   get nivelesVisibles(): number[] {
     const s = this.semestreSeleccionado;
     if (typeof s === 'number') return [s];
-    const resto = s === 'PARES' ? 0 : 1;
     const niveles = new Set<number>([
       ...this.asignaturasPlan.map((a) => a.semestre),
       ...this.actividadesPlan.map((a) => a.nivel),
     ]);
-    return [...niveles].filter((n) => n % 2 === resto).sort((a, b) => a - b);
+    const resto = s === 'PARES' ? 0 : 1;
+    return [...niveles]
+      .filter((n) => s === 'TODOS' || n % 2 === resto)
+      .sort((a, b) => a - b);
   }
 
   get asignaturas(): AsignaturaDTO[] {
@@ -461,6 +501,13 @@ export class HorarioGrillaPageComponent implements OnInit {
   }
 
   onPlanOSemestreChange(): void {
+    // Con "Todos los semestres" no aplican la vista por sala, por docente ni la de salas libres
+    if (this.todosLosSemestres) {
+      this.salaSeleccionada = 0;
+      this.docenteSeleccionado = 0;
+      this.textoDocente = '';
+      this.vista = 'horario';
+    }
     this.cargarHorarioNivel();
   }
 
@@ -484,11 +531,16 @@ export class HorarioGrillaPageComponent implements OnInit {
       propuesta: this.propuestaApi
         .obtener(this.YEAR, this.periodo)
         .pipe(catchError(() => of(null))),
+      // Con "Todos los semestres" también se carga la propuesta del otro semestre del año
+      otra: this.todosLosSemestres
+        ? this.propuestaApi.obtener(this.YEAR, 3 - this.periodo).pipe(catchError(() => of(null)))
+        : of(null),
     })
       .pipe(
-        switchMap(({ asignaturas, propuesta }) => {
+        switchMap(({ asignaturas, propuesta, otra }) => {
           this.asignaturasPlan = asignaturas;
           this.propuesta = propuesta;
+          this.propuestaOtra = otra;
           if (
             this.salaSeleccionada !== 0 &&
             !this.salas.some((s) => s.id_sala === this.salaSeleccionada)
@@ -528,9 +580,15 @@ export class HorarioGrillaPageComponent implements OnInit {
 
   // Recarga solo la propuesta (después de mover, deshacer, generar o cerrar), sin parpadeo
   private recargarPropuesta(): void {
-    this.propuestaApi.obtener(this.YEAR, this.periodo).subscribe({
-      next: (p) => {
-        this.propuesta = p;
+    forkJoin({
+      propuesta: this.propuestaApi.obtener(this.YEAR, this.periodo),
+      otra: this.todosLosSemestres
+        ? this.propuestaApi.obtener(this.YEAR, 3 - this.periodo).pipe(catchError(() => of(null)))
+        : of(null),
+    }).subscribe({
+      next: ({ propuesta, otra }) => {
+        this.propuesta = propuesta;
+        this.propuestaOtra = otra;
         this.construirGrillas();
       },
     });
@@ -568,6 +626,7 @@ export class HorarioGrillaPageComponent implements OnInit {
           clave: `docente-${docente.id_usuario}`,
           titulo: `${docente.nombre} · ${this.etiquetaSemestre} · ${this.nombrePeriodo}`,
           subtitulo: 'Todas sus clases, con sala y bloque, de todas las carreras y planes',
+          editable: this.editable,
           celdas: this.celdasDe(this.clasesDeDocente(docente.id_usuario), [], 'docente'),
         },
       ];
@@ -578,6 +637,7 @@ export class HorarioGrillaPageComponent implements OnInit {
           clave: `sala-${sala.id_sala}`,
           titulo: `${sala.nombre} · ${this.etiquetaSemestre} · ${this.nombrePeriodo}`,
           subtitulo: 'Todas las clases de la sala, de todas las carreras y planes',
+          editable: this.editable,
           celdas: this.celdasDe(acts, [], 'sala'),
         },
       ];
@@ -586,6 +646,7 @@ export class HorarioGrillaPageComponent implements OnInit {
       const plan = this.planSeleccionado?.nombre ?? '';
       this.grillas = this.nivelesVisibles.map((n) => ({
         clave: `nivel-${n}`,
+        editable: this.editableNivel(n),
         titulo: `${carrera} · Semestre ${n}`,
         subtitulo: plan,
         celdas: this.celdasDe(
@@ -598,13 +659,16 @@ export class HorarioGrillaPageComponent implements OnInit {
 
     // Mantiene marcada la selección si la clase sigue en la propuesta
     const ids = new Set(this.seleccion.map((a) => a.id));
-    this.seleccion = (this.propuesta?.actividades ?? []).filter((a) => ids.has(a.id));
+    this.seleccion = [
+      ...(this.propuesta?.actividades ?? []),
+      ...(this.todosLosSemestres ? (this.propuestaOtra?.actividades ?? []) : []),
+    ].filter((a) => ids.has(a.id));
     this.marcarSeleccion();
   }
 
   // Cruces de sala o docente en los que participa una actividad, en un bloque
   private cruceDe(a: ActividadDTO, bloque: number): string | null {
-    const v = this.propuesta?.validacion;
+    const v = this.propuestaDe(a.nivel)?.validacion ?? this.propuesta?.validacion;
     if (!v) return null;
     const toca = (c: { id_dia: number; bloque_inicio: number; bloque_fin: number; actividades: { id: string }[] }) =>
       c.id_dia === a.id_dia &&
@@ -770,15 +834,25 @@ export class HorarioGrillaPageComponent implements OnInit {
 
   // ---------- GEN-F01 / GEN-F03: generar, cerrar y reabrir ----------
 
+  // Botón "Generar horario": abre la tarjeta de la propuesta con la confirmación
+  abrirGenerar(): void {
+    this.mostrarPropuesta = true;
+    this.confirmandoGeneracion = !this.cerrado;
+  }
+
+  cancelarGenerar(): void {
+    this.confirmandoGeneracion = false;
+    this.mostrarPropuesta = false;
+  }
+
+  // Con "Todos los semestres" se elige en la tarjeta qué semestre del año se gestiona
+  cambiarPeriodoTodos(): void {
+    this.recargarPropuesta();
+    this.confirmandoGeneracion = !this.cerrado;
+  }
+
   generar(): void {
-    if (
-      this.generada &&
-      !confirm(
-        'Se reemplazarán las clases propias de la propuesta actual, incluidos los cambios hechos a mano. ¿Continuar?',
-      )
-    ) {
-      return;
-    }
+    this.confirmandoGeneracion = false;
     this.generando = true;
     this.propuestaApi.generar(this.YEAR, this.periodo).subscribe({
       next: (r) => {
@@ -802,6 +876,8 @@ export class HorarioGrillaPageComponent implements OnInit {
     this.propuestaApi.cerrar(this.YEAR, this.periodo).subscribe({
       next: (r) => {
         this.avisar(r.mensaje);
+        // Al cerrar el horario, la tarjeta de la propuesta se oculta
+        this.mostrarPropuesta = false;
         this.recargarPropuesta();
       },
       error: (err: HttpErrorResponse) => {
@@ -855,7 +931,7 @@ export class HorarioGrillaPageComponent implements OnInit {
   // Arrastre: la clase se suelta en otro día y bloque; conserva su sala
   onMover(m: MovimientoCelda): void {
     const acts = (m.celda.ref as ActividadDTO[]) ?? [];
-    if (!this.editable || acts.length !== 1) return;
+    if (acts.length !== 1 || !this.editableDe(acts[0])) return;
     const a = acts[0];
     // Si se tomó la clase desde un bloque intermedio, se respeta ese desplazamiento
     const desplazamiento = m.celda.bloque_inicio - a.bloque_inicio;
@@ -911,7 +987,7 @@ export class HorarioGrillaPageComponent implements OnInit {
     this.propuestaApi
       .mover({
         year: this.YEAR,
-        periodo: this.periodo,
+        periodo: a.nivel % 2 === 0 ? 2 : 1,
         origen: a.origen,
         id_curso: a.id_curso,
         id_dia: a.id_dia,
