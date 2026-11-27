@@ -13,6 +13,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { forkJoin, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import {
@@ -87,8 +88,9 @@ type ModoGrilla = 'nivel' | 'sala' | 'docente';
 // CAL-F01: en cada día y bloque, qué salas están libres y cuáles ocupadas (y con qué)
 interface CeldaOcupacion {
   id_dia: number;
-  libres: { id_sala: number; nombre: string }[];
-  ocupadas: { id_sala: number; nombre: string; detalle: string }[];
+  // Todas las salas, siempre en el mismo orden, para que cada una quede en el mismo lugar en todas las celdas
+  salas: { id_sala: number; nombre: string; libre: boolean; detalle: string }[];
+  libres: number;
 }
 
 // Grilla que se dibuja: una por nivel, o una sola con todas las clases de una sala o de un docente
@@ -118,6 +120,7 @@ interface GrillaVista {
     MatAutocompleteModule,
     MatInputModule,
     MatButtonToggleModule,
+    MatSlideToggleModule,
     HorarioGrillaComponent,
   ],
 })
@@ -139,6 +142,8 @@ export class HorarioGrillaPageComponent implements OnInit {
   textoDocente = '';
   // CAL-F01: "horario" (grillas) o "salas" (salas libres por bloque)
   vista: 'horario' | 'salas' = 'horario';
+  // En la vista de salas libres, ocultar las ocupadas
+  soloLibres = false;
   bloquesGrilla: BloqueGrillaDTO[] = [];
 
   readonly SEMESTRES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
@@ -292,7 +297,7 @@ export class HorarioGrillaPageComponent implements OnInit {
     return this.bloquesGrilla.map((bloque) => ({
       bloque,
       dias: this.DIAS_OPCIONES.map(({ id }) => {
-        const celda: CeldaOcupacion = { id_dia: id, libres: [], ocupadas: [] };
+        const celda: CeldaOcupacion = { id_dia: id, salas: [], libres: 0 };
         for (const s of this.salas) {
           const aqui = acts.filter(
             (a) =>
@@ -301,17 +306,15 @@ export class HorarioGrillaPageComponent implements OnInit {
               bloque.numero >= a.bloque_inicio &&
               bloque.numero <= a.bloque_fin,
           );
-          if (aqui.length) {
-            celda.ocupadas.push({
-              id_sala: s.id_sala,
-              nombre: s.nombre,
-              detalle: aqui
-                .map((a) => `${a.codigo} ${a.nombre} (Gr. ${a.grupo} · ${a.codigo_carrera ?? ''} Sem. ${a.nivel})`)
-                .join('; '),
-            });
-          } else {
-            celda.libres.push({ id_sala: s.id_sala, nombre: s.nombre });
-          }
+          celda.salas.push({
+            id_sala: s.id_sala,
+            nombre: s.nombre,
+            libre: !aqui.length,
+            detalle: aqui
+              .map((a) => `${a.codigo} ${a.nombre} (Gr. ${a.grupo} · ${a.codigo_carrera ?? ''} Sem. ${a.nivel})`)
+              .join('; '),
+          });
+          if (!aqui.length) celda.libres++;
         }
         return celda;
       }),
