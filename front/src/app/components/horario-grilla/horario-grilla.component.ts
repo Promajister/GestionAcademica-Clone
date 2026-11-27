@@ -43,6 +43,8 @@ export interface CeldaGrilla {
   seleccionada?: boolean;
   // Texto de un cruce de sala o docente que la página quiere mostrar en la celda
   cruce?: string;
+  // Detalle del cruce para el tooltip: cada clase con su semestre, plan y sala
+  cruceDetalle?: string;
   // Carrera y nivel de la clase, para la vista por sala donde se mezclan niveles
   nivel?: string;
 }
@@ -155,7 +157,7 @@ export class HorarioGrillaComponent implements OnInit {
     if (c.tipo === 'PROTEGIDO') {
       return 'Bloque protegido: ' + c.etiqueta + (c.detalle ? ' (' + c.detalle + ')' : '');
     }
-    if (c.cruce) return c.cruce;
+    if (c.cruce) return c.cruceDetalle ?? c.cruce;
     if (c.advertencia_choque) {
       return 'Superposición con bloque protegido: ' + c.bloque_protegido_nombre;
     }

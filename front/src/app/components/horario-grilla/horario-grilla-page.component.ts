@@ -26,6 +26,7 @@ import {
   BloqueGrillaDTO,
 } from '../../services/horario-api.service';
 import {
+  ActividadCruceDTO,
   ActividadDTO,
   CruceDocenteDTO,
   CruceProtegidoDTO,
@@ -86,6 +87,9 @@ type FiltroSemestre = number | 'PARES' | 'IMPARES' | 'TODOS';
 
 // Cómo se arma una grilla: por nivel (carrera y plan), por sala o por docente
 type ModoGrilla = 'nivel' | 'sala' | 'docente';
+
+// Aviso de cruce de una celda: el texto que se ve y el detalle del tooltip
+type CruceCelda = { texto: string; detalle?: string };
 
 // CAL-F01: en cada día y bloque, qué salas están libres y cuáles ocupadas (y con qué)
 interface CeldaOcupacion {
@@ -699,8 +703,9 @@ export class HorarioGrillaPageComponent implements OnInit {
     this.marcarSeleccion();
   }
 
-  // Cruces de sala o docente en los que participa una actividad, en un bloque
-  private cruceDe(a: ActividadDTO, bloque: number): string | null {
+  // Cruces de sala o docente en los que participa una actividad, en un bloque. El detalle (tooltip)
+  // dice de qué semestre, plan y sala es cada clase, y cuáles no aparecen en la grilla que se mira
+  private cruceDe(a: ActividadDTO, bloque: number, visibles: Set<string>): CruceCelda | null {
     const v = this.propuestaDe(a.nivel)?.validacion ?? this.propuesta?.validacion;
     if (!v) return null;
     const toca = (c: { id_dia: number; bloque_inicio: number; bloque_fin: number; actividades: { id: string }[] }) =>
@@ -709,12 +714,49 @@ export class HorarioGrillaPageComponent implements OnInit {
       bloque <= c.bloque_fin &&
       c.actividades.some((x) => x.id === a.id);
     const sala = v.cruces_sala.find(toca);
-    if (sala) return `Cruce de sala: ${sala.mensaje}`;
+    if (sala) {
+      return { texto: `Cruce de sala: ${sala.mensaje}`, detalle: this.detalleCruce('Cruce de sala', sala, visibles) };
+    }
     const docente = v.cruces_docente.find(toca);
-    if (docente) return `Cruce de docente: ${docente.mensaje}`;
+    if (docente) {
+      return {
+        texto: `Cruce de docente: ${docente.mensaje}`,
+        detalle: this.detalleCruce('Cruce de docente', docente, visibles),
+      };
+    }
     const protegido = (v.cruces_protegido ?? []).find(toca);
-    if (protegido) return `En bloque protegido: «${protegido.protegido}»`;
+    if (protegido) return { texto: `En bloque protegido: «${protegido.protegido}»` };
     return null;
+  }
+
+  private detalleCruce(
+    titulo: string,
+    c: { mensaje: string; actividades: ActividadCruceDTO[] },
+    visibles: Set<string>,
+  ): string {
+    // El mensaje es "<docente o sala>, <día> bloques X-Y: <clases>"; el encabezado es lo anterior a ":"
+    const encabezado = `${titulo}: ${c.mensaje.split(':')[0]}`;
+    const lineas = c.actividades.map((x) => {
+      const a = this.actividadPorId(x.id);
+      const plan = a?.id_plan != null ? this.nombrePlan(a.id_plan) : '';
+      const donde = a
+        ? `${a.codigo_carrera ?? ''} · Sem. ${a.nivel}`.trim() + (plan ? ` (${plan})` : '')
+        : '';
+      const sala = x.sala ?? a?.sala_externa ?? 'sin sala';
+      const oculta = visibles.has(x.id) ? '' : ' — no aparece en esta grilla';
+      return `• ${x.codigo} · Gr. ${x.grupo} ${x.nombre}\n   ${[donde, sala].filter(Boolean).join(', ')}${oculta}`;
+    });
+    return [encabezado, ...lineas].join('\n');
+  }
+
+  private actividadPorId(id: string): ActividadDTO | undefined {
+    return [...(this.propuesta?.actividades ?? []), ...(this.propuestaOtra?.actividades ?? [])].find(
+      (a) => a.id === id,
+    );
+  }
+
+  private nombrePlan(id_plan: number): string {
+    return this.carreras.flatMap((c) => c.planes ?? []).find((p) => p.id_plan === id_plan)?.nombre ?? '';
   }
 
   // Código con su grupo (ej. 123H · Gr. A): así se distinguen las clases de cada grupo
@@ -760,10 +802,11 @@ export class HorarioGrillaPageComponent implements OnInit {
       bloque: number;
       acts: ActividadDTO[];
       protegido?: SlotProtegido;
-      cruce: string | null;
+      cruce: CruceCelda | null;
       firma: string;
     };
 
+    const visibles = new Set(actividades.map((a) => a.id));
     const celdas: CeldaGrilla[] = [];
     for (const dia of DIAS) {
       const slots: Slot[] = [];
@@ -775,23 +818,26 @@ export class HorarioGrillaPageComponent implements OnInit {
         if (!acts.length && !protegido) continue;
         // Dos clases a la vez: en la vista por sala es un cruce de sala; por docente, un cruce
         // de docente; por nivel, un cruce para los estudiantes
-        const cruce =
+        const cruce: CruceCelda | null =
           acts.length > 1 && (modo !== 'nivel' || this.chocanEnNivel(acts))
-            ? modo === 'sala'
-              ? `Cruce de sala: ${acts.map((a) => `${this.codigoConGrupo(a)} (sem. ${a.nivel})`).join(' y ')} en la misma sala`
-              : modo === 'docente'
-                ? `Cruce de docente: ${acts.map((a) => this.codigoConGrupo(a)).join(' y ')} a la misma hora`
-                : `Cruce de nivel: ${acts.map((a) => this.codigoConGrupo(a)).join(' y ')} a la misma hora`
+            ? {
+                texto:
+                  modo === 'sala'
+                    ? `Cruce de sala: ${acts.map((a) => `${this.codigoConGrupo(a)} (sem. ${a.nivel})`).join(' y ')} en la misma sala`
+                    : modo === 'docente'
+                      ? `Cruce de docente: ${acts.map((a) => this.codigoConGrupo(a)).join(' y ')} a la misma hora`
+                      : `Cruce de nivel: ${acts.map((a) => this.codigoConGrupo(a)).join(' y ')} a la misma hora`,
+              }
             : acts
-                .map((a) => this.cruceDe(a, b))
+                .map((a) => this.cruceDe(a, b, visibles))
                 // Si la celda ya muestra el bloque protegido, no se repite el aviso
-                .find((x) => !!x && !(protegido && x.startsWith('En bloque protegido'))) ?? null;
+                .find((x) => !!x && !(protegido && x.texto.startsWith('En bloque protegido'))) ?? null;
         slots.push({
           bloque: b,
           acts,
           protegido,
           cruce,
-          firma: [acts.map((a) => a.id).join(','), protegido?.nombre ?? '', cruce ?? ''].join('|'),
+          firma: [acts.map((a) => a.id).join(','), protegido?.nombre ?? '', cruce?.texto ?? ''].join('|'),
         });
       }
 
@@ -823,7 +869,7 @@ export class HorarioGrillaPageComponent implements OnInit {
     fin: number,
     acts: ActividadDTO[],
     protegido: { nombre: string; detalle: string } | undefined,
-    cruce: string | null,
+    cruce: CruceCelda | null,
     modo: ModoGrilla,
   ): CeldaGrilla {
     const base = { dia, bloque_inicio: inicio, bloque_fin: fin, ref: acts };
@@ -852,7 +898,8 @@ export class HorarioGrillaPageComponent implements OnInit {
       bloque_protegido_alcance: protegido?.detalle,
       // Con dos clases en la misma celda se mueven desde el panel, no arrastrando
       arrastrable: acts.length === 1 && !!a,
-      cruce: cruce ?? undefined,
+      cruce: cruce?.texto,
+      cruceDetalle: cruce?.detalle,
     };
   }
 
