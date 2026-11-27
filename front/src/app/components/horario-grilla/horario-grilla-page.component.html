@@ -92,7 +92,8 @@
         <mat-form-field appearance="outline">
           <mat-label>Sala</mat-label>
           <mat-select [(ngModel)]="salaSeleccionada" [disabled]="vista === 'salas' || vistasDeUnSemestreBloqueadas" (selectionChange)="onSalaChange()">
-            <mat-option [value]="0">Todas las salas</mat-option>
+            <mat-option [value]="0">Sin filtro de sala</mat-option>
+            <mat-option [value]="TODAS_LAS_SALAS">Todas las salas (una grilla por sala)</mat-option>
             @for (s of salas; track s.id_sala) {
               <mat-option [value]="s.id_sala">{{ s.nombre }} · cap. {{ s.capacidad }} · {{ usoSala(s.id_sala) }}</mat-option>
             }
@@ -537,6 +538,20 @@
         </button>
       </div>
     }
+    @if (vista === 'horario' && todasLasSalas) {
+      <div class="vista-sala muted">
+        <mat-icon>meeting_room</mat-icon>
+        <span>
+          Viendo <strong>cada sala en su grilla</strong> ({{ etiquetaSemestre | lowercase }}, {{ nombrePeriodo }}),
+          con las clases de todas las carreras y planes; solo aparecen las salas con clases o reservas.
+          Carrera y Plan no aplican mientras esté elegida esta opción.
+        </span>
+        <button mat-button (click)="salaSeleccionada = 0; onSalaChange()">
+          <mat-icon>close</mat-icon>
+          Quitar filtro
+        </button>
+      </div>
+    }
 
     @for (g of vista === 'horario' ? grillas : []; track g.clave) {
       <mat-card class="elev grilla-main-card">
@@ -552,13 +567,15 @@
     } @empty {
       @if (vista === 'horario') {
         <mat-card class="elev grilla-main-card">
-          <p class="muted">El plan no tiene asignaturas en los semestres elegidos.</p>
+          <p class="muted">
+            {{ todasLasSalas ? 'Ninguna sala tiene clases ni reservas en los semestres elegidos.' : 'El plan no tiene asignaturas en los semestres elegidos.' }}
+          </p>
         </mat-card>
       }
     }
 
     <!-- LISTA DE ASIGNATURAS PROPIAS DE LOS NIVELES ELEGIDOS -->
-    @if (vista === 'horario' && !salaActual && !docenteActual) {
+    @if (vista === 'horario' && !salaActual && !todasLasSalas && !docenteActual) {
       <mat-card class="elev propias-card">
         <div class="propias-header">
           <div class="propias-title-wrap">

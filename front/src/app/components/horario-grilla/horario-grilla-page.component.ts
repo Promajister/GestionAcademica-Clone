@@ -144,7 +144,9 @@ export class HorarioGrillaPageComponent implements OnInit {
   idPlanSeleccionado: number | null = null;
   semestreSeleccionado: FiltroSemestre = 2; // Default a 2 para la demo
   // Con una sala elegida se ve una sola grilla con todas sus clases del semestre
-  salaSeleccionada = 0; // 0: todas las salas
+  // 0: sin filtro; TODAS_LAS_SALAS: una grilla por cada sala
+  salaSeleccionada = 0;
+  readonly TODAS_LAS_SALAS = -1;
   // CAL-F03: con un docente elegido se ve una sola grilla con todas sus clases del semestre
   docenteSeleccionado = 0; // 0: ninguno
   textoDocente = '';
@@ -259,6 +261,17 @@ export class HorarioGrillaPageComponent implements OnInit {
     return this.salas.find((s) => s.id_sala === this.salaSeleccionada);
   }
 
+  get todasLasSalas(): boolean {
+    return this.salaSeleccionada === this.TODAS_LAS_SALAS;
+  }
+
+  // Con "Todas las salas": las que tienen clases o reservas en el semestre elegido
+  get salasConUso() {
+    return this.salas.filter(
+      (s) => this.clasesEnSala(s.id_sala).length || this.reservasSala.some((r) => r.id_sala === s.id_sala),
+    );
+  }
+
   // Clases de una sala en el semestre elegido, de cualquier carrera y plan.
   // Con un nivel elegido (ej. Semestre 4) solo las de ese nivel; con pares o impares, todas
   clasesEnSala(id_sala: number): ActividadDTO[] {
@@ -330,7 +343,7 @@ export class HorarioGrillaPageComponent implements OnInit {
   }
 
   get filtrosDePlanBloqueados(): boolean {
-    return !!this.salaActual || !!this.docenteActual || this.vista === 'salas';
+    return !!this.salaActual || this.todasLasSalas || !!this.docenteActual || this.vista === 'salas';
   }
 
   // ---------- CAL-F01: salas libres por bloque ----------
@@ -575,7 +588,7 @@ export class HorarioGrillaPageComponent implements OnInit {
           this.propuesta = propuesta;
           this.propuestaOtra = otra;
           if (
-            this.salaSeleccionada !== 0 &&
+            this.salaSeleccionada > 0 &&
             !this.salas.some((s) => s.id_sala === this.salaSeleccionada)
           ) {
             this.salaSeleccionada = 0;
@@ -663,21 +676,19 @@ export class HorarioGrillaPageComponent implements OnInit {
           celdas: this.celdasDe(this.clasesDeDocente(docente.id_usuario), [], 'docente'),
         },
       ];
-    } else if (sala) {
-      const acts = this.clasesEnSala(sala.id_sala);
-      this.grillas = [
-        {
-          clave: `sala-${sala.id_sala}`,
-          titulo: `${sala.nombre} · ${this.etiquetaSemestre} · ${this.nombrePeriodo}`,
-          subtitulo: 'Todas las clases de la sala, de todas las carreras y planes',
-          editable: this.editable,
-          celdas: this.celdasDe(
-            acts,
-            this.reservasSala.filter((r) => r.id_sala === sala.id_sala),
-            'sala',
-          ),
-        },
-      ];
+    } else if (sala || this.todasLasSalas) {
+      // Una sala elegida, o todas: cada sala en su grilla, con todas sus clases del semestre
+      this.grillas = (sala ? [sala] : this.salasConUso).map((s) => ({
+        clave: `sala-${s.id_sala}`,
+        titulo: `${s.nombre} · ${this.etiquetaSemestre} · ${this.nombrePeriodo}`,
+        subtitulo: 'Todas las clases de la sala, de todas las carreras y planes',
+        editable: this.editable,
+        celdas: this.celdasDe(
+          this.clasesEnSala(s.id_sala),
+          this.reservasSala.filter((r) => r.id_sala === s.id_sala),
+          'sala',
+        ),
+      }));
     } else {
       const carrera = this.carreraSeleccionada?.nombre ?? '';
       const plan = this.planSeleccionado?.nombre ?? '';
