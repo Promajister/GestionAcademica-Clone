@@ -706,6 +706,11 @@
 
 .salas-libres-head {
   margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
 
   h3 {
     margin: 0;
@@ -812,3 +817,45 @@
   font-weight: 700;
   color: #b91c1c;
 }
+
+/* Botón "Generar horario" en la cabecera y confirmación en la tarjeta de la propuesta */
+.hero__acciones {
+  display: flex;
+  align-items: center;
+}
+
+.btn-generar {
+  background: #38bdf8 !important;
+  color: #0f172a !important;
+  font-weight: 700;
+}
+
+.periodo-select {
+  width: 200px;
+  margin-bottom: -1.25em;
+}
+
+.confirmar-generar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  font-size: 13px;
+  color: #1e3a8a;
+
+  > mat-icon {
+    color: #2563eb;
+  }
+
+  &__acciones {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+  }
+}
+
